@@ -1,5 +1,5 @@
-See our project website for project information:  http://www.iodoom3.org/
+This project is for studing purpose, if you find userfull, clone it
 
-For instructions on migrating from Gitorious, see http://www.iodoom3.org/2013/migrated-to-github/
+My milestones for the projec is in the Plans.txt 
 
 Please see id-README.txt for the original README from id software.

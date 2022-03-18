@@ -1,0 +1,13 @@
+ - Flexible CMAKE crossplatform build ( ON THE WAY )
+ - SDL2 cross platform suport 
+ - Modern SIMD instrinsics suport
+ - x64 suport
+ - Modern OpenGL 4.5 Rendering
+	- Suport for OpenGL Direct State Acess
+	- Modern buffer handling, 
+	- Modern Shading throug Shader Program Pipelins, and separable Shaders
+	- OpenGL pipeline Rendering
+ - Compile loaded images to Kronous KTX2.0 image format for fast loading, ( similar to Doom 3 BFG binary image )
+ - Suport For Diligent Engine for cross platform and multi API rendering
+ - Multi threading and jobs 
+ - Re implement tools using a cross platform GUI tools instead of MS MFC
