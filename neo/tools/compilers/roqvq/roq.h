@@ -31,11 +31,11 @@ If you have questions concerning this license or the applicable additional terms
 #include "gdefs.h"
 #include "roqParam.h"
 #include "quaddefs.h"
-#define JPEG_INTERNALS
-extern "C" {
-#include "../../../renderer/jpeg-6/jpeglib.h"
-}
-#pragma once
+
+// BEATO Begin
+#include <jpeglib.h>
+#include <jerror.h>
+// BEATO End
 
 class codec;
 class roqParam;

@@ -345,10 +345,10 @@ void idSoundSystemLocal::Init() {
 			common->Printf( "Done.\n" );
 
 			// try to obtain EAX extensions
-			if ( idSoundSystemLocal::s_useEAXReverb.GetBool() && alIsExtensionPresent( ID_ALCHAR "EAX4.0" ) ) {
+			if ( idSoundSystemLocal::s_useEAXReverb.GetBool() && alIsExtensionPresent( "EAX4.0" ) ) {
 				idSoundSystemLocal::s_useOpenAL.SetBool( true );	// EAX presence causes AL enable
-				alEAXSet = (EAXSet)alGetProcAddress( ID_ALCHAR "EAXSet" );
-				alEAXGet = (EAXGet)alGetProcAddress( ID_ALCHAR "EAXGet" );
+				alEAXSet = (EAXSet)alGetProcAddress( "EAXSet" );
+				alEAXGet = (EAXGet)alGetProcAddress( "EAXGet" );
 				common->Printf( "OpenAL: found EAX 4.0 extension\n" );
 			} else {
 				common->Printf( "OpenAL: EAX 4.0 extension not found\n" );
@@ -358,10 +358,10 @@ void idSoundSystemLocal::Init() {
 			}
 
 			// try to obtain EAX-RAM extension - not required for operation
-			if ( alIsExtensionPresent( ID_ALCHAR "EAX-RAM" ) == AL_TRUE ) {
-				alEAXSetBufferMode = (EAXSetBufferMode)alGetProcAddress( ID_ALCHAR "EAXSetBufferMode" );
-				alEAXGetBufferMode = (EAXGetBufferMode)alGetProcAddress( ID_ALCHAR "EAXGetBufferMode" );
-				common->Printf( "OpenAL: found EAX-RAM extension, %dkB\\%dkB\n", alGetInteger( alGetEnumValue( ID_ALCHAR "AL_EAX_RAM_FREE" ) ) / 1024, alGetInteger( alGetEnumValue( ID_ALCHAR "AL_EAX_RAM_SIZE" ) ) / 1024 );
+			if ( alIsExtensionPresent( "EAX-RAM" ) == AL_TRUE ) {
+				alEAXSetBufferMode = (EAXSetBufferMode)alGetProcAddress( "EAXSetBufferMode" );
+				alEAXGetBufferMode = (EAXGetBufferMode)alGetProcAddress( "EAXGetBufferMode" );
+				common->Printf( "OpenAL: found EAX-RAM extension, %dkB\\%dkB\n", alGetInteger( alGetEnumValue( "AL_EAX_RAM_FREE" ) ) / 1024, alGetInteger( alGetEnumValue( "AL_EAX_RAM_SIZE" ) ) / 1024 );
 			} else {
 				alEAXSetBufferMode = (EAXSetBufferMode)NULL;
 				alEAXGetBufferMode = (EAXGetBufferMode)NULL;
@@ -1445,7 +1445,7 @@ int idSoundSystemLocal::IsEAXAvailable( void ) {
 	device = alcOpenDevice( NULL );
 	context = alcCreateContext( device, NULL );
 	alcMakeContextCurrent( context );
-	if ( alIsExtensionPresent( ID_ALCHAR "EAX4.0" ) ) {
+	if ( alIsExtensionPresent( "EAX4.0" ) ) {
 		alcMakeContextCurrent( NULL );
 		alcDestroyContext( context );
 		alcCloseDevice( device );

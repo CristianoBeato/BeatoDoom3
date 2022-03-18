@@ -31,6 +31,8 @@ If you have questions concerning this license or the applicable additional terms
 #include "roq.h"
 #include "codec.h"
 
+#include <jpegint.h>
+
 roq		*theRoQ;				// current roq file
 
 roq::roq( void )

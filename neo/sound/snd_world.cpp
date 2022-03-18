@@ -1770,7 +1770,7 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 					chan->lastopenalStreamingBuffer[2] = chan->openalStreamingBuffer[2];
 					alGenBuffers( 3, &chan->openalStreamingBuffer[0] );
 					if ( soundSystemLocal.alEAXSetBufferMode ) {
-						soundSystemLocal.alEAXSetBufferMode( 3, &chan->openalStreamingBuffer[0], alGetEnumValue( ID_ALCHAR "AL_STORAGE_ACCESSIBLE" ) );
+						soundSystemLocal.alEAXSetBufferMode( 3, &chan->openalStreamingBuffer[0], alGetEnumValue( "AL_STORAGE_ACCESSIBLE" ) );
 					}
 					buffers[0] = chan->openalStreamingBuffer[0];
 					buffers[1] = chan->openalStreamingBuffer[1];

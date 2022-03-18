@@ -29,23 +29,29 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __SND_LOCAL_H__
 #define __SND_LOCAL_H__
 
-// you need the OpenAL headers for build, even if AL is not enabled - http://www.openal.org/
-#ifdef _WIN32
-#include "../openal/include/al.h"
-#include "../openal/include/alc.h"
-#include "../openal/idal.h"
-// broken OpenAL SDK ?
-#define ID_ALCHAR (ALubyte *)
-#elif defined( MACOS_X )
-#include <OpenAL/al.h>
-#include <OpenAL/alc.h>
-#define ID_ALCHAR
-#else         
-#include <AL/al.h>
-#include <AL/alc.h>
-#define ID_ALCHAR
+//BEATO Begin: Use OpenAL 1.1 SDK
+/// Cmake FindOpenAL.cmake
+/// Projects using this module should use ``#include "al.h"`` to include the OpenAL
+/// header file, **not** ``#include <AL / al.h>``.  The reason for this is that the
+/// latter is not entirely portable .Windows / Creative Labs does not by default put
+/// their headers in ``AL/`` and macOS uses the convention ``<OpenAL / al.h > ``.
+
+#include <al.h>
+#include <alc.h>
+#include <efx.h>
+#include <EFX-Util.h>
+
+#include "efxlib.h"
+#include "contrib/EAX/eax5.h"
+
+#ifndef AL_VERSION_1_1
+#error "NO OPENAL 1.1 found, needed"
 #endif
-#include "../openal/include/efxlib.h"
+
+#define EAX_SUPORT 1
+#define EFX_SUPORT 1
+
+// BEATO End
 
 // demo sound commands
 typedef enum {

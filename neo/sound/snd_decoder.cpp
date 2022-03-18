@@ -30,9 +30,12 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "snd_local.h"
-#include "OggVorbis/vorbis/codec.h"
-#include "OggVorbis/vorbis/vorbisfile.h"
 
+// BEATO Begin
+#include <ogg/ogg.h>
+#include <vorbis/codec.h>
+#include <vorbis/vorbisfile.h>
+// BEATO End
 
 /*
 ===================================================================================
@@ -228,9 +231,14 @@ int idWaveFile::ReadOGG( byte* pBuffer, int dwSizeToRead, int *pdwSizeRead ) {
 	int total = dwSizeToRead;
 	char *bufferPtr = (char *)pBuffer;
 	OggVorbis_File *ov = (OggVorbis_File *) ogg;
+// BEATO Begin: 
+	int current_section = 0;
+// BEATO End
 
 	do {
-		int ret = ov_read( ov, bufferPtr, total >= 4096 ? 4096 : total, Swap_IsBigEndian(), 2, 1, &ov->stream );
+// BEATO Begin: ogg vorbis load lib
+		int ret = ov_read( ov, bufferPtr, total >= 4096 ? 4096 : total, Swap_IsBigEndian(), 2, 1, &current_section );
+// BEATO End
 		if ( ret == 0 ) {
 			break;
 		}
@@ -299,6 +307,11 @@ private:
 	idFile_Memory			file;				// encoded file in memory
 
 	OggVorbis_File			ogg;				// OggVorbis file
+
+
+// BEATO Begin
+	int						currentSection;
+// BEATO End
 };
 
 idBlockAlloc<idSampleDecoderLocal, 64>		sampleDecoderAllocator;
@@ -532,6 +545,10 @@ int idSampleDecoderLocal::DecodeOGG( idSoundSample *sample, int sampleOffset44k,
 		}
 		lastFormat = WAVE_FORMAT_TAG_OGG;
 		lastSample = sample;
+
+// BEATO Begin
+		currentSection = 0;
+// BEATO End
 	}
 
 	// seek to the right offset if necessary
@@ -549,7 +566,9 @@ int idSampleDecoderLocal::DecodeOGG( idSoundSample *sample, int sampleOffset44k,
 	readSamples = 0;
 	do {
 		float **samples;
-		int ret = ov_read_float( &ogg, &samples, totalSamples / sample->objectInfo.nChannels, &ogg.stream );
+// BEATO Begin
+		int ret = ov_read_float( &ogg, &samples, totalSamples / sample->objectInfo.nChannels, &currentSection );
+// BEATO End
 		if ( ret == 0 ) {
 			failed = true;
 			break;
