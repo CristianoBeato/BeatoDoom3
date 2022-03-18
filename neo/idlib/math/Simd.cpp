@@ -30,13 +30,17 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "Simd_Generic.h"
+
+// BEATO Begin: Implement a modern SIMD intrincics instead
+#if 0
 #include "Simd_MMX.h"
 #include "Simd_3DNow.h"
 #include "Simd_SSE.h"
 #include "Simd_SSE2.h"
 #include "Simd_SSE3.h"
 #include "Simd_AltiVec.h"
-
+#endif
+// BEATO End
 
 idSIMDProcessor	*	processor = NULL;			// pointer to SIMD processor
 idSIMDProcessor *	generic = NULL;				// pointer to generic SIMD implementation
@@ -66,6 +70,8 @@ void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 
 	cpuid = idLib::sys->GetProcessorId();
 
+// BEATO Begin
+#if 0
 	if ( forceGeneric ) {
 
 		newProcessor = generic;
@@ -93,6 +99,11 @@ void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 
 		newProcessor = processor;
 	}
+#else
+	processor->cpuid = cpuid;
+	newProcessor = generic;
+#endif
+// BEATO end
 
 	if ( newProcessor != SIMDProcessor ) {
 		SIMDProcessor = newProcessor;
@@ -1498,7 +1509,7 @@ void TestMemcpy( void ) {
 		p_simd->Memcpy( test1, test0, 8192 );
 		for ( j = 0; j < i; j++ ) {
 			if ( test1[j] != test0[j] ) {
-				idLib::common->Printf( "   simd->Memcpy() "S_COLOR_RED"X\n" );
+				idLib::common->Printf( "   simd->Memcpy() " S_COLOR_RED "X\n" );
 				return;
 			}
 		}
@@ -1524,7 +1535,7 @@ void TestMemset( void ) {
 			p_simd->Memset( test, j, i );
 			for ( k = 0; k < i; k++ ) {
 				if ( test[k] != (byte)j ) {
-					idLib::common->Printf( "   simd->Memset() "S_COLOR_RED"X\n" );
+					idLib::common->Printf( "   simd->Memset() " S_COLOR_RED "X\n" );
 					return;
 				}
 			}
@@ -4099,15 +4110,18 @@ void TestNegate( void ) {
 idSIMD::Test_f
 ============
 */
-void idSIMD::Test_f( const idCmdArgs &args ) {
+void idSIMD::Test_f( const idCmdArgs &args ) 
+{
 
-#ifdef _WIN32
-	SetThreadPriority( GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL );
-#endif /* _WIN32 */
+// BEATO Begin:
+	SDL_SetThreadPriority( SDL_THREAD_PRIORITY_TIME_CRITICAL ); // May need require you to be an administrator account
+// BEATO End
 
 	p_simd = processor;
 	p_generic = generic;
 
+// BEATO Begin
+#if 0
 	if ( idStr::Length( args.Argv( 1 ) ) != 0 ) {
 		cpuid_t cpuid = idLib::sys->GetProcessorId();
 		idStr argString = args.Args();
@@ -4155,6 +4169,8 @@ void idSIMD::Test_f( const idCmdArgs &args ) {
 			return;
 		}
 	}
+#endif
+// BEATO End
 
 	idLib::common->SetRefreshOnPrint( true );
 
@@ -4219,7 +4235,7 @@ void idSIMD::Test_f( const idCmdArgs &args ) {
 	p_simd = NULL;
 	p_generic = NULL;
 
-#ifdef _WIN32
-	SetThreadPriority( GetCurrentThread(), THREAD_PRIORITY_NORMAL );
-#endif /* _WIN32 */
+// BEATO Begin:
+	SDL_SetThreadPriority( SDL_THREAD_PRIORITY_NORMAL ); // May need require you to be an administrator account
+// BEATO End
 }

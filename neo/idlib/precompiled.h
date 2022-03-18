@@ -58,7 +58,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #else
 
-#include "../tools/comafx/StdAfx.h"
+//#include "../tools/comafx/StdAfx.h"
 
 #endif
 
@@ -92,6 +92,9 @@ If you have questions concerning this license or the applicable additional terms
 	// don't generate asserts
 	#define NDEBUG
 #endif
+
+#include <SDL_stdinc.h>
+#include <SDL_assert.h>
 
 #include <stdio.h>
 #include <stdlib.h>

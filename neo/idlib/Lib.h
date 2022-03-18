@@ -240,5 +240,6 @@ template<class T> ID_INLINE T	Min( T x, T y ) { return ( x < y ) ? x : y; }
 #include "BitMsg.h"
 #include "MapFile.h"
 #include "Timer.h"
+#include "Thread.h"
 
 #endif	/* !__LIB_H__ */

@@ -58,6 +58,10 @@ public:
 	const type &		GetEndValue( void ) const { return endValue; }
 
 private:
+// BEATO Begin: Bypass to TypeInfo acess error 
+	friend class idTypeInfoTools;
+// BEATO End
+
 	float				startTime;
 	float				duration;
 	type				startValue;
@@ -149,6 +153,9 @@ public:
 	const type &		GetEndValue( void ) const { return endValue; }
 
 private:
+// BEATO Begin: Bypass to TypeInfo acess error 
+	friend class idTypeInfoTools;
+// BEATO End
 	float				startTime;
 	float				accelTime;
 	float				linearTime;
@@ -298,6 +305,9 @@ public:
 	const type &		GetEndValue( void ) const { return endValue; }
 
 private:
+// BEATO Begin: Bypass to TypeInfo acess error 
+	friend class idTypeInfoTools;
+// BEATO End
 	float				startTime;
 	float				accelTime;
 	float				linearTime;

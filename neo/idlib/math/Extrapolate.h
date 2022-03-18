@@ -67,6 +67,10 @@ public:
 	extrapolation_t		GetExtrapolationType( void ) const { return extrapolationType; }
 
 private:
+// BEATO Begin: Bypass to TypeInfo acess error 
+	friend class idTypeInfoTools;
+// BEATO End
+
 	extrapolation_t		extrapolationType;
 	float				startTime;
 	float				duration;

@@ -29,7 +29,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "Unzip.h"
+#include "contrib/minizip/unzip.h"
 
 #ifdef WIN32
 	#include <io.h>	// for _read
@@ -1356,7 +1356,9 @@ pack_t *idFileSystemLocal::LoadZipFile( const char *zipfile ) {
 		buildBuffer[i].name.ToLower();
 		buildBuffer[i].name.BackSlashesToSlashes();
 		// store the file position in the zip
-		unzGetCurrentFileInfoPosition( uf, &buildBuffer[i].pos );
+// BEATO Begin: from dhelm3 update
+		buildBuffer[i].pos = unzGetOffset64( uf ); // unzGetCurrentFileInfoPosition( uf, &buildBuffer[i].pos );
+// BEATO End
 		// add the file to the hash
 		buildBuffer[i].next = pack->hashTable[hash];
 		pack->hashTable[hash] = &buildBuffer[i];
@@ -3100,31 +3102,33 @@ pureStatus_t idFileSystemLocal::GetPackStatus( pack_t *pak ) {
 idFileSystemLocal::ReadFileFromZip
 ===========
 */
-idFile_InZip * idFileSystemLocal::ReadFileFromZip( pack_t *pak, fileInPack_t *pakFile, const char *relativePath ) {
-	unz_s *			zfi;
-	FILE *			fp;
-	idFile_InZip *file = new idFile_InZip();
+idFile_InZip * idFileSystemLocal::ReadFileFromZip( pack_t *pak, fileInPack_t *pakFile, const char *relativePath )
+{
+// BEATO Begin
+	// set position in pk4 file to the file (in the zip/pk4) we want a handle on
+	unzSetOffset64( pak->handle, pakFile->pos );
 
-	// open a new file on the pakfile
-	file->z = unzReOpen( pak->pakFilename, pak->handle );
-	if ( file->z == NULL ) {
+	// clone handle and assign a new internal filestream to zip file to it
+	unzFile uf = unzReOpen( pak->pakFilename, pak->handle );
+	if (uf == NULL)
 		common->FatalError( "Couldn't reopen %s", pak->pakFilename.c_str() );
-	}
+
+	// the following stuff is needed to get the uncompress filesize (for file->fileSize)
+	char	filename_inzip[MAX_ZIPPED_FILE_NAME];
+	unz_file_info64	file_info;
+	int err = unzGetCurrentFileInfo64( uf, &file_info, filename_inzip, sizeof( filename_inzip ), NULL, 0, NULL, 0 );
+	if (err != UNZ_OK)
+		common->FatalError( "Couldn't get file info for %s in %s, pos %llu", relativePath, pak->pakFilename.c_str(), pakFile->pos );
+
+	// create idFile_InZip and set fields accordingly
+	idFile_InZip *file = new idFile_InZip();
+	file->z = uf;
 	file->name = relativePath;
 	file->fullPath = pak->pakFilename + "/" + relativePath;
-	zfi = (unz_s *)file->z;
-	// in case the file was new
-	fp = zfi->file;
-	// set the file position in the zip file (also sets the current file info)
-	unzSetCurrentFileInfoPosition( pak->handle, pakFile->pos );
-	// copy the file info into the unzip structure
-	memcpy( zfi, pak->handle, sizeof(unz_s) );
-	// we copy this back into the structure
-	zfi->file = fp;
-	// open the file in the zip
-	unzOpenCurrentFile( file->z );
 	file->zipFilePos = pakFile->pos;
-	file->fileSize = zfi->cur_file_info.uncompressed_size;
+	file->fileSize = file_info.uncompressed_size;
+// BEATO End
+
 	return file;
 }
 
@@ -3595,7 +3599,7 @@ size_t idFileSystemLocal::CurlWriteFunction( void *ptr, size_t size, size_t nmem
 		return size * nmemb;
 	}
 	#ifdef _WIN32
-		return _write( static_cast<idFile_Permanent*>(bgl->f)->GetFilePtr()->_file, ptr, size * nmemb );
+		return _write( _fileno( static_cast<idFile_Permanent*>(bgl->f)->GetFilePtr() ), ptr, size * nmemb );
 	#else
 		return fwrite( ptr, size, nmemb, static_cast<idFile_Permanent*>(bgl->f)->GetFilePtr() );
 	#endif
@@ -3641,7 +3645,7 @@ dword BackgroundDownloadThread( void *parms ) {
 		if ( bgl->opcode == DLTYPE_FILE ) {
 			// use the low level read function, because fread may allocate memory
 			#if defined(WIN32)
-				_read( static_cast<idFile_Permanent*>(bgl->f)->GetFilePtr()->_file, bgl->file.buffer, bgl->file.length );
+				_read( _fileno( static_cast<idFile_Permanent*>(bgl->f)->GetFilePtr() ), bgl->file.buffer, bgl->file.length );
 			#else
 				fread(  bgl->file.buffer, bgl->file.length, 1, static_cast<idFile_Permanent*>(bgl->f)->GetFilePtr() );
 			#endif

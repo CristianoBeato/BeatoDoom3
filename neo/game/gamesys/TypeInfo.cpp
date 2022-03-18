@@ -26,10 +26,12 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
+// BEATO Begin
 // This is real evil but allows the code to inspect arbitrary class variables.
-#define _ALLOW_KEYWORD_MACROS
-#define private		public
-#define protected	public
+//#define _ALLOW_KEYWORD_MACROS
+//#define private		public
+//#define protected	public
+// BEATO End
 
 #include "../../idlib/precompiled.h"
 #pragma hdrstop

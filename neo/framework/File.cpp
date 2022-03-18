@@ -29,7 +29,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-#include "Unzip.h"
+#include "contrib/minizip/Unzip.h"
 
 #define	MAX_PRINT_MSG		4096
 
@@ -1339,7 +1339,9 @@ int idFile_InZip::Seek( long offset, fsOrigin_t origin ) {
 		}
 		case FS_SEEK_SET: {
 			// set the file position in the zip file (also sets the current file info)
-			unzSetCurrentFileInfoPosition( z, zipFilePos );
+// BEATO Begin: from dhelm3 update
+			unzSetOffset64( z, zipFilePos ); //unzSetCurrentFileInfoPosition( z, zipFilePos );
+// BEATO end
 			unzOpenCurrentFile( z );
 			if ( offset <= 0 ) {
 				return 0;
