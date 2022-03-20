@@ -95,6 +95,7 @@ If you have questions concerning this license or the applicable additional terms
 
 #include <SDL_stdinc.h>
 #include <SDL_assert.h>
+#include <SDL_loadso.h>
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -49,43 +49,6 @@ If you have questions concerning this license or the applicable additional terms
 
 /*
 ================
-Sys_Milliseconds
-================
-*/
-int Sys_Milliseconds( void ) {
-	int sys_curtime;
-	static int sys_timeBase;
-	static bool	initialized = false;
-
-	if ( !initialized ) {
-		sys_timeBase = timeGetTime();
-		initialized = true;
-	}
-	sys_curtime = timeGetTime() - sys_timeBase;
-
-	return sys_curtime;
-}
-
-/*
-================
-Sys_GetSystemRam
-
-	returns amount of physical memory in MB
-================
-*/
-int Sys_GetSystemRam( void ) {
-	MEMORYSTATUSEX statex;
-	statex.dwLength = sizeof ( statex );
-	GlobalMemoryStatusEx (&statex);
-	int physRam = statex.ullTotalPhys / ( 1024 * 1024 );
-	// HACK: For some reason, ullTotalPhys is sometimes off by a meg or two, so we round up to the nearest 16 megs
-	physRam = ( physRam + 8 ) & ~15;
-	return physRam;
-}
-
-
-/*
-================
 Sys_GetDriveFreeSpace
 returns in megabytes
 ================

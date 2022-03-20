@@ -92,7 +92,7 @@ class idVec4;
 #define BIT( num )				( 1 << ( num ) )
 #endif
 
-#define	MAX_STRING_CHARS		1024		// max length of a string
+#define	MAX_STRING_CHARS		2048		// max length of a string
 
 // maximum world size
 #define MAX_WORLD_COORD			( 128 * 1024 )
@@ -140,12 +140,18 @@ bool	Swap_IsBigEndian( void );
 void	SixtetsForInt( byte *out, int src);
 int		IntForSixtets( byte *in );
 
-
+// BEATO Begin: Uses SDL assertion utility 
+#if 1
+#undef assert
+#define assert SDL_assert
+#else
 #ifdef _DEBUG
 void AssertFailed( const char *file, int line, const char *expression );
 #undef assert
 #define assert( X )		if ( X ) { } else AssertFailed( __FILE__, __LINE__, #X )
 #endif
+#endif
+// BEATO End
 
 class idException {
 public:
@@ -157,6 +163,11 @@ public:
 // move from Math.h to keep gcc happy
 template<class T> ID_INLINE T	Max( T x, T y ) { return ( x > y ) ? x : y; }
 template<class T> ID_INLINE T	Min( T x, T y ) { return ( x < y ) ? x : y; }
+
+// BEATO begin
+#define SAFE_DELETE(p)       { if(p) { delete (p);     (p)=nullptr; } }
+#define SAFE_DELETE_ARRAY(p) { if(p) { delete[] (p);   (p)=nullptr; } }
+// BEATO end
 
 /*
 ===============================================================================

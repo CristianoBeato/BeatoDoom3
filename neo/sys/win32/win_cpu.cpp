@@ -31,91 +31,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "win_local.h"
 
-
-/*
-==============================================================
-
-	Clock ticks
-
-==============================================================
-*/
-
-/*
-================
-Sys_GetClockTicks
-================
-*/
-double Sys_GetClockTicks( void ) {
-#if 0
-
-	LARGE_INTEGER li;
-
-	QueryPerformanceCounter( &li );
-	return = (double ) li.LowPart + (double) 0xFFFFFFFF * li.HighPart;
-
-#else
-
-	unsigned long lo, hi;
-
-	__asm {
-		push ebx
-		xor eax, eax
-		cpuid
-		rdtsc
-		mov lo, eax
-		mov hi, edx
-		pop ebx
-	}
-	return (double ) lo + (double) 0xFFFFFFFF * hi;
-
-#endif
-}
-
-/*
-================
-Sys_ClockTicksPerSecond
-================
-*/
-double Sys_ClockTicksPerSecond( void ) {
-	static double ticks = 0;
-#if 0
-
-	if ( !ticks ) {
-		LARGE_INTEGER li;
-		QueryPerformanceFrequency( &li );
-		ticks = li.QuadPart;
-	}
-
-#else
-
-	if ( !ticks ) {
-		HKEY hKey;
-		LPBYTE ProcSpeed;
-		DWORD buflen, ret;
-
-		if ( !RegOpenKeyEx( HKEY_LOCAL_MACHINE, "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", 0, KEY_READ, &hKey ) ) {
-			ProcSpeed = 0;
-			buflen = sizeof( ProcSpeed );
-			ret = RegQueryValueEx( hKey, "~MHz", NULL, NULL, (LPBYTE) &ProcSpeed, &buflen );
-			// If we don't succeed, try some other spellings.
-			if ( ret != ERROR_SUCCESS ) {
-				ret = RegQueryValueEx( hKey, "~Mhz", NULL, NULL, (LPBYTE) &ProcSpeed, &buflen );
-			}
-			if ( ret != ERROR_SUCCESS ) {
-				ret = RegQueryValueEx( hKey, "~mhz", NULL, NULL, (LPBYTE) &ProcSpeed, &buflen );
-			}
-			RegCloseKey( hKey );
-			if ( ret == ERROR_SUCCESS ) {
-				ticks = (double) ((unsigned long)ProcSpeed) * 1000000;
-			}
-		}
-	}
-
-#endif
-	return ticks;
-}
-
-
 /*
 ==============================================================
 
@@ -531,7 +446,8 @@ static bool HasDAZ( void ) {
 Sys_GetCPUId
 ================
 */
-cpuid_t Sys_GetCPUId( void ) {
+cpuid_t Sys_GetCPUId( void ) 
+{
 	int flags;
 
 	// verify we're at least a Pentium or 486 with CPUID support

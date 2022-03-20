@@ -26,10 +26,10 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "../idlib/precompiled.h"
+#include "idlib/precompiled.h"
 #pragma hdrstop
 
-#include "../renderer/Image.h"
+#include "renderer/Image.h"
 
 #define	MAX_PRINT_MSG_SIZE	4096
 #define MAX_WARNING_LIST	256
@@ -193,7 +193,9 @@ private:
 	idStrList					warningList;
 	idStrList					errorList;
 
-	int							gameDLL;
+// BEATO Begin
+	void*						gameDLL;
+// BEATO End
 
 	idLangDict					languageDict;
 
@@ -225,7 +227,9 @@ idCommonLocal::idCommonLocal( void ) {
 	rd_buffersize = 0;
 	rd_flush = NULL;
 
-	gameDLL = 0;
+// BEATO Begin
+	gameDLL = nullptr;
+// BEATO End
 
 #ifdef ID_WRITE_VERSION
 	config_compressor = NULL;
@@ -2626,7 +2630,8 @@ void idCommonLocal::Async( void ) {
 idCommonLocal::LoadGameDLL
 =================
 */
-void idCommonLocal::LoadGameDLL( void ) {
+void idCommonLocal::LoadGameDLL( void ) 
+{
 #ifdef __DOOM_DLL__
 	char			dllPath[ MAX_OSPATH ];
 
@@ -2641,16 +2646,23 @@ void idCommonLocal::LoadGameDLL( void ) {
 		return;
 	}
 	common->DPrintf( "Loading game DLL: '%s'\n", dllPath );
-	gameDLL = sys->DLL_Load( dllPath );
-	if ( !gameDLL ) {
+
+//BEATO Begin
+	gameDLL = SDL_LoadObject( dllPath ); //	gameDLL = sys->DLL_Load( dllPath );
+	if ( !gameDLL ) 
+	{
 		common->FatalError( "couldn't load game dynamic library" );
 		return;
 	}
 
-	GetGameAPI = (GetGameAPI_t) Sys_DLL_GetProcAddress( gameDLL, "GetGameAPI" );
-	if ( !GetGameAPI ) {
-		Sys_DLL_Unload( gameDLL );
-		gameDLL = NULL;
+	//GetGameAPI = (GetGameAPI_t) Sys_DLL_GetProcAddress( gameDLL, "GetGameAPI" );
+	GetGameAPI = (GetGameAPI_t)SDL_LoadFunction( gameDLL, "GetGameAPI" );
+
+	if ( !GetGameAPI )
+	{
+		
+		SDL_UnloadObject( gameDLL ); //Sys_DLL_Unload( gameDLL );
+		gameDLL = nullptr;
 		common->FatalError( "couldn't find game DLL API" );
 		return;
 	}
@@ -2672,12 +2684,14 @@ void idCommonLocal::LoadGameDLL( void ) {
 
 	gameExport							= *GetGameAPI( &gameImport );
 
-	if ( gameExport.version != GAME_API_VERSION ) {
-		Sys_DLL_Unload( gameDLL );
-		gameDLL = NULL;
+	if ( gameExport.version != GAME_API_VERSION )
+	{
+		SDL_UnloadObject( gameDLL ); //Sys_DLL_Unload( gameDLL );
+		gameDLL = nullptr;
 		common->FatalError( "wrong game DLL API version" );
 		return;
 	}
+// BEATO End
 
 	game								= gameExport.game;
 	gameEdit							= gameExport.gameEdit;
@@ -2704,8 +2718,9 @@ void idCommonLocal::UnloadGameDLL( void ) {
 
 #ifdef __DOOM_DLL__
 
-	if ( gameDLL ) {
-		Sys_DLL_Unload( gameDLL );
+	if ( gameDLL )
+	{
+		SDL_UnloadObject( gameDLL );//Sys_DLL_Unload( gameDLL );
 		gameDLL = NULL;
 	}
 	game = NULL;

@@ -437,15 +437,6 @@ void Sys_DebugVPrintf( const char *fmt, va_list arg ) {
 
 /*
 ==============
-Sys_Sleep
-==============
-*/
-void Sys_Sleep( int msec ) {
-	Sleep( msec );
-}
-
-/*
-==============
 Sys_ShowWindow
 ==============
 */
@@ -576,70 +567,6 @@ int Sys_ListFiles( const char *directory, const char *extension, idStrList &list
 	_findclose( findhandle );
 
 	return list.Num();
-}
-
-
-/*
-================
-Sys_GetClipboardData
-================
-*/
-char *Sys_GetClipboardData( void ) {
-	char *data = NULL;
-	char *cliptext;
-
-	if ( OpenClipboard( NULL ) != 0 ) {
-		HANDLE hClipboardData;
-
-		if ( ( hClipboardData = GetClipboardData( CF_TEXT ) ) != 0 ) {
-			if ( ( cliptext = (char *)GlobalLock( hClipboardData ) ) != 0 ) {
-				data = (char *)Mem_Alloc( GlobalSize( hClipboardData ) + 1 );
-				strcpy( data, cliptext );
-				GlobalUnlock( hClipboardData );
-				
-				strtok( data, "\n\r\b" );
-			}
-		}
-		CloseClipboard();
-	}
-	return data;
-}
-
-/*
-================
-Sys_SetClipboardData
-================
-*/
-void Sys_SetClipboardData( const char *string ) {
-	HGLOBAL HMem;
-	char *PMem;
-
-	// allocate memory block
-	HMem = (char *)::GlobalAlloc( GMEM_MOVEABLE | GMEM_DDESHARE, strlen( string ) + 1 );
-	if ( HMem == NULL ) {
-		return;
-	}
-	// lock allocated memory and obtain a pointer
-	PMem = (char *)::GlobalLock( HMem );
-	if ( PMem == NULL ) {
-		return;
-	}
-	// copy text into allocated memory block
-	lstrcpy( PMem, string );
-	// unlock allocated memory
-	::GlobalUnlock( HMem );
-	// open Clipboard
-	if ( !OpenClipboard( 0 ) ) {
-		::GlobalFree( HMem );
-		return;
-	}
-	// remove current Clipboard contents
-	EmptyClipboard();
-	// supply the memory handle to the Clipboard
-	SetClipboardData( CF_TEXT, HMem );
-	HMem = 0;
-	// close Clipboard
-	CloseClipboard();
 }
 
 /*

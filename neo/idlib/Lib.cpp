@@ -565,6 +565,7 @@ bool Swap_IsBigEndian( void ) {
 	return *(short *)swaptest != 1;
 }
 
+#if 0
 /*
 ===============================================================================
 
@@ -572,7 +573,6 @@ bool Swap_IsBigEndian( void ) {
 
 ===============================================================================
 */
-
 void AssertFailed( const char *file, int line, const char *expression ) {
 	idLib::sys->DebugPrintf( "\n\nASSERTION FAILED!\n%s(%d): '%s'\n", file, line, expression );
 #ifdef _WIN32
@@ -583,3 +583,4 @@ void AssertFailed( const char *file, int line, const char *expression ) {
 	kill( getpid(), SIGINT );
 #endif
 }
+#endif

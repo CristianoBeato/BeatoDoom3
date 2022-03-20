@@ -30,6 +30,12 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 #include "sys_local.h"
 
+// BEATO Begin
+#include <SDL_clipboard.h>
+#include <SDL_timer.h>
+#include <SDL_cpuinfo.h>
+// BEATO End
+
 const char * sysLanguageNames[] = {
 	"english", "spanish", "italian", "german", "french", "russian", 
 	"polish", "korean", "japanese", "chinese", NULL
@@ -106,18 +112,6 @@ const char * idSysLocal::GetCallStackCurStr( int depth ) {
 
 void idSysLocal::ShutdownSymbols( void ) {
 	Sys_ShutdownSymbols();
-}
-
-int idSysLocal::DLL_Load( const char *dllName ) {
-	return Sys_DLL_Load( dllName );
-}
-
-void *idSysLocal::DLL_GetProcAddress( int dllHandle, const char *procName ) {
-	return Sys_DLL_GetProcAddress( dllHandle, procName );
-}
-
-void idSysLocal::DLL_Unload( int dllHandle ) {
-	Sys_DLL_Unload( dllHandle );
 }
 
 void idSysLocal::DLL_GetFileName( const char *baseName, char *dllName, int maxLength ) {
@@ -208,3 +202,116 @@ const char *Sys_TimeStampToStr( ID_TIME_T timeStamp ) {
 	return timeString;
 }
 
+// BEATO BEGIN
+
+/*
+==============================================================
+
+	Clock ticks
+
+==============================================================
+*/
+
+/*
+==============
+Sys_Sleep
+==============
+*/
+void Sys_Sleep( int msec )
+{
+	SDL_Delay( msec );
+}
+
+/*
+================
+Sys_Milliseconds
+================
+*/
+int Sys_Milliseconds( void )
+{
+	return SDL_GetTicks();
+}
+
+/*
+================
+Sys_GetClockTicks
+================
+*/
+double Sys_GetClockTicks( void )
+{
+	return SDL_GetPerformanceCounter();
+}
+
+/*
+================
+Sys_ClockTicksPerSecond
+================
+*/
+double Sys_ClockTicksPerSecond( void )
+{
+	return SDL_GetPerformanceFrequency();
+}
+
+
+struct SDL_ClipBoart
+{
+	char* txt;
+
+	SDL_ClipBoart( void ) : txt( nullptr )
+	{
+		txt = SDL_GetClipboardText();
+	};
+
+	~SDL_ClipBoart( void ) // auto clear when out of scope
+	{
+		SDL_free( txt );
+	};
+
+	const size_t size( void ) const
+	{
+		return sizeof( txt ) + 1;
+	}
+};
+
+/*
+================
+Sys_GetClipboardData
+================
+*/
+char *Sys_GetClipboardData( void )
+{
+	char *data = NULL;
+	if (SDL_HasClipboardText() == SDL_FALSE)
+		return "0/";
+
+	SDL_ClipBoart clipBoard = SDL_ClipBoart(); //Reads system clipboard
+
+	data = (char *)Mem_Alloc( clipBoard.size() );
+	SDL_memcpy( data, clipBoard.txt, clipBoard.size() );
+
+	return data;
+}
+
+/*
+================
+Sys_SetClipboardData
+================
+*/
+void Sys_SetClipboardData( const char *string )
+{
+	SDL_SetClipboardText( string );
+}
+
+/*
+================
+Sys_GetSystemRam
+
+	returns amount of physical memory in MB
+================
+*/
+int Sys_GetSystemRam( void )
+{
+	return SDL_GetSystemRAM();
+}
+
+// BEATO END
