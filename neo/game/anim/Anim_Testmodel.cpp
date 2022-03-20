@@ -768,11 +768,16 @@ void idTestModel::TestModel_f( const idCmdArgs &args ) {
 				name.DefaultFileExtension( ".ase" );
 			} 
 			
-			if ( strstr( name, ".ma" ) || strstr( name, ".mb" ) ) {
+// BEATO BEGIN
+#if 0
+			if ( strstr( name, ".ma" ) || strstr( name, ".mb" ) ) 
+			{
 				idModelExport exporter;
 				exporter.ExportModel( name );
 				name.SetFileExtension( MD5_MESH_EXT );
 			}
+#endif
+// BEATO END
 
 			if ( !renderModelManager->CheckModel( name ) ) {
 				gameLocal.Printf( "Can't register model\n" );

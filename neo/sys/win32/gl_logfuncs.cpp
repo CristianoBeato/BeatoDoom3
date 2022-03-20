@@ -26,6 +26,8 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
+#include "idlib/precompiled.h"
+
 static void APIENTRY logAccum(GLenum op, GLfloat value) {
 	fprintf( tr.logFile, "glAccum %s %g\n", EnumString(op), value );
 	dllAccum(op, value);

@@ -25,7 +25,7 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
-#include "../../../idlib/precompiled.h"
+#include "idlib/precompiled.h"
 #pragma hdrstop
 
 #include "roq.h"
@@ -210,6 +210,7 @@ int roq::SizeFile( idFile *ftosize )
 }
 
 /* Expanded data destination object for stdio output */
+#if 0 //TODO: fix "void __cdecl jinit_compress_master(struct jpeg_compress_struct *)" (?jinit_compress_master@@YAXPAUjpeg_compress_struct@@@Z)
 
 typedef struct {
   struct jpeg_destination_mgr pub; /* public fields */
@@ -518,6 +519,8 @@ void roq::WriteLossless( void ) {
 	/* And we're done! */
 	encoder->SetPreviousImage( "first frame", image );
 }
+
+#endif
 
 void roq::InitRoQFile( const char *RoQFilename )
 {

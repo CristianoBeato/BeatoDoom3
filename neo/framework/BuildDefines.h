@@ -34,6 +34,8 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
+// BEATO NOTE: Move from here to a config.h file, use the Cmake utility to defines these optitions
+
 // memory debugging
 //#define ID_REDIRECT_NEWDELETE
 //#define ID_DEBUG_MEMORY
@@ -88,15 +90,6 @@ If you have questions concerning this license or the applicable additional terms
 // compiled out.
 //#define ID_DEDICATED
 
-// if this is defined, the executable positively won't work with any paks other
-// than the demo pak, even if productid is present.
-//#define ID_DEMO_BUILD
-
-// don't define ID_ALLOW_TOOLS when we don't want tool code in the executable.
-#if defined( _WIN32 ) && !defined( ID_DEDICATED ) && !defined( ID_DEMO_BUILD )
-	#define	ID_ALLOW_TOOLS
-#endif
-
 // don't do backtraces in release builds.
 // atm, we have no useful way to reconstruct the trace, so let's leave it off
 #define ID_BT_STUB
@@ -110,13 +103,15 @@ If you have questions concerning this license or the applicable additional terms
 	#endif
 #endif
 
-#ifndef ID_ENFORCE_KEY
-#	if !defined( ID_DEDICATED ) && !defined( ID_DEMO_BUILD )
-#		define ID_ENFORCE_KEY 1
-#	else
-#		define ID_ENFORCE_KEY 0
-#	endif
-#endif
+// BEATO Begin Disabe key check, im developing using DOOM 3 Demo, since is a minimal set  
+//#ifndef ID_ENFORCE_KEY
+//#	if !defined( ID_DEDICATED ) && !defined( ID_DEMO_BUILD )
+//#		define ID_ENFORCE_KEY 1
+//#	else
+//#		define ID_ENFORCE_KEY 0
+//#	endif
+//#endif
+
 
 #ifndef ID_OPENAL
 #	if ( defined(_WIN32) || defined(MACOS_X) ) && !defined( ID_DEDICATED )
@@ -125,6 +120,18 @@ If you have questions concerning this license or the applicable additional terms
 #		define ID_OPENAL 0
 #	endif
 #endif
+
+#ifndef BT_SDL_AUDIO
+#define BT_SDL_AUDIO 0
+#endif // !BT_SDL_AUDIO
+
+#ifndef BT_USE_EFX
+#define BT_USE_EFX 1
+#endif // !BT_USE_EFX
+
+#ifndef BT_USE_EAX
+#define BT_USE_EAX 0
+#endif // !BT_USE_EAX
 
 #ifndef ID_ALLOW_D3XP
 #	define ID_ALLOW_D3XP 1

@@ -6,6 +6,8 @@
 include_directories( ${JPEG_INCLUDE_DIR} )
 
 SET( TOOLS_SOURECES 
+	${CMAKE_CURRENT_SOURCE_DIR}/edit_stub.cpp
+
 	${CMAKE_CURRENT_SOURCE_DIR}/compilers/compiler_public.h
 	${CMAKE_CURRENT_SOURCE_DIR}/edit_public.h
 	)

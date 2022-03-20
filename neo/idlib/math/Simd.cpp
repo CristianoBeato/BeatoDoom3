@@ -100,8 +100,8 @@ void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 		newProcessor = processor;
 	}
 #else
-	processor->cpuid = cpuid;
 	newProcessor = generic;
+	newProcessor->cpuid = cpuid;
 #endif
 // BEATO end
 

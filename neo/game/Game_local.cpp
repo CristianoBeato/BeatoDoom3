@@ -347,8 +347,12 @@ void idGameLocal::Shutdown( void ) {
 
 	idAI::FreeObstacleAvoidanceNodes();
 
+// BEATO Begin
+#if 0 // OLD UNUSED CODE
 	// shutdown the model exporter
 	idModelExport::Shutdown();
+#endif
+// BEATO End
 
 	idEvent::Shutdown();
 

@@ -26,10 +26,13 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "../../idlib/precompiled.h"
+#include "idlib/precompiled.h"
 #pragma hdrstop
 
 #include "../Game_local.h"
+
+// BEATO Begin
+#if 0
 #include "../../MayaImport/maya_main.h"
 
 /***********************************************************************
@@ -42,7 +45,7 @@ static idStr				Maya_Error;
 
 static exporterInterface_t	Maya_ConvertModel = NULL;
 static exporterShutdown_t	Maya_Shutdown = NULL;
-static int					importDLL = 0;
+static void					importDLL = 0;
 
 bool idModelExport::initialized = false;
 
@@ -65,9 +68,8 @@ void idModelExport::Shutdown( void ) {
 		Maya_Shutdown();
 	}
 
-	if ( importDLL ) {
+	if ( importDLL ) 
 		sys->DLL_Unload( importDLL );
-	}
 
 	importDLL = 0;
 	Maya_Shutdown = NULL;
@@ -560,3 +562,6 @@ int idModelExport::ExportModels( const char *pathname, const char *extension ) {
 
 	return count;
 }
+
+#endif
+// BEATO End

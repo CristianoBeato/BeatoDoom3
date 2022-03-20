@@ -163,6 +163,7 @@ SET( FRAMEWORK_SOURCES_ALL
 	)
 
 add_library( framework STATIC ${FRAMEWORK_SOURCES_ALL} )
+set_target_properties( framework PROPERTIES COMPILE_DEFINITIONS "__DOOM_DLL__")
 add_dependencies( framework idlib )
 target_precompile_headers( framework 
 		PUBLIC 

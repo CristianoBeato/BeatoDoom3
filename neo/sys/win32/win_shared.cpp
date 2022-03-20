@@ -110,7 +110,7 @@ returns in megabytes
 ================
 */
 int Sys_GetVideoRam( void ) {
-#ifdef	ID_DEDICATED
+#if 1 //def	ID_DEDICATED
 	return 0;
 #else
 	unsigned int retSize = 64;

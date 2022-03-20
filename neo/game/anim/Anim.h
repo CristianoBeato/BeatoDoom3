@@ -172,7 +172,8 @@ typedef struct {
 	bool					anim_turn					: 1;
 } animFlags_t;
 
-
+// BEATO Begin: Old Maya code
+#if 0
 /*
 ==============================================================================================
 
@@ -208,6 +209,8 @@ public:
 	bool					ExportAnim( const char *anim );
 	int						ExportModels( const char *pathname, const char *extension );
 };
+#endif
+// BEATO End
 
 /*
 ==============================================================================================

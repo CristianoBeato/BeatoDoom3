@@ -28,9 +28,9 @@ If you have questions concerning this license or the applicable additional terms
 /*
 ** WIN_GAMMA.C
 */
-#include <assert.h>
+//#include <assert.h>
 #include "win_local.h"
-#include "../../renderer/tr_local.h"
+#include "renderer/tr_local.h"
 
 static unsigned short s_oldHardwareGamma[3][256];
 
@@ -45,7 +45,7 @@ void WG_GetOldGammaRamp( void )
 	hDC = GetDC( GetDesktopWindow() );
 	GetDeviceGammaRamp( hDC, s_oldHardwareGamma );
 	ReleaseDC( GetDesktopWindow(), hDC );
-
+}
 
 /*
 ** GLimp_SetGamma
