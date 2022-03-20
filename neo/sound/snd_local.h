@@ -38,18 +38,23 @@ If you have questions concerning this license or the applicable additional terms
 
 #include <al.h>
 #include <alc.h>
+
+#if BT_USE_EFX
 #include <efx.h>
 #include <EFX-Util.h>
+#endif // BT_USE_EFX
 
-#include "efxlib.h"
+#if BT_USE_EAX
 #include "contrib/EAX/eax5.h"
+#endif //BT_USE_EAX
+
+#if BT_USE_EAX || BT_USE_EFX
+#include "efxlib.h"
+#endif
 
 #ifndef AL_VERSION_1_1
 #error "NO OPENAL 1.1 found, needed"
 #endif
-
-#define EAX_SUPORT 1
-#define EFX_SUPORT 1
 
 // BEATO End
 
@@ -228,7 +233,7 @@ private:
 	int				CloseOGG( void );
 };
 
-
+#if 1
 /*
 ===================================================================================
 
@@ -243,7 +248,7 @@ public:
 
     virtual					~idAudioHardware();
 
-    virtual bool			Initialize( ) = 0;
+    virtual bool			Initialize( void ) = 0;
 
 	virtual bool			Lock( void **pDSLockedBuffer, ulong *dwDSLockedBufferSize ) = 0;
 	virtual bool			Unlock( void *pDSLockedBuffer, dword dwDSLockedBufferSize ) = 0;
@@ -259,7 +264,7 @@ public:
 	virtual int				GetMixBufferSize( void ) = 0;
 	virtual short*			GetMixBuffer( void ) = 0;
 };
-
+#endif
 
 /*
 ===================================================================================
@@ -641,6 +646,14 @@ public:
 	idStr					listenerAreaName;
 	int						listenerEnvironmentID;
 
+// BEATO Begin
+	bool					listenerAreFiltersInitialized;
+	ALuint					listenerEffect;
+	ALuint					listenerSlot;
+	ALuint					listenerFilters[2]; // 0 - direct; 1 - send.
+	float					listenerSlotReverbGain;
+// BEATO End
+
 	int						gameMsec;
 	int						game44kHz;
 	int						pause44kHz;
@@ -738,7 +751,11 @@ public:
 	ALuint					AllocOpenALSource( idSoundChannel *chan, bool looping, bool stereo );
 	void					FreeOpenALSource( ALuint handle );
 
+// BEATO Begin
+#if BT_SDL_AUDIO
 	idAudioHardware *		snd_audio_hw;
+#endif //BT_SDL_AUDIO
+// BEATO End
 	idSoundCache *			soundCache;
 
 	idSoundWorldLocal *		currentSoundWorld;	// the one to mix each async tic
@@ -771,17 +788,56 @@ public:
 	ALCcontext				*openalContext;
 	ALsizei					openalSourceCount;
 	openalSource_t			openalSources[256];
+							// latches
+
+#if BT_USE_EAX || BT_USE_EFX
+	idEFXFile				EFXDatabase;
+#endif //BT_USE_EAX || BT_USE_EFX
+
+// BEATO Begin
+#if BT_SDL_AUDIO // OpenAL is not a option if no SDL audio not avaidable, is required
+	static bool				useOpenAL;
+#endif
+
+#if BT_USE_EFX
+	static bool				useEFXReverb;
+	static int				EFXAvailable; // mark available during initialization, or through an explicit test
+	bool					efxloaded;
+
+	LPALGENEFFECTS					alGenEffects;
+	LPALDELETEEFFECTS				alDeleteEffects;
+	LPALISEFFECT					alIsEffect;
+	LPALEFFECTI						alEffecti;
+	LPALEFFECTF						alEffectf;
+	LPALEFFECTFV					alEffectfv;
+	LPALGENFILTERS					alGenFilters;
+	LPALDELETEFILTERS				alDeleteFilters;
+	LPALISFILTER					alIsFilter;
+	LPALFILTERI						alFilteri;
+	LPALFILTERF						alFilterf;
+	LPALGENAUXILIARYEFFECTSLOTS		alGenAuxiliaryEffectSlots;
+	LPALDELETEAUXILIARYEFFECTSLOTS	alDeleteAuxiliaryEffectSlots;
+	LPALISAUXILIARYEFFECTSLOT		alIsAuxiliaryEffectSlot;
+	LPALAUXILIARYEFFECTSLOTI		alAuxiliaryEffectSloti;
+	LPALAUXILIARYEFFECTSLOTF		alAuxiliaryEffectSlotf;
+
+	static idCVar			s_useEFXReverb;
+#endif // BT_USE_EFX
+
+#if BT_USE_EAX
+	static bool				useEAXReverb;
+	static int				EAXAvailable; // mark available during initialization, or through an explicit test
+	bool					eaxloaded;
+
 	EAXSet					alEAXSet;
 	EAXGet					alEAXGet;
 	EAXSetBufferMode		alEAXSetBufferMode;
 	EAXGetBufferMode		alEAXGetBufferMode;
-	idEFXFile				EFXDatabase;
-	bool					efxloaded;
-							// latches
-	static bool				useOpenAL;
-	static bool				useEAXReverb;
-							// mark available during initialization, or through an explicit test
-	static int				EAXAvailable;
+
+	static idCVar			s_useEAXReverb;
+	static idCVar			s_muteEAXReverb;
+#endif // BT_USE_EAX
+// BEATO end
 
 
 	static idCVar			s_noSound;
@@ -811,8 +867,6 @@ public:
 	static idCVar			s_realTimeDecoding;
 	static idCVar			s_libOpenAL;
 	static idCVar			s_useOpenAL;
-	static idCVar			s_useEAXReverb;
-	static idCVar			s_muteEAXReverb;
 	static idCVar			s_decompressionLimit;
 
 	static idCVar			s_slowAttenuate;
@@ -826,6 +880,11 @@ public:
 	static idCVar			s_reverbFeedback;
 	static idCVar			s_enviroSuitVolumeScale;
 	static idCVar			s_skipHelltimeFX;
+
+// BEATO Begin
+	static btMutex*			m_soundLock;	// proteck interations of the main and sound threads 
+	static btMutex*			m_decodeLock;	// samples can be decoded both from the sound thread and the main thread for shakes
+// BEATO End
 };
 
 extern	idSoundSystemLocal	soundSystemLocal;

@@ -47,6 +47,17 @@ FIND_LIBRARY(VORBIS_LIBRARY
 	PATHS ${VORBIS_SEARCH_PATHS}
 )
 
+FIND_LIBRARY(VORBISFILE_LIBRARY
+	NAMES vorbisfile libvorbisfile
+	HINTS
+	$ENV{VORBISFILEDIR}
+	$ENV{VORBISFILE_PATH}
+	$ENV{VORBISDIR}
+	$ENV{VORBIS_PATH}
+	PATH_SUFFIXES lib lib64 win32/VorbisFile_Dynamic_Release "Win32/${MSVC_YEAR_NAME}/x64/Release" "Win32/${MSVC_YEAR_NAME}/Win32/Release"
+	PATHS ${VORBISFILE_SEARCH_PATHS}
+)
+
 # First search for d-suffixed libs
 FIND_LIBRARY(VORBIS_LIBRARY_DEBUG
 	NAMES vorbisd vorbis_d libvorbisd libvorbis_d
@@ -55,6 +66,18 @@ FIND_LIBRARY(VORBIS_LIBRARY_DEBUG
 	$ENV{VORBIS_PATH}
 	PATH_SUFFIXES lib lib64 win32/Vorbis_Dynamic_Debug "Win32/${MSVC_YEAR_NAME}/x64/Debug" "Win32/${MSVC_YEAR_NAME}/Win32/Debug"
 	PATHS ${VORBIS_SEARCH_PATHS}
+)
+
+# First search for d-suffixed libs
+FIND_LIBRARY(VORBISFILE_LIBRARY_DEBUG
+	NAMES vorbisfiled vorbisfile_d libvorbisfiled libvorbisfile_d
+	HINTS
+	$ENV{VORBISFILEDIR}
+	$ENV{VORBISFILE_PATH}
+	$ENV{VORBISDIR}
+	$ENV{VORBIS_PATH}
+	PATH_SUFFIXES lib lib64 win32/VorbisFile_Dynamic_Debug "Win32/${MSVC_YEAR_NAME}/x64/Debug" "Win32/${MSVC_YEAR_NAME}/Win32/Debug"
+	PATHS ${VORBISFILE_SEARCH_PATHS}
 )
 
 IF(NOT VORBIS_LIBRARY_DEBUG)
@@ -69,12 +92,25 @@ IF(NOT VORBIS_LIBRARY_DEBUG)
 	)
 ENDIF()
 
+IF(NOT VORBISFILE_LIBRARY_DEBUG)
+	# Then search for non suffixed libs if necessary, but only in debug dirs
+	FIND_LIBRARY(VORBISFILE_LIBRARY_DEBUG
+		NAMES vorbisfile libvorbisfile
+		HINTS
+		$ENV{VORBISFILEDIR}
+		$ENV{VORBISFILE_PATH}
+		$ENV{VORBISDIR}
+		$ENV{VORBIS_PATH}
+		PATH_SUFFIXES win32/VorbisFile_Dynamic_Debug "Win32/${MSVC_YEAR_NAME}/x64/Debug" "Win32/${MSVC_YEAR_NAME}/Win32/Debug"
+		PATHS ${VORBISFILE_SEARCH_PATHS}
+	)
+ENDIF()
 
 IF(VORBIS_LIBRARY)
 	IF(VORBIS_LIBRARY_DEBUG)
-		SET(VORBIS_LIBRARIES optimized "${VORBIS_LIBRARY}" debug "${VORBIS_LIBRARY_DEBUG}")
+		SET(VORBIS_LIBRARIES optimized "${VORBIS_LIBRARY}" "${VORBISFILE_LIBRARY}" debug "${VORBIS_LIBRARY_DEBUG}" "${VORBISFILE_LIBRARY_DEBUG}")
 	ELSE()
-		SET(VORBIS_LIBRARIES "${VORBIS_LIBRARY}")		# Could add "general" keyword, but it is optional
+		SET(VORBIS_LIBRARIES "${VORBIS_LIBRARY}" "${VORBISFILE_LIBRARY}")		# Could add "general" keyword, but it is optional
 	ENDIF()
 ENDIF()
 

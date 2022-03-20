@@ -355,7 +355,12 @@ void idSoundSample::MakeDefault( void ) {
 		ncd[i*2+1] = sample;
 	}
 
-	if ( idSoundSystemLocal::useOpenAL ) {
+// BEATO Begin
+#if BT_SDL_AUDIO
+	if ( idSoundSystemLocal::useOpenAL )
+#endif
+// BEATO End
+	{
 		alGetError();
 		alGenBuffers( 1, &openalBuffer );
 		if ( alGetError() != AL_NO_ERROR ) {
@@ -485,8 +490,13 @@ void idSoundSample::Load( void ) {
 	// optionally convert it to 22kHz to save memory
 	CheckForDownSample();
 
+// BEATO begin
+#if BT_SDL_AUDIO
 	// create hardware audio buffers 
-	if ( idSoundSystemLocal::useOpenAL ) {
+	if ( idSoundSystemLocal::useOpenAL ) 
+#endif // BT_SDL_AUDIO
+// BEATO End
+	{
 		// PCM loads directly
 		if ( objectInfo.wFormatTag == WAVE_FORMAT_TAG_PCM ) {
 			alGetError();
@@ -628,7 +638,14 @@ idSoundSample::PurgeSoundSample
 void idSoundSample::PurgeSoundSample() {
 	purged = true;
 
-	if ( hardwareBuffer && idSoundSystemLocal::useOpenAL ) {
+// BEATO Begin
+#if BT_SDL_AUDIO
+	if ( hardwareBuffer && idSoundSystemLocal::useOpenAL ) 
+#else
+	if ( hardwareBuffer ) 
+#endif //BT_SDL_AUDIO
+// BEATO end
+	{
 		alGetError();
 		alDeleteBuffers( 1, &openalBuffer );
 		if ( alGetError() != AL_NO_ERROR ) {

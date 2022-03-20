@@ -26,10 +26,16 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "../idlib/precompiled.h"
+#include "idlib/precompiled.h"
 #pragma hdrstop
 
 #include "snd_local.h"
+
+// BEATO Begin
+#if BT_SDL_AUDIO
+#include <SDL_audio.h>
+#endif //BT_SDL_AUDIO
+// BEATO End
 
 #ifdef ID_DEDICATED
 idCVar idSoundSystemLocal::s_noSound( "s_noSound", "1", CVAR_SOUND | CVAR_BOOL | CVAR_ROM, "" );
@@ -73,8 +79,6 @@ idCVar idSoundSystemLocal::s_skipHelltimeFX( "s_skipHelltimeFX", "0", CVAR_SOUND
 // off by default. OpenAL DLL gets loaded on-demand
 idCVar idSoundSystemLocal::s_libOpenAL( "s_libOpenAL", "openal32.dll", CVAR_SOUND | CVAR_ARCHIVE, "OpenAL DLL name/path" );
 idCVar idSoundSystemLocal::s_useOpenAL( "s_useOpenAL", "0", CVAR_SOUND | CVAR_BOOL | CVAR_ARCHIVE, "use OpenAL" );
-idCVar idSoundSystemLocal::s_useEAXReverb( "s_useEAXReverb", "0", CVAR_SOUND | CVAR_BOOL | CVAR_ARCHIVE, "use EAX reverb" );
-idCVar idSoundSystemLocal::s_muteEAXReverb( "s_muteEAXReverb", "0", CVAR_SOUND | CVAR_BOOL, "mute eax reverb" );
 idCVar idSoundSystemLocal::s_decompressionLimit( "s_decompressionLimit", "6", CVAR_SOUND | CVAR_INTEGER | CVAR_ARCHIVE, "specifies maximum uncompressed sample length in seconds" );
 #else
 idCVar idSoundSystemLocal::s_libOpenAL( "s_libOpenAL", "openal32.dll", CVAR_SOUND | CVAR_ARCHIVE, "OpenAL is not supported in this build" );
@@ -84,12 +88,88 @@ idCVar idSoundSystemLocal::s_muteEAXReverb( "s_muteEAXReverb", "0", CVAR_SOUND |
 idCVar idSoundSystemLocal::s_decompressionLimit( "s_decompressionLimit", "6", CVAR_SOUND | CVAR_INTEGER | CVAR_ROM, "specifies maximum uncompressed sample length in seconds" );
 #endif
 
-bool idSoundSystemLocal::useOpenAL = false;
+// BEATO Begin
+#if BT_USE_EFX
+bool idSoundSystemLocal::useEFXReverb = false;
+int idSoundSystemLocal::EFXAvailable = -1;
+
+idCVar idSoundSystemLocal::s_useEFXReverb( "s_useEFXReverb", "0", CVAR_SOUND | CVAR_BOOL | CVAR_ARCHIVE, "use EAX reverb" );
+#endif // BT_USE_EFX
+
+#if BT_USE_EAX
 bool idSoundSystemLocal::useEAXReverb = false;
 int idSoundSystemLocal::EAXAvailable = -1;
+idCVar idSoundSystemLocal::s_useEAXReverb( "s_useEAXReverb", "0", CVAR_SOUND | CVAR_BOOL | CVAR_ARCHIVE, "use EAX reverb" );
+idCVar idSoundSystemLocal::s_muteEAXReverb( "s_muteEAXReverb", "0", CVAR_SOUND | CVAR_BOOL, "mute eax reverb" );
+#endif // BT_USE_EAX
+// BEATO End
 
 idSoundSystemLocal	soundSystemLocal;
-idSoundSystem	*soundSystem  = &soundSystemLocal;
+idSoundSystem	*soundSystem = &soundSystemLocal;
+// BEATO Begin
+btMutex*	idSoundSystemLocal::m_soundLock = nullptr;
+btMutex*	idSoundSystemLocal::m_decodeLock = nullptr;
+
+#if BT_SDL_AUDIO
+bool idSoundSystemLocal::useOpenAL = false;
+
+class idAudioHardwareSDL : public idAudioHardware
+{
+public:
+	idAudioHardwareSDL( void )
+	{
+	}
+
+	~idAudioHardwareSDL( void )
+	{
+	}
+
+	virtual bool			Initialize( void )
+	{
+	}
+
+	virtual bool			Lock( void **pDSLockedBuffer, ulong *dwDSLockedBufferSize )
+	{
+	}
+
+	virtual bool			Unlock( void *pDSLockedBuffer, dword dwDSLockedBufferSize )
+	{
+	}
+
+	virtual bool			GetCurrentPosition( ulong *pdwCurrentWriteCursor )
+	{
+	}
+
+	virtual bool			Flush( void )
+	{
+	}
+
+	virtual void			Write( bool flushing )
+	{
+	}
+
+	virtual int				GetNumberOfSpeakers( void )
+	{
+	}
+
+	virtual int				GetMixBufferSize( void )
+	{
+	}
+
+	virtual short*			GetMixBuffer( void )
+	{
+	}
+
+private:
+
+};
+
+idAudioHardware *idAudioHardware::Alloc( void )
+{
+	return new idAudioHardwareSDL();
+}
+#endif // BT_SDL_AUDIO
+// BEATO End
 
 /*
 ===============
@@ -299,6 +379,11 @@ void idSoundSystemLocal::Init() {
 
 	common->Printf( "----- Initializing Sound System ------\n" );
 
+// BEATO Begin
+	m_soundLock = new btMutex();
+	m_decodeLock = new btMutex();
+// BEATO End
+
 	isInitialized = false;
 	muted = false;
 	shutdown = false;
@@ -334,16 +419,22 @@ void idSoundSystemLocal::Init() {
 	common->StartupVariable( "s_useOpenAL", true );
 	common->StartupVariable( "s_useEAXReverb", true );
 
-	if ( idSoundSystemLocal::s_useOpenAL.GetBool() || idSoundSystemLocal::s_useEAXReverb.GetBool() ) {
+	if ( idSoundSystemLocal::s_useOpenAL.GetBool() )
+	{
+// BEATO Begin
+#if 0
 		if ( !Sys_LoadOpenAL() ) {
 			idSoundSystemLocal::s_useOpenAL.SetBool( false );
-		} else {
+		} else
+#endif 
+		{
 			common->Printf( "Setup OpenAL device and context... " );
 			openalDevice = alcOpenDevice( NULL );
 			openalContext = alcCreateContext( openalDevice, NULL );
 			alcMakeContextCurrent( openalContext );
 			common->Printf( "Done.\n" );
 
+#if BT_USE_EAX
 			// try to obtain EAX extensions
 			if ( idSoundSystemLocal::s_useEAXReverb.GetBool() && alIsExtensionPresent( "EAX4.0" ) ) {
 				idSoundSystemLocal::s_useOpenAL.SetBool( true );	// EAX presence causes AL enable
@@ -367,6 +458,57 @@ void idSoundSystemLocal::Init() {
 				alEAXGetBufferMode = (EAXGetBufferMode)NULL;
 				common->Printf( "OpenAL: no EAX-RAM extension\n" );
 			}
+#endif // BT_USE_EAX
+
+#if BT_USE_EFX
+			// try to obtain EFX extensions
+			if (alcIsExtensionPresent( openalDevice, "ALC_EXT_EFX" ))
+			{
+				common->Printf( "OpenAL: found EFX extension\n" );
+				EFXAvailable = 1;
+
+				alGenEffects = (LPALGENEFFECTS)alGetProcAddress( "alGenEffects" );
+				alDeleteEffects = (LPALDELETEEFFECTS)alGetProcAddress( "alDeleteEffects" );
+				alIsEffect = (LPALISEFFECT)alGetProcAddress( "alIsEffect" );
+				alEffecti = (LPALEFFECTI)alGetProcAddress( "alEffecti" );
+				alEffectf = (LPALEFFECTF)alGetProcAddress( "alEffectf" );
+				alEffectfv = (LPALEFFECTFV)alGetProcAddress( "alEffectfv" );
+				alGenFilters = (LPALGENFILTERS)alGetProcAddress( "alGenFilters" );
+				alDeleteFilters = (LPALDELETEFILTERS)alGetProcAddress( "alDeleteFilters" );
+				alIsFilter = (LPALISFILTER)alGetProcAddress( "alIsFilter" );
+				alFilteri = (LPALFILTERI)alGetProcAddress( "alFilteri" );
+				alFilterf = (LPALFILTERF)alGetProcAddress( "alFilterf" );
+				alGenAuxiliaryEffectSlots = (LPALGENAUXILIARYEFFECTSLOTS)alGetProcAddress( "alGenAuxiliaryEffectSlots" );
+				alDeleteAuxiliaryEffectSlots = (LPALDELETEAUXILIARYEFFECTSLOTS)alGetProcAddress( "alDeleteAuxiliaryEffectSlots" );
+				alIsAuxiliaryEffectSlot = (LPALISAUXILIARYEFFECTSLOT)alGetProcAddress( "alIsAuxiliaryEffectSlot" );;
+				alAuxiliaryEffectSloti = (LPALAUXILIARYEFFECTSLOTI)alGetProcAddress( "alAuxiliaryEffectSloti" );
+				alAuxiliaryEffectSlotf = (LPALAUXILIARYEFFECTSLOTF)alGetProcAddress( "alAuxiliaryEffectSlotf" );
+			}
+			else
+			{
+				common->Printf( "OpenAL: EFX extension not found\n" );
+				EFXAvailable = 0;
+				idSoundSystemLocal::s_useEFXReverb.SetBool( false );
+
+				alGenEffects = NULL;
+				alDeleteEffects = NULL;
+				alIsEffect = NULL;
+				alEffecti = NULL;
+				alEffectf = NULL;
+				alEffectfv = NULL;
+				alGenFilters = NULL;
+				alDeleteFilters = NULL;
+				alIsFilter = NULL;
+				alFilteri = NULL;
+				alFilterf = NULL;
+				alGenAuxiliaryEffectSlots = NULL;
+				alDeleteAuxiliaryEffectSlots = NULL;
+				alIsAuxiliaryEffectSlot = NULL;
+				alAuxiliaryEffectSloti = NULL;
+				alAuxiliaryEffectSlotf = NULL;
+			}
+#endif // BT_USE_EFX
+
 
 			if ( !idSoundSystemLocal::s_useOpenAL.GetBool() ) {
 				common->Printf( "OpenAL: disabling ( no EAX ). Using legacy mixer.\n" );
@@ -378,7 +520,9 @@ void idSoundSystemLocal::Init() {
 		
 				alcCloseDevice( openalDevice );
 				openalDevice = NULL;
-			} else {
+			} 
+			else 
+			{
 
 				ALuint handle;		
 				openalSourceCount = 0;
@@ -410,13 +554,30 @@ void idSoundSystemLocal::Init() {
 				// adjust source count to allow for at least eight stereo sounds to play
 				openalSourceCount -= 8;
 
+#if BT_USE_EFX
+				EFXAvailable = 1;
+#endif // BT_USE_EFX
+
+#if BT_USE_EAX
 				EAXAvailable = 1;
+#endif // BT_USE_EAX
 			}
 		}
 	}
 
+#if BT_SDL_AUDIO
 	useOpenAL = idSoundSystemLocal::s_useOpenAL.GetBool();
+#endif // BT_SDL_AUDIO
+
+#if BT_USE_EFX
+	useEFXReverb = idSoundSystemLocal::s_useEFXReverb.GetBool();
+#endif // BT_USE_EFX
+
+#if BT_USE_EAX
 	useEAXReverb = idSoundSystemLocal::s_useEAXReverb.GetBool();
+#endif // BT_USE_EAX
+
+// BEATO end
 
 	cmdSystem->AddCommand( "listSounds", ListSounds_f, CMD_FL_SOUND, "lists all sounds" );
 	cmdSystem->AddCommand( "listSoundDecoders", ListSoundDecoders_f, CMD_FL_SOUND, "list active sound decoders" );
@@ -439,8 +600,11 @@ void idSoundSystemLocal::Shutdown() {
 	// EAX or not, the list needs to be cleared
 	EFXDatabase.Clear();
 
+#if BT_SDL_AUDIO
 	// destroy openal sources
-	if ( useOpenAL ) {
+	if ( useOpenAL ) 
+#endif //!BT_SDL_AUDIO
+	{
 		
 		efxloaded = false;
 
@@ -470,7 +634,10 @@ void idSoundSystemLocal::Shutdown() {
 	soundCache = NULL;
 
 	// destroy openal device and context
-	if ( useOpenAL ) {
+#if BT_SDL_AUDIO
+	if ( useOpenAL ) 
+#endif //BT_SDL_AUDIO
+	{
 		alcMakeContextCurrent( NULL );
 		
 		alcDestroyContext( openalContext );
@@ -480,9 +647,16 @@ void idSoundSystemLocal::Shutdown() {
 		openalDevice = NULL;
 	}
 
+// BEATO Begin
+#if 0
 	Sys_FreeOpenAL();
-
+#endif
 	idSampleDecoder::Shutdown();
+
+	// Clear mutexes 
+	SAFE_DELETE( m_decodeLock );
+	SAFE_DELETE( m_soundLock );
+// BEATO End
 }
 
 /*
@@ -492,30 +666,34 @@ idSoundSystemLocal::InitHW
 */
 bool idSoundSystemLocal::InitHW() {
 
-	if ( s_noSound.GetBool() ) {
+	if ( s_noSound.GetBool() ) 
 		return false;
-	}
 
+// BEATO Begin
+#if BT_SDL_AUDIO
 	delete snd_audio_hw;
 	snd_audio_hw = idAudioHardware::Alloc();
 
-	if ( snd_audio_hw == NULL ) {
+	if ( snd_audio_hw == NULL ) 
 		return false;
-	}
 
-	if ( !useOpenAL ) {
-		if ( !snd_audio_hw->Initialize() ) {
+	if ( !useOpenAL )
+	{
+		if ( !snd_audio_hw->Initialize() )
+		{
 			delete snd_audio_hw;
 			snd_audio_hw = NULL;
 			return false;
 		}
 
-		if ( snd_audio_hw->GetNumberOfSpeakers() == 0 ) {
+		if ( snd_audio_hw->GetNumberOfSpeakers() == 0 ) 
 			return false;
-		}
+		
 		// put the real number in there
 		s_numberOfSpeakers.SetInteger( snd_audio_hw->GetNumberOfSpeakers() );
 	}
+#endif //BT_SDL_AUDIO
+// BEATo End
 
 	isInitialized = true;
 	shutdown = false;
@@ -538,8 +716,12 @@ bool idSoundSystemLocal::ShutdownHW() {
 
 	common->Printf( "Shutting down sound hardware\n" );
 
+// BEATO Begin
+#if BT_SDL_AUDIO
 	delete snd_audio_hw;
 	snd_audio_hw = NULL;
+#endif // BT_SDL_AUDIO
+// BEATO end
 
 	isInitialized = false;
 
@@ -557,9 +739,12 @@ idSoundSystemLocal::GetCurrent44kHzTime
 ===============
 */
 int idSoundSystemLocal::GetCurrent44kHzTime( void ) const {
-	if ( snd_audio_hw ) {
+	if (isInitialized)
+	{
 		return CurrentSoundTime;
-	} else {
+	}
+	else
+	{
 		// NOTE: this would overflow 31bits within about 1h20 ( not that important since we get a snd_audio_hw right away pbly )
 		//return ( ( Sys_Milliseconds()*441 ) / 10 ) * 4; 
 		return idMath::FtoiFast( (float)Sys_Milliseconds() * 176.4f );
@@ -571,15 +756,17 @@ int idSoundSystemLocal::GetCurrent44kHzTime( void ) const {
 idSoundSystemLocal::ClearBuffer
 ===================
 */
-void idSoundSystemLocal::ClearBuffer( void ) {
-
+void idSoundSystemLocal::ClearBuffer( void ) 
+{
+// BEATO Beging
+#if BT_SDL_AUDIO
+	short *fBlock;
+	ulong fBlockLen;
 	// check to make sure hardware actually exists
 	if ( !snd_audio_hw ) {
 		return;
 	}
 
-	short *fBlock;
-	ulong fBlockLen;
 
 	if ( !snd_audio_hw->Lock( (void **)&fBlock, &fBlockLen ) ) {
 		return;
@@ -589,6 +776,8 @@ void idSoundSystemLocal::ClearBuffer( void ) {
 		SIMDProcessor->Memset( fBlock, 0, fBlockLen );
 		snd_audio_hw->Unlock( fBlock, fBlockLen );
 	}
+#endif // BT_SDL_AUDIO
+// BEATO End
 }
 
 /*
@@ -600,13 +789,17 @@ Mac OSX version. The system uses it's own thread and an IOProc callback
 int idSoundSystemLocal::AsyncMix( int soundTime, float *mixBuffer ) {
 	int	inTime, numSpeakers;
 
-	if ( !isInitialized || shutdown || !snd_audio_hw ) {
+	if ( !isInitialized || shutdown )// || !snd_audio_hw ) 
 		return 0;
-	}
 
 	inTime = Sys_Milliseconds();
-	numSpeakers = snd_audio_hw->GetNumberOfSpeakers();
-	
+
+// BEATO Begin
+	//numSpeakers = snd_audio_hw->GetNumberOfSpeakers();
+	numSpeakers = idSoundSystemLocal::s_numberOfSpeakers.GetInteger();
+// BEATO end
+
+
 	// let the active sound world mix all the channels in unless muted or avi demo recording
 	if ( !muted && currentSoundWorld && !currentSoundWorld->fpa[0] ) {
 		currentSoundWorld->MixLoop( soundTime, numSpeakers, mixBuffer );
@@ -625,13 +818,14 @@ called from async sound thread when com_asyncSound == 1 ( Windows )
 */
 int idSoundSystemLocal::AsyncUpdate( int inTime ) {
 
-	if ( !isInitialized || shutdown || !snd_audio_hw ) {
+	if ( !isInitialized || shutdown )// || !snd_audio_hw )
 		return 0;
-	}
 
 	ulong dwCurrentWritePos;
 	dword dwCurrentBlock;
 
+// BEATO Begin
+#if BT_SDL_AUDIO
 	// If not using openal, get actual playback position from sound hardware
 	if ( useOpenAL ) {
 		// here we do it in samples ( overflows in 27 hours or so )
@@ -646,15 +840,19 @@ int idSoundSystemLocal::AsyncUpdate( int inTime ) {
 		// mixBufferSize is in bytes
 		dwCurrentBlock = dwCurrentWritePos / snd_audio_hw->GetMixBufferSize();
 	}
+#else //!BT_SDL_AUDIO
+	// here we do it in samples ( overflows in 27 hours or so )
+	dwCurrentWritePos = idMath::Ftol( (float)Sys_Milliseconds() * 44.1f ) % (MIXBUFFER_SAMPLES * ROOM_SLICES_IN_BUFFER);
+	dwCurrentBlock = dwCurrentWritePos / MIXBUFFER_SAMPLES;
+#endif //BT_SDL_AUDIO
 
-	if ( nextWriteBlock == 0xffffffff ) {
+	if ( nextWriteBlock == 0xffffffff ) 
 		nextWriteBlock = dwCurrentBlock;
-	}
 
-	if ( dwCurrentBlock != nextWriteBlock ) {
+	if ( dwCurrentBlock != nextWriteBlock ) 
 		return 0;
-	}
 
+#if BT_SDL_AUDIO
 	// lock the buffer so we can actually write to it
 	short *fBlock = NULL;
 	ulong fBlockLen = 0;
@@ -664,12 +862,17 @@ int idSoundSystemLocal::AsyncUpdate( int inTime ) {
 			return 0;
 		}
 	}
+#endif // BT_SDL_AUDIO
 
 	int j;
 	soundStats.runs++;
 	soundStats.activeSounds = 0;
-
+// BEATO Begin
+#if BT_SDL_AUDIO
 	int	numSpeakers = snd_audio_hw->GetNumberOfSpeakers();
+#else 
+	int	numSpeakers = s_numberOfSpeakers.GetInteger();
+#endif //BT_SDL_AUDIO
 
 	nextWriteBlock++;
 	nextWriteBlock %= ROOM_SLICES_IN_BUFFER;
@@ -698,23 +901,27 @@ int idSoundSystemLocal::AsyncUpdate( int inTime ) {
 		soundStats.missedWindow++;
 	}
 
-	if ( useOpenAL ) {
-		// enable audio hardware caching
+	// enable audio hardware caching
+#if BT_SDL_AUDIO
+	if ( useOpenAL )
 		alcSuspendContext( openalContext );
-	} else {
+	else 
 		// clear the buffer for all the mixing output
 		SIMDProcessor->Memset( finalMixBuffer, 0, MIXBUFFER_SAMPLES * sizeof(float) * numSpeakers );
-	}
+#else //!BT_SDL_AUDIO
+	alcSuspendContext( openalContext );
+#endif //BT_SDL_AUDIO
+
 
 	// let the active sound world mix all the channels in unless muted or avi demo recording
-	if ( !muted && currentSoundWorld && !currentSoundWorld->fpa[0] ) {
+	if ( !muted && currentSoundWorld && !currentSoundWorld->fpa[0] ) 
 		currentSoundWorld->MixLoop( newSoundTime, numSpeakers, finalMixBuffer );
-	}
 
-	if ( useOpenAL ) {
+#if BT_SDL_AUDIO
+	if ( useOpenAL ) 
 		// disable audio hardware caching (this updates ALL settings since last alcSuspendContext)
 		alcProcessContext( openalContext );
-	} else {
+	else {
 		short *dest = fBlock + nextWriteSamples * numSpeakers;
 
 		SIMDProcessor->MixedSoundToSamples( dest, finalMixBuffer, MIXBUFFER_SAMPLES * numSpeakers );
@@ -729,6 +936,7 @@ int idSoundSystemLocal::AsyncUpdate( int inTime ) {
 		}
 		snd_audio_hw->Unlock( fBlock, fBlockLen );
 	}
+#endif
 
 	CurrentSoundTime = newSoundTime;
 
@@ -745,50 +953,61 @@ we mix MIXBUFFER_SAMPLES at a time, but we feed the audio device with smaller ch
 called by the sound thread when com_asyncSound is 3 ( Linux )
 ===================
 */
-int idSoundSystemLocal::AsyncUpdateWrite( int inTime ) {
-
-	if ( !isInitialized || shutdown || !snd_audio_hw ) {
+int idSoundSystemLocal::AsyncUpdateWrite( int inTime ) 
+{
+// BEATO Begin
+#if BT_SDL_AUDIO
+	if ( !isInitialized || shutdown || !snd_audio_hw ) 
 		return 0;
-	}
 
-	if ( !useOpenAL ) {
+	if (!useOpenAL) 
 		snd_audio_hw->Flush();
-	}
+#else
+	if ( !isInitialized || shutdown ) 
+		return 0;
+#endif
+// BEATO End
 
 	unsigned int dwCurrentBlock = (unsigned int)( inTime * 44.1f / MIXBUFFER_SAMPLES );
 
-	if ( nextWriteBlock == 0xffffffff ) {
+	if ( nextWriteBlock == 0xffffffff ) 
 		nextWriteBlock = dwCurrentBlock;
-	}
 
-	if ( dwCurrentBlock < nextWriteBlock ) {
+	if ( dwCurrentBlock < nextWriteBlock ) 
 		return 0;
-	}
 
-	if ( nextWriteBlock != dwCurrentBlock ) {
+	if ( nextWriteBlock != dwCurrentBlock ) 
 		Sys_Printf( "missed %d sound updates\n", dwCurrentBlock - nextWriteBlock );
-	}
 
 	int sampleTime = dwCurrentBlock * MIXBUFFER_SAMPLES;	
+
+// BEATO Begin
+#if BT_SDL_AUDIO
 	int numSpeakers = snd_audio_hw->GetNumberOfSpeakers();
 
-	if ( useOpenAL ) {
+	if ( useOpenAL ) 
 		// enable audio hardware caching
 		alcSuspendContext( openalContext );
-	} else {
+	else 
 		// clear the buffer for all the mixing output
 		SIMDProcessor->Memset( finalMixBuffer, 0, MIXBUFFER_SAMPLES * sizeof(float) * numSpeakers );
-	}
+#else
+	int numSpeakers = s_numberOfSpeakers.GetInteger();
+
+	// enable audio hardware caching
+	alcSuspendContext( openalContext );
+#endif //BT_SDL_AUDIO
 
 	// let the active sound world mix all the channels in unless muted or avi demo recording
-	if ( !muted && currentSoundWorld && !currentSoundWorld->fpa[0] ) {
+	if ( !muted && currentSoundWorld && !currentSoundWorld->fpa[0] )
 		currentSoundWorld->MixLoop( sampleTime, numSpeakers, finalMixBuffer );
-	}
 
-	if ( useOpenAL ) {
+#if BT_SDL_AUDIO
+	if ( useOpenAL )
 		// disable audio hardware caching (this updates ALL settings since last alcSuspendContext)
 		alcProcessContext( openalContext );
-	} else {
+	else
+	{
 		short *dest = snd_audio_hw->GetMixBuffer();
 
 		SIMDProcessor->MixedSoundToSamples( dest, finalMixBuffer, MIXBUFFER_SAMPLES * numSpeakers );
@@ -804,6 +1023,11 @@ int idSoundSystemLocal::AsyncUpdateWrite( int inTime ) {
 		}
 		snd_audio_hw->Write( false );
 	}
+#else //!BT_SDL_AUDIO
+	// disable audio hardware caching (this updates ALL settings since last alcSuspendContext)
+	alcProcessContext( openalContext );
+#endif // BT_SDL_AUDIO
+// BEATO end
 
 	// only move to the next block if the write was successful
 	nextWriteBlock = dwCurrentBlock + 1;
@@ -834,147 +1058,206 @@ float idSoundSystemLocal::dB2Scale( const float val ) const {
 idSoundSystemLocal::ImageForTime
 ===================
 */
-cinData_t idSoundSystemLocal::ImageForTime( const int milliseconds, const bool waveform ) {
+cinData_t idSoundSystemLocal::ImageForTime( const int milliseconds, const bool waveform )
+{
 	cinData_t ret;
 	int i, j;
 
-	if ( !isInitialized || !snd_audio_hw ) {
+	// BEATO Begin
+#if BT_SDL_AUDIO
+	if (!isInitialized || !snd_audio_hw)
+#else
+	if (!isInitialized)
+#endif // !BT_SDL_AUDIO
+		//BEATO End
+	{
 		memset( &ret, 0, sizeof( ret ) );
 		return ret;
 	}
 
-	Sys_EnterCriticalSection();
+	// BEATO Begin
+	m_soundLock->Lock(); //Sys_EnterCriticalSection();
 
-	if ( !graph ) {
-		graph = (dword *)Mem_Alloc( 256*128 * 4);
+
+	if (!graph)
+	{
+		graph = (dword *)Mem_Alloc( 256 * 128 * 4 );
 	}
-	memset( graph, 0, 256*128 * 4 );
+	memset( graph, 0, 256 * 128 * 4 );
 	float *accum = finalMixBuffer;	// unfortunately, these are already clamped
 	int time = Sys_Milliseconds();
 
+#if BT_SDL_AUDIO
 	int numSpeakers = snd_audio_hw->GetNumberOfSpeakers();
+#else
+	int numSpeakers = s_numberOfSpeakers.GetInteger();
+#endif //BT_SDL_AUDIO
 
-	if ( !waveform ) {
-		for( j = 0; j < numSpeakers; j++ ) {
+	if (!waveform)
+	{
+		for (j = 0; j < numSpeakers; j++)
+		{
 			int meter = 0;
-			for( i = 0; i < MIXBUFFER_SAMPLES; i++ ) {
-				float result = idMath::Fabs(accum[i*numSpeakers+j]);
-				if ( result > meter ) {
+			for (i = 0; i < MIXBUFFER_SAMPLES; i++)
+			{
+				float result = idMath::Fabs( accum[i*numSpeakers + j] );
+				if (result > meter)
+				{
 					meter = result;
 				}
 			}
 
 			meter /= 256;		// 32768 becomes 128
-			if ( meter > 128 ) {
+			if (meter > 128)
+			{
 				meter = 128;
 			}
 			int offset;
 			int xsize;
-			if ( numSpeakers == 6 ) {
+			if (numSpeakers == 6)
+			{
 				offset = j * 40;
 				xsize = 20;
-			} else {
+			}
+			else
+			{
 				offset = j * 128;
 				xsize = 63;
 			}
-			int x,y;
+			int x, y;
 			dword color = 0xff00ff00;
-			for ( y = 0; y < 128; y++ ) {
-				for ( x = 0; x < xsize; x++ ) {
-					graph[(127-y)*256 + offset + x ] = color;
+			for (y = 0; y < 128; y++)
+			{
+				for (x = 0; x < xsize; x++)
+				{
+					graph[(127 - y) * 256 + offset + x] = color;
 				}
 #if 0
-				if ( y == 80 ) {
+				if (y == 80)
+				{
 					color = 0xff00ffff;
-				} else if ( y == 112 ) {
+				}
+				else if (y == 112)
+				{
 					color = 0xff0000ff;
 				}
 #endif
-				if ( y > meter ) {
+				if (y > meter)
+				{
 					break;
 				}
 			}
 
-			if ( meter > meterTops[j] ) {
+			if (meter > meterTops[j])
+			{
 				meterTops[j] = meter;
 				meterTopsTime[j] = time + s_meterTopTime.GetInteger();
-			} else if ( time > meterTopsTime[j] && meterTops[j] > 0 ) {
+			}
+			else if (time > meterTopsTime[j] && meterTops[j] > 0)
+			{
 				meterTops[j]--;
-				if (meterTops[j]) {
+				if (meterTops[j])
+				{
 					meterTops[j]--;
 				}
 			}
 		}
 
-		for( j = 0; j < numSpeakers; j++ ) {
+		for (j = 0; j < numSpeakers; j++)
+		{
 			int meter = meterTops[j];
 
 			int offset;
 			int xsize;
-			if ( numSpeakers == 6 ) {
-				offset = j*40;
+			if (numSpeakers == 6)
+			{
+				offset = j * 40;
 				xsize = 20;
-			} else {
-				offset = j*128;
+			}
+			else
+			{
+				offset = j * 128;
 				xsize = 63;
 			}
-			int x,y;
+			int x, y;
 			dword color;
-			if ( meter <= 80 ) {
+			if (meter <= 80)
+			{
 				color = 0xff007f00;
-			} else if ( meter <= 112 ) {
+			}
+			else if (meter <= 112)
+			{
 				color = 0xff007f7f;
-			} else {
+			}
+			else
+			{
 				color = 0xff00007f;
 			}
-			for ( y = meter; y < 128 && y < meter + 4; y++ ) {
-				for ( x = 0; x < xsize; x++ ) {
-					graph[(127-y)*256 + offset + x ] = color;
+			for (y = meter; y < 128 && y < meter + 4; y++)
+			{
+				for (x = 0; x < xsize; x++)
+				{
+					graph[(127 - y) * 256 + offset + x] = color;
 				}
 			}
 		}
-	} else {
+	}
+	else
+	{
 		dword colors[] = { 0xff007f00, 0xff007f7f, 0xff00007f, 0xff00ff00, 0xff00ffff, 0xff0000ff };
 
-		for( j = 0; j < numSpeakers; j++ ) {
+		for (j = 0; j < numSpeakers; j++)
+		{
 			int xx = 0;
 			float fmeter;
 			int step = MIXBUFFER_SAMPLES / 256;
-			for( i = 0; i < MIXBUFFER_SAMPLES; i += step ) {
+			for (i = 0; i < MIXBUFFER_SAMPLES; i += step)
+			{
 				fmeter = 0.0f;
-				for( int x = 0; x < step; x++ ) {
-					float result = accum[(i+x)*numSpeakers+j];
+				for (int x = 0; x < step; x++)
+				{
+					float result = accum[(i + x)*numSpeakers + j];
 					result = result / 32768.0f;
 					fmeter += result;
 				}
 				fmeter /= 4.0f;
-				if ( fmeter < -1.0f ) {
+				if (fmeter < -1.0f)
+				{
 					fmeter = -1.0f;
-				} else if ( fmeter > 1.0f ) {
+				}
+				else if (fmeter > 1.0f)
+				{
 					fmeter = 1.0f;
 				}
 				int meter = (fmeter * 63.0f);
-				graph[ (meter + 64) * 256 + xx ] = colors[j];
+				graph[(meter + 64) * 256 + xx] = colors[j];
 
-				if ( meter < 0 ) {
+				if (meter < 0)
+				{
 					meter = -meter;
 				}
-				if ( meter > meterTops[xx] ) {
+				if (meter > meterTops[xx])
+				{
 					meterTops[xx] = meter;
 					meterTopsTime[xx] = time + 100;
-				} else if ( time>meterTopsTime[xx] && meterTops[xx] > 0 ) {
+				}
+				else if (time > meterTopsTime[xx] && meterTops[xx] > 0)
+				{
 					meterTops[xx]--;
-					if ( meterTops[xx] ) {
+					if (meterTops[xx])
+					{
 						meterTops[xx]--;
 					}
 				}
 				xx++;
 			}
 		}
-		for( i = 0; i < 256; i++ ) {
+		for (i = 0; i < 256; i++)
+		{
 			int meter = meterTops[i];
-			for ( int y = -meter; y < meter; y++ ) {
-				graph[ (y+64)*256 + i ] = colors[j];
+			for (int y = -meter; y < meter; y++)
+			{
+				graph[(y + 64) * 256 + i] = colors[j];
 			}
 		}
 	}
@@ -982,7 +1265,8 @@ cinData_t idSoundSystemLocal::ImageForTime( const int milliseconds, const bool w
 	ret.imageWidth = 256;
 	ret.image = (unsigned char *)graph;
 
-	Sys_LeaveCriticalSection();
+	m_soundLock->Unlock(); //Sys_LeaveCriticalSection();
+	// BEATO End
 
 	return ret;
 }
@@ -1244,13 +1528,13 @@ void idSoundSystemLocal::FreeOpenALSource( ALuint handle ) {
 			if ( openalSources[i].chan ) {
 				openalSources[i].chan->openalSource = NULL;
 			}
-#if ID_OPENAL
+#if BT_USE_EAX
 			// Reset source EAX ROOM level when freeing stereo source
 			if ( openalSources[i].stereo && alEAXSet ) {
 				long Room = EAXSOURCE_DEFAULTROOM;
 				alEAXSet( &EAXPROPERTYID_EAX_Source, EAXSOURCE_ROOM, openalSources[i].handle, &Room, sizeof(Room));
 			}
-#endif
+#endif // BT_USE_EAX
 			// Initialize structure
 			openalSources[i].startTime = 0;
 			openalSources[i].chan = NULL;
@@ -1351,7 +1635,11 @@ void idSoundSystemLocal::DoEnviroSuit( float* samples, int numSamples, int numSp
 	float out[10000], *out_p = out + 2;
 	float in[10000], *in_p = in + 2;
 
+// BEATO Begin
+#if BT_SDL_AUDIO
 	assert( !idSoundSystemLocal::useOpenAL );
+#endif
+// BEATO End
 
 	if ( !fxList.Num() ) {
 		for ( int i = 0; i < 6; i++ ) {
@@ -1433,29 +1721,62 @@ int idSoundSystemLocal::IsEAXAvailable( void ) {
 	ALCdevice	*device;
 	ALCcontext	*context;
 
-	if ( EAXAvailable != -1 ) {
+// BEATO Begin
+#if BT_USE_EAX
+	if ( EAXAvailable != -1 )
 		return EAXAvailable;
-	}
+#endif
 
+#if BT_USE_EFX
+	if (EFXAvailable != -1)
+		return EFXAvailable;
+#endif
+
+#if 0
 	if ( !Sys_LoadOpenAL() ) {
 		EAXAvailable = 2;
 		return 2;
 	}
+#endif
+// BEATO End
+
 	// when dynamically loading the OpenAL subsystem, we need to get a context before alIsExtensionPresent would work
 	device = alcOpenDevice( NULL );
 	context = alcCreateContext( device, NULL );
 	alcMakeContextCurrent( context );
-	if ( alIsExtensionPresent( "EAX4.0" ) ) {
+#if BT_USE_EAX
+	if ( alIsExtensionPresent( "EAX4.0" ) ) 
+	{
 		alcMakeContextCurrent( NULL );
 		alcDestroyContext( context );
 		alcCloseDevice( device );
 		EAXAvailable = 1;
 		return 1;
 	}
+#endif //BT_USE_EAX
+#if BT_USE_EFX
+	if (alcIsExtensionPresent( openalDevice, "ALC_EXT_EFX" ))
+	{
+		alcMakeContextCurrent( NULL );
+		alcDestroyContext( context );
+		alcCloseDevice( device );
+		EFXAvailable = 1;
+		return 1;
+	}
+#endif //BT_USE_EAX
+
 	alcMakeContextCurrent( NULL );
 	alcDestroyContext( context );
 	alcCloseDevice( device );
+
+#if BT_USE_EFX
+	EFXAvailable = 0;
+#endif //BT_USE_EFX
+
+#if BT_USE_EAX
 	EAXAvailable = 0;
+#endif //BT_USE_EAX
+
 	return 0;
 #endif
 }

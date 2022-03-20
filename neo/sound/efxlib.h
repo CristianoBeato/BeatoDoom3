@@ -4,7 +4,7 @@
 #ifndef __EFXLIBH
 #define __EFXLIBH
 
-//#include "eax4.h"
+#define EFXprintf(...) do { common->Printf(__VA_ARGS__); } while (false)
 
 ///////////////////////////////////////////////////////////
 // Class definitions.
@@ -13,16 +13,22 @@ class idSoundEffect
 public:
 	idSoundEffect() {
 	};
-	~idSoundEffect() { 
-		if ( data && datasize ) {
+	~idSoundEffect() 
+	{ 
+		if ( data && datasize )
+		{
 			Mem_Free( data );
 			data = NULL;
 		}
+
+		if (effectID)
+			effectID = 0;
 	}
 	
 	idStr name;
 	int datasize;
 	void *data;
+	ALuint effectID;
 };
 
 class idEFXFile

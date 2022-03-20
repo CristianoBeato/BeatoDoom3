@@ -221,8 +221,14 @@ void idSoundChannel::Stop( void ) {
 idSoundChannel::ALStop
 ===================
 */
-void idSoundChannel::ALStop( void ) {
-	if ( idSoundSystemLocal::useOpenAL ) {
+void idSoundChannel::ALStop( void )
+{
+// BEATO Begin
+#if BT_SDL_AUDIO
+	if ( idSoundSystemLocal::useOpenAL ) 
+#endif
+// BEATO end
+	{
 
 		if ( alIsSource( openalSource ) ) {
 			alSourceStop( openalSource );
@@ -452,9 +458,15 @@ void idSoundEmitterLocal::CheckForCompletion( int current44kHzTime ) {
 			if ( !( chan->parms.soundShaderFlags & SSF_LOOPING ) ) {
 				ALint state = AL_PLAYING;
 
-				if ( idSoundSystemLocal::useOpenAL && alIsSource( chan->openalSource ) ) {
+// BEATO BEgin
+#if BT_SDL_AUDIO
+				if ( idSoundSystemLocal::useOpenAL && alIsSource( chan->openalSource ) ) 
+#else
+				if ( alIsSource( chan->openalSource ) ) 
+#endif // BT_SDL_AUDIO
+// BEATO End
 					alGetSourcei( chan->openalSource, AL_SOURCE_STATE, &state );
-				}
+				
 				idSlowChannel slow = GetSlowChannel( chan );
 
 				if ( soundWorld->slowmoActive && slow.IsActive() ) {
@@ -754,7 +766,8 @@ int idSoundEmitterLocal::StartSound( const idSoundShader *shader, const s_channe
 		}
 	}
 
-	Sys_EnterCriticalSection();
+	// BEATO Begin
+	idSoundSystemLocal::m_soundLock->Lock(); // Sys_EnterCriticalSection();
 
 	// kill any sound that is currently playing on this channel
 	if ( channel != SCHANNEL_ANY ) {
@@ -863,7 +876,8 @@ int idSoundEmitterLocal::StartSound( const idSoundShader *shader, const s_channe
 	
 	length *= 1000 / (float)PRIMARYFREQ;
 
-	Sys_LeaveCriticalSection();
+	idSoundSystemLocal::m_soundLock->Unlock(); //Sys_LeaveCriticalSection();
+	//BEATO End
 
 	return length;
 }
@@ -932,7 +946,8 @@ void idSoundEmitterLocal::StopSound( const s_channelType channel ) {
 		soundWorld->writeDemo->WriteInt( channel );
 	}
 
-	Sys_EnterCriticalSection();
+// BEATO Begin
+	idSoundSystemLocal::m_soundLock->Lock();// Sys_EnterCriticalSection();
 
 	for( i = 0; i < SOUND_MAX_CHANNELS; i++ ) {
 		idSoundChannel	*chan = &channels[i];
@@ -959,7 +974,7 @@ void idSoundEmitterLocal::StopSound( const s_channelType channel ) {
 		chan->soundShader = NULL;
 	}
 
-	Sys_LeaveCriticalSection();
+	idSoundSystemLocal::m_soundLock->Unlock(); //Sys_LeaveCriticalSection();
 }
 
 /*

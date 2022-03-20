@@ -172,13 +172,14 @@ int idWaveFile::OpenOGG( const char* strFileName, waveformatex_t *pwfx ) {
 		return -1;
 	}
 
-	Sys_EnterCriticalSection( CRITICAL_SECTION_ONE );
+	// BEATO Begin
+	idSoundSystemLocal::m_decodeLock->Lock();//Sys_EnterCriticalSection( CRITICAL_SECTION_ONE );
 
 	ov = new OggVorbis_File;
 
 	if( ov_openFile( mhmmio, ov ) < 0 ) {
 		delete ov;
-		Sys_LeaveCriticalSection( CRITICAL_SECTION_ONE );
+		idSoundSystemLocal::m_decodeLock->Unlock();//Sys_LeaveCriticalSection( CRITICAL_SECTION_ONE );
 		fileSystem->CloseFile( mhmmio );
 		mhmmio = NULL;
 		return -1;
@@ -215,7 +216,8 @@ int idWaveFile::OpenOGG( const char* strFileName, waveformatex_t *pwfx ) {
 
 	memcpy( pwfx, &mpwfx, sizeof( waveformatex_t ) );
 
-	Sys_LeaveCriticalSection( CRITICAL_SECTION_ONE );
+	idSoundSystemLocal::m_decodeLock->Unlock(); //Sys_LeaveCriticalSection( CRITICAL_SECTION_ONE );
+	// BEATO End
 
 	isOgg = true;
 
@@ -265,11 +267,12 @@ idWaveFile::CloseOGG
 */
 int idWaveFile::CloseOGG( void ) {
 	OggVorbis_File *ov = (OggVorbis_File *) ogg;
-	if ( ov != NULL ) {
-		Sys_EnterCriticalSection( CRITICAL_SECTION_ONE );
+	if ( ov != NULL )
+	{
+		idSoundSystemLocal::m_decodeLock->Lock();//Sys_EnterCriticalSection( CRITICAL_SECTION_ONE );
 		ov_clear( ov );
 		delete ov;
-		Sys_LeaveCriticalSection( CRITICAL_SECTION_ONE );
+		idSoundSystemLocal::m_decodeLock->Unlock();//Sys_LeaveCriticalSection( CRITICAL_SECTION_ONE );
 		fileSystem->CloseFile( mhmmio );
 		mhmmio = NULL;
 		ogg = NULL;
@@ -395,8 +398,10 @@ void idSampleDecoderLocal::Clear( void ) {
 idSampleDecoderLocal::ClearDecoder
 ====================
 */
-void idSampleDecoderLocal::ClearDecoder( void ) {
-	Sys_EnterCriticalSection( CRITICAL_SECTION_ONE );
+void idSampleDecoderLocal::ClearDecoder( void ) 
+{
+	// BEATO Begin
+	idSoundSystemLocal::m_decodeLock->Lock();//Sys_EnterCriticalSection( CRITICAL_SECTION_ONE );
 
 	switch( lastFormat ) {
 		case WAVE_FORMAT_TAG_PCM: {
@@ -411,7 +416,8 @@ void idSampleDecoderLocal::ClearDecoder( void ) {
 
 	Clear();
 
-	Sys_LeaveCriticalSection( CRITICAL_SECTION_ONE );
+	idSoundSystemLocal::m_decodeLock->Unlock(); //Sys_LeaveCriticalSection( CRITICAL_SECTION_ONE );
+	// BEATO End
 }
 
 /*
@@ -452,7 +458,8 @@ void idSampleDecoderLocal::Decode( idSoundSample *sample, int sampleOffset44k, i
 	}
 
 	// samples can be decoded both from the sound thread and the main thread for shakes
-	Sys_EnterCriticalSection( CRITICAL_SECTION_ONE );
+	// BEATO Begin:
+	idSoundSystemLocal::m_decodeLock->Lock(); //Sys_EnterCriticalSection( CRITICAL_SECTION_ONE );
 
 	switch( sample->objectInfo.wFormatTag ) {
 		case WAVE_FORMAT_TAG_PCM: {
@@ -469,7 +476,8 @@ void idSampleDecoderLocal::Decode( idSoundSample *sample, int sampleOffset44k, i
 		}
 	}
 
-	Sys_LeaveCriticalSection( CRITICAL_SECTION_ONE );
+	idSoundSystemLocal::m_decodeLock->Unlock();//Sys_LeaveCriticalSection( CRITICAL_SECTION_ONE );
+	// BEATO End
 
 	if ( readSamples44k < sampleCount44k ) {
 		memset( dest + readSamples44k, 0, ( sampleCount44k - readSamples44k ) * sizeof( dest[0] ) );

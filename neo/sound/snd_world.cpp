@@ -26,10 +26,20 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "../idlib/precompiled.h"
+//
+#if BT_USE_EFX
+#include <al.h>
+#include <efx.h>
+#endif 
+//
+
+#include "idlib/precompiled.h"
 #pragma hdrstop
 
+
 #include "snd_local.h"
+
+idCVar s_alReverbGain( "s_alReverbGain", "0.5", CVAR_SOUND | CVAR_FLOAT | CVAR_ARCHIVE, "reduce reverb strength (0.0 to 1.0)", 0.0f, 1.0f );
 
 /*
 ==================
@@ -53,7 +63,8 @@ void idSoundWorldLocal::Init( idRenderWorld *renderWorld ) {
 	pause44kHz = -1;
 	lastAVI44kHz = 0;
 
-	for ( int i = 0 ; i < SOUND_MAX_CLASSES ; i++ ) {
+	for ( int i = 0 ; i < SOUND_MAX_CLASSES ; i++ ) 
+	{
 		soundClassFade[i].Clear();
 	}
 
@@ -71,6 +82,67 @@ void idSoundWorldLocal::Init( idRenderWorld *renderWorld ) {
 	slowmoActive		= false;
 	slowmoSpeed			= 0;
 	enviroSuitActive	= false;
+
+// BEATO Begin
+#if BT_USE_EFX
+	if (idSoundSystemLocal::useEFXReverb)
+	{
+		if (!soundSystemLocal.alIsAuxiliaryEffectSlot( listenerSlot ))
+		{
+			alGetError();
+
+			soundSystemLocal.alGenAuxiliaryEffectSlots( 1, &listenerSlot );
+			ALuint e = alGetError();
+			if (e != AL_NO_ERROR)
+			{
+				common->Warning( "idSoundWorldLocal::Init: alGenAuxiliaryEffectSlots failed: 0x%x", e );
+				listenerSlot = AL_EFFECTSLOT_NULL;
+			}
+		}
+
+		if (!listenerAreFiltersInitialized)
+		{
+			listenerAreFiltersInitialized = true;
+
+			alGetError();
+			soundSystemLocal.alGenFilters( 2, listenerFilters );
+			ALuint e = alGetError();
+			if (e != AL_NO_ERROR)
+			{
+				common->Warning( "idSoundWorldLocal::Init: alGenFilters failed: 0x%x", e );
+				listenerFilters[0] = AL_FILTER_NULL;
+				listenerFilters[1] = AL_FILTER_NULL;
+			}
+			else
+			{
+				soundSystemLocal.alFilteri( listenerFilters[0], AL_FILTER_TYPE, AL_FILTER_LOWPASS );
+				// original EAX occusion value was -1150
+				// default OCCLUSIONLFRATIO is 0.25
+				// default OCCLUSIONDIRECTRATIO is 1.0
+
+				// pow(10.0, (-1150*0.25*1.0)/2000.0)
+				soundSystemLocal.alFilterf( listenerFilters[0], AL_LOWPASS_GAIN, 0.718208f );
+				// pow(10.0, (-1150*1.0)/2000.0)
+				soundSystemLocal.alFilterf( listenerFilters[0], AL_LOWPASS_GAINHF, 0.266073f );
+
+
+				soundSystemLocal.alFilteri( listenerFilters[1], AL_FILTER_TYPE, AL_FILTER_LOWPASS );
+				// original EAX occusion value was -1150
+				// default OCCLUSIONLFRATIO is 0.25
+				// default OCCLUSIONROOMRATIO is 1.5
+
+				// pow(10.0, (-1150*(0.25+1.5-1.0))/2000.0)
+				soundSystemLocal.alFilterf( listenerFilters[1], AL_LOWPASS_GAIN, 0.370467f );
+				// pow(10.0, (-1150*1.5)/2000.0)
+				soundSystemLocal.alFilterf( listenerFilters[1], AL_LOWPASS_GAINHF, 0.137246f );
+			}
+			// allow reducing the gain effect globally via s_alReverbGain CVar
+			listenerSlotReverbGain = s_alReverbGain.GetFloat();
+			soundSystemLocal.alAuxiliaryEffectSlotf( listenerSlot, AL_EFFECTSLOT_GAIN, listenerSlotReverbGain );
+		}
+	}
+#endif // BT_USE_EFX
+// BEATO End
 }
 
 /*
@@ -123,7 +195,9 @@ idSoundWorldLocal::ClearAllSoundEmitters
 void idSoundWorldLocal::ClearAllSoundEmitters() {
 	int i;
 
-	Sys_EnterCriticalSection();
+	// BEATO Begin
+	//Sys_EnterCriticalSection();
+	btScopeLock lock( idSoundSystemLocal::m_soundLock );
 
 	AVIClose();
 
@@ -133,7 +207,8 @@ void idSoundWorldLocal::ClearAllSoundEmitters() {
 	}
 	localSound = NULL;
 
-	Sys_LeaveCriticalSection();
+	//Sys_LeaveCriticalSection();
+	// BEATO End
 }
 
 /*
@@ -167,13 +242,14 @@ idSoundEmitterLocal *idSoundWorldLocal::AllocLocalSoundEmitter() {
 		def = new idSoundEmitterLocal;
 
 		// we need to protect this from the async thread
-		Sys_EnterCriticalSection();
+// BEATO Begin
+		idSoundSystemLocal::m_soundLock->Lock(); //Sys_EnterCriticalSection();
 		index = emitters.Append( def );
-		Sys_LeaveCriticalSection();
+		idSoundSystemLocal::m_soundLock->Unlock();  //Sys_LeaveCriticalSection();
+// BEATO end
 
-		if ( idSoundSystemLocal::s_showStartSound.GetInteger() ) {
+		if ( idSoundSystemLocal::s_showStartSound.GetInteger() ) 
 			common->Printf( "sound: appended new sound def %d\n", index );
-		}
 	}
 
 	def->Clear();
@@ -260,9 +336,9 @@ void idSoundWorldLocal::ProcessDemoCommand( idDemoFile *readDemo ) {
 		// we need to protect this from the async thread
 		// other instances of calling idSoundWorldLocal::ReadFromSaveGame do this while the sound code is muted
 		// setting muted and going right in may not be good enough here, as we async thread may already be in an async tick (in which case we could still race to it)
-		Sys_EnterCriticalSection();
+		idSoundSystemLocal::m_soundLock->Lock(); // Sys_EnterCriticalSection();
 		ReadFromSaveGame( readDemo );
-		Sys_LeaveCriticalSection();
+		idSoundSystemLocal::m_soundLock->Unlock(); // Sys_LeaveCriticalSection();
 		UnPause();
 		break;
 	case SCMD_PLACE_LISTENER:
@@ -422,14 +498,26 @@ void idSoundWorldLocal::MixLoop( int current44kHz, int numSpeakers, float *final
 	idSoundEmitterLocal *sound;
 
 	// if noclip flying outside the world, leave silence
-	if ( listenerArea == -1 ) {
+	if ( listenerArea == -1 ) 
+	{
+// BEATO Begin
+#if BT_SDL_AUDIO
 		if ( idSoundSystemLocal::useOpenAL )
 			alListenerf( AL_GAIN, 0.0f );
+#else
+		alListenerf( AL_GAIN, 0.0f );
+#endif // BT_SDL_AUDIO
+
 		return;
 	} 
-
+#if BT_SDL_AUDIO
 	// update the listener position and orientation
-	if ( idSoundSystemLocal::useOpenAL ) {
+	if ( idSoundSystemLocal::useOpenAL ) 
+#endif // BT_SDL_AUDIO
+	{
+		idSoundEffect *effect = NULL;
+		int EnvironmentID = -1;
+
 		ALfloat listenerPosition[3];
 
 		listenerPosition[0] = -listenerPos.y;
@@ -450,11 +538,11 @@ void idSoundWorldLocal::MixLoop( int current44kHz, int numSpeakers, float *final
 		alListenerfv( AL_POSITION, listenerPosition );
 		alListenerfv( AL_ORIENTATION, listenerOrientation );
 
-#if ID_OPENAL
-		if ( soundSystemLocal.s_useEAXReverb.GetBool() ) {
+#if BT_USE_EAX
+		if (idSoundSystemLocal::s_useEAXReverb.GetBool() )
+		{
 			if ( soundSystemLocal.efxloaded ) {
-				idSoundEffect *effect = NULL;
-				int EnvironmentID = -1;
+				
 				idStr defaultStr( "default" );
 				idStr listenerAreaStr( listenerArea );
 				
@@ -482,8 +570,48 @@ void idSoundWorldLocal::MixLoop( int current44kHz, int numSpeakers, float *final
 				}
 			}
 		}
-#endif
+#endif // BT_USE_EAX
+#if BT_USE_EFX
+		if (idSoundSystemLocal::s_useEFXReverb.GetBool() && soundSystemLocal.efxloaded)
+		{
+			ALuint effectId = 0;
+			idStr s( listenerArea );
+
+			// allow reducing the gain effect globally via s_alReverbGain CVar
+			float gain = s_alReverbGain.GetFloat();
+			if (listenerSlotReverbGain != gain)
+			{
+				listenerSlotReverbGain = gain;
+				soundSystemLocal.alAuxiliaryEffectSlotf( listenerSlot, AL_EFFECTSLOT_GAIN, gain );
+			}
+
+			bool found = soundSystemLocal.EFXDatabase.FindEffect( s, &effect, &EnvironmentID );
+			if (!found)
+			{
+				s = listenerAreaName;
+				found = soundSystemLocal.EFXDatabase.FindEffect( s, &effect, &EnvironmentID );
+			}
+			if (!found)
+			{
+				s = "default";
+				found = soundSystemLocal.EFXDatabase.FindEffect( s, &effect, &EnvironmentID );
+			}
+
+			if (effect)
+				effectId = effect->effectID;
+
+			// only update if change in settings
+			if (found && listenerEffect != effectId)
+			{
+				EFXprintf( "Switching to EFX '%s' (#%u)\n", s.c_str(), effectId );
+				listenerEffect = effectId;
+				soundSystemLocal.alAuxiliaryEffectSloti( listenerSlot, AL_EFFECTSLOT_EFFECT, effectId );
+			}
+		}
+#endif // BT_USE_EFX
+
 	}
+// BEATO end
 
 	// debugging option to mute all but a single soundEmitter
 	if ( idSoundSystemLocal::s_singleEmitter.GetInteger() > 0 && idSoundSystemLocal::s_singleEmitter.GetInteger() < emitters.Num() ) {
@@ -530,9 +658,13 @@ void idSoundWorldLocal::MixLoop( int current44kHz, int numSpeakers, float *final
 		}
 	}
 
-	if ( !idSoundSystemLocal::useOpenAL && enviroSuitActive ) {
+#if BT_SDL_AUDIO
+	if ( !idSoundSystemLocal::useOpenAL && enviroSuitActive ) 
+#else
+	if ( enviroSuitActive ) 
+#endif // !BT_SDL_AUDIO
 		soundSystemLocal.DoEnviroSuit( finalMixBuffer, MIXBUFFER_SAMPLES, numSpeakers );
-	}
+
 }
 
 //==============================================================================
@@ -550,14 +682,17 @@ void idSoundWorldLocal::AVIOpen( const char *path, const char *name ) {
 
 	lastAVI44kHz = game44kHz - game44kHz % MIXBUFFER_SAMPLES;
 
-	if ( soundSystemLocal.snd_audio_hw->GetNumberOfSpeakers() == 6 ) {
+	if (idSoundSystemLocal::s_numberOfSpeakers.GetInteger() == 6)
+	{
 		fpa[0] = fileSystem->OpenFileWrite( aviDemoPath + "channel_51_left.raw" );
 		fpa[1] = fileSystem->OpenFileWrite( aviDemoPath + "channel_51_right.raw" );
 		fpa[2] = fileSystem->OpenFileWrite( aviDemoPath + "channel_51_center.raw" );
 		fpa[3] = fileSystem->OpenFileWrite( aviDemoPath + "channel_51_lfe.raw" );
 		fpa[4] = fileSystem->OpenFileWrite( aviDemoPath + "channel_51_backleft.raw" );
 		fpa[5] = fileSystem->OpenFileWrite( aviDemoPath + "channel_51_backright.raw" );
-	} else {
+	} 
+	else 
+	{
 		fpa[0] = fileSystem->OpenFileWrite( aviDemoPath + "channel_left.raw" );
 		fpa[1] = fileSystem->OpenFileWrite( aviDemoPath + "channel_right.raw" );
 	}
@@ -581,11 +716,15 @@ void idSoundWorldLocal::AVIUpdate() {
 		return;
 	}
 
-	if ( !soundSystemLocal.snd_audio_hw ) {
-		numSpeakers = 2;
-	} else {
-		numSpeakers = soundSystemLocal.snd_audio_hw->GetNumberOfSpeakers();
-	}
+// BEATO Begin:
+//	if ( !soundSystemLocal.snd_audio_hw ) {
+//		numSpeakers = 2;
+//	} else {
+//		numSpeakers = soundSystemLocal.snd_audio_hw->GetNumberOfSpeakers();
+//	}
+
+	numSpeakers = idSoundSystemLocal::s_numberOfSpeakers.GetInteger();
+// BEATO End
 
 	float	mix[MIXBUFFER_SAMPLES*6+16];
 	float	*mix_p = (float *)((( int)mix + 15 ) & ~15);	// SIMD align
@@ -639,7 +778,13 @@ void idSoundWorldLocal::AVIClose( void ) {
 			fpa[i] = NULL;
 		}
 	}
-	if ( soundSystemLocal.snd_audio_hw->GetNumberOfSpeakers() == 2 ) {
+
+#if BT_SDL_AUDIO
+	if ( soundSystemLocal.snd_audio_hw->GetNumberOfSpeakers() == 2 )
+#else
+	if (idSoundSystemLocal::s_numberOfSpeakers.GetInteger() == 2)
+#endif //!BT_SDL_AUDIO
+	{
 		// convert it to a wave file
 		idFile *rL, *lL, *wO;
 		idStr	name;
@@ -964,7 +1109,8 @@ void idSoundWorldLocal::ForegroundUpdate( int current44kHzTime ) {
 		return;
 	}
 
-	Sys_EnterCriticalSection();
+// BEATO Begin
+	idSoundSystemLocal::m_soundLock->Lock(); //Sys_EnterCriticalSection();
 
 	// if we are recording an AVI demo, don't use hardware time
 	if ( fpa[0] ) {
@@ -1039,7 +1185,8 @@ void idSoundWorldLocal::ForegroundUpdate( int current44kHzTime ) {
 		}
 	}
 
-	Sys_LeaveCriticalSection();
+	idSoundSystemLocal::m_soundLock->Unlock(); //Sys_LeaveCriticalSection();
+// BEATO end
 
 	//
 	// the sound meter
@@ -1717,8 +1864,15 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 
 	//
 	// allocate and initialize hardware source
-	// 
-	if ( idSoundSystemLocal::useOpenAL && sound->removeStatus < REMOVE_STATUS_SAMPLEFINISHED ) {
+	//
+// BEATO Begin
+#if BT_SDL_AUDIO
+	if ( idSoundSystemLocal::useOpenAL && sound->removeStatus < REMOVE_STATUS_SAMPLEFINISHED ) 
+#else
+	if ( sound->removeStatus < REMOVE_STATUS_SAMPLEFINISHED ) 
+#endif // BT_SDL_AUDIO
+// BEATO end
+	{
 		if ( !alIsSource( chan->openalSource ) ) {
 			chan->openalSource = soundSystemLocal.AllocOpenALSource( chan, !chan->leadinSample->hardwareBuffer || !chan->soundShader->entries[0]->hardwareBuffer || looping, chan->leadinSample->objectInfo.nChannels == 2 );
 		}
@@ -1746,12 +1900,28 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 			alSourcef( chan->openalSource, AL_MAX_DISTANCE, maxd );
 #endif
 			alSourcef( chan->openalSource, AL_PITCH, ( slowmoActive && !chan->disallowSlow ) ? ( slowmoSpeed ) : ( 1.0f ) );
-#if ID_OPENAL
+#if BT_USE_EAX
 			long lOcclusion = ( enviroSuitActive ? -1150 : 0);
 			if ( soundSystemLocal.alEAXSet ) {
 				soundSystemLocal.alEAXSet( &EAXPROPERTYID_EAX_Source, EAXSOURCE_OCCLUSION, chan->openalSource, &lOcclusion, sizeof(lOcclusion) );
 			}
-#endif
+#endif //!BT_USE_EAX
+#if BT_USE_EFX
+			if (idSoundSystemLocal::useEFXReverb)
+			{
+				if (enviroSuitActive)
+				{
+					alSourcei( chan->openalSource, AL_DIRECT_FILTER, listenerFilters[0] );
+					alSource3i( chan->openalSource, AL_AUXILIARY_SEND_FILTER, listenerSlot, 0, listenerFilters[1] );
+				}
+				else
+				{
+					alSourcei( chan->openalSource, AL_DIRECT_FILTER, AL_FILTER_NULL );
+					alSource3i( chan->openalSource, AL_AUXILIARY_SEND_FILTER, listenerSlot, 0, AL_FILTER_NULL );
+				}
+			}
+#endif //BT_USE_EFX
+
 			if ( ( !looping && chan->leadinSample->hardwareBuffer ) || ( looping && chan->soundShader->entries[0]->hardwareBuffer ) ) {
 				// handle uncompressed (non streaming) single shot and looping sounds
 				if ( chan->triggered ) {
@@ -1762,16 +1932,22 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 				ALuint buffers[3];
 
 				// handle streaming sounds (decode on the fly) both single shot AND looping
-				if ( chan->triggered ) {
+				if ( chan->triggered )
+				{
 					alSourcei( chan->openalSource, AL_BUFFER, NULL );
 					alDeleteBuffers( 3, &chan->lastopenalStreamingBuffer[0] );
 					chan->lastopenalStreamingBuffer[0] = chan->openalStreamingBuffer[0];
 					chan->lastopenalStreamingBuffer[1] = chan->openalStreamingBuffer[1];
 					chan->lastopenalStreamingBuffer[2] = chan->openalStreamingBuffer[2];
 					alGenBuffers( 3, &chan->openalStreamingBuffer[0] );
-					if ( soundSystemLocal.alEAXSetBufferMode ) {
+				
+#if BT_USE_EAX
+					if ( soundSystemLocal.alEAXSetBufferMode ) 
+					{
 						soundSystemLocal.alEAXSetBufferMode( 3, &chan->openalStreamingBuffer[0], alGetEnumValue( "AL_STORAGE_ACCESSIBLE" ) );
 					}
+#endif //!BT_USE_EAX
+
 					buffers[0] = chan->openalStreamingBuffer[0];
 					buffers[1] = chan->openalStreamingBuffer[1];
 					buffers[2] = chan->openalStreamingBuffer[2];
