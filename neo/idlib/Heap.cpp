@@ -1064,7 +1064,7 @@ void Mem_UpdateFreeStats( int size ) {
 Mem_Alloc
 ==================
 */
-void *Mem_Alloc( const int size ) {
+void *Mem_Alloc( const size_t size ) {
 	if ( !size ) {
 		return NULL;
 	}
@@ -1104,7 +1104,7 @@ void Mem_Free( void *ptr ) {
 Mem_Alloc16
 ==================
 */
-void *Mem_Alloc16( const int size ) {
+void *Mem_Alloc16( const size_t size ) {
 	if ( !size ) {
 		return NULL;
 	}
@@ -1146,11 +1146,23 @@ void Mem_Free16( void *ptr ) {
 Mem_ClearedAlloc
 ==================
 */
-void *Mem_ClearedAlloc( const int size ) {
+void *Mem_ClearedAlloc( const size_t size ) {
 	void *mem = Mem_Alloc( size );
 	SIMDProcessor->Memset( mem, 0, size );
 	return mem;
 }
+
+// BEATO Begin
+ID_INLINE void * Mem_Realloc( void *& mem, size_t size )
+{
+	size_t oSize = sizeof( mem );
+	assert( oSize > size );
+	void* newPtr = Mem_Alloc( size );
+	SIMDProcessor->Memcpy( newPtr, mem, oSize );
+	SAFE_FREE( mem );
+	return newPtr;
+}
+// BEATO End
 
 /*
 ==================

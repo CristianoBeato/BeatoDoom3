@@ -66,12 +66,6 @@ If you have questions concerning this license or the applicable additional terms
 #include <mmsystem.h>
 #include <mmreg.h>
 
-#define DIRECTINPUT_VERSION  0x0800			// was 0x0700 with the old mssdk
-#define DIRECTSOUND_VERSION  0x0800
-
-#include <dsound.h>
-#include <dinput.h>
-
 #endif /* !GAME_DLL */
 #endif /* !_D3SDK */
 
@@ -82,8 +76,14 @@ If you have questions concerning this license or the applicable additional terms
 
 #include <malloc.h>							// no malloc.h on mac or unix
 #include <windows.h>						// for qgl.h
-#undef FindText								// stupid namespace poluting Microsoft monkeys
 
+// stupid namespace poluting Microsoft monkeys
+#ifdef FindText
+#undef FindText
+#endif //FindText
+#ifdef GetObject
+#undef GetObject
+#endif//GetObject
 #endif /* _WIN32 */
 
 //-----------------------------------------------------
@@ -92,10 +92,6 @@ If you have questions concerning this license or the applicable additional terms
 	// don't generate asserts
 	#define NDEBUG
 #endif
-
-#include <SDL_stdinc.h>
-#include <SDL_assert.h>
-#include <SDL_loadso.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -111,6 +107,7 @@ If you have questions concerning this license or the applicable additional terms
 //-----------------------------------------------------
 
 // non-portable system services
+#include "../sys/sys_platform.h"
 #include "../sys/sys_public.h"
 
 // id lib

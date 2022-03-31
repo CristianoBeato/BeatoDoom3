@@ -309,7 +309,6 @@ btWindow::btWindow
 */
 btWindow::btWindow( void ) : 
 	m_mouseGrab( false ),
-	m_windowID( 0 ),
 	m_handler( nullptr )
 {
 }
@@ -337,9 +336,6 @@ bool btWindow::Create( const char * title, const SDL_Rect windowBounds, Uint32 f
 		common->Error( "Error on SDL_CreateWindow(%s)", SDL_GetError() );
 		return false;
 	}
-
-	//Grab window identifier
-	m_windowID = SDL_GetWindowID( m_handler );
 	
 	return true;
 }
@@ -358,7 +354,6 @@ void btWindow::Destroy( void )
 	}
 
 	m_mouseGrab = false;
-	m_windowID = 0;
 }
 
 /*
@@ -421,13 +416,16 @@ const bool btWindow::IsFlagActive( const Uint32 flag )
 btWindow::TogleFullScreen
 ==============
 */
-const bool btWindow::TogleFullScreen( bool togle )
+const bool btWindow::TogleFullScreen( const bool togle, const bool desktop )
 {
 	assert( m_handler != nullptr );
-	const bool isFullScreen = IsFlagActive( SDL_WINDOW_FULLSCREEN );
+	const bool isFullScreen = false;
+	const Uint32 fsMode = (desktop) ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN;
+
+	const bool isFullScreen = IsFlagActive( fsMode );
 	if (togle != isFullScreen)
 	{
-		if (SDL_SetWindowFullscreen( m_handler, togle ? SDL_TRUE : SDL_FALSE ) != 0)
+		if (SDL_SetWindowFullscreen( m_handler, togle ? fsMode : SDL_FALSE ) != 0)
 			common->Warning( "Can't togle window to fullscren" );
 	}
 
@@ -439,7 +437,7 @@ const bool btWindow::TogleFullScreen( bool togle )
 btWindow::SetFocusWindow
 ==============
 */
-const bool btWindow::SetFocusWindow( void )
+const bool btWindow::SetFocus( void )
 {
 	assert( m_handler != nullptr );
 	const bool hasFocus = IsFlagActive( SDL_WINDOW_INPUT_FOCUS );
@@ -452,7 +450,7 @@ const bool btWindow::SetFocusWindow( void )
 btWindow::ShowWindow
 ==============
 */
-const bool btWindow::ShowWindow( void )
+const bool btWindow::Show( void )
 {
 	assert( m_handler != nullptr );
 	const bool isShow = IsFlagActive( SDL_WINDOW_SHOWN );
@@ -466,11 +464,11 @@ const bool btWindow::ShowWindow( void )
 btWindow::HideWindow
 ==============
 */
-const bool btWindow::HideWindow( void )
+const bool btWindow::Hide( void )
 {
 	assert( m_handler != nullptr );
 	const bool isHide = IsFlagActive( SDL_WINDOW_HIDDEN );
-	if (!isHide) SDL_ShowWindow( m_handler );
+	if (!isHide) SDL_HideWindow( m_handler );
 	return isHide;
 }
 
@@ -505,4 +503,9 @@ const int btWindow::Id( void ) const
 {
 	assert( m_handler != nullptr );
 	return SDL_GetWindowID( m_handler );
+}
+
+SDL_Window * btWindow::GetHandler( void ) const
+{
+	return m_handler;
 }

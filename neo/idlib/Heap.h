@@ -41,6 +41,18 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
+// BEATO Begin
+static ID_INLINE const size_t _alignedSize( const size_t size, const size_t align )
+{
+	return  ((size)+((align)-1)) & ~((align)-1);
+}
+
+static ID_INLINE const void* _alloca16( const size_t size )
+{
+	return _alloca( _alignedSize( size, 16 ) );
+}
+
+// BEATO End
 
 typedef struct {
 	int		num;
@@ -63,14 +75,12 @@ void		Mem_AllocDefragBlock( void );
 
 #ifndef ID_DEBUG_MEMORY
 
-void *		Mem_Alloc( const int size );
-void *		Mem_ClearedAlloc( const int size );
+void *		Mem_Alloc( const size_t size );
+void *		Mem_ClearedAlloc( const size_t size );
 void		Mem_Free( void *ptr );
 char *		Mem_CopyString( const char *in );
-void *		Mem_Alloc16( const int size );
+void *		Mem_Alloc16( const size_t size );
 void		Mem_Free16( void *ptr );
-
-#ifdef ID_REDIRECT_NEWDELETE
 
 __inline void *operator new( size_t s ) {
 	return Mem_Alloc( s );
@@ -85,7 +95,6 @@ __inline void operator delete[]( void *p ) {
 	Mem_Free( p );
 }
 
-#endif
 
 #else /* ID_DEBUG_MEMORY */
 
@@ -138,6 +147,18 @@ __inline void operator delete[]( void *p ) {
 
 #endif /* ID_DEBUG_MEMORY */
 
+//BEATO Begin
+template< typename t_ >
+ID_INLINE t_* Mem_AllocType( const unsigned int count = 1 )
+{
+	return static_cast<t_*>(Mem_Alloc( sizeof( t_ ) * count ));
+}
+
+
+ID_INLINE void * Mem_Realloc( void* &mem, size_t size );
+
+
+//BEATO End
 
 /*
 ===============================================================================

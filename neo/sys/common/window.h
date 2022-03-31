@@ -37,24 +37,24 @@ public:
 	btWindow( void );
 	~btWindow( void );
 
-	bool		Create( const char* title, const SDL_Rect windowBounds, Uint32 flags );
-	void		Destroy( void );
-	void		UpdateBounds( const SDL_Rect windowBounds );
-	void		GetBounds( SDL_Rect &windowBounds );
-	void		GrabMouseCursor( const bool grabIt );
-	const bool	IsFlagActive( const Uint32 flag );
-	const bool	TogleFullScreen( bool togle );
-	const bool	SetFocusWindow( void );
-	const bool	ShowWindow( void );
-	const int	GetDisplayID( void );
-	const bool	HideWindow( void );
-	const int	SetDisplay( const int index );
-	const int	Id( void ) const;
+	bool				Create( const char* title, const SDL_Rect windowBounds, Uint32 flags );
+	void				Destroy( void );
+	void				UpdateBounds( const SDL_Rect windowBounds );
+	void				GetBounds( SDL_Rect &windowBounds );
+	void				GrabMouseCursor( const bool grabIt );
+	const bool			IsFlagActive( const Uint32 flag );
+	const bool			TogleFullScreen( const bool togle, const bool desktop = false );
+	const bool			SetFocus( void );
+	const bool			Show( void );
+	const int			GetDisplayID( void );
+	const bool			Hide( void );
+	const int			SetDisplay( const int index );
+	const int			Id( void ) const;
+	SDL_Window*			GetHandler( void ) const;
 
 private:
 	//Window dimensions
 	bool		m_mouseGrab;
-	int			m_windowID = 0;
 	SDL_Rect	m_bounds = { 0, 0, 0, 0 };
 	SDL_Window*	m_handler = nullptr;
 };
