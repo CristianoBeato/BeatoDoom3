@@ -185,7 +185,8 @@ GLimp_SetGamma
 The renderer calls this when the user adjusts r_gamma or r_brightness
 ========================
 */
-void GLimp_SetGamma( unsigned short red[256], unsigned short green[256], unsigned short blue[256] ) {
+void GLimp_SetGamma( unsigned short red[256], unsigned short green[256], unsigned short blue[256] ) 
+{
 	unsigned short table[3][256];
 	int i;
 
@@ -997,30 +998,6 @@ void GLimp_Shutdown( void ) {
 	QGL_Shutdown();
 }
 
-
-/*
-=====================
-GLimp_SwapBuffers
-=====================
-*/
-void GLimp_SwapBuffers( void ) {
-	//
-	// wglSwapinterval is a windows-private extension,
-	// so we must check for it here instead of portably
-	//
-	if ( r_swapInterval.IsModified() ) {
-		r_swapInterval.ClearModified();
-
-		if ( wglSwapIntervalEXT ) {
-			wglSwapIntervalEXT( r_swapInterval.GetInteger() );
-		}
-	}
-
-	qwglSwapBuffers( win32.hDC );
-
-//Sys_DebugPrintf( "*** SwapBuffers() ***\n" );
-}
-
 /*
 ===========================================================
 
@@ -1031,37 +1008,6 @@ SMP acceleration
 
 //#define	REALLOC_DC
 
-/*
-===================
-GLimp_ActivateContext
-
-===================
-*/
-void GLimp_ActivateContext( void ) {
-	if ( !qwglMakeCurrent( win32.hDC, win32.hGLRC ) ) {
-		win32.wglErrors++;
-	}
-}
-
-/*
-===================
-GLimp_DeactivateContext
-
-===================
-*/
-void GLimp_DeactivateContext( void ) {
-	qglFinish();
-	if ( !qwglMakeCurrent( win32.hDC, NULL ) ) {
-		win32.wglErrors++;
-	}
-#ifdef REALLOC_DC
-	// makeCurrent NULL frees the DC, so get another
-	if ( ( win32.hDC = GetDC( win32.hWnd ) ) == NULL ) {
-		win32.wglErrors++;
-	}
-#endif
-
-}
 
 /*
 ===================

@@ -35,9 +35,18 @@ If you have questions concerning this license or the applicable additional terms
 #include <lmwksta.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <direct.h>
 #include <io.h>
 #include <conio.h>
+#include <float.h>
+#include <mapi.h>
+#include <ShellAPI.h>
+
+#ifndef __MRC__
+#include <sys/types.h>
+#include <sys/stat.h>
+#endif
+
+#include "rc/CreateResourceIDs.h"
 
 #ifndef	ID_DEDICATED
 #include <comdef.h>
@@ -46,6 +55,394 @@ If you have questions concerning this license or the applicable additional terms
 
 #pragma comment (lib, "wbemuuid.lib")
 #endif
+
+idCVar Win32Vars_t::win_allowAltTab( "win_allowAltTab", "0", CVAR_SYSTEM | CVAR_BOOL, "allow Alt-Tab when fullscreen" );
+idCVar Win32Vars_t::win_notaskkeys( "win_notaskkeys", "0", CVAR_SYSTEM | CVAR_INTEGER, "disable windows task keys" );
+idCVar Win32Vars_t::win_username( "win_username", "", CVAR_SYSTEM | CVAR_INIT, "windows user name" );
+idCVar Win32Vars_t::win_xpos( "win_xpos", "3", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_INTEGER, "horizontal position of window" );
+idCVar Win32Vars_t::win_ypos( "win_ypos", "22", CVAR_SYSTEM | CVAR_ARCHIVE | CVAR_INTEGER, "vertical position of window" );
+idCVar Win32Vars_t::win_timerUpdate( "win_timerUpdate", "0", CVAR_SYSTEM | CVAR_BOOL, "allows the game to be updated while dragging the window" );
+idCVar Win32Vars_t::win_allowMultipleInstances( "win_allowMultipleInstances", "0", CVAR_SYSTEM | CVAR_BOOL, "allow multiple instances running concurrently" );
+
+
+/*
+==================
+idSysLocal::OpenURL
+==================
+*/
+void idSysLocal::OpenURL( const char *url, bool doexit )
+{
+	static bool doexit_spamguard = false;
+	HWND wnd;
+
+	if (doexit_spamguard)
+	{
+		common->DPrintf( "OpenURL: already in an exit sequence, ignoring %s\n", url );
+		return;
+	}
+
+	common->Printf( "Open URL: %s\n", url );
+
+	if (!ShellExecute( NULL, "open", url, NULL, NULL, SW_RESTORE ))
+	{
+		common->Error( "Could not open url: '%s' ", url );
+		return;
+	}
+
+	wnd = GetForegroundWindow();
+	if (wnd)
+	{
+		ShowWindow( wnd, SW_MAXIMIZE );
+	}
+
+	if (doexit)
+	{
+		doexit_spamguard = true;
+		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "quit\n" );
+	}
+}
+
+Win32Vars_t	win32;
+
+#pragma optimize( "", on )
+
+
+/*
+================
+Sys_Init
+
+The cvar system must already be setup
+================
+*/
+#define OSR2_BUILD_NUMBER 1111
+#define WIN98_BUILD_NUMBER 1998
+
+void Sys_Init( void )
+{
+
+	CoInitialize( NULL );
+
+	// make sure the timer is high precision, otherwise
+	// NT gets 18ms resolution
+	timeBeginPeriod( 1 );
+
+	// get WM_TIMER messages pumped every millisecond
+//	SetTimer( NULL, 0, 100, NULL );
+
+	cmdSystem->AddCommand( "in_restart", Sys_In_Restart_f, CMD_FL_SYSTEM, "restarts the input system" );
+#ifdef DEBUG
+	cmdSystem->AddCommand( "createResourceIDs", CreateResourceIDs_f, CMD_FL_TOOL, "assigns resource IDs in _resouce.h files" );
+#endif
+#if 0
+	cmdSystem->AddCommand( "setAsyncSound", Sys_SetAsyncSound_f, CMD_FL_SYSTEM, "set the async sound option" );
+#endif
+
+	//
+	// Windows user name
+	//
+	win32.win_username.SetString( Sys_GetCurrentUser() );
+
+	//
+	// Windows version
+	//
+	win32.osversion.dwOSVersionInfoSize = sizeof( win32.osversion );
+
+	if (!GetVersionEx( (LPOSVERSIONINFO)&win32.osversion ))
+		Sys_Error( "Couldn't get OS info" );
+
+	if (win32.osversion.dwMajorVersion < 4)
+	{
+		Sys_Error( GAME_NAME " requires Windows version 4 (NT) or greater" );
+	}
+	if (win32.osversion.dwPlatformId == VER_PLATFORM_WIN32s)
+	{
+		Sys_Error( GAME_NAME " doesn't run on Win32s" );
+	}
+
+	if (win32.osversion.dwPlatformId == VER_PLATFORM_WIN32_NT)
+	{
+		if (win32.osversion.dwMajorVersion <= 4)
+		{
+			win32.sys_arch.SetString( "WinNT (NT)" );
+		}
+		else if (win32.osversion.dwMajorVersion == 5 && win32.osversion.dwMinorVersion == 0)
+		{
+			win32.sys_arch.SetString( "Win2K (NT)" );
+		}
+		else if (win32.osversion.dwMajorVersion == 5 && win32.osversion.dwMinorVersion == 1)
+		{
+			win32.sys_arch.SetString( "WinXP (NT)" );
+		}
+		else if (win32.osversion.dwMajorVersion == 6)
+		{
+			win32.sys_arch.SetString( "Vista" );
+		}
+		else
+		{
+			win32.sys_arch.SetString( "Unknown NT variant" );
+		}
+	}
+	else if (win32.osversion.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS)
+	{
+		if (win32.osversion.dwMajorVersion == 4 && win32.osversion.dwMinorVersion == 0)
+		{
+			// Win95
+			if (win32.osversion.szCSDVersion[1] == 'C')
+			{
+				win32.sys_arch.SetString( "Win95 OSR2 (95)" );
+			}
+			else
+			{
+				win32.sys_arch.SetString( "Win95 (95)" );
+			}
+		}
+		else if (win32.osversion.dwMajorVersion == 4 && win32.osversion.dwMinorVersion == 10)
+		{
+			// Win98
+			if (win32.osversion.szCSDVersion[1] == 'A')
+			{
+				win32.sys_arch.SetString( "Win98SE (95)" );
+			}
+			else
+			{
+				win32.sys_arch.SetString( "Win98 (95)" );
+			}
+		}
+		else if (win32.osversion.dwMajorVersion == 4 && win32.osversion.dwMinorVersion == 90)
+		{
+			// WinMe
+			win32.sys_arch.SetString( "WinMe (95)" );
+		}
+		else
+		{
+			win32.sys_arch.SetString( "Unknown 95 variant" );
+		}
+	}
+	else
+	{
+		win32.sys_arch.SetString( "unknown Windows variant" );
+	}
+
+	
+}
+
+/*
+================
+Sys_Shutdown
+================
+*/
+void Sys_Shutdown( void )
+{
+	CoUninitialize();
+}
+
+
+#ifdef DEBUG
+
+
+static unsigned int debug_total_alloc = 0;
+static unsigned int debug_total_alloc_count = 0;
+static unsigned int debug_current_alloc = 0;
+static unsigned int debug_current_alloc_count = 0;
+static unsigned int debug_frame_alloc = 0;
+static unsigned int debug_frame_alloc_count = 0;
+
+idCVar sys_showMallocs( "sys_showMallocs", "0", CVAR_SYSTEM, "" );
+
+// _HOOK_ALLOC, _HOOK_REALLOC, _HOOK_FREE
+
+typedef struct CrtMemBlockHeader
+{
+	struct _CrtMemBlockHeader *pBlockHeaderNext;	// Pointer to the block allocated just before this one:
+	struct _CrtMemBlockHeader *pBlockHeaderPrev;	// Pointer to the block allocated just after this one
+	char *szFileName;    // File name
+	int nLine;           // Line number
+	size_t nDataSize;    // Size of user block
+	int nBlockUse;       // Type of block
+	long lRequest;       // Allocation number
+	byte		gap[4];								// Buffer just before (lower than) the user's memory:
+} CrtMemBlockHeader;
+
+#include <crtdbg.h>
+
+/*
+==================
+Sys_AllocHook
+
+	called for every malloc/new/free/delete
+==================
+*/
+int Sys_AllocHook( int nAllocType, void *pvData, size_t nSize, int nBlockUse, long lRequest, const unsigned char * szFileName, int nLine )
+{
+	CrtMemBlockHeader	*pHead;
+	byte				*temp;
+
+	if (nBlockUse == _CRT_BLOCK)
+	{
+		return(TRUE);
+	}
+
+	// get a pointer to memory block header
+	temp = (byte *)pvData;
+	temp -= 32;
+	pHead = (CrtMemBlockHeader *)temp;
+
+	switch (nAllocType)
+	{
+	case	_HOOK_ALLOC:
+		debug_total_alloc += nSize;
+		debug_current_alloc += nSize;
+		debug_frame_alloc += nSize;
+		debug_total_alloc_count++;
+		debug_current_alloc_count++;
+		debug_frame_alloc_count++;
+		break;
+
+	case	_HOOK_FREE:
+		assert( pHead->gap[0] == 0xfd && pHead->gap[1] == 0xfd && pHead->gap[2] == 0xfd && pHead->gap[3] == 0xfd );
+
+		debug_current_alloc -= pHead->nDataSize;
+		debug_current_alloc_count--;
+		debug_total_alloc_count++;
+		debug_frame_alloc_count++;
+		break;
+
+	case	_HOOK_REALLOC:
+		assert( pHead->gap[0] == 0xfd && pHead->gap[1] == 0xfd && pHead->gap[2] == 0xfd && pHead->gap[3] == 0xfd );
+
+		debug_current_alloc -= pHead->nDataSize;
+		debug_total_alloc += nSize;
+		debug_current_alloc += nSize;
+		debug_frame_alloc += nSize;
+		debug_total_alloc_count++;
+		debug_current_alloc_count--;
+		debug_frame_alloc_count++;
+		break;
+	}
+	return(TRUE);
+}
+
+/*
+==================
+Sys_DebugMemory_f
+==================
+*/
+void Sys_DebugMemory_f( void )
+{
+	common->Printf( "Total allocation %8dk in %d blocks\n", debug_total_alloc / 1024, debug_total_alloc_count );
+	common->Printf( "Current allocation %8dk in %d blocks\n", debug_current_alloc / 1024, debug_current_alloc_count );
+}
+
+/*
+==================
+Sys_MemFrame
+==================
+*/
+void Sys_MemFrame( void )
+{
+	if (sys_showMallocs.GetInteger())
+	{
+		common->Printf( "Frame: %8dk in %5d blocks\n", debug_frame_alloc / 1024, debug_frame_alloc_count );
+	}
+
+	debug_frame_alloc = 0;
+	debug_frame_alloc_count = 0;
+}
+
+#endif
+
+/*
+==================
+Sys_FlushCacheMemory
+
+On windows, the vertex buffers are write combined, so they
+don't need to be flushed from the cache
+==================
+*/
+void Sys_FlushCacheMemory( void *base, int bytes )
+{
+}
+
+/*
+=================
+Sys_In_Restart_f
+
+Restart the input subsystem
+=================
+*/
+void Sys_In_Restart_f( const idCmdArgs &args )
+{
+	Sys_ShutdownInput();
+	Sys_InitInput();
+}
+
+/*
+================
+Sys_AlreadyRunning
+
+returns true if there is a copy of D3 running already
+================
+*/
+bool Sys_AlreadyRunning( void )
+{
+#ifndef DEBUG
+	if (!win32.win_allowMultipleInstances.GetBool())
+	{
+		HANDLE hMutexOneInstance = ::CreateMutex( NULL, FALSE, "DOOM3" );
+		if (::GetLastError() == ERROR_ALREADY_EXISTS || ::GetLastError() == ERROR_ACCESS_DENIED)
+		{
+			return true;
+		}
+	}
+#endif
+	return false;
+}
+
+/*
+==================
+idSysLocal::StartProcess
+==================
+*/
+void idSysLocal::StartProcess( const char *exePath, bool doexit )
+{
+	TCHAR				szPathOrig[_MAX_PATH];
+	STARTUPINFO			si;
+	PROCESS_INFORMATION	pi;
+
+	ZeroMemory( &si, sizeof( si ) );
+	si.cb = sizeof( si );
+
+	strncpy( szPathOrig, exePath, _MAX_PATH );
+
+	if (!CreateProcess( NULL, szPathOrig, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi ))
+	{
+		common->Error( "Could not start process: '%s' ", szPathOrig );
+		return;
+	}
+
+	if (doexit)
+	{
+		cmdSystem->BufferCommandText( CMD_EXEC_APPEND, "quit\n" );
+	}
+}
+
+/*
+==================
+Sys_SetFatalError
+==================
+*/
+void Sys_SetFatalError( const char *error )
+{
+}
+
+/*
+==================
+Sys_DoPreferences
+==================
+*/
+void Sys_DoPreferences( void )
+{
+}
 
 /*
 ================

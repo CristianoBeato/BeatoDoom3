@@ -4,13 +4,34 @@
 ##################################
 
 SET( ENGINE_SOURCES 
+	${CMAKE_CURRENT_SOURCE_DIR}/sys_main.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/sys_local.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/sys_threads.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/sys_consoleOut.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/sys_fileSystem.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/sys_events.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/sys_cpuinfo.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/sys_openGL.cpp
 	
+	${CMAKE_CURRENT_SOURCE_DIR}/sys_platform.h
+	${CMAKE_CURRENT_SOURCE_DIR}/sys_main.h
 	${CMAKE_CURRENT_SOURCE_DIR}/sys_local.h
 	${CMAKE_CURRENT_SOURCE_DIR}/sys_public.h
 	)
 
 source_group("" FILES ${ENGINE_SOURCES} )
+
+SET( ENGINE_COMMON_SOURCES 
+	${CMAKE_CURRENT_SOURCE_DIR}/common/console.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/common/eventInput.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/common/window.cpp
+	
+	${CMAKE_CURRENT_SOURCE_DIR}/common/console.h
+	${CMAKE_CURRENT_SOURCE_DIR}/common/eventInput.h
+	${CMAKE_CURRENT_SOURCE_DIR}/common/window.h
+	)
+
+source_group("common" FILES ${ENGINE_COMMON_SOURCES} )
 
 # 
 # Linux platform souce code
@@ -25,17 +46,17 @@ source_group("" FILES ${ENGINE_SOURCES} )
 # Windows platform souce code
 #
 SET( ENGINE_WINDOWS_SOURCES 
-	${CMAKE_CURRENT_SOURCE_DIR}/win32/win_cpu.cpp
+#	${CMAKE_CURRENT_SOURCE_DIR}/win32/win_cpu.cpp
 #	${CMAKE_CURRENT_SOURCE_DIR}/win32/win_gamma.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/win32/win_glimp.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/win32/win_input.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/win32/win_main.cpp
+#	${CMAKE_CURRENT_SOURCE_DIR}/win32/win_main.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/win32/win_net.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/win32/win_qgl.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/win32/win_shared.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/win32/win_syscon.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/win32/win_taskkeyhook.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/win32/win_wndproc.cpp
+#	${CMAKE_CURRENT_SOURCE_DIR}/win32/win_syscon.cpp
+#	${CMAKE_CURRENT_SOURCE_DIR}/win32/win_taskkeyhook.cpp
+#	${CMAKE_CURRENT_SOURCE_DIR}/win32/win_wndproc.cpp
 	
 	${CMAKE_CURRENT_SOURCE_DIR}/win32/win_local.h
 	
@@ -63,6 +84,7 @@ SET( WIN_LIBS
 #
 SET( ENGINE_SOURCES_ALL 
 	${ENGINE_SOURCES}
+	${ENGINE_COMMON_SOURCES}
 	)
 	
 SET( ENGINE_LIBS_ALL 

@@ -29,116 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __SYS_PUBLIC__
 #define __SYS_PUBLIC__
 
-/*
-===============================================================================
-
-	Non-portable system services.
-
-===============================================================================
-*/
-
-
-// Win32
-#if defined(WIN32) || defined(_WIN32)
-
-#define	BUILD_STRING					"win-x86"
-#define BUILD_OS_ID						0
-#define	CPUSTRING						"x86"
-#define CPU_EASYARGS					1
-
-#define ALIGN16( x )					__declspec(align(16)) x
-#define PACKED
-
-#define _alloca16( x )					((void *)((((int)_alloca( (x)+15 )) + 15) & ~15))
-
-#define PATHSEPERATOR_STR				"\\"
-#define PATHSEPERATOR_CHAR				'\\'
-
-#define ID_INLINE						__forceinline
-#define ID_STATIC_TEMPLATE				static
-
-#define assertmem( x, y )				assert( _CrtIsValidPointer( x, y, true ) )
-
-#endif
-
-// Mac OSX
-#if defined(MACOS_X) || defined(__APPLE__)
-
-#define BUILD_STRING				"MacOSX-universal"
-#define BUILD_OS_ID					1
-#ifdef __ppc__
-	#define	CPUSTRING					"ppc"
-	#define CPU_EASYARGS				0
-#elif defined(__i386__)
-	#define	CPUSTRING					"x86"
-	#define CPU_EASYARGS				1
-#endif
-
-#define ALIGN16( x )					x __attribute__ ((aligned (16)))
-
-#ifdef __MWERKS__
-#define PACKED
-#include <alloca.h>
-#else
-#define PACKED							__attribute__((packed))
-#endif
-
-#define _alloca							alloca
-#define _alloca16( x )					((void *)((((int)alloca( (x)+15 )) + 15) & ~15))
-
-#define PATHSEPERATOR_STR				"/"
-#define PATHSEPERATOR_CHAR				'/'
-
-#define __cdecl
-#define ASSERT							assert
-
-#define ID_INLINE						inline
-#define ID_STATIC_TEMPLATE
-
-#define assertmem( x, y )
-
-#endif
-
-
-// Linux
-#ifdef __linux__
-
-#ifdef __i386__
-	#define	BUILD_STRING				"linux-x86"
-	#define BUILD_OS_ID					2
-	#define CPUSTRING					"x86"
-	#define CPU_EASYARGS				1
-#elif defined(__ppc__)
-	#define	BUILD_STRING				"linux-ppc"
-	#define CPUSTRING					"ppc"
-	#define CPU_EASYARGS				0
-#endif
-
-#define _alloca							alloca
-#define _alloca16( x )					((void *)((((int)alloca( (x)+15 )) + 15) & ~15))
-
-#define ALIGN16( x )					x
-#define PACKED							__attribute__((packed))
-
-#define PATHSEPERATOR_STR				"/"
-#define PATHSEPERATOR_CHAR				'/'
-
-#define __cdecl
-#define ASSERT							assert
-
-#define ID_INLINE						inline
-#define ID_STATIC_TEMPLATE
-
-#define assertmem( x, y )
-
-#endif
-
-#ifdef __GNUC__
-#define id_attribute(x) __attribute__(x)
-#else
-#define id_attribute(x)  
-#endif
-
 typedef enum {
 	CPUID_NONE							= 0x00000,
 	CPUID_UNSUPPORTED					= 0x00001,	// unsupported (386/486)
@@ -235,6 +125,16 @@ typedef unsigned long address_t;
 
 template<class type> class idList;		// for Sys_ListFiles
 
+/*
+==============================================================
+
+	Multi-threading
+
+==============================================================
+*/
+
+static const Uint32 MAX_THREADS = 16;
+static const Uint32 MIN_THREADS = 4;	// Need atleast 4 ( Main/Assync/Audio/Jobs )
 
 void			Sys_Init( void );
 void			Sys_Shutdown( void );
@@ -264,7 +164,7 @@ void			Sys_Sleep( int msec );
 
 // Sys_Milliseconds should only be used for profiling purposes,
 // any game related timing information should come from event timestamps
-int				Sys_Milliseconds( void );
+Uint32			Sys_Milliseconds( void );
 
 // for accurate performance testing
 double			Sys_GetClockTicks( void );
@@ -325,11 +225,6 @@ const char *	Sys_GetCallStackCurStr( int depth );
 const char *	Sys_GetCallStackCurAddressStr( int depth );
 void			Sys_ShutdownSymbols( void );
 
-// DLL loading, the path should be a fully qualified OS path to the DLL file to be loaded
-int				Sys_DLL_Load( const char *dllName );
-void *			Sys_DLL_GetProcAddress( int dllHandle, const char *procName );
-void			Sys_DLL_Unload( int dllHandle );
-
 // event generation
 void			Sys_GenerateEvents( void );
 sysEvent_t		Sys_GetEvent( void );
@@ -368,7 +263,7 @@ void			Sys_ShowConsole( int visLevel, bool quitOnClose );
 
 
 void			Sys_Mkdir( const char *path );
-ID_TIME_T			Sys_FileTimeStamp( FILE *fp );
+ID_TIME_T		Sys_FileTimeStamp( FILE *fp );
 // NOTE: do we need to guarantee the same output on all platforms?
 const char *	Sys_TimeStampToStr( ID_TIME_T timeStamp );
 const char *	Sys_DefaultCDPath( void );
@@ -467,64 +362,6 @@ bool			Sys_CompareNetAdrBase( const netadr_t a, const netadr_t b );
 
 void			Sys_InitNetworking( void );
 void			Sys_ShutdownNetworking( void );
-
-
-/*
-==============================================================
-
-	Multi-threading
-
-==============================================================
-*/
-
-typedef unsigned int (*xthread_t)( void * );
-
-typedef enum {
-	THREAD_NORMAL,
-	THREAD_ABOVE_NORMAL,
-	THREAD_HIGHEST
-} xthreadPriority;
-
-typedef struct {
-	const char *	name;
-	int				threadHandle;
-	unsigned long	threadId;
-} xthreadInfo;
-
-const int MAX_THREADS				= 10;
-extern xthreadInfo *g_threads[MAX_THREADS];
-extern int			g_thread_count;
-
-void				Sys_CreateThread( xthread_t function, void *parms, xthreadPriority priority, xthreadInfo &info, const char *name, xthreadInfo *threads[MAX_THREADS], int *thread_count );
-void				Sys_DestroyThread( xthreadInfo& info ); // sets threadHandle back to 0
-
-// find the name of the calling thread
-// if index != NULL, set the index in g_threads array (use -1 for "main" thread)
-const char *		Sys_GetThreadName( int *index = 0 );
- 
-const int MAX_CRITICAL_SECTIONS		= 4;
-
-enum {
-	CRITICAL_SECTION_ZERO = 0,
-	CRITICAL_SECTION_ONE,
-	CRITICAL_SECTION_TWO,
-	CRITICAL_SECTION_THREE
-};
-
-void				Sys_EnterCriticalSection( int index = CRITICAL_SECTION_ZERO );
-void				Sys_LeaveCriticalSection( int index = CRITICAL_SECTION_ZERO );
-
-const int MAX_TRIGGER_EVENTS		= 4;
-
-enum {
-	TRIGGER_EVENT_ZERO = 0,
-	TRIGGER_EVENT_ONE,
-	TRIGGER_EVENT_TWO,
-	TRIGGER_EVENT_THREE
-};
-
-void				Sys_WaitForEvent( int index = TRIGGER_EVENT_ZERO );
-void				Sys_TriggerEvent( int index = TRIGGER_EVENT_ZERO );
 
 /*
 ==============================================================

@@ -26,15 +26,17 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "../idlib/precompiled.h"
+#include "idlib/precompiled.h"
 #pragma hdrstop
-#include "sys_local.h"
+
 
 // BEATO Begin
 #include <SDL_clipboard.h>
 #include <SDL_timer.h>
-#include <SDL_cpuinfo.h>
 // BEATO End
+
+#include "sys_main.h"
+#include "sys_local.h"
 
 const char * sysLanguageNames[] = {
 	"english", "spanish", "italian", "german", "french", "russian", 
@@ -43,10 +45,8 @@ const char * sysLanguageNames[] = {
 
 idCVar sys_lang( "sys_lang", "english", CVAR_SYSTEM | CVAR_ARCHIVE,  "", sysLanguageNames, idCmdSystem::ArgCompletion_String<sysLanguageNames> );
 
-idSysLocal			sysLocal;
-idSys *				sys = &sysLocal;
-
-void idSysLocal::DebugPrintf( const char *fmt, ... ) {
+void idSysLocal::DebugPrintf( const char *fmt, ... )
+{
 	va_list argptr;
 
 	va_start( argptr, fmt );
@@ -227,7 +227,7 @@ void Sys_Sleep( int msec )
 Sys_Milliseconds
 ================
 */
-int Sys_Milliseconds( void )
+Uint32 Sys_Milliseconds( void )
 {
 	return SDL_GetTicks();
 }
@@ -312,6 +312,16 @@ Sys_GetSystemRam
 int Sys_GetSystemRam( void )
 {
 	return SDL_GetSystemRAM();
+}
+
+/*
+================
+Sys_GetExeLaunchMemoryStatus
+================
+*/
+void Sys_GetExeLaunchMemoryStatus( sysMemoryStats_t &stats )
+{
+	stats = sysVars.exeLaunchMemoryStats;
 }
 
 // BEATO END

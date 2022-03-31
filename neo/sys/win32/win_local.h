@@ -62,15 +62,9 @@ extern	PFNWGLSETPBUFFERATTRIBARBPROC	wglSetPbufferAttribARB;
 
 void	Sys_QueEvent( int time, sysEventType_t type, int value, int value2, int ptrLength, void *ptr );
 
-void	Sys_CreateConsole( void );
-void	Sys_DestroyConsole( void );
-
-char	*Sys_ConsoleInput (void);
 char	*Sys_GetCurrentUser( void );
 
 void	Win_SetErrorText( const char *text );
-
-cpuid_t	Sys_GetCPUId( void );
 
 int		MapKey (int key);
 
@@ -108,7 +102,7 @@ typedef struct {
 
 	OSVERSIONINFOEX	osversion;
 
-	cpuid_t			cpuid;
+
 
 	// when we get a windows message, we store the time off so keyboard processing
 	// can know the exact time of an event (not really needed now that we use async direct input)
@@ -136,20 +130,15 @@ typedef struct {
 	// desktop gamma is saved here for restoration at exit
 
 	static idCVar	sys_arch;
-	static idCVar	sys_cpustring;
 	static idCVar	in_mouse;
 	static idCVar	win_allowAltTab;
 	static idCVar	win_notaskkeys;
 	static idCVar	win_username;
 	static idCVar	win_xpos;			// archived X coordinate of window position
 	static idCVar	win_ypos;			// archived Y coordinate of window position
-	static idCVar	win_outputDebugString;
-	static idCVar	win_outputEditString;
-	static idCVar	win_viewlog;
 	static idCVar	win_timerUpdate;
 	static idCVar	win_allowMultipleInstances;
 
-	CRITICAL_SECTION criticalSections[MAX_CRITICAL_SECTIONS];
 	HANDLE			backgroundDownloadSemaphore;
 
 	HINSTANCE		hInstDI;			// direct input
