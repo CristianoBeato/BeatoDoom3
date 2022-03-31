@@ -1839,7 +1839,7 @@ void Session_Hitch_f( const idCmdArgs &args ) {
 	if ( sw ) {
 		soundSystem->SetMute(true);
 		sw->Pause();
-		Sys_EnterCriticalSection();
+		soundSystem->EnterCriticalSection();
 	}
 	if ( args.Argc() == 2 ) {
 		Sys_Sleep( atoi(args.Argv(1)) );
@@ -1847,7 +1847,7 @@ void Session_Hitch_f( const idCmdArgs &args ) {
 		Sys_Sleep( 100 );
 	}
 	if ( sw ) {
-		Sys_LeaveCriticalSection();
+		soundSystem->LeaveCriticalSection();
 		sw->UnPause();
 		soundSystem->SetMute(false);
 	}

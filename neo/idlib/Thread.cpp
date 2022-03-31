@@ -25,3 +25,45 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 
 #include "idlib/precompiled.h"
 #include "Thread.h"
+
+#include <SDL_thread.h>
+#include "sys/sys_main.h"
+
+btThreadExecution::btThreadExecution( const char* _name ) : name( _name )
+{
+}
+
+btThreadExecution::~btThreadExecution( void )
+{
+}
+
+void btThreadExecution::StartExecution( void )
+{
+	pendingExit = false;
+	Sys_StartThread( this );
+}
+
+void btThreadExecution::FinishExecution( void )
+{
+	pendingExit = true;
+}
+
+const char * btThreadExecution::GetName( void ) const
+{
+	return name;
+}
+
+unsigned long btThreadExecution::GetID( void ) const
+{
+	return threadId;
+}
+
+const bool btThreadExecution::IsCurretThread( void ) const
+{
+	return SDL_ThreadID() == threadId;
+}
+
+const bool btThreadExecution::IsExitPending( void ) const
+{
+	return pendingExit;
+}

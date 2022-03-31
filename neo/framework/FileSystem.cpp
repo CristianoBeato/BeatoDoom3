@@ -337,7 +337,12 @@ private:
 	idStr				extension;
 };
 
-class idFileSystemLocal : public idFileSystem {
+class idFileSystemLocal :
+	public idFileSystem,
+// BEATO Begin
+	public btThreadExecution
+// BEATO end
+{
 public:
 							idFileSystemLocal( void );
 
@@ -400,8 +405,14 @@ public:
 	static void				TouchFile_f( const idCmdArgs &args );
 	static void				TouchFileList_f( const idCmdArgs &args );
 
+// Beato Begin
+protected:
+	virtual void			Run( void ) override;
+	virtual void			NotifyExit( void ) override;
+
 private:
-	friend dword 			BackgroundDownloadThread( void *parms );
+	//friend dword 			BackgroundDownloadThread( void *parms );
+// BEATO End
 
 	searchpath_t *			searchPaths;
 	int						readCount;			// total bytes read
@@ -427,7 +438,11 @@ private:
 
 	backgroundDownload_t *	backgroundDownloads;
 	backgroundDownload_t	defaultBackgroundDownload;
-	xthreadInfo				backgroundThread;
+
+	// BEATO Begin
+	btMutex*				m_backgroundDownloadLock;
+	btSemaphore*			m_backgroundDownloadSemaphore;
+	// BEATO End
 
 	idList<pack_t *>		serverPaks;
 	bool					loadedFileFromDir;		// set to true once a file was loaded from a directory - can't switch to pure anymore
@@ -504,7 +519,9 @@ idFileSystem *		fileSystem = &fileSystemLocal;
 idFileSystemLocal::idFileSystemLocal
 ================
 */
-idFileSystemLocal::idFileSystemLocal( void ) {
+idFileSystemLocal::idFileSystemLocal( void ) :
+	btThreadExecution( "backgroundDownload" )
+{
 	searchPaths = NULL;
 	readCount = 0;
 	loadCount = 0;
@@ -514,8 +531,12 @@ idFileSystemLocal::idFileSystemLocal( void ) {
 	d3xp = 0;
 	loadedFileFromDir = false;
 	restartGamePakChecksum = 0;
-	memset( &backgroundThread, 0, sizeof( backgroundThread ) );
 	addonPaks = NULL;
+
+// BEATO Begin
+	m_backgroundDownloadLock = nullptr;
+	m_backgroundDownloadSemaphore = nullptr;
+// BEATO End
 }
 
 /*
@@ -2838,7 +2859,8 @@ Called only at inital startup, not when the filesystem
 is resetting due to a game change
 ================
 */
-void idFileSystemLocal::Init( void ) {
+void idFileSystemLocal::Init( void ) 
+{
 	// allow command line parms to override our defaults
 	// we have to specially handle this, because normal command
 	// line variable sets don't happen until after the filesystem
@@ -2852,6 +2874,11 @@ void idFileSystemLocal::Init( void ) {
 	common->StartupVariable( "fs_copyfiles", false );
 	common->StartupVariable( "fs_restrict", false );
 	common->StartupVariable( "fs_searchAddons", false );
+
+	// BEATO Begin
+	m_backgroundDownloadLock = new btMutex();
+	m_backgroundDownloadSemaphore = new btSemaphore();
+	// BEATO end
 
 #if !ID_ALLOW_D3XP
 	if ( fs_game.GetString()[0] && !idStr::Icmp( fs_game.GetString(), "d3xp" ) ) {
@@ -2967,6 +2994,11 @@ void idFileSystemLocal::Shutdown( bool reloading ) {
 	// any FS_ calls will now be an error until reinitialized
 	searchPaths = NULL;
 	addonPaks = NULL;
+
+	//BEATO Begin
+	SAFE_DELETE(m_backgroundDownloadLock)
+	SAFE_DELETE( m_backgroundDownloadSemaphore )
+	//BEATO End
 
 	cmdSystem->RemoveCommand( "path" );
 	cmdSystem->RemoveCommand( "dir" );
@@ -3620,6 +3652,7 @@ int idFileSystemLocal::CurlProgressFunction( void *clientp, double dltotal, doub
 	return 0;
 }
 
+// BEATO Begin
 /*
 ===================
 BackgroundDownload
@@ -3627,18 +3660,21 @@ BackgroundDownload
 Reads part of a file from a background thread.
 ===================
 */
-dword BackgroundDownloadThread( void *parms ) {
-	while( 1 ) {
-		Sys_EnterCriticalSection();
+//dword BackgroundDownloadThread( void *parms )
+void idFileSystemLocal::Run( void )
+{
+	while( 1 )
+	{
+		fileSystemLocal.m_backgroundDownloadLock->Lock(); //Sys_EnterCriticalSection();
 		backgroundDownload_t	*bgl = fileSystemLocal.backgroundDownloads;
 		if ( !bgl ) {
-			Sys_LeaveCriticalSection();
-			Sys_WaitForEvent();
+			fileSystemLocal.m_backgroundDownloadLock->Unlock();//Sys_LeaveCriticalSection();
+			m_backgroundDownloadSemaphore->Wait();//Sys_WaitForEvent();
 			continue;
 		}
 		// remove this from the list
 		fileSystemLocal.backgroundDownloads = bgl->next;
-		Sys_LeaveCriticalSection();
+		fileSystemLocal.m_backgroundDownloadLock->Unlock();//	Sys_LeaveCriticalSection();
 
 		bgl->next = NULL;
 
@@ -3740,7 +3776,11 @@ dword BackgroundDownloadThread( void *parms ) {
 #endif
 		}
 	}
-	return 0;
+	//return 0;
+}
+
+void idFileSystemLocal::NotifyExit( void )
+{
 }
 
 /*
@@ -3748,44 +3788,62 @@ dword BackgroundDownloadThread( void *parms ) {
 idFileSystemLocal::StartBackgroundReadThread
 =================
 */
-void idFileSystemLocal::StartBackgroundDownloadThread() {
+void idFileSystemLocal::StartBackgroundDownloadThread() 
+{
+#if 0
 	if ( !backgroundThread.threadHandle ) {
-		Sys_CreateThread( (xthread_t)BackgroundDownloadThread, NULL, THREAD_NORMAL, backgroundThread, "backgroundDownload", g_threads, &g_thread_count );
+		Sys_CreateThread( (xthread_t)BackgroundDownloadThread, NULL, THREAD_NORMAL, backgroundThread, , g_threads, &g_thread_count );
 		if ( !backgroundThread.threadHandle ) {
 			common->Warning( "idFileSystemLocal::StartBackgroundDownloadThread: failed" );
 		}
 	} else {
 		common->Printf( "background thread already running\n" );
 	}
+#else
+	StartExecution();
+#endif
 }
+
+// BEATO End
 
 /*
 =================
 idFileSystemLocal::BackgroundDownload
 =================
 */
-void idFileSystemLocal::BackgroundDownload( backgroundDownload_t *bgl ) {
+void idFileSystemLocal::BackgroundDownload( backgroundDownload_t *bgl )
+{
 	if ( bgl->opcode == DLTYPE_FILE ) {
-		if ( dynamic_cast<idFile_Permanent *>(bgl->f) ) {
+		if ( dynamic_cast<idFile_Permanent *>(bgl->f) )
+		{
+// BEATO Begin
 			// add the bgl to the background download list
-			Sys_EnterCriticalSection();
+			 //Sys_EnterCriticalSection();
+			btScopeLock guard( fileSystemLocal.m_backgroundDownloadLock );
 			bgl->next = backgroundDownloads;
 			backgroundDownloads = bgl;
-			Sys_TriggerEvent();
-			Sys_LeaveCriticalSection();
-		} else {
+			m_backgroundDownloadSemaphore->Trigger(); //Sys_TriggerEvent();
+			//Sys_LeaveCriticalSection();
+		} 
+		else
+		{
 			// read zipped file directly
 			bgl->f->Seek( bgl->file.position, FS_SEEK_SET );
 			bgl->f->Read( bgl->file.buffer, bgl->file.length );
 			bgl->completed = true;
 		}
-	} else {
-		Sys_EnterCriticalSection();
+	} 
+	else
+	{
+		//Sys_EnterCriticalSection();
+		btScopeLock guard( fileSystemLocal.m_backgroundDownloadLock );
 		bgl->next = backgroundDownloads;
 		backgroundDownloads = bgl;
-		Sys_TriggerEvent();
-		Sys_LeaveCriticalSection();
+		m_backgroundDownloadSemaphore->Trigger(); //Sys_TriggerEvent();
+		
+		//Sys_LeaveCriticalSection();
 	}
+// BEATO End
 }
 
 /*

@@ -189,17 +189,9 @@ int				Sys_ListFiles( const char *directory, const char *extension, idStrList &l
 
 #endif
 
-xthreadInfo *	g_threads[MAX_THREADS];
-int				g_thread_count;
-
-void			Sys_CreateThread( xthread_t function, void *parms, xthreadPriority priority, xthreadInfo &info, const char *name, xthreadInfo *threads[MAX_THREADS], int *thread_count ) {}
-void			Sys_DestroyThread( xthreadInfo& info ) {}
-
-void			Sys_EnterCriticalSection( int index ) {}
-void			Sys_LeaveCriticalSection( int index ) {}
-
-void			Sys_WaitForEvent( int index ) {}
-void			Sys_TriggerEvent( int index ) {}
+// BEATO Begin
+void	Sys_StartThread( const btThreadExecution* thread ) {};
+// BEATO End
 
 /*
 ==============
@@ -226,9 +218,6 @@ const char *	idSysLocal::GetCallStackStr( const address_t *callStack, const int 
 const char *	idSysLocal::GetCallStackCurStr( int depth ) { return ""; }
 void			idSysLocal::ShutdownSymbols( void ) {}
 
-int				idSysLocal::DLL_Load( const char *dllName ) { return 0; }
-void *			idSysLocal::DLL_GetProcAddress( int dllHandle, const char *procName ) { return NULL; }
-void			idSysLocal::DLL_Unload( int dllHandle ) { }
 void			idSysLocal::DLL_GetFileName( const char *baseName, char *dllName, int maxLength ) { }
 
 sysEvent_t		idSysLocal::GenerateMouseButtonEvent( int button, bool down ) { sysEvent_t ev; memset( &ev, 0, sizeof( ev ) ); return ev; }

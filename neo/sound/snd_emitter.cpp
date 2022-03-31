@@ -801,7 +801,7 @@ int idSoundEmitterLocal::StartSound( const idSoundShader *shader, const s_channe
 
 	if ( i == SOUND_MAX_CHANNELS ) {
 		// we couldn't find a channel for it
-		Sys_LeaveCriticalSection();
+		idSoundSystemLocal::m_soundLock->Unlock(); //Sys_LeaveCriticalSection();
 		if ( idSoundSystemLocal::s_showStartSound.GetInteger() ) {
 			common->Printf( "no channels available\n" );
 		}

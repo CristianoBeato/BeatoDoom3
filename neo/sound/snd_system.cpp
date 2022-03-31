@@ -1780,3 +1780,15 @@ int idSoundSystemLocal::IsEAXAvailable( void ) {
 	return 0;
 #endif
 }
+
+void idSoundSystemLocal::EnterCriticalSection( void )
+{
+	assert( m_soundLock );
+	m_soundLock->Lock();
+}
+
+void idSoundSystemLocal::LeaveCriticalSection( void )
+{
+	assert( m_soundLock );
+	m_soundLock->Unlock();
+}

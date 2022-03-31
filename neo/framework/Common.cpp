@@ -111,7 +111,10 @@ idGameEdit *	gameEdit = NULL;
 // writes si_version to the config file - in a kinda obfuscated way
 //#define ID_WRITE_VERSION
 
-class idCommonLocal : public idCommon {
+class idCommonLocal : 
+	public idCommon,
+	public btThreadExecution
+{
 public:
 								idCommonLocal( void );
 
@@ -158,6 +161,12 @@ public:
 
 	void						SetMachineSpec( void );
 
+// BEATO Begin
+protected:
+	virtual void				Run( void ) override;
+	virtual void				NotifyExit( void ) override;
+// BEATO end
+
 private:
 	void						InitCommands( void );
 	void						InitRenderSystem( void );
@@ -195,6 +204,8 @@ private:
 
 // BEATO Begin
 	void*						gameDLL;
+
+	btMutex*					m_asyncMutex;
 // BEATO End
 
 	idLangDict					languageDict;
@@ -213,7 +224,9 @@ idCommon *		common = &commonLocal;
 idCommonLocal::idCommonLocal
 ==================
 */
-idCommonLocal::idCommonLocal( void ) {
+idCommonLocal::idCommonLocal( void ) : btThreadExecution( "AsyncThread" )
+
+{
 	com_fullyInitialized = false;
 	com_refreshOnPrint = false;
 	com_errorEntered = 0;
@@ -229,6 +242,8 @@ idCommonLocal::idCommonLocal( void ) {
 
 // BEATO Begin
 	gameDLL = nullptr;
+
+	m_asyncMutex = nullptr;
 // BEATO End
 
 #ifdef ID_WRITE_VERSION
@@ -2548,10 +2563,11 @@ asyncStats_t	com_asyncStats[MAX_ASYNC_STATS];		// indexed by com_ticNumber
 int prevAsyncMsec;
 int	lastTicMsec;
 
-void idCommonLocal::SingleAsyncTic( void ) {
+void idCommonLocal::SingleAsyncTic( void )
+{
 	// main thread code can prevent this from happening while modifying
 	// critical data structures
-	Sys_EnterCriticalSection();
+	btScopeLock guard( m_asyncMutex ); // Sys_EnterCriticalSection();
 
 	asyncStats_t *stat = &com_asyncStats[com_ticNumber & (MAX_ASYNC_STATS-1)];
 	memset( stat, 0, sizeof( *stat ) );
@@ -2577,7 +2593,7 @@ void idCommonLocal::SingleAsyncTic( void ) {
 
 	stat->timeConsumed = Sys_Milliseconds() - stat->milliseconds;
 
-	Sys_LeaveCriticalSection();
+	//Sys_LeaveCriticalSection();
 }
 
 /*
@@ -2779,6 +2795,10 @@ idCommonLocal::Init
 void idCommonLocal::Init( int argc, const char **argv, const char *cmdline ) {
 	try {
 
+		// BEATO Begin:
+		m_asyncMutex = new btMutex();
+		// BEATO End
+
 		// set interface pointers used by idLib
 		idLib::sys			= sys;
 		idLib::common		= common;
@@ -2872,6 +2892,10 @@ void idCommonLocal::Init( int argc, const char **argv, const char *cmdline ) {
 		ClearCommandLine();
 
 		com_fullyInitialized = true;
+
+	// BEATO Begin: initialize async thread 
+		StartExecution();
+	// BEATO End
 	}
 
 	catch( idException & ) {
@@ -2888,6 +2912,10 @@ idCommonLocal::Shutdown
 void idCommonLocal::Shutdown( void ) {
 
 	com_shuttingDown = true;
+
+	// BEATO Begin: shutdown async thread 
+	FinishExecution();
+	// BEATO End
 
 	idAsyncNetwork::server.Kill();
 	idAsyncNetwork::client.Shutdown();
@@ -2925,6 +2953,10 @@ void idCommonLocal::Shutdown( void ) {
 
 	// enable leak test
 	Mem_EnableLeakTest( "doom" );
+
+	// BEATO Begin
+	SAFE_DELETE( m_asyncMutex );
+	// BEATO End
 
 	// shutdown idLib
 	idLib::ShutDown();
@@ -3114,3 +3146,39 @@ void idCommonLocal::ShutdownGame( bool reloading ) {
 	// shut down the file system
 	fileSystem->Shutdown( reloading );
 }
+
+// BEATO Begin
+/*
+=================
+idCommonLocal::Run
+=================
+*/
+void idCommonLocal::Run( void )
+{
+	Uint32	startTime = 0;
+
+	// this will trigger 60 times a second
+	Uint32	stepTime = 1000 / 60;
+	do
+	{
+		startTime = Sys_Milliseconds();
+		this->Async();
+		Uint32 elapsed = Sys_Milliseconds() - startTime;
+
+		// wait the remain time
+		Sys_Sleep( stepTime - elapsed );
+	}
+	while (IsExitPending());
+	NotifyExit();
+}
+
+
+/*
+=================
+idCommonLocal::NotifyExit
+=================
+*/
+void idCommonLocal::NotifyExit( void )
+{
+}
+// BEATO End

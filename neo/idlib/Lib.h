@@ -163,8 +163,12 @@ public:
 // move from Math.h to keep gcc happy
 template<class T> ID_INLINE T	Max( T x, T y ) { return ( x > y ) ? x : y; }
 template<class T> ID_INLINE T	Min( T x, T y ) { return ( x < y ) ? x : y; }
+// BEATO Begin
+template< typename t_> ID_INLINE const t_ Clamp( const t_ val, const t_ min, const t_ max ) { return Max( min, Min( max, val ) ); }
+// BEATO End
 
 // BEATO begin
+#define SAFE_FREE( p )  { if(p) { Mem_Free(p);     (p)=nullptr; } }
 #define SAFE_DELETE(p)       { if(p) { delete (p);     (p)=nullptr; } }
 #define SAFE_DELETE_ARRAY(p) { if(p) { delete[] (p);   (p)=nullptr; } }
 // BEATO end
@@ -240,6 +244,10 @@ template<class T> ID_INLINE T	Min( T x, T y ) { return ( x < y ) ? x : y; }
 #include "containers/VectorSet.h"
 #include "containers/PlaneSet.h"
 
+// BEATO Begin
+#include "containers/Array.h"
+// BEATO End
+
 // hashing
 #include "hashing/CRC32.h"
 #include "hashing/MD4.h"
@@ -251,6 +259,10 @@ template<class T> ID_INLINE T	Min( T x, T y ) { return ( x < y ) ? x : y; }
 #include "BitMsg.h"
 #include "MapFile.h"
 #include "Timer.h"
+
+// BEATO Begin
 #include "Thread.h"
+#include "SmartPointer.h"
+// BEATO End
 
 #endif	/* !__LIB_H__ */

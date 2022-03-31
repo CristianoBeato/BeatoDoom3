@@ -19,7 +19,7 @@ set( CMAKE_CXX_STANDARD 17)
 if(CMAKE_CL_64)
 		set( BUILD_PLATFORM_POSTFIX "x64" )
 else(CMAKE_CL_64)
-		set( BUILD_PLATFORM_POSTFIX "x86" )
+		set( BUILD_PLATFORM_POSTFIX "x32" )
 endif(CMAKE_CL_64)
 
 ############################

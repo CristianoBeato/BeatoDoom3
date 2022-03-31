@@ -37,7 +37,6 @@ If you have questions concerning this license or the applicable additional terms
 // BEATO NOTE: Move from here to a config.h file, use the Cmake utility to defines these optitions
 
 // memory debugging
-//#define ID_REDIRECT_NEWDELETE
 //#define ID_DEBUG_MEMORY
 //#define ID_DEBUG_UNINITIALIZED_MEMORY
 
@@ -137,3 +136,12 @@ If you have questions concerning this license or the applicable additional terms
 #	define ID_ALLOW_D3XP 1
 #endif
 
+// BEATO Begin
+#ifndef ID_REDIRECT_NEWDELETE
+#define ID_REDIRECT_NEWDELETE 1
+#endif // !ID_REDIRECT_NEWDELETE
+
+#ifndef ID_USE_INSTRINSEC
+#define ID_USE_INSTRINSEC 1
+#endif // !ID_USE_INSTRINSEC
+// BEATO End

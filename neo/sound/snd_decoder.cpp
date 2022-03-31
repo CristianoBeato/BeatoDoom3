@@ -233,9 +233,6 @@ int idWaveFile::ReadOGG( byte* pBuffer, int dwSizeToRead, int *pdwSizeRead ) {
 	int total = dwSizeToRead;
 	char *bufferPtr = (char *)pBuffer;
 	OggVorbis_File *ov = (OggVorbis_File *) ogg;
-// BEATO Begin: 
-	int current_section = 0;
-// BEATO End
 
 	do {
 // BEATO Begin: ogg vorbis load lib

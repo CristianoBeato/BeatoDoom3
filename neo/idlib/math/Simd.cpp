@@ -29,6 +29,8 @@ If you have questions concerning this license or the applicable additional terms
 #include "../precompiled.h"
 #pragma hdrstop
 
+#include <SDL_thread.h>
+
 #include "Simd_Generic.h"
 
 // BEATO Begin: Implement a modern SIMD intrincics instead

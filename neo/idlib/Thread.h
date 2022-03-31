@@ -28,12 +28,10 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 
 #include <SDL_atomic.h>
 #include <SDL_mutex.h>
-#include <SDL_thread.h>
 
 struct btAtommicCounter
 {
 public:
-	SDL_atomic_t	m_atomic;
 
 	//
 	// 
@@ -75,7 +73,7 @@ public:
 		return SDL_AtomicAdd( &m_atomic, -1 ) - 1;
 	}
 
-	SDL_INLINE btAtommicCounter operator = ( int & v )
+	ID_INLINE btAtommicCounter operator = ( int & v )
 	{
 		Set( v );
 		return *this;
@@ -83,46 +81,50 @@ public:
 
 	//
 	//
-	SDL_INLINE int operator ++ ( void )
+	ID_INLINE int operator ++ ( void )
 	{
 		return SDL_AtomicAdd( &m_atomic, 1 );
 	}
 
-	SDL_INLINE int operator ++( int v )
+	ID_INLINE int operator ++( int v )
 	{
 		return SDL_AtomicAdd( &m_atomic, v );
 	}
 
 	//
 	//
-	SDL_INLINE int operator -- ( void )
+	ID_INLINE int operator -- ( void )
 	{
 		return SDL_AtomicAdd( &m_atomic, -1 );
 	}
 
-	SDL_INLINE int operator --( int v )
+	ID_INLINE int operator --( int v )
 	{
 		return SDL_AtomicAdd( &m_atomic, -v );
 	}
 
 	//
 	//
-	SDL_INLINE bool	operator ==( int v )
+	ID_INLINE bool	operator ==( int v )
 	{
 		return (Get() == v);
 	}
 
-	SDL_INLINE const bool operator ==( const int v ) const
+	ID_INLINE const bool operator ==( const int v ) const
 	{
 		return (Get() == v);
 	}
 
 	//
 	//
-	SDL_INLINE bool operator == ( btAtommicCounter & compare ) const
+	ID_INLINE bool operator == ( btAtommicCounter & compare ) const
 	{
 		return (Get() == compare.Get());
 	}
+
+private:
+	SDL_atomic_t	m_atomic;
+
 };
 
 class btMutex
@@ -157,6 +159,8 @@ private:
 	// Mutex pointer acess, for condition lock
 	friend class btCondition;
 	SDL_mutex*	m_mtxhnd;
+
+	// prevent object copy
 	btMutex( const btCondition & s ) {}
 	void			operator=( const btMutex & s ) {}
 };
@@ -164,13 +168,13 @@ private:
 class btScopeLock
 {
 public:
-	SDL_INLINE btScopeLock( const btMutex * lock ) : m_lock( lock )
+	ID_INLINE btScopeLock( const btMutex * lock ) : m_lock( lock )
 	{
 		if (m_lock)
 			m_lock->Lock();
 	}
 
-	SDL_INLINE ~btScopeLock( void )
+	ID_INLINE ~btScopeLock( void )
 	{
 		if (m_lock)
 			m_lock->Unlock();
@@ -188,7 +192,7 @@ public:
 		m_cndhnd = SDL_CreateCond();
 	}
 
-	SDL_INLINE ~btCondition( void )
+	ID_INLINE ~btCondition( void )
 	{
 		if (m_cndhnd != nullptr)
 		{
@@ -199,21 +203,21 @@ public:
 
 	// Destrava uma thread
 	// Unlock one thread 
-	SDL_INLINE void	Signal( void ) const
+	ID_INLINE void	Signal( void ) const
 	{
 		SDL_CondSignal( m_cndhnd );
 	}
 
 	// Destrava todas as threads esperando pelo sinal
 	// Unlock all thread waiting for the signal
-	SDL_INLINE void	SignalAll( void ) const
+	ID_INLINE void	SignalAll( void ) const
 	{
 		SDL_CondBroadcast( m_cndhnd );
 	}
 
 	// Trava a execução da atual thread
 	// Lock the current thread execution
-	SDL_INLINE void	Wait( const btMutex * lock, const Uint32 timeout = 0 ) const
+	ID_INLINE void	Wait( const btMutex * lock, const Uint32 timeout = 0 ) const
 	{
 		assert( lock );
 		// Precisa estar travado antes
@@ -227,10 +231,78 @@ public:
 
 private:
 	SDL_cond*	m_cndhnd;
+
+	// prevent object copy
 	btCondition( const btCondition & s ) {}
 	void			operator=( const btCondition & s ) {}
 };
 
+class btSemaphore
+{
+public:
+	btSemaphore( void ) : m_sem(nullptr)
+	{
+		m_sem = SDL_CreateSemaphore( 1 );
+	}
+
+	~btSemaphore( void )
+	{
+		if (m_sem != nullptr)
+		{
+			SDL_DestroySemaphore( m_sem );
+			m_sem = nullptr;
+		}
+	}
+
+	ID_INLINE void	Wait( const Uint32 timeout = 0 ) const
+	{
+		assert( m_sem );
+		if (timeout > 0)
+			SDL_SemWaitTimeout( m_sem, timeout );
+		else
+			SDL_SemWait( m_sem );
+	}
+
+	SDL_INLINE void	Trigger( void )
+	{
+		assert( m_sem );
+		SDL_SemPost( m_sem );
+	}
+
+private:
+	SDL_semaphore*	m_sem;
+};
+
+
+class btThreadExecution
+{
+public:
+	btThreadExecution( const char* name );
+	~btThreadExecution( void );
+
+	void			StartExecution( void );
+	void			FinishExecution( void );
+	const char*		GetName( void ) const;
+	unsigned long	GetID( void ) const;
+	const bool		IsCurretThread( void ) const;
+	const bool		IsExitPending( void ) const;
+
+protected:
+	friend int threadStaticEntryPoint( void * threadRef );
+	// NEVER CALL THESE 
+	virtual void	Run( void ) = 0;
+	virtual void	NotifyExit( void ) = 0;
+
+private:
+	volatile bool	pendingExit;
+	int				threadHandle;
+	unsigned long	threadId;
+	const char *	name;
+
+	// prevent object copy
+	btThreadExecution( const btThreadExecution & s ) {}
+	void			operator=( const btThreadExecution & s ) {}
+};
 
 #endif // !_THREAD_H_
 

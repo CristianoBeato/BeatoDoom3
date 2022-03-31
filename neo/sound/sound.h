@@ -343,6 +343,12 @@ public:
 
 	// is EAX support present - -1: disabled at compile time, 0: no suitable hardware, 1: ok, 2: failed to load OpenAL DLL
 	virtual int				IsEAXAvailable( void ) = 0;
+
+	// BEATO Begin: audio thread concurrenci protection
+	virtual void EnterCriticalSection( void ) = 0;
+	virtual void LeaveCriticalSection( void ) = 0;
+	// BEATO End
+
 };
 
 extern idSoundSystem	*soundSystem;

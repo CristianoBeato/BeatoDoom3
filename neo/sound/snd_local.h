@@ -225,6 +225,11 @@ private:
 	void *			ogg;			// only !NULL when !s_realTimeDecoding
 	bool			isOgg;
 
+// BEATO Begin: 
+	int current_section;
+// BEATO End
+
+
 private:
     int				ReadMMIO( void );
 
@@ -738,6 +743,11 @@ public:
 	virtual void			PrintMemInfo( MemInfo_t *mi );
 
 	virtual int				IsEAXAvailable( void );
+	
+	// BEATO Begin: audio thread concurrenci protection
+	virtual void EnterCriticalSection( void );
+	virtual void LeaveCriticalSection( void );
+	// BEATO End
 
 	//-------------------------
 
