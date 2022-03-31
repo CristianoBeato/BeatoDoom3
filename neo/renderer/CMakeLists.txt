@@ -40,9 +40,9 @@ SET( RENDERER_BAKCEND_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/draw_common.cpp
 #	${CMAKE_CURRENT_SOURCE_DIR}/draw_exp.cpp		#Mark as remove
 #	${CMAKE_CURRENT_SOURCE_DIR}/draw_exp_stub.cpp	#Mark as remove
-	${CMAKE_CURRENT_SOURCE_DIR}/draw_nv10.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/draw_nv20.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/draw_r200.cpp
+#	${CMAKE_CURRENT_SOURCE_DIR}/draw_nv10.cpp	# No Nvidia or Radeon Specific Path
+#	${CMAKE_CURRENT_SOURCE_DIR}/draw_nv20.cpp	#
+#	${CMAKE_CURRENT_SOURCE_DIR}/draw_r200.cpp	#
 	${CMAKE_CURRENT_SOURCE_DIR}/tr_backend.cpp
 	
 	${CMAKE_CURRENT_SOURCE_DIR}/cg_explicit.h
@@ -133,7 +133,7 @@ source_group("Models" FILES ${RENDERER_MODELS_SOURCES} )
 ## 
 SET( RENDERER_OPENGL_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/qgl.h
-	${CMAKE_CURRENT_SOURCE_DIR}/qgl_linked.h
+	#${CMAKE_CURRENT_SOURCE_DIR}/qgl_linked.h
 	)
 	
 source_group("OpenGL" FILES ${RENDERER_OPENGL_SOURCES} )
