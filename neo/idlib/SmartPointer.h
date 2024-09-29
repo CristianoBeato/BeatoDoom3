@@ -33,17 +33,20 @@ GNU General Public License which accompanied the Beato Tech 4 Source Code.
 // Copyright( C ) 2013 Viktor Latypov( vl@linderdaum.com )
 // All rights reserved.
 
-class btObjectCounter : public btAtommicCounter
+class btObjectCounter 
 {
 public:
-	btObjectCounter( void ) {};
+	btObjectCounter( void ) : m_count( 0 ) {};
 	~btObjectCounter( void ) {};
 
-	ID_INLINE void	IncRefCount( void ) { Increment(); };
-	ID_INLINE void	DecRefCount( void ) { if (Decrement() < 1) delete this; };
+	ID_INLINE void	IncRefCount( void ) { __sync_add_and_fetch( &m_count, 1 ); };
+	ID_INLINE void	DecRefCount( void ) { if ( __sync_sub_and_fetch( &m_count, 1 ) < 1) delete this; };
 
 	static void IncRef( void* ptr );
 	static void DecRef( void* ptr );
+
+private:
+	int m_count;
 };
 
 template<class t_ >
@@ -72,7 +75,7 @@ public:
 		btObjectCounter::IncRef( m_ptr );
 	}
 
-	// Construtor para converção implicita de tipo
+	// Construtor para converï¿½ï¿½o implicita de tipo
 	// Constructor for an implicit type conversion
 	btRefCntAutoPtr( pointer Object ) : m_ptr( Object )
 	{
@@ -130,7 +133,7 @@ public:
 		return btRefCntAutoPtr<value_type>( const_cast<pointer>(m_ptr) );
 	}
 
-	// Operador de comparação de equalidade
+	// Operador de comparaï¿½ï¿½o de equalidade
 	// Compare equality operator
 	ID_INLINE bool operator == ( const t_* Ptr1 ) const
 	{
@@ -145,7 +148,7 @@ public:
 		return m_ptr == Ptr1.GetInternalPtr();
 	}
 
-	// Operador de comparação de Diferença
+	// Operador de comparaï¿½ï¿½o de Diferenï¿½a
 	// Diference comparation operator
 	ID_INLINE bool operator != ( const pointer Ptr1 ) const
 	{

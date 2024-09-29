@@ -328,19 +328,23 @@ idBounds BoundsForPointRotation( const idVec3 &start, const idRotation &rotation
 	v1 = ( start - origin ).Cross( axis );
 	v2 = ( end - origin ).Cross( axis );
 
-	for ( i = 0; i < 3; i++ ) {
+	for ( i = 0; i < 3; i++ ) 
+	{
 		// if the derivative changes sign along this axis during the rotation from start to end
-		if ( ( v1[i] > 0.0f && v2[i] < 0.0f ) || ( v1[i] < 0.0f && v2[i] > 0.0f ) ) {
-			if ( ( 0.5f * (start[i] + end[i]) - origin[i] ) > 0.0f ) {
-				bounds[0][i] = Min( start[i], end[i] );
+		if ( ( v1[i] > 0.0f && v2[i] < 0.0f ) || ( v1[i] < 0.0f && v2[i] > 0.0f ) ) 
+		{
+			if ( ( 0.5f * (start[i] + end[i]) - origin[i] ) > 0.0f ) 
+			{
+				bounds[0][i] = min( start[i], end[i] );
 				bounds[1][i] = origin[i] + idMath::Sqrt( radiusSqr * ( 1.0f - axis[i] * axis[i] ) );
 			}
 			else {
 				bounds[0][i] = origin[i] - idMath::Sqrt( radiusSqr * ( 1.0f - axis[i] * axis[i] ) );
-				bounds[1][i] = Max( start[i], end[i] );
+				bounds[1][i] = max( start[i], end[i] );
 			}
 		}
-		else if ( start[i] > end[i] ) {
+		else if ( start[i] > end[i] ) 
+		{
 			bounds[0][i] = end[i];
 			bounds[1][i] = start[i];
 		}

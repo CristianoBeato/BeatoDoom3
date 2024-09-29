@@ -26,13 +26,6 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-//
-#if BT_USE_EFX
-#include <al.h>
-#include <efx.h>
-#endif 
-//
-
 #include "idlib/precompiled.h"
 #pragma hdrstop
 
@@ -46,9 +39,10 @@ idCVar s_alReverbGain( "s_alReverbGain", "0.5", CVAR_SOUND | CVAR_FLOAT | CVAR_A
 idSoundWorldLocal::Init
 ==================
 */
-void idSoundWorldLocal::Init( idRenderWorld *renderWorld ) {
+void idSoundWorldLocal::Init( idRenderWorld *renderWorld ) 
+{
 	rw = renderWorld;
-	writeDemo = NULL;
+	writeDemo = nullptr;
 
 	listenerAxis.Identity();
 	listenerPos.Zero();
@@ -169,22 +163,25 @@ idSoundWorldLocal::Shutdown
   this is called from the main thread
 ===============
 */
-void idSoundWorldLocal::Shutdown() {
+void idSoundWorldLocal::Shutdown( void ) 
+{
 	int i;
 
-	if ( soundSystemLocal.currentSoundWorld == this ) {
-		soundSystemLocal.currentSoundWorld = NULL;
+	if ( soundSystemLocal.currentSoundWorld == this ) 
+	{
+		soundSystemLocal.currentSoundWorld = nullptr;
 	}
 
 	AVIClose();
 
-	for ( i = 0; i < emitters.Num(); i++ ) {
+	for ( i = 0; i < emitters.Num(); i++ ) 
+	{
 		if ( emitters[i] ) {
 			delete emitters[i];
-			emitters[i] = NULL;
+			emitters[i] = nullptr;
 		}
 	}
-	localSound = NULL;
+	localSound = nullptr;
 }
 
 /*
@@ -192,20 +189,22 @@ void idSoundWorldLocal::Shutdown() {
 idSoundWorldLocal::ClearAllSoundEmitters
 ===================
 */
-void idSoundWorldLocal::ClearAllSoundEmitters() {
+void idSoundWorldLocal::ClearAllSoundEmitters( void ) 
+{
 	int i;
 
 	// BEATO Begin
 	//Sys_EnterCriticalSection();
-	btScopeLock lock( idSoundSystemLocal::m_soundLock );
+	crScopeLock lock( idSoundSystemLocal::soundLock );
 
 	AVIClose();
 
-	for ( i = 0; i < emitters.Num(); i++ ) {
+	for ( i = 0; i < emitters.Num(); i++ ) 
+	{
 		idSoundEmitterLocal *sound = emitters[i];
 		sound->Clear();
 	}
-	localSound = NULL;
+	localSound = nullptr;
 
 	//Sys_LeaveCriticalSection();
 	// BEATO End
@@ -243,9 +242,9 @@ idSoundEmitterLocal *idSoundWorldLocal::AllocLocalSoundEmitter() {
 
 		// we need to protect this from the async thread
 // BEATO Begin
-		idSoundSystemLocal::m_soundLock->Lock(); //Sys_EnterCriticalSection();
+		idSoundSystemLocal::soundLock->Lock(); //Sys_EnterCriticalSection();
 		index = emitters.Append( def );
-		idSoundSystemLocal::m_soundLock->Unlock();  //Sys_LeaveCriticalSection();
+		idSoundSystemLocal::soundLock->Unlock();  //Sys_LeaveCriticalSection();
 // BEATO end
 
 		if ( idSoundSystemLocal::s_showStartSound.GetInteger() ) 
@@ -336,9 +335,9 @@ void idSoundWorldLocal::ProcessDemoCommand( idDemoFile *readDemo ) {
 		// we need to protect this from the async thread
 		// other instances of calling idSoundWorldLocal::ReadFromSaveGame do this while the sound code is muted
 		// setting muted and going right in may not be good enough here, as we async thread may already be in an async tick (in which case we could still race to it)
-		idSoundSystemLocal::m_soundLock->Lock(); // Sys_EnterCriticalSection();
+		idSoundSystemLocal::soundLock->Lock(); // Sys_EnterCriticalSection();
 		ReadFromSaveGame( readDemo );
-		idSoundSystemLocal::m_soundLock->Unlock(); // Sys_LeaveCriticalSection();
+		idSoundSystemLocal::soundLock->Unlock(); // Sys_LeaveCriticalSection();
 		UnPause();
 		break;
 	case SCMD_PLACE_LISTENER:
@@ -709,25 +708,18 @@ writes one block of sound samples if enough time has passed
 This can be used to write wave files even if no sound hardware exists
 ===================
 */
-void idSoundWorldLocal::AVIUpdate() {
+void idSoundWorldLocal::AVIUpdate( void ) 
+{
 	int		numSpeakers;
 	
-	if ( game44kHz - lastAVI44kHz < MIXBUFFER_SAMPLES ) {
+	if ( game44kHz - lastAVI44kHz < MIXBUFFER_SAMPLES ) 
 		return;
-	}
-
-// BEATO Begin:
-//	if ( !soundSystemLocal.snd_audio_hw ) {
-//		numSpeakers = 2;
-//	} else {
-//		numSpeakers = soundSystemLocal.snd_audio_hw->GetNumberOfSpeakers();
-//	}
 
 	numSpeakers = idSoundSystemLocal::s_numberOfSpeakers.GetInteger();
 // BEATO End
 
 	float	mix[MIXBUFFER_SAMPLES*6+16];
-	float	*mix_p = (float *)((( int)mix + 15 ) & ~15);	// SIMD align
+	float	*mix_p = (float *)(((intptr_t)mix + 15 ) & ~15);	// SIMD align
 
 	SIMDProcessor->Memset( mix_p, 0, MIXBUFFER_SAMPLES*sizeof(float)*numSpeakers );
 
@@ -1101,16 +1093,16 @@ void idSoundWorldLocal::PlaceListener( const idVec3& origin, const idMat3& axis,
 idSoundWorldLocal::ForegroundUpdate
 ==================
 */
-void idSoundWorldLocal::ForegroundUpdate( int current44kHzTime ) {
+void idSoundWorldLocal::ForegroundUpdate( int current44kHzTime ) 
+{
 	int j, k;
 	idSoundEmitterLocal	*def;
 
-	if ( !soundSystemLocal.isInitialized ) {
+	if ( !soundSystemLocal.isInitialized ) 
 		return;
-	}
 
 // BEATO Begin
-	idSoundSystemLocal::m_soundLock->Lock(); //Sys_EnterCriticalSection();
+	idSoundSystemLocal::soundLock->Lock(); //Sys_EnterCriticalSection();
 
 	// if we are recording an AVI demo, don't use hardware time
 	if ( fpa[0] ) {
@@ -1185,7 +1177,7 @@ void idSoundWorldLocal::ForegroundUpdate( int current44kHzTime ) {
 		}
 	}
 
-	idSoundSystemLocal::m_soundLock->Unlock(); //Sys_LeaveCriticalSection();
+	idSoundSystemLocal::soundLock->Unlock(); //Sys_LeaveCriticalSection();
 // BEATO end
 
 	//
@@ -1344,10 +1336,10 @@ void idSoundWorldLocal::WriteToSaveGameSoundChannel( idFile *saveGame, idSoundCh
 	saveGame->WriteInt( ch->trigger44kHzTime );
 	saveGame->WriteInt( ch->triggerGame44kHzTime );
 	WriteToSaveGameSoundShaderParams( saveGame, &ch->parms );
-	saveGame->WriteInt( (int)ch->leadinSample );
+	saveGame->WriteInt( (intptr_t)ch->leadinSample );
 	saveGame->WriteInt( ch->triggerChannel );
-	saveGame->WriteInt( (int)ch->soundShader );
-	saveGame->WriteInt( (int)ch->decoder );
+	saveGame->WriteInt( (intptr_t)ch->soundShader );
+	saveGame->WriteInt( (intptr_t)ch->decoder );
 	saveGame->WriteFloat(ch->diversity );
 	saveGame->WriteFloat(ch->lastVolume );
 	for (int m = 0; m < 6; m++)
@@ -1818,15 +1810,20 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 		}
 
 		// reduce volume based on distance
-		if ( dlen >= maxd ) {
+		if ( dlen >= maxd ) 
+		{
 			volume = 0.0f;
-		} else if ( dlen > mind ) {
-			float frac = idMath::ClampFloat( 0.0f, 1.0f, 1.0f - ((dlen - mind) / (maxd - mind)));
-			if ( idSoundSystemLocal::s_quadraticFalloff.GetBool() ) {
+		} 
+		else if ( dlen > mind ) 
+		{
+			float frac = clamp( 1.0f - ((dlen - mind) / (maxd - mind)), 0.0f, 1.0f );
+			if ( idSoundSystemLocal::s_quadraticFalloff.GetBool() ) 
 				frac *= frac;
-			}
+			
 			volume *= frac;
-		} else if ( mind > 0.0f ) {
+		} 
+		else if ( mind > 0.0f ) 
+		{
 			// we tweak the spatialization bias when you are inside the minDistance
 			spatialize = dlen / mind;
 		}
@@ -1860,53 +1857,43 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 	//
 	int offset = current44kHz - chan->trigger44kHzTime;
 	float inputSamples[MIXBUFFER_SAMPLES*2+16];
-	float *alignedInputSamples = (float *) ( ( ( (int)inputSamples ) + 15 ) & ~15 );
+	float *alignedInputSamples = (float *) ( ( ( (intptr_t)inputSamples ) + 15 ) & ~15 );
 
 	//
 	// allocate and initialize hardware source
 	//
-// BEATO Begin
-#if BT_SDL_AUDIO
-	if ( idSoundSystemLocal::useOpenAL && sound->removeStatus < REMOVE_STATUS_SAMPLEFINISHED ) 
-#else
 	if ( sound->removeStatus < REMOVE_STATUS_SAMPLEFINISHED ) 
-#endif // BT_SDL_AUDIO
-// BEATO end
 	{
-		if ( !alIsSource( chan->openalSource ) ) {
+		if ( !alIsSource( chan->openalSource ) ) 
 			chan->openalSource = soundSystemLocal.AllocOpenALSource( chan, !chan->leadinSample->hardwareBuffer || !chan->soundShader->entries[0]->hardwareBuffer || looping, chan->leadinSample->objectInfo.nChannels == 2 );
-		}
+		
 
-		if ( alIsSource( chan->openalSource ) ) {
-			
+		if ( alIsSource( chan->openalSource ) ) 
+		{	
 			// stop source if needed..
-			if ( chan->triggered ) {
+			if ( chan->triggered ) 
 				alSourceStop( chan->openalSource );
-			}
-
+		
 			// update source parameters
-			if ( global || omni ) {
+			if ( global || omni ) 
+			{
 				alSourcei( chan->openalSource, AL_SOURCE_RELATIVE, AL_TRUE);
 				alSource3f( chan->openalSource, AL_POSITION, 0.0f, 0.0f, 0.0f );
 				alSourcef( chan->openalSource, AL_GAIN, ( volume ) < ( 1.0f ) ? ( volume ) : ( 1.0f ) );
-			} else {
+			} 
+			else 
+			{
 				alSourcei( chan->openalSource, AL_SOURCE_RELATIVE, AL_FALSE);
 				alSource3f( chan->openalSource, AL_POSITION, -spatializedOriginInMeters.y, spatializedOriginInMeters.z, -spatializedOriginInMeters.x );
 				alSourcef( chan->openalSource, AL_GAIN, ( volume ) < ( 1.0f ) ? ( volume ) : ( 1.0f ) );
 			}
+
 			alSourcei( chan->openalSource, AL_LOOPING, ( looping && chan->soundShader->entries[0]->hardwareBuffer ) ? AL_TRUE : AL_FALSE );
-#if !defined(MACOS_X)		
 			alSourcef( chan->openalSource, AL_REFERENCE_DISTANCE, mind );
 			alSourcef( chan->openalSource, AL_MAX_DISTANCE, maxd );
-#endif
 			alSourcef( chan->openalSource, AL_PITCH, ( slowmoActive && !chan->disallowSlow ) ? ( slowmoSpeed ) : ( 1.0f ) );
-#if BT_USE_EAX
-			long lOcclusion = ( enviroSuitActive ? -1150 : 0);
-			if ( soundSystemLocal.alEAXSet ) {
-				soundSystemLocal.alEAXSet( &EAXPROPERTYID_EAX_Source, EAXSOURCE_OCCLUSION, chan->openalSource, &lOcclusion, sizeof(lOcclusion) );
-			}
-#endif //!BT_USE_EAX
-#if BT_USE_EFX
+
+// BEATO Begin:
 			if (idSoundSystemLocal::useEFXReverb)
 			{
 				if (enviroSuitActive)
@@ -1920,47 +1907,44 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 					alSource3i( chan->openalSource, AL_AUXILIARY_SEND_FILTER, listenerSlot, 0, AL_FILTER_NULL );
 				}
 			}
-#endif //BT_USE_EFX
+//BEATO END
 
-			if ( ( !looping && chan->leadinSample->hardwareBuffer ) || ( looping && chan->soundShader->entries[0]->hardwareBuffer ) ) {
+			if ( ( !looping && chan->leadinSample->hardwareBuffer ) || ( looping && chan->soundShader->entries[0]->hardwareBuffer ) ) 
+			{
 				// handle uncompressed (non streaming) single shot and looping sounds
-				if ( chan->triggered ) {
-					alSourcei( chan->openalSource, AL_BUFFER, looping ? chan->soundShader->entries[0]->openalBuffer : chan->leadinSample->openalBuffer );
-				}
-			} else {
+				if ( chan->triggered ) 
+					alSourcei( chan->openalSource, AL_BUFFER, looping ? chan->soundShader->entries[0]->openalBuffer : chan->leadinSample->openalBuffer );	
+			} 
+			else 
+			{
 				ALint finishedbuffers;
 				ALuint buffers[3];
 
 				// handle streaming sounds (decode on the fly) both single shot AND looping
 				if ( chan->triggered )
 				{
-					alSourcei( chan->openalSource, AL_BUFFER, NULL );
+					alSourcei( chan->openalSource, AL_BUFFER, 0 );
 					alDeleteBuffers( 3, &chan->lastopenalStreamingBuffer[0] );
 					chan->lastopenalStreamingBuffer[0] = chan->openalStreamingBuffer[0];
 					chan->lastopenalStreamingBuffer[1] = chan->openalStreamingBuffer[1];
 					chan->lastopenalStreamingBuffer[2] = chan->openalStreamingBuffer[2];
 					alGenBuffers( 3, &chan->openalStreamingBuffer[0] );
-				
-#if BT_USE_EAX
-					if ( soundSystemLocal.alEAXSetBufferMode ) 
-					{
-						soundSystemLocal.alEAXSetBufferMode( 3, &chan->openalStreamingBuffer[0], alGetEnumValue( "AL_STORAGE_ACCESSIBLE" ) );
-					}
-#endif //!BT_USE_EAX
 
 					buffers[0] = chan->openalStreamingBuffer[0];
 					buffers[1] = chan->openalStreamingBuffer[1];
 					buffers[2] = chan->openalStreamingBuffer[2];
 					finishedbuffers = 3;
-				} else {
+				} 
+				else 
+				{
 					alGetSourcei( chan->openalSource, AL_BUFFERS_PROCESSED, &finishedbuffers );
 					alSourceUnqueueBuffers( chan->openalSource, finishedbuffers, &buffers[0] );
-					if ( finishedbuffers == 3 ) {
+					if ( finishedbuffers == 3 )
 						chan->triggered = true;
-					}
 				}
 
-				for ( j = 0; j < finishedbuffers; j++ ) {
+				for ( j = 0; j < finishedbuffers; j++ ) 
+				{
 					chan->GatherChannelSamples( chan->openalStreamingOffset * sample->objectInfo.nChannels, MIXBUFFER_SAMPLES * sample->objectInfo.nChannels, alignedInputSamples );
 					for ( int i = 0; i < ( MIXBUFFER_SAMPLES * sample->objectInfo.nChannels ); i++ ) {
 						if ( alignedInputSamples[i] < -32768.0f )
@@ -1974,7 +1958,8 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 					chan->openalStreamingOffset += MIXBUFFER_SAMPLES;
 				}
 
-				if ( finishedbuffers ) {
+				if ( finishedbuffers ) 
+				{
 					alSourceQueueBuffers( chan->openalSource, finishedbuffers, &buffers[0] );
 				}
 			}
@@ -2129,13 +2114,11 @@ float idSoundWorldLocal::FindAmplitude( idSoundEmitterLocal *sound, const int lo
 	for ( i = 0; i < SOUND_MAX_CHANNELS ; i++ ) {
 		idSoundChannel	*chan = &sound->channels[ i ];
 
-		if ( !chan->triggerState ) {
+		if ( !chan->triggerState )
 			continue;
-		}
 
-		if ( channel != SCHANNEL_ANY && chan->triggerChannel != channel) {
+		if ( channel != SCHANNEL_ANY && chan->triggerChannel != channel) 
 			continue;
-		}
 
 		parms = &chan->parms;
 
@@ -2145,49 +2128,52 @@ float idSoundWorldLocal::FindAmplitude( idSoundEmitterLocal *sound, const int lo
 
 		// check for screen shakes
 		float shakes = parms->shakes;
-		if ( shakesOnly && shakes <= 0.0f ) {
+		if ( shakesOnly && shakes <= 0.0f ) 
 			continue;
-		}
 
 		//
 		// calculate volume
 		//
-		if ( !listenerPosition ) {
+		if ( !listenerPosition ) 
+		{
 			// just look at the raw wav data for light shader evaluation
 			volume = 1.0;
-		} else {
+		} 
+		else 
+		{
 			volume = parms->volume;
 			volume = soundSystemLocal.dB2Scale( volume );
-			if ( shakesOnly ) {
+			if ( shakesOnly ) 
 				volume *= shakes;
-			}
-
-			if ( listenerPosition && !( parms->soundShaderFlags & SSF_GLOBAL )  ) {			
+			
+			if ( listenerPosition && !( parms->soundShaderFlags & SSF_GLOBAL )  ) 
+			{			
 				// check for overrides
 				float maxd = parms->maxDistance;
 				float mind = parms->minDistance;
 
-				if ( dlen >= maxd ) {
+				if ( dlen >= maxd )
 					volume = 0.0f;
-				} else if ( dlen > mind ) {
-					float frac = idMath::ClampFloat( 0, 1, 1.0f - ((dlen - mind) / (maxd - mind)));
-					if ( idSoundSystemLocal::s_quadraticFalloff.GetBool() ) {
+				else if ( dlen > mind ) 
+				{
+					float frac = clamp( 1.0f - ((dlen - mind) / (maxd - mind)), 0.0f, 1.0f );
+					if ( idSoundSystemLocal::s_quadraticFalloff.GetBool() ) 
 						frac *= frac;
-					}
+					
 					volume *= frac;
 				}
 			}
 		}
 
-		if ( volume <= 0 ) {
+		if ( volume <= 0 ) 
 			continue;
-		}
 
 		//
 		// fetch the sound from the cache
 		// this doesn't handle stereo samples correctly...
 		//
-		if ( !listenerPosition && chan->parms.soundShaderFlags & SSF_NO_FLICKER ) {
+		if ( !listenerPosition && chan->parms.soundShaderFlags & SSF_NO_FLICKER ) 
+		{
 			// the NO_FLICKER option is to allow a light to still play a sound, but
 			// not have it effect the intensity
 			for ( j = 0 ; j < (AMPLITUDE_SAMPLES); j++ ) {

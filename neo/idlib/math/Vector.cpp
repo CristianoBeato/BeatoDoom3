@@ -372,7 +372,8 @@ void idVec5::Lerp( const idVec5 &v1, const idVec5 &v2, const float l ) {
 idVec6::ToString
 =============
 */
-const char *idVec6::ToString( int precision ) const {
+const char *idVec6::ToString( int precision ) const 
+{
 	return idStr::FloatArrayToString( ToFloatPtr(), GetDimension(), precision );
 }
 
@@ -384,7 +385,7 @@ const char *idVec6::ToString( int precision ) const {
 //===============================================================
 
 float	idVecX::temp[VECX_MAX_TEMP+4];
-float *	idVecX::tempPtr = (float *) ( ( (int) idVecX::temp + 15 ) & ~15 );
+float *	idVecX::tempPtr = (float *) ( ( (intptr_t) idVecX::temp + 15 ) & ~15 );
 int		idVecX::tempIndex = 0;
 
 /*

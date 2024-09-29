@@ -233,7 +233,7 @@ void idCmdSystemLocal::Exec_f( const idCmdArgs &args ) {
 
 	filename = args.Argv(1);
 	filename.DefaultFileExtension( ".cfg" );
-	len = fileSystem->ReadFile( filename, reinterpret_cast<void **>(&f), NULL );
+	len = fileSystem->ReadFile( filename, reinterpret_cast<void **>(&f), nullptr );
 	if ( !f ) {
 		common->Printf( "couldn't exec %s\n", args.Argv(1) );
 		return;
@@ -389,11 +389,14 @@ void idCmdSystemLocal::AddCommand( const char *cmdName, cmdFunction_t function, 
 idCmdSystemLocal::RemoveCommand
 ============
 */
-void idCmdSystemLocal::RemoveCommand( const char *cmdName ) {
+void idCmdSystemLocal::RemoveCommand( const char *cmdName ) 
+{
 	commandDef_t *cmd, **last;
 
-	for ( last = &commands, cmd = *last; cmd; cmd = *last ) {
-		if ( idStr::Cmp( cmdName, cmd->name ) == 0 ) {
+	for ( last = &commands, cmd = *last; cmd; cmd = *last ) 
+	{
+		if ( idStr::Cmp( cmdName, cmd->name ) == 0 ) 
+		{
 			*last = cmd->next;
 			Mem_Free( cmd->name );
 			Mem_Free( cmd->description );
@@ -409,11 +412,14 @@ void idCmdSystemLocal::RemoveCommand( const char *cmdName ) {
 idCmdSystemLocal::RemoveFlaggedCommands
 ============
 */
-void idCmdSystemLocal::RemoveFlaggedCommands( int flags ) {
+void idCmdSystemLocal::RemoveFlaggedCommands( int flags ) 
+{
 	commandDef_t *cmd, **last;
 
-	for ( last = &commands, cmd = *last; cmd; cmd = *last ) {
-		if ( cmd->flags & flags ) {
+	for ( last = &commands, cmd = *last; cmd; cmd = *last ) 
+	{
+		if ( cmd->flags & flags ) 
+		{
 			*last = cmd->next;
 			Mem_Free( cmd->name );
 			Mem_Free( cmd->description );

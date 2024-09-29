@@ -29,14 +29,7 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __MATH_MATH_H__
 #define __MATH_MATH_H__
 
-#ifdef MACOS_X
-// for square root estimate instruction
-#ifdef PPC_INTRINSICS
-#include <ppc_intrinsics.h>
-#endif
-// for FLT_MIN
-#include <float.h>
-#endif
+
 /*
 ===============================================================================
 
@@ -49,9 +42,12 @@ If you have questions concerning this license or the applicable additional terms
 #undef INFINITY
 #endif
 
+// BEATO BEGIN
 #ifdef FLT_EPSILON
 #undef FLT_EPSILON
+#define SDL_FLT_EPSILON idMath::FLT_EPSILON
 #endif
+// BEATO END
 
 #define DEG2RAD(a)				( (a) * idMath::M_DEG2RAD )
 #define RAD2DEG(a)				( (a) * idMath::M_RAD2DEG )
@@ -190,8 +186,8 @@ public:
 
 	static signed char			ClampChar( int i );
 	static signed short			ClampShort( int i );
-	static int					ClampInt( int min, int max, int value );
-	static float				ClampFloat( float min, float max, float value );
+//	static int					ClampInt( int min, int max, int value );
+//	static float				ClampFloat( float min, float max, float value );
 
 	static float				AngleNormalize360( float angle );
 	static float				AngleNormalize180( float angle );
@@ -230,11 +226,11 @@ private:
 	};
 
 	union _flint {
-		dword					i;
+		uint32_t				i;
 		float					f;
 	};
 
-	static dword				iSqrt[SQRT_TABLE_SIZE];
+	static uint32_t				iSqrt[SQRT_TABLE_SIZE];
 	static bool					initialized;
 };
 
@@ -253,7 +249,7 @@ ID_INLINE float idMath::RSqrt( float x ) {
 
 ID_INLINE float idMath::InvSqrt16( float x ) {
 
-	dword a = ((union _flint*)(&x))->i;
+	uint32_t a = ((union _flint*)(&x))->i;
 	union _flint seed;
 
 	assert( initialized );
@@ -267,7 +263,7 @@ ID_INLINE float idMath::InvSqrt16( float x ) {
 
 ID_INLINE float idMath::InvSqrt( float x ) {
 
-	dword a = ((union _flint*)(&x))->i;
+	uint32_t a = ((union _flint*)(&x))->i;
 	union _flint seed;
 
 	assert( initialized );
@@ -281,7 +277,7 @@ ID_INLINE float idMath::InvSqrt( float x ) {
 }
 
 ID_INLINE double idMath::InvSqrt64( float x ) {
-	dword a = ((union _flint*)(&x))->i;
+	uint32_t a = ((union _flint*)(&x))->i;
 	union _flint seed;
 
 	assert( initialized );
@@ -394,8 +390,8 @@ ID_INLINE void idMath::SinCos( float a, float &s, float &c ) {
 		fsincos
 		mov		ecx, c
 		mov		edx, s
-		fstp	dword ptr [ecx]
-		fstp	dword ptr [edx]
+		fstp	uint32_t ptr [ecx]
+		fstp	uint32_t ptr [edx]
 	}
 #else
 	s = sinf( a );
@@ -600,15 +596,18 @@ ID_INLINE float idMath::ATan16( float a ) {
 	}
 }
 
-ID_INLINE double idMath::ATan64( float a ) {
-	return atan( a );
+ID_INLINE double idMath::ATan64( float a ) 
+{
+	return std::atan( a );
 }
 
-ID_INLINE float idMath::ATan( float y, float x ) {
-	return atan2f( y, x );
+ID_INLINE float idMath::ATan( float y, float x ) 
+{
+	return std::atan2( y, x );
 }
 
-ID_INLINE float idMath::ATan16( float y, float x ) {
+ID_INLINE float idMath::ATan16( float y, float x ) 
+{
 	float a, s;
 
 	if ( fabs( y ) > fabs( x ) ) {
@@ -629,27 +628,33 @@ ID_INLINE float idMath::ATan16( float y, float x ) {
 	}
 }
 
-ID_INLINE double idMath::ATan64( float y, float x ) {
-	return atan2( y, x );
+ID_INLINE double idMath::ATan64( float y, float x ) 
+{
+	return std::atan2( (double)y, (double)x );
 }
 
-ID_INLINE float idMath::Pow( float x, float y ) {
-	return powf( x, y );
+ID_INLINE float idMath::Pow( float x, float y ) 
+{
+	return std::pow( x, y );
 }
 
-ID_INLINE float idMath::Pow16( float x, float y ) {
+ID_INLINE float idMath::Pow16( float x, float y ) 
+{
 	return Exp16( y * Log16( x ) );
 }
 
-ID_INLINE double idMath::Pow64( float x, float y ) {
-	return pow( x, y );
+ID_INLINE double idMath::Pow64( float x, float y ) 
+{
+	return std::pow( (double)x, (double)y );
 }
 
-ID_INLINE float idMath::Exp( float f ) {
-	return expf( f );
+ID_INLINE float idMath::Exp( float f ) 
+{
+	return std::exp( f );
 }
 
-ID_INLINE float idMath::Exp16( float f ) {
+ID_INLINE float idMath::Exp16( float f ) 
+{
 	int i, s, e, m, exponent;
 	float x, x2, y, p, q;
 
@@ -680,12 +685,14 @@ ID_INLINE float idMath::Exp16( float f ) {
 	return x;
 }
 
-ID_INLINE double idMath::Exp64( float f ) {
-	return exp( f );
+ID_INLINE double idMath::Exp64( float f ) 
+{
+	return std::exp( (double)f );
 }
 
-ID_INLINE float idMath::Log( float f ) {
-	return logf( f );
+ID_INLINE float idMath::Log( float f ) 
+{
+	return std::log( f );
 }
 
 ID_INLINE float idMath::Log16( float f ) {
@@ -704,43 +711,53 @@ ID_INLINE float idMath::Log16( float f ) {
 	return y;
 }
 
-ID_INLINE double idMath::Log64( float f ) {
-	return log( f );
+ID_INLINE double idMath::Log64( float f ) 
+{
+	return std::log( (double)f );
 }
 
-ID_INLINE int idMath::IPow( int x, int y ) {
+ID_INLINE int idMath::IPow( int x, int y ) 
+{
 	int r; for( r = x; y > 1; y-- ) { r *= x; } return r;
 }
 
-ID_INLINE int idMath::ILog2( float f ) {
+ID_INLINE int idMath::ILog2( float f ) 
+{
 	return ( ( (*reinterpret_cast<int *>(&f)) >> IEEE_FLT_MANTISSA_BITS ) & ( ( 1 << IEEE_FLT_EXPONENT_BITS ) - 1 ) ) - IEEE_FLT_EXPONENT_BIAS;
 }
 
-ID_INLINE int idMath::ILog2( int i ) {
+ID_INLINE int idMath::ILog2( int i ) 
+{
 	return ILog2( (float)i );
 }
 
-ID_INLINE int idMath::BitsForFloat( float f ) {
+ID_INLINE int idMath::BitsForFloat( float f ) 
+{
 	return ILog2( f ) + 1;
 }
 
-ID_INLINE int idMath::BitsForInteger( int i ) {
+ID_INLINE int idMath::BitsForInteger( int i ) 
+{
 	return ILog2( (float)i ) + 1;
 }
 
-ID_INLINE int idMath::MaskForFloatSign( float f ) {
+ID_INLINE int idMath::MaskForFloatSign( float f ) 
+{
 	return ( (*reinterpret_cast<int *>(&f)) >> 31 );
 }
 
-ID_INLINE int idMath::MaskForIntegerSign( int i ) {
+ID_INLINE int idMath::MaskForIntegerSign( int i )
+{
 	return ( i >> 31 );
 }
 
-ID_INLINE int idMath::FloorPowerOfTwo( int x ) {
+ID_INLINE int idMath::FloorPowerOfTwo( int x ) 
+{
 	return CeilPowerOfTwo( x ) >> 1;
 }
 
-ID_INLINE int idMath::CeilPowerOfTwo( int x ) {
+ID_INLINE int idMath::CeilPowerOfTwo( int x ) 
+{
 	x--;
 	x |= x >> 1;
 	x |= x >> 2;
@@ -751,11 +768,13 @@ ID_INLINE int idMath::CeilPowerOfTwo( int x ) {
 	return x;
 }
 
-ID_INLINE bool idMath::IsPowerOfTwo( int x ) {
+ID_INLINE bool idMath::IsPowerOfTwo( int x ) 
+{
 	return ( x & ( x - 1 ) ) == 0 && x > 0;
 }
 
-ID_INLINE int idMath::BitCount( int x ) {
+ID_INLINE int idMath::BitCount( int x ) 
+{
 	x -= ( ( x >> 1 ) & 0x55555555 );
 	x = ( ( ( x >> 2 ) & 0x33333333 ) + ( x & 0x33333333 ) );
 	x = ( ( ( x >> 4 ) + x ) & 0x0f0f0f0f );
@@ -763,7 +782,8 @@ ID_INLINE int idMath::BitCount( int x ) {
 	return ( ( x + ( x >> 16 ) ) & 0x0000003f );
 }
 
-ID_INLINE int idMath::BitReverse( int x ) {
+ID_INLINE int idMath::BitReverse( int x ) 
+{
 	x = ( ( ( x >> 1 ) & 0x55555555 ) | ( ( x & 0x55555555 ) << 1 ) );
 	x = ( ( ( x >> 2 ) & 0x33333333 ) | ( ( x & 0x33333333 ) << 2 ) );
 	x = ( ( ( x >> 4 ) & 0x0f0f0f0f ) | ( ( x & 0x0f0f0f0f ) << 4 ) );
@@ -771,34 +791,41 @@ ID_INLINE int idMath::BitReverse( int x ) {
 	return ( ( x >> 16 ) | ( x << 16 ) );
 }
 
-ID_INLINE int idMath::Abs( int x ) {
+ID_INLINE int idMath::Abs( int x ) 
+{
    int y = x >> 31;
    return ( ( x ^ y ) - y );
 }
 
-ID_INLINE float idMath::Fabs( float f ) {
+ID_INLINE float idMath::Fabs( float f ) 
+{
 	int tmp = *reinterpret_cast<int *>( &f );
 	tmp &= 0x7FFFFFFF;
 	return *reinterpret_cast<float *>( &tmp );
 }
 
-ID_INLINE float idMath::Floor( float f ) {
-	return floorf( f );
+ID_INLINE float idMath::Floor( float f ) 
+{
+	return std::floor( f );
 }
 
-ID_INLINE float idMath::Ceil( float f ) {
-	return ceilf( f );
+ID_INLINE float idMath::Ceil( float f ) 
+{
+	return std::ceil( f );
 }
 
-ID_INLINE float idMath::Rint( float f ) {
-	return floorf( f + 0.5f );
+ID_INLINE float idMath::Rint( float f ) 
+{
+	return std::floor( f + 0.5f );
 }
 
-ID_INLINE int idMath::Ftoi( float f ) {
+ID_INLINE int idMath::Ftoi( float f ) 
+{
 	return (int) f;
 }
 
-ID_INLINE int idMath::FtoiFast( float f ) {
+ID_INLINE int idMath::FtoiFast( float f ) 
+{
 #ifdef _WIN32
 	int i;
 	__asm fld		f
@@ -826,11 +853,13 @@ ID_INLINE int idMath::FtoiFast( float f ) {
 #endif
 }
 
-ID_INLINE unsigned long idMath::Ftol( float f ) {
+ID_INLINE unsigned long idMath::Ftol( float f ) 
+{
 	return (unsigned long) f;
 }
 
-ID_INLINE unsigned long idMath::FtolFast( float f ) {
+ID_INLINE unsigned long idMath::FtolFast( float f ) 
+{
 #ifdef _WIN32
 	// FIXME: this overflows on 31bits still .. same as FtoiFast
 	unsigned long i;
@@ -860,45 +889,37 @@ ID_INLINE unsigned long idMath::FtolFast( float f ) {
 #endif
 }
 
-ID_INLINE signed char idMath::ClampChar( int i ) {
-	if ( i < -128 ) {
-		return -128;
-	}
-	if ( i > 127 ) {
-		return 127;
-	}
-	return i;
+// BEATO Begin:
+ID_INLINE signed char idMath::ClampChar( int i ) 
+{
+	return clamp<int>( i, -128, 127);
 }
 
-ID_INLINE signed short idMath::ClampShort( int i ) {
-	if ( i < -32768 ) {
-		return -32768;
-	}
-	if ( i > 32767 ) {
-		return 32767;
-	}
-	return i;
+ID_INLINE signed short idMath::ClampShort( int i ) 
+{
+	return clamp<int>( i, -32767, 32767 );
 }
 
-ID_INLINE int idMath::ClampInt( int min, int max, int value ) {
-	if ( value < min ) {
-		return min;
-	}
-	if ( value > max ) {
-		return max;
-	}
-	return value;
-}
+//ID_INLINE int idMath::ClampInt( int min, int max, int value ) {
+//	if ( value < min ) {
+//		return min;
+//	}
+//	if ( value > max ) {
+//		return max;
+//	}
+//	return value;
+//}
 
-ID_INLINE float idMath::ClampFloat( float min, float max, float value ) {
-	if ( value < min ) {
-		return min;
-	}
-	if ( value > max ) {
-		return max;
-	}
-	return value;
-}
+//ID_INLINE float idMath::ClampFloat( float min, float max, float value ) {
+//	if ( value < min ) {
+//		return min;
+//	}
+//	if ( value > max ) {
+//		return max;
+//	}
+//	return value;
+//}
+// BEATO End
 
 ID_INLINE float idMath::AngleNormalize360( float angle ) {
 	if ( ( angle >= 360.0f ) || ( angle < 0.0f ) ) {

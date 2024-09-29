@@ -425,7 +425,7 @@ void SSDAsteroid::Init(idGameSSDWindow* _game, const idVec3& startPosition, cons
 
 	SetMaterial(ASTEROID_MATERIAL);
 	SetSize(_size);
-	SetRadius(Max(size.x, size.y), 0.3f);
+	SetRadius(max(size.x, size.y), 0.3f);
 	SetRotation(game->random.RandomInt(360));
 
 	
@@ -523,7 +523,7 @@ void SSDAstronaut::Init(idGameSSDWindow* _game, const idVec3& startPosition, flo
 
 	SetMaterial(ASTRONAUT_MATERIAL);
 	SetSize(idVec2(256,256));
-	SetRadius(Max(size.x, size.y), 0.3f);
+	SetRadius(max(size.x, size.y), 0.3f);
 	SetRotation(game->random.RandomInt(360));
 	
 	position = startPosition;
@@ -1123,7 +1123,7 @@ void SSDPowerup::Init(idGameSSDWindow* _game, float _speed, float _rotation) {
 
 	SetGame(_game);
 	SetSize(idVec2(200,200));
-	SetRadius(Max(size.x, size.y), 0.3f);
+	SetRadius(max(size.x, size.y), 0.3f);
 
 	type = SSD_ENTITY_POWERUP;
 	
@@ -1701,18 +1701,19 @@ void idGameSSDWindow::ContinueGame() {
 	StartGame();
 }
 
-void idGameSSDWindow::LevelComplete() {
+void idGameSSDWindow::LevelComplete() 
+{
 	
 	gameStats.prebonusscore = gameStats.score;
 
 	// Add the bonuses
 	int accuracy;
-	if( !gameStats.levelStats.shotCount ) {
-		accuracy = 0;
-	} else {
+	if( !gameStats.levelStats.shotCount ) 
+		accuracy = 0; 
+	else 
 		accuracy = (int)( ( (float)gameStats.levelStats.hitCount / (float)gameStats.levelStats.shotCount ) * 100.0f );
-	}
-	int accuracyPoints = Max( 0, accuracy - 50 ) * 20;
+	
+	int accuracyPoints = max( 0, accuracy - 50 ) * 20;
 
 	gui->SetStateString("player_accuracy_score", va("%i", accuracyPoints));
 
@@ -1725,7 +1726,7 @@ void idGameSSDWindow::LevelComplete() {
 	} else {
 		saveAccuracy = (int)( ( (float)gameStats.levelStats.savedAstronauts / (float)totalAst ) * 100.0f );
 	}
-	accuracyPoints = Max( 0, saveAccuracy - 50 ) * 20;
+	accuracyPoints = max( 0, saveAccuracy - 50 ) * 20;
 
 	gui->SetStateString("save_accuracy_score", va("%i", accuracyPoints));
 
@@ -1854,10 +1855,12 @@ void idGameSSDWindow::CheckForHits() {
 	}
 }
 
-void idGameSSDWindow::ZOrderEntities() {
+void idGameSSDWindow::ZOrderEntities() 
+{
 	//Z-Order the entities
 	//Using a simple sorting method
-	for (int i = entities.Num()-1; i >= 0; i--) { 
+	for (int i = entities.Num()-1; i >= 0; i--) 
+	{ 
 		bool flipped = false;
 		for (int j = 0;  j<i ; j++) { 
 			if (entities[j]->position.z > entities[j+1]->position.z) { 
@@ -2041,7 +2044,7 @@ void idGameSSDWindow::AddDamage(int damage) {
 
 void idGameSSDWindow::AddHealth(int health) {
 	gameStats.health += health;
-	gameStats.health = Min( 100, gameStats.health );
+	gameStats.health = min( 100, gameStats.health );
 }
 
 

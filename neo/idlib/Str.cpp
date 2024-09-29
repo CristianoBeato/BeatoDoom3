@@ -1499,7 +1499,8 @@ idStr::vsnPrintf: always appends a trailing '\0', returns number of characters w
 or returns -1 on failure or if the buffer would be overflowed.
 ============
 */
-int idStr::vsnPrintf( char *dest, int size, const char *fmt, va_list argptr ) {
+int idStr::vsnPrintf( char *dest, int size, const char *fmt, va_list argptr )
+{
 	int ret;
 
 #ifdef _WIN32
@@ -1512,9 +1513,9 @@ int idStr::vsnPrintf( char *dest, int size, const char *fmt, va_list argptr ) {
 #define vsnprintf	use_idStr_vsnPrintf
 #endif
 	dest[size-1] = '\0';
-	if ( ret < 0 || ret >= size ) {
+	if ( ret < 0 || ret >= size ) 
 		return -1;
-	}
+	
 	return ret;
 }
 

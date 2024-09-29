@@ -38,7 +38,8 @@ If you have questions concerning this license or the applicable additional terms
 */
 
 
-class idPolynomial {
+class idPolynomial 
+{
 public:
 					idPolynomial( void );
 					explicit idPolynomial( int d );
@@ -101,23 +102,26 @@ private:
 	int				Laguer( const idComplex *coef, const int degree, idComplex &r ) const;
 };
 
-ID_INLINE idPolynomial::idPolynomial( void ) {
+ID_INLINE idPolynomial::idPolynomial( void ) 
+{
 	degree = -1;
 	allocated = 0;
-	coefficient = NULL;
+	coefficient = nullptr;
 }
 
-ID_INLINE idPolynomial::idPolynomial( int d ) {
+ID_INLINE idPolynomial::idPolynomial( int d ) 
+{
 	degree = -1;
 	allocated = 0;
-	coefficient = NULL;
+	coefficient = nullptr;
 	Resize( d, false );
 }
 
-ID_INLINE idPolynomial::idPolynomial( float a, float b ) {
+ID_INLINE idPolynomial::idPolynomial( float a, float b ) 
+{
 	degree = -1;
 	allocated = 0;
-	coefficient = NULL;
+	coefficient = nullptr;
 	Resize( 1, false );
 	coefficient[0] = b;
 	coefficient[1] = a;
@@ -126,7 +130,7 @@ ID_INLINE idPolynomial::idPolynomial( float a, float b ) {
 ID_INLINE idPolynomial::idPolynomial( float a, float b, float c ) {
 	degree = -1;
 	allocated = 0;
-	coefficient = NULL;
+	coefficient = nullptr;
 	Resize( 2, false );
 	coefficient[0] = c;
 	coefficient[1] = b;
@@ -136,7 +140,7 @@ ID_INLINE idPolynomial::idPolynomial( float a, float b, float c ) {
 ID_INLINE idPolynomial::idPolynomial( float a, float b, float c, float d ) {
 	degree = -1;
 	allocated = 0;
-	coefficient = NULL;
+	coefficient = nullptr;
 	Resize( 3, false );
 	coefficient[0] = d;
 	coefficient[1] = c;
@@ -147,7 +151,7 @@ ID_INLINE idPolynomial::idPolynomial( float a, float b, float c, float d ) {
 ID_INLINE idPolynomial::idPolynomial( float a, float b, float c, float d, float e ) {
 	degree = -1;
 	allocated = 0;
-	coefficient = NULL;
+	coefficient = nullptr;
 	Resize( 4, false );
 	coefficient[0] = e;
 	coefficient[1] = d;
@@ -418,7 +422,8 @@ ID_INLINE float idPolynomial::GetValue( const float x ) const {
 	return y;
 }
 
-ID_INLINE idComplex idPolynomial::GetValue( const idComplex &x ) const {
+ID_INLINE idComplex idPolynomial::GetValue( const idComplex &x ) const 
+{
 	idComplex y, z;
 	y.Set( coefficient[0], 0.0f );
 	z = x;
@@ -608,13 +613,18 @@ ID_INLINE float *idPolynomial::ToFloatPtr( void ) {
 	return coefficient;
 }
 
-ID_INLINE void idPolynomial::Resize( int d, bool keep ) {
+ID_INLINE void idPolynomial::Resize( int d, bool keep ) 
+{
 	int alloc = ( d + 1 + 3 ) & ~3;
-	if ( alloc > allocated ) {
-		float *ptr = (float *) Mem_Alloc16( alloc * sizeof( float ) );
-		if ( coefficient != NULL ) {
-			if ( keep ) {
-				for ( int i = 0; i <= degree; i++ ) {
+	if ( alloc > allocated ) 
+	{
+		float *ptr = (float *) Mem_Alloc16( _alignedSize( alloc * sizeof( float ), 16 ) );
+		if ( coefficient != nullptr ) 
+		{
+			if ( keep ) 
+			{
+				for ( int i = 0; i <= degree; i++ ) 
+				{
 					ptr[i] = coefficient[i];
 				}
 			}

@@ -276,7 +276,8 @@ void idServerScan::NetScan( ) {
 	GUIUpdateSelected();
 	common->DPrintf( "NetScan with challenge %d\n", challenge );
 	
-	while ( cur_info < Min( net_servers.Num(), MAX_PINGREQUESTS ) ) {
+	while ( cur_info < min( net_servers.Num(), MAX_PINGREQUESTS ) ) 
+	{
 		netadr_t serv = net_servers[ cur_info ].adr;
 		EmitGetInfo( serv );
 		net_servers[ cur_info ].time = Sys_Milliseconds();

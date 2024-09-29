@@ -29,6 +29,8 @@ If you have questions concerning this license or the applicable additional terms
 #include "../precompiled.h"
 #pragma hdrstop
 
+#include "idlib/math/Polynomial.h"
+
 const float EPSILON		= 1e-6f;
 
 /*
@@ -68,7 +70,8 @@ int idPolynomial::Laguer( const idComplex *coef, const int degree, idComplex &x 
 		if ( abp < abm ) {
 			gps = gms;
 		}
-		if ( Max( abp, abm ) > 0.0f ) {
+		if ( max( abp, abm ) > 0.0f ) 
+		{
 			dx = degree / gps;
 		} else {
 			dx = idMath::Exp( idMath::Log( 1.0f + abx ) ) * idComplex( idMath::Cos( i ), idMath::Sin( i ) );
@@ -187,7 +190,7 @@ idPolynomial::Test
 */
 void idPolynomial::Test( void ) {
 	int i, num;
-	float roots[4], value;
+	float roots[4], value id_attribute((unused));
 	idComplex complexRoots[4], complexValue;
 	idPolynomial p;
 
@@ -228,9 +231,12 @@ void idPolynomial::Test( void ) {
 
 	p = idPolynomial( 1.0f, 4.0f, 3.0f, -2.0f );
 	num = p.GetRoots( complexRoots );
-	for ( i = 0; i < num; i++ ) {
+	for ( i = 0; i < num; i++ ) 
+	{
 		complexValue = p.GetValue( complexRoots[i] );
-		assert( idMath::Fabs( complexValue.r ) < 1e-4f && idMath::Fabs( complexValue.i ) < 1e-4f );
+		float r = idMath::Fabs( complexValue.r );
+		float i = idMath::Fabs( complexValue.i ); 
+		assert( r < 1e-4f && i < 1e-4f );
 	}
 
 	p = idPolynomial( 5.0f, 4.0f, 3.0f, -2.0f );

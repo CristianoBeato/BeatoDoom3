@@ -2861,13 +2861,14 @@ idCollisionModelManagerLocal::OptimizeArrays
   can have a lot of unused entries.
 ==================
 */
-void idCollisionModelManagerLocal::OptimizeArrays( cm_model_t *model ) {
+void idCollisionModelManagerLocal::OptimizeArrays( cm_model_t *model ) 
+{
 	int i, newNumVertices, newNumEdges, *v;
 	int *remap;
 	cm_edge_t *oldEdges;
 	cm_vertex_t *oldVertices;
 
-	remap = (int *) Mem_ClearedAlloc( Max( model->numVertices, model->numEdges ) * sizeof( int ) );
+	remap = (int *) Mem_ClearedAlloc( max( model->numVertices, model->numEdges ) * sizeof( int ) );
 	// get all used vertices
 	for ( i = 0; i < model->numEdges; i++ ) {
 		remap[ model->edges[i].vertexNum[0] ] = true;

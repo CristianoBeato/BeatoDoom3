@@ -1714,48 +1714,43 @@ void idWindow::PostParse() {
 idWindow::GetWinVarOffset
 ================
 */
-int idWindow::GetWinVarOffset( idWinVar *wv, drawWin_t* owner) {
-	int ret = -1;
+intptr_t idWindow::GetWinVarOffset( idWinVar *wv, drawWin_t* owner) {
+	intptr_t ret = -1;
 
-	if ( wv == &rect ) {
-		ret = (int)&( ( idWindow * ) 0 )->rect;
-	}
+	if ( wv == &rect ) 
+		ret = (intptr_t)&( ( idWindow * ) 0 )->rect;
 
-	if ( wv == &backColor ) {
-		ret = (int)&( ( idWindow * ) 0 )->backColor;
-	}
+	if ( wv == &backColor ) 
+		ret = (intptr_t)&( ( idWindow * ) 0 )->backColor;
 
-	if ( wv == &matColor ) {
-		ret = (int)&( ( idWindow * ) 0 )->matColor;
-	}
+	if ( wv == &matColor ) 
+		ret = (intptr_t)&( ( idWindow * ) 0 )->matColor;
 
-	if ( wv == &foreColor ) {
-		ret = (int)&( ( idWindow * ) 0 )->foreColor;
-	}
+	if ( wv == &foreColor ) 
+		ret = (intptr_t)&( ( idWindow * ) 0 )->foreColor;
 
-	if ( wv == &hoverColor ) {
-		ret = (int)&( ( idWindow * ) 0 )->hoverColor;
-	}
+	if ( wv == &hoverColor ) 
+		ret = (intptr_t)&( ( idWindow * ) 0 )->hoverColor;
 
-	if ( wv == &borderColor ) {
-		ret = (int)&( ( idWindow * ) 0 )->borderColor;
-	}
+	if ( wv == &borderColor ) 
+		ret = (intptr_t)&( ( idWindow * ) 0 )->borderColor;
 
-	if ( wv == &textScale ) {
-		ret = (int)&( ( idWindow * ) 0 )->textScale;
-	}
+	if ( wv == &textScale ) 
+		ret = (intptr_t)&( ( idWindow * ) 0 )->textScale;
 
-	if ( wv == &rotate ) {
-		ret = (int)&( ( idWindow * ) 0 )->rotate;
-	}
+	if ( wv == &rotate ) 
+		ret = (intptr_t)&( ( idWindow * ) 0 )->rotate;
 
-	if ( ret != -1 ) {
+	if ( ret != -1 ) 
+	{
 		owner->win = this;
 		return ret;
 	}
 
-	for ( int i = 0; i < drawWindows.Num(); i++ ) {
-		if ( drawWindows[i].win ) {
+	for ( int i = 0; i < drawWindows.Num(); i++ ) 
+	{
+		if ( drawWindows[i].win ) 
+		{
 			ret = drawWindows[i].win->GetWinVarOffset( wv, owner );
 		} else {
 			ret = drawWindows[i].simp->GetWinVarOffset( wv, owner );
@@ -2699,8 +2694,9 @@ bool idWindow::RunScript(int n) {
 idWindow::ExpressionConstant
 ================
 */
-int idWindow::ExpressionConstant(float f) {
-	int		i;
+intptr_t idWindow::ExpressionConstant(float f) 
+{
+	intptr_t	i = 0;
 
 	for ( i = WEXP_REG_NUM_PREDEFINED ; i < expressionRegisters.Num() ; i++ ) {
 		if ( !registerIsTemporary[i] && expressionRegisters[i] == f ) {
@@ -2763,7 +2759,8 @@ idWindow::EmitOp
 ================
 */
 
-int idWindow::EmitOp( int a, int b, wexpOpType_t opType, wexpOp_t **opp ) {
+intptr_t idWindow::EmitOp( intptr_t a, intptr_t b, wexpOpType_t opType, wexpOp_t **opp ) 
+{
 	wexpOp_t *op;
 /*
 	// optimize away identity operations
@@ -2814,8 +2811,9 @@ int idWindow::EmitOp( int a, int b, wexpOpType_t opType, wexpOp_t **opp ) {
 idWindow::ParseEmitOp
 ================
 */
-int idWindow::ParseEmitOp( idParser *src, int a, wexpOpType_t opType, int priority, wexpOp_t **opp ) {
-	int b = ParseExpressionPriority( src, priority );
+intptr_t idWindow::ParseEmitOp( idParser *src, intptr_t a, wexpOpType_t opType, int priority, wexpOp_t **opp ) 
+{
+	intptr_t b = ParseExpressionPriority( src, priority );
 	return EmitOp( a, b, opType, opp );  
 }
 
@@ -2827,13 +2825,15 @@ idWindow::ParseTerm
 Returns a register index
 =================
 */
-int idWindow::ParseTerm( idParser *src,	idWinVar *var, int component ) {
+intptr_t idWindow::ParseTerm( idParser *src,	idWinVar *var, int component ) 
+{
 	idToken token;
-	int		a, b;
+	intptr_t		a, b;
 
 	src->ReadToken( &token );
 
-	if ( token == "(" ) {
+	if ( token == "(" ) 
+	{
 		a = ParseExpression( src );
 		src->ExpectTokenString(")");
 		return a;
@@ -2859,7 +2859,8 @@ int idWindow::ParseTerm( idParser *src,	idWinVar *var, int component ) {
 
 	// see if it is a table name
 	const idDeclTable *table = static_cast<const idDeclTable *>( declManager->FindType( DECL_TABLE, token.c_str(), false ) );
-	if ( table ) {
+	if ( table ) 
+	{
 		a = table->Index();
 		// parse a table expression
 		src->ExpectTokenString("[");
@@ -2868,11 +2869,12 @@ int idWindow::ParseTerm( idParser *src,	idWinVar *var, int component ) {
 		return EmitOp( a, b, WOP_TYPE_TABLE );
 	}
 	
-	if (var == NULL) {
+	if ( var == nullptr ) 
 		var = GetWinVarByName(token, true);
-	}
-	if (var) {
-		a = (int)var;
+	
+	if (var) 
+	{
+		a = (intptr_t)var;
 		//assert(dynamic_cast<idWinVec4*>(var));
 		var->Init(token, this);
 		b = component;
@@ -2886,23 +2888,35 @@ int idWindow::ParseTerm( idParser *src,	idWinVar *var, int component ) {
 				}
 			}
 			return EmitOp(a, b, WOP_TYPE_VAR);
-		} else if (dynamic_cast<idWinFloat*>(var)) {
+		} 
+		else if (dynamic_cast<idWinFloat*>(var)) 
+		{
 			return EmitOp(a, b, WOP_TYPE_VARF);
-		} else if (dynamic_cast<idWinInt*>(var)) {
+		} 
+		else if (dynamic_cast<idWinInt*>(var)) 
+		{
 			return EmitOp(a, b, WOP_TYPE_VARI);
-		} else if (dynamic_cast<idWinBool*>(var)) {
+		} 
+		else if (dynamic_cast<idWinBool*>(var)) 
+		{
 			return EmitOp(a, b, WOP_TYPE_VARB);
-		} else if (dynamic_cast<idWinStr*>(var)) {
+		} 
+		else if (dynamic_cast<idWinStr*>(var)) 
+		{
 			return EmitOp(a, b, WOP_TYPE_VARS);
-		} else {
+		} 
+		else 
+		{
 			src->Warning("Var expression not vec4, float or int '%s'", token.c_str());
 		}
 		return 0;
-	} else {
+	} 
+	else 
+	{
 		// ugly but used for post parsing to fixup named vars
 		char *p = new char[token.Length()+1];
 		strcpy(p, token);
-		a = (int)p;
+		a = (intptr_t)p;
 		b = -2;
 		return EmitOp(a, b, WOP_TYPE_VAR);
 	}
@@ -2917,68 +2931,67 @@ Returns a register index
 =================
 */
 #define	TOP_PRIORITY 4
-int idWindow::ParseExpressionPriority( idParser *src, int priority, idWinVar *var, int component ) {
-	idToken token;
-	int		a;
+intptr_t idWindow::ParseExpressionPriority( idParser *src, int priority, idWinVar *var, int component ) 
+{
+	idToken 	token;
+	intptr_t	a;
 
-	if ( priority == 0 ) {
+	if ( priority == 0 ) 
 		return ParseTerm( src, var, component );
-	}
 
 	a = ParseExpressionPriority( src, priority - 1, var, component );
 
-	if ( !src->ReadToken( &token ) ) {
-		// we won't get EOF in a real file, but we can
-		// when parsing from generated strings
-		return a;
-	}
+	if ( !src->ReadToken( &token ) ) 
+		return a; // we won't get EOF in a real file, but we can when parsing from generated strings
 
-	if ( priority == 1 && token == "*" ) {
+	if ( priority == 1 && token == "*" ) 
 		return ParseEmitOp( src, a, WOP_TYPE_MULTIPLY, priority );
-	}
-	if ( priority == 1 && token == "/" ) {
+	
+	if ( priority == 1 && token == "/" ) 
 		return ParseEmitOp( src, a, WOP_TYPE_DIVIDE, priority );
-	}
-	if ( priority == 1 && token == "%" ) {	// implied truncate both to integer
+	
+	if ( priority == 1 && token == "%" ) // implied truncate both to integer
 		return ParseEmitOp( src, a, WOP_TYPE_MOD, priority );
-	}
-	if ( priority == 2 && token == "+" ) {
+	
+	if ( priority == 2 && token == "+" )
 		return ParseEmitOp( src, a, WOP_TYPE_ADD, priority );
-	}
-	if ( priority == 2 && token == "-" ) {
+	
+	if ( priority == 2 && token == "-" ) 
 		return ParseEmitOp( src, a, WOP_TYPE_SUBTRACT, priority );
-	}
-	if ( priority == 3 && token == ">" ) {
+	
+	if ( priority == 3 && token == ">" ) 
 		return ParseEmitOp( src, a, WOP_TYPE_GT, priority );
-	}
-	if ( priority == 3 && token == ">=" ) {
+	
+	if ( priority == 3 && token == ">=" ) 
 		return ParseEmitOp( src, a, WOP_TYPE_GE, priority );
-	}
-	if ( priority == 3 && token == "<" ) {
+	
+	if ( priority == 3 && token == "<" ) 
 		return ParseEmitOp( src, a, WOP_TYPE_LT, priority );
-	}
-	if ( priority == 3 && token == "<=" ) {
+	
+	if ( priority == 3 && token == "<=" ) 
 		return ParseEmitOp( src, a, WOP_TYPE_LE, priority );
-	}
-	if ( priority == 3 && token == "==" ) {
+	
+	if ( priority == 3 && token == "==" ) 
 		return ParseEmitOp( src, a, WOP_TYPE_EQ, priority );
-	}
-	if ( priority == 3 && token == "!=" ) {
+	
+	if ( priority == 3 && token == "!=" ) 
 		return ParseEmitOp( src, a, WOP_TYPE_NE, priority );
-	}
-	if ( priority == 4 && token == "&&" ) {
+	
+	if ( priority == 4 && token == "&&" ) 
 		return ParseEmitOp( src, a, WOP_TYPE_AND, priority );
-	}
-	if ( priority == 4 && token == "||" ) {
+	
+	if ( priority == 4 && token == "||" ) 
 		return ParseEmitOp( src, a, WOP_TYPE_OR, priority );
-	}
-	if ( priority == 4 && token == "?" ) {
-		wexpOp_t *oop = NULL;
+	
+	if ( priority == 4 && token == "?" ) 
+	{
+		wexpOp_t *oop = nullptr;
 		int o = ParseEmitOp( src, a, WOP_TYPE_COND, priority, &oop );
-		if ( !src->ReadToken( &token ) ) {
+		if ( !src->ReadToken( &token ) ) 
 			return o;
-		}
-		if (token == ":") {
+		
+		if (token == ":") 
+		{
 			a = ParseExpressionPriority( src, priority - 1, var );
 			oop->d = a;
 		}
@@ -3000,7 +3013,8 @@ idWindow::ParseExpression
 Returns a register index
 ================
 */
-int idWindow::ParseExpression(idParser *src, idWinVar *var, int component) {
+intptr_t idWindow::ParseExpression(idParser *src, idWinVar *var, int component) 
+{
 	return ParseExpressionPriority( src, TOP_PRIORITY, var );
 }
 
@@ -3009,7 +3023,8 @@ int idWindow::ParseExpression(idParser *src, idWinVar *var, int component) {
 idWindow::ParseBracedExpression
 ================
 */
-void idWindow::ParseBracedExpression(idParser *src) {
+void idWindow::ParseBracedExpression(idParser *src) 
+{
 	src->ExpectTokenString("{");
 	ParseExpression(src);
 	src->ExpectTokenString("}");
@@ -3768,54 +3783,64 @@ int idWindow::NumTransitions() {
 idWindow::FixupTransitions
 ===============
 */
-void idWindow::FixupTransitions() {
+void idWindow::FixupTransitions() 
+{
 	int i, c = transitions.Num();
-	for ( i = 0; i < c; i++ ) {
+	for ( i = 0; i < c; i++ ) 
+	{
 		drawWin_t *dw = gui->GetDesktop()->FindChildByName( ( ( idWinStr* )transitions[i].data )->c_str() );
 		delete transitions[i].data;
-		transitions[i].data = NULL;
-		if ( dw && ( dw->win || dw->simp ) ){
-			if ( dw->win ) {
-				if ( transitions[i].offset == (int)&( ( idWindow * ) 0 )->rect ) {
+		transitions[i].data = nullptr;
+		
+		if ( dw && ( dw->win || dw->simp ) )
+		{
+			if ( dw->win ) 
+			{
+				if ( transitions[i].offset == (intptr_t)&( ( idWindow * ) 0 )->rect ) 
 					transitions[i].data = &dw->win->rect;
-				} else if ( transitions[i].offset == (int)&( ( idWindow * ) 0 )->backColor ) {
+				else if ( transitions[i].offset == (intptr_t)&( ( idWindow * ) 0 )->backColor ) 
 					transitions[i].data = &dw->win->backColor;
-				} else if ( transitions[i].offset == (int)&( ( idWindow * ) 0 )->matColor ) {
+				else if ( transitions[i].offset == (intptr_t)&( ( idWindow * ) 0 )->matColor ) 
 					transitions[i].data = &dw->win->matColor;
-				} else if ( transitions[i].offset == (int)&( ( idWindow * ) 0 )->foreColor ) {
+				else if ( transitions[i].offset == (intptr_t)&( ( idWindow * ) 0 )->foreColor ) 
 					transitions[i].data = &dw->win->foreColor;
-				} else if ( transitions[i].offset == (int)&( ( idWindow * ) 0 )->borderColor ) {
+				else if ( transitions[i].offset == (intptr_t)&( ( idWindow * ) 0 )->borderColor ) 
 					transitions[i].data = &dw->win->borderColor;
-				} else if ( transitions[i].offset == (int)&( ( idWindow * ) 0 )->textScale ) {
+				else if ( transitions[i].offset == (intptr_t)&( ( idWindow * ) 0 )->textScale )
 					transitions[i].data = &dw->win->textScale;
-				} else if ( transitions[i].offset == (int)&( ( idWindow * ) 0 )->rotate ) {
-					transitions[i].data = &dw->win->rotate;
-				}
-			} else {
-				if ( transitions[i].offset == (int)&( ( idSimpleWindow * ) 0 )->rect ) {
+				else if ( transitions[i].offset == (intptr_t)&( ( idWindow * ) 0 )->rotate )
+					transitions[i].data = &dw->win->rotate;	
+			} 
+			else 
+			{
+				if ( transitions[i].offset == (intptr_t)&( ( idSimpleWindow * ) 0 )->rect )
 					transitions[i].data = &dw->simp->rect;
-				} else if ( transitions[i].offset == (int)&( ( idSimpleWindow * ) 0 )->backColor ) {
+				else if ( transitions[i].offset == (intptr_t)&( ( idSimpleWindow * ) 0 )->backColor )
 					transitions[i].data = &dw->simp->backColor;
-				} else if ( transitions[i].offset == (int)&( ( idSimpleWindow * ) 0 )->matColor ) {
+				else if ( transitions[i].offset == (intptr_t)&( ( idSimpleWindow * ) 0 )->matColor )
 					transitions[i].data = &dw->simp->matColor;
-				} else if ( transitions[i].offset == (int)&( ( idSimpleWindow * ) 0 )->foreColor ) {
+				else if ( transitions[i].offset == (intptr_t)&( ( idSimpleWindow * ) 0 )->foreColor )
 					transitions[i].data = &dw->simp->foreColor;
-				} else if ( transitions[i].offset == (int)&( ( idSimpleWindow * ) 0 )->borderColor ) {
+				else if ( transitions[i].offset == (intptr_t)&( ( idSimpleWindow * ) 0 )->borderColor )
 					transitions[i].data = &dw->simp->borderColor;
-				} else if ( transitions[i].offset == (int)&( ( idSimpleWindow * ) 0 )->textScale ) {
+				else if ( transitions[i].offset == (intptr_t)&( ( idSimpleWindow * ) 0 )->textScale )
 					transitions[i].data = &dw->simp->textScale;
-				} else if ( transitions[i].offset == (int)&( ( idSimpleWindow * ) 0 )->rotate ) {
+				else if ( transitions[i].offset == (intptr_t)&( ( idSimpleWindow * ) 0 )->rotate )
 					transitions[i].data = &dw->simp->rotate;
-				}
+				
 			}
 		}
-		if ( transitions[i].data == NULL ) {
+
+		if ( transitions[i].data == nullptr ) 
+		{
 			transitions.RemoveIndex( i );
 			i--;
 			c--;
 		}
 	}
-	for ( c = 0; c < children.Num(); c++ ) {
+
+	for ( c = 0; c < children.Num(); c++ ) 
+	{
 		children[c]->FixupTransitions();
 	}
 }
@@ -3858,13 +3883,15 @@ void idWindow::FixupParms() {
 	}
 
 	c = ops.Num();
-	for (i = 0; i < c; i++) {
-		if (ops[i].b == -2) {
+	for (i = 0; i < c; i++) 
+	{
+		if (ops[i].b == -2) 
+		{
 			// need to fix this up
 			const char *p = (const char*)(ops[i].a);
 			idWinVar *var = GetWinVarByName(p, true);
 			delete []p;
-			ops[i].a = (int)var;
+			ops[i].a = (intptr_t)var;
 			ops[i].b = -1;
 		}
 	}

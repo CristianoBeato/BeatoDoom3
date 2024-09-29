@@ -550,7 +550,8 @@ const char *idGameBearShootWindow::Activate(bool activate) {
 idGameBearShootWindow::UpdateTurret
 =============================
 */
-void idGameBearShootWindow::UpdateTurret() {
+void idGameBearShootWindow::UpdateTurret( void ) 
+{
 	idVec2	pt;
 	idVec2	turretOrig;
 	idVec2	right;
@@ -568,9 +569,9 @@ void idGameBearShootWindow::UpdateTurret() {
 
 	dot = pt * right;
 
-	angle = RAD2DEG( acosf( dot ) );
+	angle = RAD2DEG( std::acos( dot ) );
 
-	turretAngle = idMath::ClampFloat( 0.f, 90.f, angle );
+	turretAngle = clamp( angle, 0.f, 90.f );
 }
 
 /*
@@ -879,15 +880,17 @@ void idGameBearShootWindow::UpdateGame() {
 
 		// Update countdown timer
 		timeRemaining -= timeSlice;
-		timeRemaining = idMath::ClampFloat( 0.f, 99999.f, timeRemaining );
+		timeRemaining = clamp( timeRemaining, 0.f, 99999.f );
 		gui->SetStateString( "time_remaining", va("%2.1f", timeRemaining ) );
 
-		if ( timeRemaining <= 0.f && !gameOver ) {
+		if ( timeRemaining <= 0.f && !gameOver ) 
+		{
 			gameOver = true;
 			updateScore = true;
 		}
 
-		if ( updateScore ) {
+		if ( updateScore ) 
+		{
 			UpdateScore();
 			updateScore = false;
 		}

@@ -678,7 +678,7 @@ void idAsyncServer::InitClient( int clientNum, int clientId, int clientRate ) {
 	client.gameTime = 0;
 	client.channel.ResetRate();
 	client.clientRate = clientRate ? clientRate : idAsyncNetwork::serverMaxClientRate.GetInteger();
-	client.channel.SetMaxOutgoingRate( Min( idAsyncNetwork::serverMaxClientRate.GetInteger(), client.clientRate ) );
+	client.channel.SetMaxOutgoingRate( min( idAsyncNetwork::serverMaxClientRate.GetInteger(), client.clientRate ) );
 	client.clientPing = 0;
 	client.lastConnectTime = serverTime;
 	client.lastEmptyTime = serverTime;
@@ -1193,10 +1193,12 @@ bool idAsyncServer::SendSnapshotToClient( int clientNum ) {
 			continue;
 		}
 
-		int maxRelay = idMath::ClampInt( 1, MAX_USERCMD_RELAY, idAsyncNetwork::serverMaxUsercmdRelay.GetInteger() );
+// BEATO Begin:
+		int maxRelay = clamp( idAsyncNetwork::serverMaxUsercmdRelay.GetInteger(), 1, MAX_USERCMD_RELAY );
+// BEATO End
 
 		// Max( 1, to always send at least one cmd, which we know we have because we call DuplicateUsercmds in RunFrame
-		numUsercmds = Max( 1, Min( client.gameFrame, gameFrame + maxRelay ) - gameFrame );
+		numUsercmds = max( 1, min( client.gameFrame, gameFrame + maxRelay ) - gameFrame );
 		msg.WriteByte( i );
 		msg.WriteByte( numUsercmds );
 		for ( j = 0; j < numUsercmds; j++ ) {
@@ -1715,7 +1717,7 @@ void idAsyncServer::ProcessConnectMessage( const netadr_t from, const idBitMsg &
 			PrintOOB( from, SERVER_PRINT_MISC, "#str_04843" );
 			return;
 		case CDK_WAIT:
-			if ( challenges[ ichallenge ].authReply == AUTH_NONE && Min( serverTime - lastAuthTime, serverTime - challenges[ ichallenge ].time ) > AUTHORIZE_TIMEOUT ) {
+			if ( challenges[ ichallenge ].authReply == AUTH_NONE && min( serverTime - lastAuthTime, serverTime - challenges[ ichallenge ].time ) > AUTHORIZE_TIMEOUT ) {
 				common->DPrintf( "%s: Authorize server timed out\n", Sys_NetAdrToString( from ) );
 				break; // will continue with the connecting process
 			}
@@ -2169,11 +2171,16 @@ bool idAsyncServer::ConnectionlessMessage( const netadr_t from, const idBitMsg &
 		return false;
 	}
 
+// BEATO Begin:
+#if 0
 	// download request
-	if ( idStr::Icmp( string, "downloadRequest" ) == 0 ) {		
+	if ( idStr::Icmp( string, "downloadRequest" ) == 0 ) 
+	{		
 		ProcessDownloadRequestMessage( from, msg );
 	}
-	
+#endif
+// BEATO End
+
 	// auth server
 	if ( idStr::Icmp( string, "auth" ) == 0 ) {
 		if ( !Sys_CompareNetAdrBase( from, idAsyncNetwork::GetMasterAddress() ) ) {
@@ -2355,11 +2362,14 @@ void idAsyncServer::ProcessConnectionLessMessages( void ) {
 idAsyncServer::UpdateTime
 ==================
 */
-int idAsyncServer::UpdateTime( int clamp ) {
+int idAsyncServer::UpdateTime( int _clamp ) 
+{
 	int time, msec;
 
 	time = Sys_Milliseconds();
-	msec = idMath::ClampInt( 0, clamp, time - realTime );
+// BEATO Begin:
+	msec = clamp<int>( ( time - realTime ), 0, _clamp );
+// BEATO End
 	realTime = time;
 	serverTime += msec;
 	return msec;
@@ -2486,7 +2496,7 @@ void idAsyncServer::RunFrame( void ) {
 
 		// modify maximum rate if necesary
 		if ( idAsyncNetwork::serverMaxClientRate.IsModified() ) {
-			client.channel.SetMaxOutgoingRate( Min( client.clientRate, idAsyncNetwork::serverMaxClientRate.GetInteger() ) );
+			client.channel.SetMaxOutgoingRate( min( client.clientRate, idAsyncNetwork::serverMaxClientRate.GetInteger() ) );
 		}
 
 		// if the channel is not yet ready to send new data
@@ -2671,6 +2681,8 @@ void idAsyncServer::GetAsyncStatsAvgMsg( idStr &msg ) {
 idAsyncServer::ProcessDownloadRequestMessage
 ===============
 */
+// BEATO Begin:
+#if 0
 void idAsyncServer::ProcessDownloadRequestMessage( const netadr_t from, const idBitMsg &msg ) {
 	int			challenge, clientId, iclient, numPaks, i;
 	int			dlGamePak;
@@ -2716,7 +2728,8 @@ void idAsyncServer::ProcessDownloadRequestMessage( const netadr_t from, const id
 
 	// read the checksums, build path names and pass that to the game code
 	dlPakChecksum = msg.ReadLong();
-	while ( dlPakChecksum ) {
+	while ( dlPakChecksum ) 
+	{
 		if ( !( dlSize[ numPaks ] = fileSystem->ValidateDownloadPakForChecksum( dlPakChecksum, pakbuf, false ) ) ) {
 			// we pass an empty token to the game so our list doesn't get offset
 			common->Warning( "client requested an unknown pak 0x%x", dlPakChecksum );
@@ -2823,3 +2836,5 @@ void idAsyncServer::ProcessDownloadRequestMessage( const netadr_t from, const id
 		serverPort.SendPacket( from, outMsg.GetData(), outMsg.GetSize() );
 	}
 }
+#endif
+// BEATO End

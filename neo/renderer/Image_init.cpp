@@ -360,13 +360,13 @@ static void R_BorderClampImage( idImage *image ) {
 		TF_LINEAR /* TF_NEAREST */, false, TR_CLAMP_TO_BORDER, TD_DEFAULT );
 
 	if ( !glConfig.isInitialized ) {
-		// can't call qglTexParameterfv yet
+		// can't call glTexParameterfv yet
 		return;
 	}
 	// explicit zero border
 	float	color[4];
 	color[0] = color[1] = color[2] = color[3] = 0;
-	qglTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, color );
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, color );
 }
 
 static void R_RGBA8Image( idImage *image ) {
@@ -925,18 +925,21 @@ This resets filtering on all loaded images
 New images will automatically pick up the current values.
 ===============
 */
-void idImageManager::ChangeTextureFilter( void ) {
+void idImageManager::ChangeTextureFilter( void ) 
+{
 	int		i;
 	idImage	*glt;
 	const char	*string;
-static filterName_t textureFilters[] = {
-	{"GL_LINEAR_MIPMAP_NEAREST", GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR},
-	{"GL_LINEAR_MIPMAP_LINEAR", GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR},
-	{"GL_NEAREST", GL_NEAREST, GL_NEAREST},
-	{"GL_LINEAR", GL_LINEAR, GL_LINEAR},
-	{"GL_NEAREST_MIPMAP_NEAREST", GL_NEAREST_MIPMAP_NEAREST, GL_NEAREST},
-	{"GL_NEAREST_MIPMAP_LINEAR", GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST}
-};
+
+	static filterName_t textureFilters[] = 
+	{
+		{"GL_LINEAR_MIPMAP_NEAREST", GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR},
+		{"GL_LINEAR_MIPMAP_LINEAR", GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR},
+		{"GL_NEAREST", GL_NEAREST, GL_NEAREST},
+		{"GL_LINEAR", GL_LINEAR, GL_LINEAR},
+		{"GL_NEAREST_MIPMAP_NEAREST", GL_NEAREST_MIPMAP_NEAREST, GL_NEAREST},
+		{"GL_NEAREST_MIPMAP_LINEAR", GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST}
+	};
 
 	// if these are changed dynamically, it will force another ChangeTextureFilter
 	image_filter.ClearModified();
@@ -944,13 +947,16 @@ static filterName_t textureFilters[] = {
 	image_lodbias.ClearModified();
 
 	string = image_filter.GetString();
-	for ( i = 0; i < 6; i++ ) {
-		if ( !idStr::Icmp( textureFilters[i].name, string ) ) {
+	for ( i = 0; i < 6; i++ ) 
+	{
+		if ( !idStr::Icmp( textureFilters[i].name, string ) ) 
+		{
 			break;
 		}
 	}
 
-	if ( i == 6 ) {
+	if ( i == 6 ) 
+	{
 		common->Warning( "bad r_textureFilter: '%s'", string);
 		// default to LINEAR_MIPMAP_NEAREST
 		i = 0;
@@ -969,12 +975,14 @@ static filterName_t textureFilters[] = {
 
 	// change all the existing mipmap texture objects with default filtering
 
-	for ( i = 0 ; i < images.Num() ; i++ ) {
+	for ( i = 0 ; i < images.Num() ; i++ ) 
+	{
 		unsigned int	texEnum = GL_TEXTURE_2D;
 
 		glt = images[ i ];
 
-		switch( glt->type ) {
+		switch( glt->type ) 
+		{
 		case TT_2D:
 			texEnum = GL_TEXTURE_2D;
 			break;
@@ -982,24 +990,31 @@ static filterName_t textureFilters[] = {
 			texEnum = GL_TEXTURE_3D;
 			break;
 		case TT_CUBIC:
-			texEnum = GL_TEXTURE_CUBE_MAP_EXT;
+			texEnum = GL_TEXTURE_CUBE_MAP;
 			break;
 		}
 
 		// make sure we don't start a background load
-		if ( glt->texnum == idImage::TEXTURE_NOT_LOADED ) {
+		if ( glt->texnum == idImage::TEXTURE_NOT_LOADED ) 
+		{
 			continue;
 		}
+		
 		glt->Bind();
-		if ( glt->filter == TF_DEFAULT ) {
-			qglTexParameterf(texEnum, GL_TEXTURE_MIN_FILTER, globalImages->textureMinFilter );
-			qglTexParameterf(texEnum, GL_TEXTURE_MAG_FILTER, globalImages->textureMaxFilter );
+		if ( glt->filter == TF_DEFAULT ) 
+		{
+			glTexParameterf(texEnum, GL_TEXTURE_MIN_FILTER, globalImages->textureMinFilter );
+			glTexParameterf(texEnum, GL_TEXTURE_MAG_FILTER, globalImages->textureMaxFilter );
 		}
-		if ( glConfig.anisotropicAvailable ) {
-			qglTexParameterf(texEnum, GL_TEXTURE_MAX_ANISOTROPY_EXT, globalImages->textureAnisotropy );
+		
+		if ( glConfig.anisotropicAvailable ) 
+		{
+			glTexParameterf(texEnum, GL_TEXTURE_MAX_ANISOTROPY, globalImages->textureAnisotropy );
 		}	
-		if ( glConfig.textureLODBiasAvailable ) {
-			qglTexParameterf(texEnum, GL_TEXTURE_LOD_BIAS_EXT, globalImages->textureLODBias );
+		
+		if ( glConfig.textureLODBiasAvailable ) 
+		{
+			glTexParameterf(texEnum, GL_TEXTURE_LOD_BIAS, globalImages->textureLODBias );
 		}
 	}
 }
@@ -1183,17 +1198,20 @@ void R_ListImages_f( const idCmdArgs &args ) {
 	for ( i = 0 ; i < globalImages->images.Num() ; i++ ) {
 		image = globalImages->images[ i ];
 
-		if ( uncompressedOnly ) {
-			if ( ( image->internalFormat >= GL_COMPRESSED_RGB_S3TC_DXT1_EXT && image->internalFormat <= GL_COMPRESSED_RGBA_S3TC_DXT5_EXT )
-				|| image->internalFormat == GL_COLOR_INDEX8_EXT ) {
+		if ( uncompressedOnly ) 
+		{
+			if ( ( image->internalFormat >= GL_COMPRESSED_RGB_S3TC_DXT1_EXT && image->internalFormat <= GL_COMPRESSED_RGBA_S3TC_DXT5_EXT ) ) 
+			{
 				continue;
 			}
 		}
 
-		if ( matchTag && image->classification != matchTag ) {
+		if ( matchTag && image->classification != matchTag ) 
+		{
 			continue;
 		}
-		if ( unloaded && image->texnum != idImage::TEXTURE_NOT_LOADED ) {
+		if ( unloaded && image->texnum != idImage::TEXTURE_NOT_LOADED ) 
+		{
 			continue;
 		}
 		if ( partial && !image->isPartialImage ) {
@@ -1297,7 +1315,9 @@ SetNormalPalette
 Create a 256 color palette to be used by compressed normal maps
 ==================
 */
-void idImageManager::SetNormalPalette( void ) {
+#if 0
+void idImageManager::SetNormalPalette( void )
+{
 	int		i, j;
 	idVec3	v;
 	float	t;
@@ -1383,15 +1403,16 @@ void idImageManager::SetNormalPalette( void ) {
 		return;
 	}
 
-	qglColorTableEXT( GL_SHARED_TEXTURE_PALETTE_EXT,
+	glColorTable( GL_SHARED_TEXTURE_PALETTE,
 					   GL_RGB,
 					   256,
 					   GL_RGB,
 					   GL_UNSIGNED_BYTE,
 					   temptable );
 
-	qglEnable( GL_SHARED_TEXTURE_PALETTE_EXT );
+	glEnable( GL_SHARED_TEXTURE_PALETTE_EXT );
 }
+#endif
 
 /*
 ==============
@@ -1673,11 +1694,16 @@ void idImageManager::PurgeAllImages() {
 ReloadAllImages
 ===============
 */
-void idImageManager::ReloadAllImages() {
+void idImageManager::ReloadAllImages() 
+{
 	idCmdArgs args;
 
+// 
+#if 0
 	// build the compressed normal map palette
 	SetNormalPalette();
+#endif 
+//
 
 	args.TokenizeString( "reloadImages reload", false );
 	R_ReloadImages_f( args );
@@ -1772,7 +1798,8 @@ void R_CombineCubeImages_f( const idCmdArgs &args ) {
 idImage::StartBackgroundImageLoad
 ==================
 */
-void idImage::StartBackgroundImageLoad() {
+void idImage::StartBackgroundImageLoad() 
+{
 	if ( imageManager.numActiveBackgroundImageLoads >= idImageManager::MAX_BACKGROUND_IMAGE_LOADS ) {
 		return;
 	}
@@ -1807,7 +1834,11 @@ void idImage::StartBackgroundImageLoad() {
 
 	bgl.file.buffer = R_StaticAlloc( bgl.file.length );
 
+// BEATO Begin:
+#if 0
 	fileSystem->BackgroundDownload( &bgl );
+#endif 
+// BEATO End
 
 	imageManager.numActiveBackgroundImageLoads++;
 
@@ -1915,18 +1946,24 @@ int idImageManager::SumOfUsedImages() {
 BindNull
 ===============
 */
-void idImageManager::BindNull() {
+void idImageManager::BindNull( void ) 
+{
 	tmu_t			*tmu;
 
 	tmu = &backEnd.glState.tmu[backEnd.glState.currenttmu];
 
 	RB_LogComment( "BindNull()\n" );
-	if ( tmu->textureType == TT_CUBIC ) {
-		qglDisable( GL_TEXTURE_CUBE_MAP_EXT );
-	} else if ( tmu->textureType == TT_3D ) {
-		qglDisable( GL_TEXTURE_3D );
-	} else if ( tmu->textureType == TT_2D ) {
-		qglDisable( GL_TEXTURE_2D );
+	if ( tmu->textureType == TT_CUBIC ) 
+	{
+		glDisable( GL_TEXTURE_CUBE_MAP );
+	} 
+	else if ( tmu->textureType == TT_3D ) 
+	{
+		glDisable( GL_TEXTURE_3D );
+	} 
+	else if ( tmu->textureType == TT_2D ) 
+	{
+		glDisable( GL_TEXTURE_2D );
 	}
 	tmu->textureType = TT_DISABLED;
 }

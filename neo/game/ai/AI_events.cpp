@@ -2325,17 +2325,20 @@ idAI::Event_ThrowMoveable
 */
 void idAI::Event_ThrowMoveable( void ) {
 	idEntity *ent;
-	idEntity *moveable = NULL;
+	idEntity *moveable = nullptr;
 
-	for ( ent = GetNextTeamEntity(); ent != NULL; ent = ent->GetNextTeamEntity() ) {
-		if ( ent->GetBindMaster() == this && ent->IsType( idMoveable::Type ) ) {
+	for ( ent = GetNextTeamEntity(); ent != NULL; ent = ent->GetNextTeamEntity() ) 
+	{
+		if ( ent->GetBindMaster() == this && ent->IsType( idMoveable::Type ) ) 
+		{
 			moveable = ent;
 			break;
 		}
 	}
-	if ( moveable ) {
+	if ( moveable ) 
+	{
 		moveable->Unbind();
-		moveable->PostEventMS( &EV_SetOwner, 200, NULL );
+		moveable->PostEventMS( &EV_SetOwner, 200, 0 );
 	}
 }
 
@@ -2344,19 +2347,22 @@ void idAI::Event_ThrowMoveable( void ) {
 idAI::Event_ThrowAF
 ================
 */
-void idAI::Event_ThrowAF( void ) {
+void idAI::Event_ThrowAF( void ) 
+{
 	idEntity *ent;
-	idEntity *af = NULL;
+	idEntity *af = nullptr;
 
-	for ( ent = GetNextTeamEntity(); ent != NULL; ent = ent->GetNextTeamEntity() ) {
-		if ( ent->GetBindMaster() == this && ent->IsType( idAFEntity_Base::Type ) ) {
+	for ( ent = GetNextTeamEntity(); ent != NULL; ent = ent->GetNextTeamEntity() ) 
+	{
+		if ( ent->GetBindMaster() == this && ent->IsType( idAFEntity_Base::Type ) ) 
+		{
 			af = ent;
 			break;
 		}
 	}
 	if ( af ) {
 		af->Unbind();
-		af->PostEventMS( &EV_SetOwner, 200, NULL );
+		af->PostEventMS( &EV_SetOwner, 200, 0 );
 	}
 }
 

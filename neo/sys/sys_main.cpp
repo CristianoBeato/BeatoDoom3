@@ -29,10 +29,8 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 //
 // Only include here, to don't leak to typeInfo executable the main entry point 
 //#define SDL_MAIN_HANDLED
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
-#include "common/console.h"
-#include "common/window.h"
 #include "sys_main.h"
 #include "sys_local.h"
 
@@ -47,84 +45,23 @@ idSys *				sys = &sysLocal;
 							/*	FPU_EXCEPTION_INEXACT_RESULT |			*/	\
 								0
 
-static void Sys_CreateWindow( void )
-{
-	SDL_Rect win = { SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480 };
-	assert( !sysVars.window );
-	sysVars.window = new btWindow();
-
-	// Create a small hiden window, and show and recise when the renderer is initialized
-	sysVars.window->Create( GAME_NAME, win, SDL_WINDOW_HIDDEN | SDL_WINDOW_OPENGL );
-}
-
-static void Sys_DestroyWindow( void )
-{
-	if (sysVars.window)
-		sysVars.window->Destroy();
-
-	SAFE_DELETE( sysVars.window );
-}
-
-/*
-==============
-Sys_ShowWindow
-==============
-*/
-void Sys_ShowWindow( bool show )
-{
-	assert( sysVars.window != nullptr );
-	if (show)
-		sysVars.window->Show();
-	else
-		sysVars.window->Hide();
-}
-
-/*
-==============
-Sys_IsWindowVisible
-==============
-*/
-bool Sys_IsWindowVisible( void )
-{
-	assert( sysVars.window != nullptr );
-	return sysVars.window->IsFlagActive( SDL_WINDOW_SHOWN );
-}
-
-/*
-==============
-Sys_Quit
-==============
-*/
-void Sys_Quit( void )
-{
-	timeEndPeriod( 1 );
-	Sys_ShutdownInput();
-	Sys_DestroyConsole();
-	Sys_ShutDownOpenGL();
-#if _WIN32 || _WIN64
-	ExitProcess( 0 );
-#endif
-}
-
 /*
 ==============
 MainInit
 ==============
 */
-void		MainInit( int argc, char *argv[] )
+void		MainInit( int argc, const char **argv )
 {
 	//init SDL
-	SDL_assert( SDL_Init( SDL_INIT_EVERYTHING ) == 0 );
+	SDL_assert( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO) == 0 );
+
+	// BEATO Move here, to prevent: "munmap_chunk(): invalid pointer"
+	Sys_videoStartUp();
 
 	//
 	Sys_getCPUInfo();
 
-	// 
-	Sys_StartThreadPool();
-
 	//
-	Sys_CreateWindow();
-
 	Sys_SetPhysicalWorkMemory( 192 << 20, 1024 << 20 );
 	Sys_GetCurrentMemoryStatus( sysVars.exeLaunchMemoryStats );
 
@@ -141,37 +78,31 @@ void		MainInit( int argc, char *argv[] )
 #endif
 #endif //_WIN32
 
+#if TEST_FPU_EXCEPTIONS
 	Sys_FPU_SetPrecision( FPU_PRECISION_DOUBLE_EXTENDED );
+#endif //TEST_FPU_EXCEPTIONS
 
 	if (argc > 1)
-		common->Init( argc - 1, &argv[1], NULL );
+		common->Init( argc - 1, argv, nullptr );
 	else
-		common->Init( 0, NULL, NULL );
-
-	// Initialize OpenGL config
-	Sys_InitOpenGL();
+		common->Init( 0, nullptr, nullptr );
 
 #if TEST_FPU_EXCEPTIONS != 0
 	common->Printf( Sys_FPU_GetState() );
-#endif
+#endif //TEST_FPU_EXCEPTIONS
 
 	// hide or show the early console as necessary
-	if (sysVars.sys_viewlog.GetInteger() || com_skipRenderer.GetBool() || idAsyncNetwork::serverDedicated.GetInteger())
-		Sys_ShowConsole( 1, true );
-	else
-		Sys_ShowConsole( 0, false );
-
+//	if ( sys_viewlog.GetInteger() || com_skipRenderer.GetBool() || idAsyncNetwork::serverDedicated.GetInteger())
+//		Sys_ShowConsole( 1, true );
+//	else
+//		Sys_ShowConsole( 0, false );
+//
 	// Launch the script debugger
 	//if (strstr( lpCmdLine, "+debugger" ))
 	//{
 		// DebuggerClientInit( lpCmdLine );
 	//	return 0;
 	//}
-
-#ifndef	ID_DEDICATED
-	// Initialization done 
-	sysVars.window->SetFocus();
-#endif // ID_DEDICATED
 }
 
 static void	Sys_toolsFrame( void )
@@ -242,30 +173,31 @@ MainLoop
 void		MainLoop( void )
 {
 	// if "viewlog" has been modified, show or hide the log console
-	if (sysVars.sys_viewlog.IsModified())
-	{
-		if (!com_skipRenderer.GetBool() && idAsyncNetwork::serverDedicated.GetInteger() != 1)
-		{
-			Sys_ShowConsole( sysVars.sys_viewlog.GetInteger(), false );
-		}
-		sysVars.sys_viewlog.ClearModified();
+//	if (sysVars.sys_viewlog.IsModified())
+//	{
+//		if (!com_skipRenderer.GetBool() && idAsyncNetwork::serverDedicated.GetInteger() != 1)
+//		{
+//			Sys_ShowConsole( sysVars.sys_viewlog.GetInteger(), false );
+//		}
+//		sysVars.sys_viewlog.ClearModified();
+//	}
 
 #if 0 //def _DEBUG
-		Sys_MemFrame();
+	Sys_MemFrame();
 #endif
 
-		// set exceptions, even if some crappy syscall changes them!
-		Sys_FPU_EnableExceptions( TEST_FPU_EXCEPTIONS );
+	// set exceptions, even if some crappy syscall changes them!
+	Sys_FPU_EnableExceptions( TEST_FPU_EXCEPTIONS );
 
 #ifdef ID_ALLOW_TOOLS
-		Sys_toolsFrame();
+	Sys_toolsFrame();
 #endif
-		// run the game
-		common->Frame();
-	}
+	
+	// run the game
+	common->Frame();	
 }
 
-int main( int argc, char *argv[] )
+int main( int argc, const char *argv[] )
 {
 	MainInit( argc, argv );
 

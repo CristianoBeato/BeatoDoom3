@@ -27,36 +27,18 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #define __SYS_MAIN__
 
 void Sys_getCPUInfo( void );
-
-void Sys_CreateConsole( void );
-void Sys_StartThreadPool( void );
-void Sys_ShutDownThreadPool( void );
-void Sys_StartThread( const btThreadExecution* thread );
-
 void Sys_DestroyConsole( void );
 void Sys_CreateConsole( void );
 
-//
-void Sys_InitOpenGL( void );
-void Sys_ShutDownOpenGL( void );
-
-struct btThreadContext;
 typedef struct
 {
 	cpuid_t							cpuid;
-	Uint32							numThreads;					// System Thread Count
-	btAtommicCounter				threadCount;				// Running Threads
-	idStaticList< btThreadContext*, MAX_THREADS>	threadPool;	// Thread Pool
-
+	uint32_t						numThreads;					// System Thread Count
 	sysMemoryStats_t				exeLaunchMemoryStats;
-
-	class btWindow*			window;		// Main Game Window Handle
 	class btInputEvent*		input;		// Event Input Manager
 	class btConsoleLog*		console;	// Console/Dedicate mode log window
-
-	static idCVar sys_viewlog;			// Enable Log Console in game
-	static idCVar sys_outputEditString; 
 } sysVars_t;
+
 static sysVars_t sysVars;
 
 #endif /* !__SYS_MAIN__ */

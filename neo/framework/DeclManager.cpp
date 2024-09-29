@@ -1954,7 +1954,7 @@ bool idDeclLocal::ReplaceSourceFileText( void ) {
 	// get length and allocate buffer to hold the file
 	oldFileLength = sourceFile->fileSize;
 	newFileLength = oldFileLength - sourceTextLength + textLength;
-	buffer = (char *) Mem_Alloc( Max( newFileLength, oldFileLength ) );
+	buffer = (char *) Mem_Alloc( max( newFileLength, oldFileLength ) );
 
 	// read original file
 	if ( sourceFile->fileSize ) {

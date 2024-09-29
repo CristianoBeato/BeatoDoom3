@@ -442,6 +442,11 @@ void idSessionLocal::Shutdown() {
 	}
 
 	Clear();
+
+// BEATO Begin
+	SAFE_DELETE( asyncSygnal );
+	SAFE_DELETE( asyncLock );
+// BEATO End
 }
 
 /*
@@ -1463,7 +1468,7 @@ int idSessionLocal::GetBytesNeededForMapLoad( const char *mapName ) {
 	const idDecl *mapDecl = declManager->FindType( DECL_MAPDEF, mapName, false );
 	const idDeclEntityDef *mapDef = static_cast<const idDeclEntityDef *>( mapDecl );
 	if ( mapDef ) {
-		return mapDef->dict.GetInt( va("size%d", Max( 0, com_machineSpec.GetInteger() ) ) );
+		return mapDef->dict.GetInt( va("size%d", max( 0, com_machineSpec.GetInteger() ) ) );
 	} else {
 		if ( com_machineSpec.GetInteger() < 2 ) {
 			return 200 * 1024 * 1024;
@@ -2596,18 +2601,20 @@ void idSessionLocal::Frame() {
 		Sys_Sleep( 1 );
 	}
 #else
-	while( 1 ) {
+	while( 1 ) 
+	{
 		latchedTicNumber = com_ticNumber;
-		if ( latchedTicNumber >= minTic ) {
+		if ( latchedTicNumber >= minTic ) 
 			break;
-		}
-		Sys_WaitForEvent( TRIGGER_EVENT_ONE );
+	
+		WaitForAsyncEvent();
 	}
 #endif
 
 	if ( authEmitTimeout ) {
 		// waiting for a game auth
-		if ( Sys_Milliseconds() > authEmitTimeout ) {
+		if ( Sys_Milliseconds() > authEmitTimeout ) 
+		{
 			// expired with no reply
 			// means that if a firewall is blocking the master, we will let through
 			common->DPrintf( "no reply from auth\n" );
@@ -2844,7 +2851,12 @@ Called in an orderly fashion at system startup,
 so commands, cvars, files, etc are all available
 ===============
 */
-void idSessionLocal::Init() {
+void idSessionLocal::Init( void ) 
+{
+// BEATO Begin:
+		asyncLock = new crMutex();
+		asyncSygnal = new crCondition();
+// BEATO End
 
 	common->Printf( "-------- Initializing Session --------\n" );
 
@@ -3322,3 +3334,16 @@ idSessionLocal::GetAuthMsg
 const char *idSessionLocal::GetAuthMsg( void ) {
 	return authMsg.c_str();
 }
+
+// BEATO Begin:
+void idSessionLocal::TriggerAsyncEvent( void )
+{
+	asyncSygnal->Signal();
+}
+
+void idSessionLocal::WaitForAsyncEvent( void )
+{
+	crScopeLock lock( asyncLock );
+	asyncSygnal->Wait( asyncLock );
+}
+// BEATO End

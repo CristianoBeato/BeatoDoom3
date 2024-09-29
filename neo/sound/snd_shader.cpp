@@ -172,49 +172,48 @@ bool idSoundShader::ParseShader( idLexer &src ) {
 	numLeadins = 0;
 
 	int	maxSamples = idSoundSystemLocal::s_maxSoundsPerShader.GetInteger();
-	if ( com_makingBuild.GetBool() || maxSamples <= 0 || maxSamples > SOUND_MAX_LIST_WAVS ) {
+	if ( com_makingBuild.GetBool() || maxSamples <= 0 || maxSamples > SOUND_MAX_LIST_WAVS ) 
+	{
 		maxSamples = SOUND_MAX_LIST_WAVS;
 	}
 
-	while ( 1 ) {
-		if ( !src.ExpectAnyToken( &token ) ) {
+	while ( 1 ) 
+	{
+		if ( !src.ExpectAnyToken( &token ) ) 
 			return false;
-		}
+		
 		// end of definition
-		else if ( token == "}" ) {
+		else if ( token == "}" ) 	
 			break;
-		}
-		// minimum number of sounds
-		else if ( !token.Icmp( "minSamples" ) ) {
-			maxSamples = idMath::ClampInt( src.ParseInt(), SOUND_MAX_LIST_WAVS, maxSamples );
-		}
-		// description
-		else if ( !token.Icmp( "description" ) ) {
+	
+		else if ( !token.Icmp( "minSamples" ) ) // minimum number of sounds
+			maxSamples = clamp( maxSamples, src.ParseInt(), SOUND_MAX_LIST_WAVS );
+		else if ( !token.Icmp( "description" ) ) // description
+		{
 			src.ReadTokenOnLine( &token );
 			desc = token.c_str();
 		}
-		// mindistance
-		else if ( !token.Icmp( "mindistance" ) ) {
+		else if ( !token.Icmp( "mindistance" ) )  // mindistance
 			parms.minDistance = src.ParseFloat();
-		}
-		// maxdistance
-		else if ( !token.Icmp( "maxdistance" ) ) {
+		else if ( !token.Icmp( "maxdistance" ) )  // maxdistance
 			parms.maxDistance = src.ParseFloat();
-		}
-		// shakes screen
-		else if ( !token.Icmp( "shakes" ) ) {
+		else if ( !token.Icmp( "shakes" ) ) // shakes screen
+		{
 			src.ExpectAnyToken( &token );
-			if ( token.type == TT_NUMBER ) {
+			if ( token.type == TT_NUMBER ) 
 				parms.shakes = token.GetFloatValue();
-			} else {
+			else 
+			{
 				src.UnreadToken( &token );
 				parms.shakes = 1.0f;
 			}
 		}
 		// reverb
-		else if ( !token.Icmp( "reverb" ) ) {
+		else if ( !token.Icmp( "reverb" ) ) 
+		{
 			int reg0 = src.ParseFloat();
-			if ( !src.ExpectTokenString( "," ) ) {
+			if ( !src.ExpectTokenString( "," ) ) 
+			{
 				src.FreeSource();
 				return false;
 			}
@@ -222,54 +221,66 @@ bool idSoundShader::ParseShader( idLexer &src ) {
 			// no longer supported
 		}
 		// volume
-		else if ( !token.Icmp( "volume" ) ) {
+		else if ( !token.Icmp( "volume" ) )
 			parms.volume = src.ParseFloat();
-		}
+		
 		// leadinVolume is used to allow light breaking leadin sounds to be much louder than the broken loop
-		else if ( !token.Icmp( "leadinVolume" ) ) {
+		else if ( !token.Icmp( "leadinVolume" ) ) 
+		{
 			leadinVolume = src.ParseFloat();
 		}
 		// speaker mask
-		else if ( !token.Icmp( "mask_center" ) ) {
+		else if ( !token.Icmp( "mask_center" ) ) 
+		{
 			speakerMask |= 1<<SPEAKER_CENTER;
 		}
 		// speaker mask
-		else if ( !token.Icmp( "mask_left" ) ) {
+		else if ( !token.Icmp( "mask_left" ) ) 
+		{
 			speakerMask |= 1<<SPEAKER_LEFT;
 		}
 		// speaker mask
-		else if ( !token.Icmp( "mask_right" ) ) {
+		else if ( !token.Icmp( "mask_right" ) ) 
+		{
 			speakerMask |= 1<<SPEAKER_RIGHT;
 		}
 		// speaker mask
-		else if ( !token.Icmp( "mask_backright" ) ) {
+		else if ( !token.Icmp( "mask_backright" ) ) 
+		{
 			speakerMask |= 1<<SPEAKER_BACKRIGHT;
 		}
 		// speaker mask
-		else if ( !token.Icmp( "mask_backleft" ) ) {
+		else if ( !token.Icmp( "mask_backleft" ) ) 
+		{
 			speakerMask |= 1<<SPEAKER_BACKLEFT;
 		}
 		// speaker mask
-		else if ( !token.Icmp( "mask_lfe" ) ) {
+		else if ( !token.Icmp( "mask_lfe" ) ) 
+		{
 			speakerMask |= 1<<SPEAKER_LFE;
 		}
 		// soundClass
-		else if ( !token.Icmp( "soundClass" ) ) {
+		else if ( !token.Icmp( "soundClass" ) ) 
+		{
 			parms.soundClass = src.ParseInt();
-			if ( parms.soundClass < 0 || parms.soundClass >= SOUND_MAX_CLASSES ) {
+			if ( parms.soundClass < 0 || parms.soundClass >= SOUND_MAX_CLASSES ) 
+			{
 				src.Warning( "SoundClass out of range" );
 				return false;
 			}
 		}
 		// altSound
-		else if ( !token.Icmp( "altSound" ) ) {
-			if ( !src.ExpectAnyToken( &token ) ) {
+		else if ( !token.Icmp( "altSound" ) ) 
+		{
+			if ( !src.ExpectAnyToken( &token ) ) 
+			{
 				return false;
 			}
 			altSound = declManager->FindSound( token.c_str() );
 		}
 		// ordered
-		else if ( !token.Icmp( "ordered" ) ) {
+		else if ( !token.Icmp( "ordered" ) ) 
+		{
 			// no longer supported
 		}
 		// no_dups

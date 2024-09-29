@@ -589,92 +589,124 @@ int idTypeInfoTools::WriteVariable_r( const void *varPtr, const char *varName, c
 	}
 
 	// get full type
-	while( typeSrc.CheckTokenString( "::" ) ) {
+	while( typeSrc.CheckTokenString( "::" ) ) 
+	{
 		idToken newToken;
 		typeSrc.ExpectTokenType( TT_NAME, 0, &newToken );
 		token += "::" + newToken;
 	}
 
-	if ( token == "signed" ) {
+	if ( token == "signed" ) 
+	{
 
-		if ( !typeSrc.ReadToken( &token ) ) {
+		if ( !typeSrc.ReadToken( &token ) ) 
+		{
 			Write( varName, varType, scope, prefix, "", va( "<unknown type '%s'>", varType ), varPtr, 0 );
 			return -1;
 		}
-		if ( token == "char" ) {
+		
+		if ( token == "char" ) 
+		{
 
 			typeSize = sizeof( signed char );
 			Write( varName, varType, scope, prefix, "", va( "%d", *((signed char *)varPtr) ), varPtr, typeSize );
 
-		} else if ( token == "short" ) {
-
+		} 
+		else if ( token == "short" ) 
+		{
 			typeSize = sizeof( signed short );
 			Write( varName, varType, scope, prefix, "", va( "%d", *((signed short *)varPtr) ), varPtr, typeSize );
 
-		} else if ( token == "int" ) {
+		} 
+		else if ( token == "int" ) 
+		{
 
 			typeSize = sizeof( signed int );
 			Write( varName, varType, scope, prefix, "", va( "%d", *((signed int *)varPtr) ), varPtr, typeSize );
 
-		} else if ( token == "long" ) {
+		} 
+		else if ( token == "long" ) 
+		{
 
 			typeSize = sizeof( signed long );
 			Write( varName, varType, scope, prefix, "", va( "%ld", *((signed long *)varPtr) ), varPtr, typeSize );
 
-		} else {
+		} 
+		else 
+		{
 
 			Write( varName, varType, scope, prefix, "", va( "<unknown type '%s'>", varType ), varPtr, 0 );
 			return -1;
 		}
 
-	} else if ( token == "unsigned" ) {
+	} 
+	else if ( token == "unsigned" ) 
+	{
 
-		if ( !typeSrc.ReadToken( &token ) ) {
+		if ( !typeSrc.ReadToken( &token ) ) 
+		{
 			Write( varName, varType, scope, prefix, "", va( "<unknown type '%s'>", varType ), varPtr, 0 );
 			return -1;
 		}
-		if ( token == "char" ) {
+
+		if ( token == "char" ) 
+		{
 
 			typeSize = sizeof( unsigned char );
 			Write( varName, varType, scope, prefix, "", va( "%d", *((unsigned char *)varPtr) ), varPtr, typeSize );
 
-		} else if ( token == "short" ) {
+		} 
+		else if ( token == "short" ) 
+		{
 
 			typeSize = sizeof( unsigned short );
 			Write( varName, varType, scope, prefix, "", va( "%d", *((unsigned short *)varPtr) ), varPtr, typeSize );
 
-		} else if ( token == "int" ) {
+		} 
+		else if ( token == "int" ) 
+		{
 
 			typeSize = sizeof( unsigned int );
 			Write( varName, varType, scope, prefix, "", va( "%d", *((unsigned int *)varPtr) ), varPtr, typeSize );
 
-		} else if ( token == "long" ) {
+		} 
+		else if ( token == "long" ) 
+		{
 
 			typeSize = sizeof( unsigned long );
 			Write( varName, varType, scope, prefix, "", va( "%lu", *((unsigned long *)varPtr) ), varPtr, typeSize );
 
-		} else {
+		} 
+		else 
+		{
 
 			Write( varName, varType, scope, prefix, "", va( "<unknown type '%s'>", varType ), varPtr, 0 );
 			return -1;
 		}
-
-	} else if ( token == "byte" ) {
+	} 
+	else if ( token == "byte" ) 
+	{
 
 		typeSize = sizeof( byte );
 		Write( varName, varType, scope, prefix, "", va( "%d", *((byte *)varPtr) ), varPtr, typeSize );
 
-	} else if ( token == "word" ) {
+	} 
+	else if ( token == "word" ) 
+	{
 
-		typeSize = sizeof( word );
-		Write( varName, varType, scope, prefix, "", va( "%d", *((word *)varPtr) ), varPtr, typeSize );
+		typeSize = sizeof( uint16_t );
+		Write( varName, varType, scope, prefix, "", va( "%d", *((uint16_t *)varPtr) ), varPtr, typeSize );
 
-	} else if ( token == "dword" ) {
+	} 
+	else if ( token == "dword" ) 
+	{
 
-		typeSize = sizeof( dword );
-		Write( varName, varType, scope, prefix, "", va( "%d", *((dword *)varPtr) ), varPtr, typeSize );
+		typeSize = sizeof( uint32_t );
+		Write( varName, varType, scope, prefix, "", va( "%d", *((uint32_t *)varPtr) ), varPtr, typeSize );
 
-	} else if ( token == "bool" ) {
+	} 
+	else if ( token == "bool" ) 
+	{
 
 		typeSize = sizeof( bool );
 		Write( varName, varType, scope, prefix, "", va( "%d", *((bool *)varPtr) ), varPtr, typeSize );

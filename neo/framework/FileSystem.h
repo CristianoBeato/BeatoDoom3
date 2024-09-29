@@ -109,7 +109,8 @@ typedef struct fileDownload_s {
 	void *				buffer;
 } fileDownload_t;
 
-typedef struct backgroundDownload_s {
+typedef struct backgroundDownload_s 
+{
 	struct backgroundDownload_s	*next;	// set by the fileSystem
 	dlType_t			opcode;
 	idFile *			f;
@@ -119,7 +120,8 @@ typedef struct backgroundDownload_s {
 } backgroundDownload_t;
 
 // file list for directory listings
-class idFileList {
+class idFileList 
+{
 	friend class idFileSystemLocal;
 public:
 	const char *			GetBasePath( void ) const { return basePath; }
@@ -133,7 +135,8 @@ private:
 };
 
 // mod list
-class idModList {
+class idModList 
+{
 	friend class idFileSystemLocal;
 public:
 	int						GetNumMods( void ) const { return mods.Num(); }
@@ -239,8 +242,13 @@ public:
 	virtual idFile *		OpenExplicitFileWrite( const char *OSPath ) = 0;
 							// Closes a file.
 	virtual void			CloseFile( idFile *f ) = 0;
+
+// BEATO Begin: Disable dowload thread
+#if 0
 							// Returns immediately, performing the read from a background thread.
 	virtual void			BackgroundDownload( backgroundDownload_t *bgl ) = 0;
+#endif
+// BEATO End
 							// resets the bytes read counter
 	virtual void			ResetReadCount( void ) = 0;
 							// retrieves the current read count
@@ -262,8 +270,12 @@ public:
 							// don't use for large copies - allocates a single memory block for the copy
 	virtual void			CopyFile( const char *fromOSPath, const char *toOSPath ) = 0;
 
+// BEATO Begin:
+#if 0
 							// lookup a relative path, return the size or 0 if not found
 	virtual int				ValidateDownloadPakForChecksum( int checksum, char path[ MAX_STRING_CHARS ], bool isGamePak ) = 0;
+#endif 
+// BEAT End
 
 	virtual idFile *		MakeTemporaryFile( void ) = 0;
 

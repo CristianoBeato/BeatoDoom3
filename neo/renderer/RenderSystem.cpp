@@ -271,18 +271,21 @@ R_CheckCvars
 See if some cvars that we watch have changed
 =============
 */
-static void R_CheckCvars( void ) {
+static void R_CheckCvars( void ) 
+{
 	globalImages->CheckCvars();
 
 	// gamma stuff
-	if ( r_gamma.IsModified() || r_brightness.IsModified() ) {
+	if ( r_gamma.IsModified() || r_brightness.IsModified() ) 
+	{
 		r_gamma.ClearModified();
 		r_brightness.ClearModified();
 		R_SetColorMappings();
 	}
 
+	
 	// check for changes to logging state
-	GLimp_EnableLogging( r_logFile.GetInteger() != 0 );
+//	GLimp_EnableLogging( r_logFile.GetInteger() != 0 ); // BT: using GL_ARB_debug_output this is useless
 }
 
 /*
@@ -542,60 +545,35 @@ void idRenderSystemLocal::SetBackEndRenderer() {
 
 	backEndRenderer = BE_BAD;
 
-	if ( idStr::Icmp( r_renderer.GetString(), "arb" ) == 0 ) {
+	if ( idStr::Icmp( r_renderer.GetString(), "arb" ) == 0 ) 
+	{
 		backEndRenderer = BE_ARB;
-	} else if ( idStr::Icmp( r_renderer.GetString(), "arb2" ) == 0 ) {
+	} 
+	else if ( idStr::Icmp( r_renderer.GetString(), "arb2" ) == 0 ) 
+	{
 		if ( glConfig.allowARB2Path ) {
 			backEndRenderer = BE_ARB2;
 		}
-	} else if ( idStr::Icmp( r_renderer.GetString(), "nv10" ) == 0 ) {
-		if ( glConfig.allowNV10Path ) {
-			backEndRenderer = BE_NV10;
-		}
-	} else if ( idStr::Icmp( r_renderer.GetString(), "nv20" ) == 0 ) {
-		if ( glConfig.allowNV20Path ) {
-			backEndRenderer = BE_NV20;
-		}
-	} else if ( idStr::Icmp( r_renderer.GetString(), "r200" ) == 0 ) {
-		if ( glConfig.allowR200Path ) {
-			backEndRenderer = BE_R200;
-		}
-	}
-
+	} 
+	
 	// fallback
-	if ( backEndRenderer == BE_BAD ) {
+	if ( backEndRenderer == BE_BAD ) 
+	{
 		// choose the best
-		if ( glConfig.allowARB2Path ) {
+		if ( glConfig.allowARB2Path ) 
 			backEndRenderer = BE_ARB2;
-		} else if ( glConfig.allowR200Path ) {
-			backEndRenderer = BE_R200;
-		} else if ( glConfig.allowNV20Path ) {
-			backEndRenderer = BE_NV20;
-		} else if ( glConfig.allowNV10Path ) {
-			backEndRenderer = BE_NV10;
-		} else {
-			// the others are considered experimental
-			backEndRenderer = BE_ARB;
-		}
+		else 
+			backEndRenderer = BE_ARB; // the others are considered experimental
+		
 	}
 
 	backEndRendererHasVertexPrograms = false;
 	backEndRendererMaxLight = 1.0;
 
-	switch( backEndRenderer ) {
+	switch( backEndRenderer ) 
+	{
 	case BE_ARB:
 		common->Printf( "using ARB renderSystem\n" );
-		break;
-	case BE_NV10:
-		common->Printf( "using NV10 renderSystem\n" );
-		break;
-	case BE_NV20:
-		common->Printf( "using NV20 renderSystem\n" );
-		backEndRendererHasVertexPrograms = true;
-		break;
-	case BE_R200:
-		common->Printf( "using R200 renderSystem\n" );
-		backEndRendererHasVertexPrograms = true;
 		break;
 	case BE_ARB2:
 		common->Printf( "using ARB2 renderSystem\n" );
@@ -764,7 +742,8 @@ RenderViewToViewport
 Converts from SCREEN_WIDTH / SCREEN_HEIGHT coordinates to current cropped pixel coordinates
 =====================
 */
-void idRenderSystemLocal::RenderViewToViewport( const renderView_t *renderView, idScreenRect *viewport ) {
+void idRenderSystemLocal::RenderViewToViewport( const renderView_t *renderView, idScreenRect *viewport ) 
+{
 	renderCrop_t	*rc = &renderCrops[currentRenderCrop];
 
 	float wRatio = (float)rc->width / SCREEN_WIDTH;
@@ -960,13 +939,13 @@ void idRenderSystemLocal::CaptureRenderToFile( const char *fileName, bool fixAlp
 	guiModel->Clear();
 	R_IssueRenderCommands();
 
-	qglReadBuffer( GL_BACK );
+	glReadBuffer( GL_BACK );
 
 	// include extra space for OpenGL padding to word boundaries
 	int	c = ( rc->width + 3 ) * rc->height;
 	byte *data = (byte *)R_StaticAlloc( c * 3 );
 	
-	qglReadPixels( rc->x, rc->y, rc->width, rc->height, GL_RGB, GL_UNSIGNED_BYTE, data ); 
+	glReadPixels( rc->x, rc->y, rc->width, rc->height, GL_RGB, GL_UNSIGNED_BYTE, data ); 
 
 	byte *data2 = (byte *)R_StaticAlloc( c * 4 );
 

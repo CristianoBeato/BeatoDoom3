@@ -940,17 +940,24 @@ void idBitMsgDelta::ReadString( char *buffer, int bufferSize ) const {
 idBitMsgDelta::ReadData
 ================
 */
-void idBitMsgDelta::ReadData( void *data, int length ) const {
-	if ( !base ) {
+void idBitMsgDelta::ReadData( void *data, int length ) const 
+{
+	if ( !base ) 
+	{
 		readDelta->ReadData( data, length );
 		changed = true;
-	} else {
+	} 
+	else 
+	{
 		char baseData[MAX_DATA_BUFFER];
-		assert( length < sizeof( baseData ) );
+		assert( length < (int)sizeof( baseData ) );
 		base->ReadData( baseData, length );
-		if ( !readDelta || readDelta->ReadBits( 1 ) == 0 ) {
+		if ( !readDelta || readDelta->ReadBits( 1 ) == 0 ) 
+		{
 			memcpy( data, baseData, length );
-		} else {
+		} 
+		else 
+		{
 			readDelta->ReadData( data, length );
 			changed = true;
 		}

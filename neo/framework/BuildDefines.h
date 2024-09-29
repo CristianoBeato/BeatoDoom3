@@ -36,10 +36,6 @@ If you have questions concerning this license or the applicable additional terms
 
 // BEATO NOTE: Move from here to a config.h file, use the Cmake utility to defines these optitions
 
-// memory debugging
-//#define ID_DEBUG_MEMORY
-//#define ID_DEBUG_UNINITIALIZED_MEMORY
-
 // if enabled, the console won't toggle upon ~, unless you start the binary with +set com_allowConsole 1
 // Ctrl+Alt+~ will always toggle the console no matter what
 #ifndef ID_CONSOLE_LOCK
@@ -137,9 +133,9 @@ If you have questions concerning this license or the applicable additional terms
 #endif
 
 // BEATO Begin
-#ifndef ID_REDIRECT_NEWDELETE
-#define ID_REDIRECT_NEWDELETE 1
-#endif // !ID_REDIRECT_NEWDELETE
+//#ifndef ID_REDIRECT_NEWDELETE
+//#define ID_REDIRECT_NEWDELETE 1
+//#endif // !ID_REDIRECT_NEWDELETE
 
 #ifndef ID_USE_INSTRINSEC
 #define ID_USE_INSTRINSEC 1

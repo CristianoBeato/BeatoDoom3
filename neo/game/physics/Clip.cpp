@@ -1340,7 +1340,7 @@ bool idClip::Motion( trace_t &results, const idVec3 &start, const idVec3 &end, c
 		results.endAxis = rotationalTrace.endAxis;
 	}
 
-	results.fraction = Max( translationalTrace.fraction, rotationalTrace.fraction );
+	results.fraction = max( translationalTrace.fraction, rotationalTrace.fraction );
 
 	return ( translationalTrace.fraction < 1.0f || rotationalTrace.fraction < 1.0f );
 }

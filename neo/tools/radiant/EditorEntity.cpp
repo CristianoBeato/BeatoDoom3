@@ -1304,8 +1304,8 @@ int GetUniqueTargetId(int iHint) {
 	for (; pe != NULL && pe != &entities; pe = pe->next) {
 		i = IntForKey(pe, "target");
 		if (i) {
-			iMin = Min(i, iMin);
-			iMax = Max(i, iMax);
+			iMin = std:min(i, iMin);
+			iMax = std:max(i, iMax);
 			if (i == iHint) {
 				fFound = TRUE;
 			}

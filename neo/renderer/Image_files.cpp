@@ -874,11 +874,7 @@ static void LoadJPG( const char *filename, unsigned char **pic, int *width, int 
   /* Step 2: specify data source (eg, a file) */
 
 // BEATO Begin
-#if JPEG_LIB_VERSION >= 90
   jpeg_mem_src( &cinfo, fbuffer, len );
-#else
-  jpeg_stdio_src( &cinfo, fbuffer );
-#endif
 // BEATO End
 
   /* Step 3: read file parameters with jpeg_read_header() */

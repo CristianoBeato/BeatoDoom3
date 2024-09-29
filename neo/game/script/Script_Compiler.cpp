@@ -38,7 +38,7 @@ If you have questions concerning this license or the applicable additional terms
 #define TOP_PRIORITY		7
 
 bool idCompiler::punctuationValid[ 256 ];
-char *idCompiler::punctuation[] = {
+const char *idCompiler::punctuation[] = {
 	"+=", "-=", "*=", "/=", "%=", "&=", "|=", "++", "--",
 	"&&", "||", "<=", ">=", "==", "!=", "::", ";",  ",",
 	"~",  "!",  "*",  "/",  "%",  "(",   ")",  "-", "+",
@@ -207,7 +207,7 @@ idCompiler::idCompiler()
 ================
 */
 idCompiler::idCompiler() {
-	char	**ptr;
+	const char	**ptr;
 	int		id;
 
 	// make sure we have the right # of opcodes in the table
@@ -220,8 +220,8 @@ idCompiler::idCompiler() {
 	loopDepth			= 0;
 	eof					= false;
 	braceDepth			= 0;
-	immediateType		= NULL;
-	basetype			= NULL;
+	immediateType		= nullptr;
+	basetype			= nullptr;
 	currentLineNumber	= 0;
 	currentFileNumber	= 0;
 	errorCount			= 0;
@@ -230,11 +230,12 @@ idCompiler::idCompiler() {
 
 	memset( &immediate, 0, sizeof( immediate ) );
 	memset( punctuationValid, 0, sizeof( punctuationValid ) );
-	for( ptr = punctuation; *ptr != NULL; ptr++ ) {
+	for( ptr = punctuation; *ptr != nullptr; ptr++ ) 
+	{
 		id = parserPtr->GetPunctuationId( *ptr );
-		if ( ( id >= 0 ) && ( id < 256 ) ) {
+		if ( ( id >= 0 ) && ( id < 256 ) )
 			punctuationValid[ id ] = true;
-		}
+		
 	}
 }
 

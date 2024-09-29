@@ -43,9 +43,9 @@ void idMarkerWindow::CommonInit() {
 	currentTime = -1;
 	currentMarker = -1;
 	stopTime = -1;
-	imageBuff = NULL;
-	markerMat = NULL;
-	markerStop = NULL;
+	imageBuff = 0;
+	markerMat = nullptr;
+	markerStop = nullptr;
 }
 
 idMarkerWindow::idMarkerWindow(idDeviceContext *d, idUserInterfaceLocal *g) : idWindow(d, g) {
@@ -62,7 +62,8 @@ idMarkerWindow::idMarkerWindow(idUserInterfaceLocal *g) : idWindow(g) {
 idMarkerWindow::~idMarkerWindow() {
 }
 
-bool idMarkerWindow::ParseInternalVar(const char *_name, idParser *src) {
+bool idMarkerWindow::ParseInternalVar(const char *_name, idParser *src) 
+{
 	if (idStr::Icmp(_name, "markerMat") == 0) {
 		idStr str;
 		ParseString(src, str);
@@ -70,14 +71,17 @@ bool idMarkerWindow::ParseInternalVar(const char *_name, idParser *src) {
 		markerMat->SetSort( SS_GUI );
 		return true;
 	}
-	if (idStr::Icmp(_name, "markerStop") == 0) {
+
+	if (idStr::Icmp(_name, "markerStop") == 0) 
+	{
 		idStr str;
 		ParseString(src, str);
 		markerStop = declManager->FindMaterial(str);
 		markerStop->SetSort( SS_GUI );
 		return true;
 	}
-	if (idStr::Icmp(_name, "markerColor") == 0) {
+	if (idStr::Icmp(_name, "markerColor") == 0) 
+	{
 		ParseVec4(src, markerColor);
 		return true;
 	}
@@ -228,7 +232,7 @@ const char *idMarkerWindow::RouteMouseCoords(float xd, float yd) {
 	return ret;
 }
 
-void idMarkerWindow::Point(int x, int y, dword *out, dword color) {
+void idMarkerWindow::Point(int x, int y, uint32_t *out, uint32_t color) {
 	int index = (63-y) * 512 + x;
 	if (index >= 0 && index < 512 * 64) {
 		out[index] = color;
@@ -237,7 +241,7 @@ void idMarkerWindow::Point(int x, int y, dword *out, dword color) {
 	}
 }
 
-void idMarkerWindow::Line(int x1, int y1, int x2, int y2, dword* out, dword color) {
+void idMarkerWindow::Line(int x1, int y1, int x2, int y2, uint32_t* out, uint32_t color) {
 	int deltax = abs(x2 - x1);
 	int deltay = abs(y2 - y1);
 	int incx = (x1 > x2) ? -1 : 1;
@@ -272,7 +276,7 @@ void idMarkerWindow::Activate(bool activate, idStr &act) {
 	if (activate) {
 		int i;
 		gui->GetDesktop()->SetChildWinVarVal("markerText", "text", "");
-		imageBuff = (dword*)Mem_Alloc(512*64*4);
+		imageBuff = (uint32_t*)Mem_Alloc(512*64*4);
 		markerTimes.Clear();
 		currentMarker = -1;
 		currentTime = -1;

@@ -91,9 +91,9 @@ void btBaseGui::SetPos( const int x, const int y )
 {
 	if (m_parent)
 	{
-		SDL_Rect parent = m_parent->GetBounds();
-		m_bounds.x = Clamp( x, parent.x, parent.x + parent.w );
-		m_bounds.y = Clamp( y, parent.y, parent.y + parent.h );
+		btRect_t parent = m_parent->GetBounds();
+		m_bounds.x = clamp( x, parent.x, parent.x + (int)parent.w );
+		m_bounds.y = clamp( y, parent.y, parent.y + (int)parent.h );
 	}
 	else
 	{
@@ -102,13 +102,13 @@ void btBaseGui::SetPos( const int x, const int y )
 	}
 }
 
-void btBaseGui::SetSize( const int w, const int h )
+void btBaseGui::SetSize( const uint32_t w, const uint32_t h )
 {
 	if (m_parent)
 	{
-		SDL_Rect parent = m_parent->GetBounds();
-		m_bounds.w = Min( w, m_bounds.x + parent.w ); 
-		m_bounds.h = Min( h, m_bounds.y + parent.h );
+		btRect_t parent = m_parent->GetBounds();
+		m_bounds.w = min( w, m_bounds.x + parent.w ); 
+		m_bounds.h = min( h, m_bounds.y + parent.h );
 	}
 	else
 	{
@@ -117,7 +117,7 @@ void btBaseGui::SetSize( const int w, const int h )
 	}
 }
 
-void btBaseGui::SetBounds( const SDL_Rect boundsrect )
+void btBaseGui::SetBounds( const btRect_t boundsrect )
 {
 	m_bounds = boundsrect;
 }
@@ -144,7 +144,7 @@ void btBaseGui::GetSize( int & w, int & h )
 	h = m_bounds.h;
 }
 
-SDL_Rect btBaseGui::GetBounds( void ) const
+btRect_t btBaseGui::GetBounds( void ) const
 {
 	return m_bounds;
 }

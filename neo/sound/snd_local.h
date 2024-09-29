@@ -36,21 +36,11 @@ If you have questions concerning this license or the applicable additional terms
 /// latter is not entirely portable .Windows / Creative Labs does not by default put
 /// their headers in ``AL/`` and macOS uses the convention ``<OpenAL / al.h > ``.
 
-#include <al.h>
-#include <alc.h>
+#include <AL/al.h>
+#include <AL/alc.h>
+#include <AL/alext.h>
 
-#if BT_USE_EFX
-#include <efx.h>
-#include <EFX-Util.h>
-#endif // BT_USE_EFX
-
-#if BT_USE_EAX
-#include "contrib/EAX/eax5.h"
-#endif //BT_USE_EAX
-
-#if BT_USE_EAX || BT_USE_EFX
 #include "efxlib.h"
-#endif
 
 #ifndef AL_VERSION_1_1
 #error "NO OPENAL 1.1 found, needed"
@@ -59,7 +49,8 @@ If you have questions concerning this license or the applicable additional terms
 // BEATO End
 
 // demo sound commands
-typedef enum {
+typedef enum 
+{
 	SCMD_STATE,				// followed by a load game state
 	SCMD_PLACE_LISTENER,
 	SCMD_ALLOC_EMITTER,
@@ -104,14 +95,15 @@ class idSoundWorldLocal;
 #ifdef __MWERKS__
 #pragma pack (push, 1)
 #endif
-struct waveformatex_s {
-    word    wFormatTag;        /* format type */
-    word    nChannels;         /* number of channels (i.e. mono, stereo...) */
-    dword   nSamplesPerSec;    /* sample rate */
-    dword   nAvgBytesPerSec;   /* for buffer estimation */
-    word    nBlockAlign;       /* block size of data */
-    word    wBitsPerSample;    /* Number of bits per sample of mono data */
-    word    cbSize;            /* The count in bytes of the size of
+struct waveformatex_s 
+{
+    uint16_t	wFormatTag;        /* format type */
+    uint16_t	nChannels;         /* number of channels (i.e. mono, stereo...) */
+    uint32_t	nSamplesPerSec;    /* sample rate */
+    uint32_t	nAvgBytesPerSec;   /* for buffer estimation */
+    uint16_t	nBlockAlign;       /* block size of data */
+    uint16_t	wBitsPerSample;    /* Number of bits per sample of mono data */
+    uint16_t	cbSize;            /* The count in bytes of the size of
                                     extra information (after cbSize) */
 } PACKED;
 
@@ -119,11 +111,11 @@ typedef waveformatex_s waveformatex_t;
 
 /* OLD general waveform format structure (information common to all formats) */
 struct waveformat_s {
-    word    wFormatTag;        /* format type */
-    word    nChannels;         /* number of channels (i.e. mono, stereo, etc.) */
-    dword   nSamplesPerSec;    /* sample rate */
-    dword   nAvgBytesPerSec;   /* for buffer estimation */
-    word    nBlockAlign;       /* block size of data */
+    uint16_t    wFormatTag;        /* format type */
+    uint16_t    nChannels;         /* number of channels (i.e. mono, stereo, etc.) */
+    uint32_t  	nSamplesPerSec;    /* sample rate */
+    uint32_t  	nAvgBytesPerSec;   /* for buffer estimation */
+    uint16_t    nBlockAlign;       /* block size of data */
 } PACKED;
 
 typedef waveformat_s waveformat_t;
@@ -137,41 +129,42 @@ enum {
 /* specific waveform format structure for PCM data */
 struct pcmwaveformat_s {
     waveformat_t	wf;
-    word			wBitsPerSample;
+    uint16_t		wBitsPerSample;
 } PACKED;
 
 typedef pcmwaveformat_s pcmwaveformat_t;
 
 #ifndef mmioFOURCC
 #define mmioFOURCC( ch0, ch1, ch2, ch3 )				\
-		( (dword)(byte)(ch0) | ( (dword)(byte)(ch1) << 8 ) |	\
-		( (dword)(byte)(ch2) << 16 ) | ( (dword)(byte)(ch3) << 24 ) )
+		( (uint32_t)(byte)(ch0) | ( (uint32_t)(byte)(ch1) << 8 ) |	\
+		( (uint32_t)(byte)(ch2) << 16 ) | ( (uint32_t)(byte)(ch3) << 24 ) )
 #endif
 
 #define fourcc_riff     mmioFOURCC('R', 'I', 'F', 'F')
 
-struct waveformatextensible_s {
+struct waveformatextensible_s 
+{
     waveformatex_t    Format;
     union {
-        word wValidBitsPerSample;       /* bits of precision  */
-        word wSamplesPerBlock;          /* valid if wBitsPerSample==0*/
-        word wReserved;                 /* If neither applies, set to zero*/
+        uint32_t	wValidBitsPerSample;       // bits of precision
+        uint32_t	wSamplesPerBlock;          // valid if wBitsPerSample==0
+        uint32_t	wReserved;                 // If neither applies, set to zero
     } Samples;
-    dword           dwChannelMask;      /* which channels are */
-                                        /* present in stream  */
-    int            SubFormat;
+    uint32_t		dwChannelMask;      		// which channels are
+                                        		// present in stream
+    int				SubFormat;
 } PACKED;
 
 typedef waveformatextensible_s waveformatextensible_t;
 
-typedef dword fourcc;
+typedef uint32_t fourcc;
 
 /* RIFF chunk information data structure */
 struct mminfo_s {
-	fourcc			ckid;           /* chunk ID */
-	dword			cksize;         /* chunk size */
-	fourcc			fccType;        /* form type or list type */
-	dword			dwDataOffset;   /* offset of data portion of chunk */
+	fourcc			ckid;           // chunk ID 
+	uint32_t		cksize;         // chunk size
+	fourcc			fccType;        // form type or list type
+	uint32_t		dwDataOffset;   // offset of data portion of chunk
 } PACKED;
 
 typedef mminfo_s mminfo_t;
@@ -212,15 +205,15 @@ private:
 	idFile *		mhmmio;			// I/O handle for the WAVE
     mminfo_t		mck;			// Multimedia RIFF chunk
     mminfo_t		mckRiff;		// used when opening a WAVE file
-    dword			mdwSize;		// size in samples
-	dword			mMemSize;		// size of the wave data in memory
-	dword			mseekBase;
-	ID_TIME_T			mfileTime;
+    uint32_t		mdwSize;		// size in samples
+	uint32_t		mMemSize;		// size of the wave data in memory
+	uint32_t		mseekBase;
+	ID_TIME_T		mfileTime;
 
     bool			mbIsReadingFromMemory;
     short *			mpbData;
     short *			mpbDataCur;
-    dword			mulDataSize;
+    uint32_t		mulDataSize;
 
 	void *			ogg;			// only !NULL when !s_realTimeDecoding
 	bool			isOgg;
@@ -256,7 +249,7 @@ public:
     virtual bool			Initialize( void ) = 0;
 
 	virtual bool			Lock( void **pDSLockedBuffer, ulong *dwDSLockedBufferSize ) = 0;
-	virtual bool			Unlock( void *pDSLockedBuffer, dword dwDSLockedBufferSize ) = 0;
+	virtual bool			Unlock( void *pDSLockedBuffer, uint32_t dwDSLockedBufferSize ) = 0;
 	virtual bool			GetCurrentPosition( ulong *pdwCurrentWriteCursor ) = 0;
 	
 	// try to write as many sound samples to the device as possible without blocking and prepare for a possible new mixing call
@@ -279,9 +272,10 @@ Encapsulates functionality of a DirectSound buffer.
 ===================================================================================
 */
 
-class idAudioBuffer {
+class idAudioBuffer 
+{
 public:
-    virtual int 		Play( dword dwPriority=0, dword dwFlags=0 ) = 0;
+    virtual int 		Play( uint32_t dwPriority=0, uint32_t dwFlags=0 ) = 0;
     virtual int			Stop( void ) = 0;
     virtual int			Reset( void ) = 0;
     virtual bool		IsSoundPlaying( void ) = 0;
@@ -328,7 +322,7 @@ protected:
 	float				param;
 
 public:
-						SoundFX()										{ channel = 0; buffer = NULL; initialized = false; maxlen = 0; memset( continuitySamples, 0, sizeof( float ) * 4 ); };
+						SoundFX()										{ channel = 0; buffer = nullptr; initialized = false; maxlen = 0; memset( continuitySamples, 0, sizeof( float ) * 4 ); };
 	virtual				~SoundFX()										{ if ( buffer ) delete buffer; };
 
 	virtual void		Initialize()									{ };
@@ -447,7 +441,8 @@ public:
 
 };
 
-class idSoundEmitterLocal : public idSoundEmitter {
+class idSoundEmitterLocal : public idSoundEmitter 
+{
 public:
 
 						idSoundEmitterLocal( void );
@@ -742,11 +737,11 @@ public:
 
 	virtual void			PrintMemInfo( MemInfo_t *mi );
 
-	virtual int				IsEAXAvailable( void );
+	virtual int				IsEFXAvailable( void );
 	
 	// BEATO Begin: audio thread concurrenci protection
-	virtual void EnterCriticalSection( void );
-	virtual void LeaveCriticalSection( void );
+	virtual void 			EnterCriticalSection( void );
+	virtual void 			LeaveCriticalSection( void );
 	// BEATO End
 
 	//-------------------------
@@ -788,7 +783,7 @@ public:
 	int						meterTops[256];
 	int						meterTopsTime[256];
 
-	dword *					graph;
+	uint32_t *				graph;
 
 	float					volumesDB[1200];		// dB to float volume conversion
 
@@ -800,19 +795,12 @@ public:
 	openalSource_t			openalSources[256];
 							// latches
 
-#if BT_USE_EAX || BT_USE_EFX
-	idEFXFile				EFXDatabase;
-#endif //BT_USE_EAX || BT_USE_EFX
+	idEFXFile					EFXDatabase;
 
 // BEATO Begin
-#if BT_SDL_AUDIO // OpenAL is not a option if no SDL audio not avaidable, is required
-	static bool				useOpenAL;
-#endif
-
-#if BT_USE_EFX
-	static bool				useEFXReverb;
-	static int				EFXAvailable; // mark available during initialization, or through an explicit test
-	bool					efxloaded;
+	static bool					useEFXReverb;
+	static int					EFXAvailable; // mark available during initialization, or through an explicit test
+	bool						efxloaded;
 
 	LPALGENEFFECTS					alGenEffects;
 	LPALDELETEEFFECTS				alDeleteEffects;
@@ -831,53 +819,38 @@ public:
 	LPALAUXILIARYEFFECTSLOTI		alAuxiliaryEffectSloti;
 	LPALAUXILIARYEFFECTSLOTF		alAuxiliaryEffectSlotf;
 
-	static idCVar			s_useEFXReverb;
-#endif // BT_USE_EFX
-
-#if BT_USE_EAX
-	static bool				useEAXReverb;
-	static int				EAXAvailable; // mark available during initialization, or through an explicit test
-	bool					eaxloaded;
-
-	EAXSet					alEAXSet;
-	EAXGet					alEAXGet;
-	EAXSetBufferMode		alEAXSetBufferMode;
-	EAXGetBufferMode		alEAXGetBufferMode;
-
-	static idCVar			s_useEAXReverb;
-	static idCVar			s_muteEAXReverb;
-#endif // BT_USE_EAX
+	static idCVar					s_useEFXReverb;
 // BEATO end
 
 
-	static idCVar			s_noSound;
-	static idCVar			s_quadraticFalloff;
-	static idCVar			s_drawSounds;
-	static idCVar			s_minVolume6;
-	static idCVar			s_dotbias6;
-	static idCVar			s_minVolume2;
-	static idCVar			s_dotbias2;
-	static idCVar			s_spatializationDecay;
-	static idCVar			s_showStartSound;
-	static idCVar			s_maxSoundsPerShader;
-	static idCVar			s_reverse;
-	static idCVar			s_showLevelMeter;
-	static idCVar			s_meterTopTime;
-	static idCVar			s_volume;
-	static idCVar			s_constantAmplitude;
-	static idCVar			s_playDefaultSound;
-	static idCVar			s_useOcclusion;
-	static idCVar			s_subFraction;
-	static idCVar			s_globalFraction;
-	static idCVar			s_doorDistanceAdd;
-	static idCVar			s_singleEmitter;
-	static idCVar			s_numberOfSpeakers;
-	static idCVar			s_force22kHz;
-	static idCVar			s_clipVolumes;
-	static idCVar			s_realTimeDecoding;
-	static idCVar			s_libOpenAL;
-	static idCVar			s_useOpenAL;
-	static idCVar			s_decompressionLimit;
+	static idCVar				s_noSound;
+	static idCVar				s_quadraticFalloff;
+	static idCVar				s_drawSounds;
+	static idCVar				s_minVolume6;
+	static idCVar				s_dotbias6;
+	static idCVar				s_minVolume2;
+	static idCVar				s_dotbias2;
+	static idCVar				s_spatializationDecay;
+	static idCVar				s_showStartSound;
+	static idCVar				s_maxSoundsPerShader;
+	static idCVar				s_reverse;
+	static idCVar				s_showLevelMeter;
+	static idCVar				s_meterTopTime;
+	static idCVar				s_volume;
+	static idCVar				s_constantAmplitude;
+	static idCVar				s_playDefaultSound;
+	static idCVar				s_useOcclusion;
+	static idCVar				s_subFraction;
+	static idCVar				s_globalFraction;
+	static idCVar				s_doorDistanceAdd;
+	static idCVar				s_singleEmitter;
+	static idCVar				s_numberOfSpeakers;
+	static idCVar				s_force22kHz;
+	static idCVar				s_clipVolumes;
+	static idCVar				s_realTimeDecoding;
+	static idCVar				s_libOpenAL;
+	static idCVar				s_useOpenAL;
+	static idCVar				s_decompressionLimit;
 
 	static idCVar			s_slowAttenuate;
 
@@ -892,8 +865,8 @@ public:
 	static idCVar			s_skipHelltimeFX;
 
 // BEATO Begin
-	static btMutex*			m_soundLock;	// proteck interations of the main and sound threads 
-	static btMutex*			m_decodeLock;	// samples can be decoded both from the sound thread and the main thread for shakes
+	static crMutex*			soundLock;	// proteck interations of the main and sound threads 
+	static crMutex*			decodeLock;	// samples can be decoded both from the sound thread and the main thread for shakes
 // BEATO End
 };
 

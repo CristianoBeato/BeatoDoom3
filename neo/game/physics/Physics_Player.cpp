@@ -292,7 +292,7 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 
 			if ( totalMass > 0.0f ) {
 				// decrease velocity based on the total mass of the objects being pushed ?
-				current.velocity *= 1.0f - idMath::ClampFloat( 0.0f, 1000.0f, totalMass - 20.0f ) * ( 1.0f / 950.0f );
+				current.velocity *= 1.0f - clamp( totalMass - 20.0f, 0.0f, 1000.0f ) * ( 1.0f / 950.0f );
 				pushed = true;
 			}
 	
@@ -300,17 +300,18 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 			time_left -= time_left * trace.fraction;
 
 			// if moved the entire distance
-			if ( trace.fraction >= 1.0f ) {
+			if ( trace.fraction >= 1.0f ) 
 				break;
-			}
 		}
 
-		if ( !stepped ) {
+		if ( !stepped ) 
+		{
 			// let the entity know about the collision
 			self->Collide( trace, current.velocity );
 		}
 
-		if ( numplanes >= MAX_CLIP_PLANES ) {
+		if ( numplanes >= MAX_CLIP_PLANES ) 
+		{
 			// MrElusive: I think we have some relatively high poly LWO models with a lot of slanted tris
 			// where it may hit the max clip planes
 			current.velocity = vec3_origin;
@@ -322,15 +323,18 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 		// out along it, which fixes some epsilon issues with
 		// non-axial planes
 		//
-		for ( i = 0; i < numplanes; i++ ) {
-			if ( ( trace.c.normal * planes[i] ) > 0.999f ) {
+		for ( i = 0; i < numplanes; i++ ) 
+		{
+			if ( ( trace.c.normal * planes[i] ) > 0.999f ) 
+			{
 				current.velocity += trace.c.normal;
 				break;
 			}
 		}
-		if ( i < numplanes ) {
+		
+		if ( i < numplanes ) 
 			continue;
-		}
+		
 		planes[numplanes] = trace.c.normal;
 		numplanes++;
 
@@ -339,7 +343,8 @@ bool idPhysics_Player::SlideMove( bool gravity, bool stepUp, bool stepDown, bool
 		//
 
 		// find a plane that it enters
-		for ( i = 0; i < numplanes; i++ ) {
+		for ( i = 0; i < numplanes; i++ ) 
+		{
 			into = current.velocity * planes[i];
 			if ( into >= 0.1f ) {
 				continue;		// move doesn't interact with the plane

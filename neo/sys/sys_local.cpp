@@ -31,8 +31,8 @@ If you have questions concerning this license or the applicable additional terms
 
 
 // BEATO Begin
-#include <SDL_clipboard.h>
-#include <SDL_timer.h>
+#include <SDL2/SDL_clipboard.h>
+#include <SDL2/SDL_timer.h>
 // BEATO End
 
 #include "sys_main.h"
@@ -48,73 +48,68 @@ idCVar sys_lang( "sys_lang", "english", CVAR_SYSTEM | CVAR_ARCHIVE,  "", sysLang
 void idSysLocal::DebugPrintf( const char *fmt, ... )
 {
 	va_list argptr;
-
 	va_start( argptr, fmt );
 	Sys_DebugVPrintf( fmt, argptr );
 	va_end( argptr );
 }
 
-void idSysLocal::DebugVPrintf( const char *fmt, va_list arg ) {
+void idSysLocal::DebugVPrintf( const char *fmt, va_list arg ) 
+{
 	Sys_DebugVPrintf( fmt, arg );
 }
 
-double idSysLocal::GetClockTicks( void ) {
+double idSysLocal::GetClockTicks( void ) 
+{
 	return Sys_GetClockTicks();
 }
 
-double idSysLocal::ClockTicksPerSecond( void ) {
+double idSysLocal::ClockTicksPerSecond( void ) 
+{
 	return Sys_ClockTicksPerSecond();
 }
 
-cpuid_t idSysLocal::GetProcessorId( void ) {
+cpuid_t idSysLocal::GetProcessorId( void ) 
+{
 	return Sys_GetProcessorId();
 }
 
-const char *idSysLocal::GetProcessorString( void ) {
+const char *idSysLocal::GetProcessorString( void ) 
+{
 	return Sys_GetProcessorString();
 }
 
-const char *idSysLocal::FPU_GetState( void ) {
+const char *idSysLocal::FPU_GetState( void ) 
+{
 	return Sys_FPU_GetState();
 }
 
-bool idSysLocal::FPU_StackIsEmpty( void ) {
+bool idSysLocal::FPU_StackIsEmpty( void ) 
+{
 	return Sys_FPU_StackIsEmpty();
 }
 
-void idSysLocal::FPU_SetFTZ( bool enable ) {
+void idSysLocal::FPU_SetFTZ( bool enable ) 
+{
 	Sys_FPU_SetFTZ( enable );
 }
 
-void idSysLocal::FPU_SetDAZ( bool enable ) {
+void idSysLocal::FPU_SetDAZ( bool enable ) 
+{
 	Sys_FPU_SetDAZ( enable );
 }
 
-bool idSysLocal::LockMemory( void *ptr, int bytes ) {
+bool idSysLocal::LockMemory( void *ptr, int bytes ) 
+{
 	return Sys_LockMemory( ptr, bytes );
 }
 
-bool idSysLocal::UnlockMemory( void *ptr, int bytes ) {
+bool idSysLocal::UnlockMemory( void *ptr, int bytes ) 
+{
 	return Sys_UnlockMemory( ptr, bytes );
 }
 
-void idSysLocal::GetCallStack( address_t *callStack, const int callStackSize ) {
-	Sys_GetCallStack( callStack, callStackSize );
-}
-
-const char * idSysLocal::GetCallStackStr( const address_t *callStack, const int callStackSize ) {
-	return Sys_GetCallStackStr( callStack, callStackSize );
-}
-
-const char * idSysLocal::GetCallStackCurStr( int depth ) {
-	return Sys_GetCallStackCurStr( depth );
-}
-
-void idSysLocal::ShutdownSymbols( void ) {
-	Sys_ShutdownSymbols();
-}
-
-void idSysLocal::DLL_GetFileName( const char *baseName, char *dllName, int maxLength ) {
+void idSysLocal::DLL_GetFileName( const char *baseName, char *dllName, int maxLength ) 
+{
 #ifdef _WIN32
 	idStr::snPrintf( dllName, maxLength, "%s" CPUSTRING ".dll", baseName );
 #elif defined( __linux__ )
@@ -126,7 +121,8 @@ void idSysLocal::DLL_GetFileName( const char *baseName, char *dllName, int maxLe
 #endif
 }
 
-sysEvent_t idSysLocal::GenerateMouseButtonEvent( int button, bool down ) {
+sysEvent_t idSysLocal::GenerateMouseButtonEvent( int button, bool down ) 
+{
 	sysEvent_t ev;
 	ev.evType = SE_KEY;
 	ev.evValue = K_MOUSE1 + button - 1;
@@ -136,7 +132,8 @@ sysEvent_t idSysLocal::GenerateMouseButtonEvent( int button, bool down ) {
 	return ev;
 }
 
-sysEvent_t idSysLocal::GenerateMouseMoveEvent( int deltax, int deltay ) {
+sysEvent_t idSysLocal::GenerateMouseMoveEvent( int deltax, int deltay ) 
+{
 	sysEvent_t ev;
 	ev.evType = SE_MOUSE;
 	ev.evValue = deltax;
@@ -227,10 +224,111 @@ void Sys_Sleep( int msec )
 Sys_Milliseconds
 ================
 */
-Uint32 Sys_Milliseconds( void )
+uint64_t Sys_Milliseconds( void )
 {
-	return SDL_GetTicks();
+	return SDL_GetTicks64();
 }
+
+/*
+========================
+Sys_Microseconds
+========================
+*/
+uint64_t Sys_Microseconds( void ) 
+{
+	static uint64_t ticksPerMicrosecondTimes1024 = 0;
+
+	Sys_GetClockTicks();
+	if ( ticksPerMicrosecondTimes1024 == 0 ) 
+	{
+		ticksPerMicrosecondTimes1024 = ( SDL_GetPerformanceFrequency() << 10 ) / 1000000;
+		assert( ticksPerMicrosecondTimes1024 > 0 );
+	}
+
+	return ( ( SDL_GetPerformanceCounter() << 10 ) ) / ticksPerMicrosecondTimes1024;
+}
+
+
+/*
+================
+Sys_LockMemory
+================
+*/
+bool Sys_LockMemory( void *ptr, const size_t bytes ) 
+{
+#ifdef _WIN32
+	return ( VirtualLock( ptr, (SIZE_T)bytes ) != FALSE );
+#else
+	return false;
+#endif
+}
+
+/*
+================
+Sys_UnlockMemory
+================
+*/
+bool Sys_UnlockMemory( void *ptr, const size_t bytes ) 
+{
+#ifdef _WIN32
+	return ( VirtualUnlock( ptr, (SIZE_T)bytes ) != FALSE );
+#else
+	return false;
+#endif
+}
+
+/*
+================
+Sys_SetPhysicalWorkMemory
+================
+*/
+void Sys_SetPhysicalWorkMemory( const intptr_t minBytes, const intptr_t maxBytes ) 
+{
+#ifdef _WIN32
+	::SetProcessWorkingSetSize( GetCurrentProcess(), minBytes, maxBytes );
+#endif
+}
+
+/*
+=================
+Sys_GetMemoryStatus
+=================
+*/
+void Sys_GetMemoryStatus( sysMemoryStats_t &stats ) 
+{
+	common->Printf( "FIXME: Sys_GetMemoryStatus stub\n" );
+}
+
+/*
+=================
+Sys_GetMemoryStatus
+=================
+*/
+void Sys_GetCurrentMemoryStatus( sysMemoryStats_t &stats ) 
+{
+	common->Printf( "FIXME: Sys_GetCurrentMemoryStatus\n" );
+}
+
+/*
+=================
+Sys_GetMemoryStatus
+=================
+*/
+void Sys_GetExeLaunchMemoryStatus( sysMemoryStats_t &stats ) 
+{
+	common->Printf( "FIXME: Sys_GetExeLaunchMemoryStatus\n" );
+}
+
+/*
+ ==================
+ Sys_DoPreferences
+ ==================
+ */
+void Sys_DoPreferences( void ) 
+{ 
+}
+
+
 
 /*
 ================
@@ -280,9 +378,9 @@ Sys_GetClipboardData
 */
 char *Sys_GetClipboardData( void )
 {
-	char *data = NULL;
+	char *data = nullptr;
 	if (SDL_HasClipboardText() == SDL_FALSE)
-		return "0/";
+		return (char*)"0/";
 
 	SDL_ClipBoart clipBoard = SDL_ClipBoart(); //Reads system clipboard
 
@@ -312,16 +410,6 @@ Sys_GetSystemRam
 int Sys_GetSystemRam( void )
 {
 	return SDL_GetSystemRAM();
-}
-
-/*
-================
-Sys_GetExeLaunchMemoryStatus
-================
-*/
-void Sys_GetExeLaunchMemoryStatus( sysMemoryStats_t &stats )
-{
-	stats = sysVars.exeLaunchMemoryStats;
 }
 
 // BEATO END

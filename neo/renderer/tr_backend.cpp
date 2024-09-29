@@ -77,13 +77,14 @@ void RB_SetDefaultGLState( void ) {
 	glDepthFunc( GL_ALWAYS );
  
 	glCullFace( GL_FRONT_AND_BACK );
-	glShadeModel( GL_SMOOTH );
+//	glShadeModel( GL_SMOOTH ); // FIXED FUNCTION PIPELINE
 
 	if ( r_useScissor.GetBool() ) {
 		glScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 	}
 
-	for ( i = glConfig.maxTextureUnits - 1 ; i >= 0 ; i-- ) {
+	for ( i = glConfig.maxTextureUnits - 1 ; i >= 0 ; i-- ) 
+	{
 		GL_SelectTexture( i );
 
 		// object linear texgen is our default
@@ -94,11 +95,14 @@ void RB_SetDefaultGLState( void ) {
 
 		GL_TexEnv( GL_MODULATE );
 		glDisable( GL_TEXTURE_2D );
-		if ( glConfig.texture3DAvailable ) {
+		if ( glConfig.texture3DAvailable ) 
+		{
 			glDisable( GL_TEXTURE_3D );
 		}
-		if ( glConfig.cubeMapAvailable ) {
-			glDisable( GL_TEXTURE_CUBE_MAP_EXT );
+		
+		if ( glConfig.cubeMapAvailable ) 
+		{
+			glDisable( GL_TEXTURE_CUBE_MAP );
 		}
 	}
 }
@@ -132,18 +136,19 @@ void RB_LogComment( const char *comment, ... ) {
 GL_SelectTexture
 ====================
 */
-void GL_SelectTexture( int unit ) {
-	if ( backEnd.glState.currenttmu == unit ) {
+void GL_SelectTexture( int unit ) 
+{
+	if ( backEnd.glState.currenttmu == unit ) 
 		return;
-	}
 
-	if ( unit < 0 || unit >= glConfig.maxTextureUnits && unit >= glConfig.maxTextureImageUnits ) {
+	if ( unit < 0 || unit >= glConfig.maxTextureUnits && unit >= glConfig.maxTextureImageUnits ) 
+	{
 		common->Warning( "GL_SelectTexture: unit = %i", unit );
 		return;
 	}
 
-	glActiveTextureARB( GL_TEXTURE0_ARB + unit );
-	glClientActiveTextureARB( GL_TEXTURE0_ARB + unit );
+	glActiveTexture( GL_TEXTURE0 + unit );
+	glClientActiveTextureARB( GL_TEXTURE0 + unit );
 	RB_LogComment( "glActiveTextureARB( %i );\nglClientActiveTextureARB( %i );\n", unit, unit );
 
 	backEnd.glState.currenttmu = unit;
@@ -158,30 +163,38 @@ This handles the flipping needed when the view being
 rendered is a mirored view.
 ====================
 */
-void GL_Cull( int cullType ) {
-	if ( backEnd.glState.faceCulling == cullType ) {
+void GL_Cull( int cullType ) 
+{
+	if ( backEnd.glState.faceCulling == cullType ) 
+	{
 		return;
 	}
 
-	if ( cullType == CT_TWO_SIDED ) {
-		glDisable( GL_CULL_FACE );
-	} else  {
-		if ( backEnd.glState.faceCulling == CT_TWO_SIDED ) {
-			glEnable( GL_CULL_FACE );
-		}
+	if ( cullType == CT_TWO_SIDED ) 
+	{
+		glSetState( GL_CULL_FACE, GL_FALSE );
+	} 
+	else  
+	{
+		GLenum mode = GL_NONE;
+		if ( backEnd.glState.faceCulling == CT_TWO_SIDED ) 
+			glSetState( GL_CULL_FACE, GL_TRUE );
 
-		if ( cullType == CT_BACK_SIDED ) {
-			if ( backEnd.viewDef->isMirror ) {
-				glCullFace( GL_FRONT );
-			} else {
-				glCullFace( GL_BACK );
-			}
-		} else {
-			if ( backEnd.viewDef->isMirror ) {
-				glCullFace( GL_BACK );
-			} else {
-				glCullFace( GL_FRONT );
-			}
+		if ( cullType == CT_BACK_SIDED ) 
+		{
+			if ( backEnd.viewDef->isMirror )
+				mode = GL_FRONT;
+			else
+				mode = GL_BACK;
+		} 
+		else 
+		{
+			if ( backEnd.viewDef->isMirror ) 
+				mode = GL_BACK;
+			else 
+				mode = GL_FRONT;
+
+			glCullFace( mode );
 		}
 	}
 
@@ -193,17 +206,18 @@ void GL_Cull( int cullType ) {
 GL_TexEnv
 ====================
 */
-void GL_TexEnv( int env ) {
+void GL_TexEnv( int env ) 
+{
 	tmu_t	*tmu;
 
 	tmu = &backEnd.glState.tmu[backEnd.glState.currenttmu];
-	if ( env == tmu->texEnv ) {
+	if ( env == tmu->texEnv ) 
 		return;
-	}
 
 	tmu->texEnv = env;
 
-	switch ( env ) {
+	switch ( env ) 
+	{
 	case GL_COMBINE_EXT:
 	case GL_MODULATE:
 	case GL_REPLACE:
@@ -225,7 +239,8 @@ Clears the state delta bits, so the next GL_State
 will set every item
 =================
 */
-void GL_ClearStateDelta( void ) {
+void GL_ClearStateDelta( void ) 
+{
 	backEnd.glState.forceGlState = true;
 }
 
@@ -475,7 +490,8 @@ RB_SetBuffer
 
 =============
 */
-static void	RB_SetBuffer( const void *data ) {
+static void	RB_SetBuffer( const void *data ) 
+{
 	const setBufferCommand_t	*cmd;
 
 	// see which draw buffer we want to render the frame to
@@ -489,7 +505,8 @@ static void	RB_SetBuffer( const void *data ) {
 	// clear screen for debugging
 	// automatically enable this with several other debug tools
 	// that might leave unrendered portions of the screen
-	if ( r_clear.GetFloat() || idStr::Length( r_clear.GetString() ) != 1 || r_lockSurfaces.GetBool() || r_singleArea.GetBool() || r_showOverDraw.GetBool() ) {
+	if ( r_clear.GetFloat() || idStr::Length( r_clear.GetString() ) != 1 || r_lockSurfaces.GetBool() || r_singleArea.GetBool() || r_showOverDraw.GetBool() ) 
+	{
 		float c[3];
 		if ( sscanf( r_clear.GetString(), "%f %f %f", &c[0], &c[1], &c[2] ) == 3 ) {
 			glClearColor( c[0], c[1], c[2], 1 );
@@ -512,7 +529,8 @@ Draw all the images to the screen, on top of whatever
 was there.  This is used to test for texture thrashing.
 ===============
 */
-void RB_ShowImages( void ) {
+void RB_ShowImages( void )
+ {
 	int		i;
 	idImage	*image;
 	float	x, y, w, h;
@@ -571,7 +589,8 @@ RB_SwapBuffers
 
 =============
 */
-const void	RB_SwapBuffers( const void *data ) {
+const void	RB_SwapBuffers( const void *data ) 
+{
 	// texture swapping test
 	if ( r_showImages.GetInteger() != 0 ) {
 		RB_ShowImages();
@@ -585,8 +604,13 @@ const void	RB_SwapBuffers( const void *data ) {
     RB_LogComment( "***************** RB_SwapBuffers *****************\n\n\n" );
 
 	// don't flip if drawing to front buffer
-	if ( !r_frontBuffer.GetBool() ) {
-	    GLimp_SwapBuffers();
+	if ( !r_frontBuffer.GetBool() ) 
+	{
+#if CR_USE_VULKAN
+		Sys_SwapBuffersVK();
+#else
+		Sys_SwapBuffersGL();
+#endif
 	}
 }
 

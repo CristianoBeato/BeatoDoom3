@@ -104,9 +104,10 @@ typedef enum {
 	WEXP_REG_NUM_PREDEFINED
 } wexpRegister_t;
 
-typedef struct {
+typedef struct 
+{
 	wexpOpType_t opType;	
-	int	a, b, c, d;
+	intptr_t	a, b, c, d;
 } wexpOp_t;
 
 struct idRegEntry {
@@ -157,13 +158,14 @@ public:
 
 struct idTransitionData {
 	idWinVar *data;
-	int	offset;
+	intptr_t offset;
 	idInterpolateAccelDecelLinear<idVec4> interp;
 };
 
 
 class idUserInterfaceLocal;
-class idWindow {
+class idWindow 
+{
 public:
 	idWindow(idUserInterfaceLocal *gui);
 	idWindow(idDeviceContext *d, idUserInterfaceLocal *gui);
@@ -209,9 +211,9 @@ public:
 
 	idWindow *SetCapture(idWindow *w);
 	void SetParent(idWindow *w);
-	void SetFlag(unsigned int f);
-	void ClearFlag(unsigned int f);
-	unsigned GetFlags() {return flags;};
+	void SetFlag( uint32_t f);
+	void ClearFlag( uint32_t f);
+	uint32_t GetFlags() {return flags;};
 	void Move(float x, float y);
 	void BringToTop(idWindow *w);
 	void Adjust(float xd, float yd);
@@ -230,7 +232,7 @@ public:
 
 	virtual idWinVar *GetWinVarByName	(const char *_name, bool winLookup = false, drawWin_t** owner = NULL);
 
-	int  GetWinVarOffset( idWinVar *wv, drawWin_t *dw );
+	intptr_t  GetWinVarOffset( idWinVar *wv, drawWin_t *dw );
 	float GetMaxCharHeight();
 	float GetMaxCharWidth();
 	void SetFont();
@@ -300,8 +302,8 @@ public:
 	bool RunScript(int n);
 	bool RunScriptList(idGuiScriptList *src);
 	void SetRegs(const char *key, const char *val);
-	int ParseExpression( idParser *src, idWinVar *var = NULL, int component = 0 );
-	int ExpressionConstant(float f);
+	intptr_t ParseExpression( idParser *src, idWinVar *var = NULL, int component = 0 );
+	intptr_t ExpressionConstant(float f);
 	idRegisterList *RegList() { return &regList; }
 	void AddCommand(const char *cmd);
 	void AddUpdateVar(idWinVar *var);
@@ -350,10 +352,10 @@ protected:
 
 	int ExpressionTemporary();
 	wexpOp_t *ExpressionOp();
-	int EmitOp( int a, int b, wexpOpType_t opType, wexpOp_t **opp = NULL );
-	int ParseEmitOp( idParser *src, int a, wexpOpType_t opType, int priority, wexpOp_t **opp = NULL );
-	int ParseTerm( idParser *src, idWinVar *var = NULL, int component = 0 );
-	int ParseExpressionPriority( idParser *src, int priority, idWinVar *var = NULL, int component = 0 );
+	intptr_t EmitOp( intptr_t a, intptr_t b, wexpOpType_t opType, wexpOp_t **opp = NULL );
+	intptr_t ParseEmitOp( idParser *src, intptr_t a, wexpOpType_t opType, int priority, wexpOp_t **opp = NULL );
+	intptr_t ParseTerm( idParser *src, idWinVar *var = NULL, int component = 0 );
+	intptr_t ParseExpressionPriority( idParser *src, int priority, idWinVar *var = NULL, int component = 0 );
 	void EvaluateRegisters(float *registers);
 	void SaveExpressionParseState();
 	void RestoreExpressionParseState();
@@ -365,14 +367,14 @@ protected:
 	void ParseVec4(idParser *src, idVec4 &out);
 	void ConvertRegEntry(const char *name, idParser *src, idStr &out, int tabs);
 
-	float actualX;					// physical coords
-	float actualY;					// ''
-	int	  childID;					// this childs id
-	unsigned int flags;             // visible, focus, mouseover, cursor, border, etc.. 
-	int lastTimeRun;				//
+	float 		actualX;					// physical coords
+	float 		actualY;					// ''
+	int	  		childID;					// this childs id
+	uint32_t	flags;             // visible, focus, mouseover, cursor, border, etc.. 
+	int 		lastTimeRun;				//
 	idRectangle drawRect;			// overall rect
 	idRectangle clientRect;			// client area
-	idVec2	origin;
+	idVec2		origin;
 
 	int timeLine;					// time stamp used for various fx
 	float xOffset;			

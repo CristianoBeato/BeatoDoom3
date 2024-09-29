@@ -36,48 +36,55 @@ If you have questions concerning this license or the applicable additional terms
 
 ===================================================================================
 */
-
-typedef struct {
+typedef struct 
+{
 	const char * name;
 	const char * type;
 	const char * value;
 } constantInfo_t;
 
-typedef struct {
+typedef struct 
+{
 	const char * name;
 	int value;
 } enumValueInfo_t;
 
-typedef struct {
+typedef struct 
+{
 	const char * typeName;
 	const enumValueInfo_t * values;
 } enumTypeInfo_t;
 
-typedef struct {
-	const char * type;
-	const char * name;
-	int offset;
-	int size;
+typedef struct 
+{
+	const char*	type;
+	const char* name;
+	intptr_t 	offset;
+	size_t		size;
 } classVariableInfo_t;
 
-typedef struct {
-	const char * typeName;
-	const char * superType;
-	int size;
+typedef struct 
+{
+	const char*		typeName;
+	const char*		superType;
+	size_t 			size;
 	const classVariableInfo_t * variables;
 } classTypeInfo_t;
 
 
-static constantInfo_t constantInfo[] = {
-	{ NULL, NULL, NULL }
+static constantInfo_t constantInfo[] = 
+{
+	{ nullptr, nullptr, nullptr }
 };
 
-static enumTypeInfo_t enumTypeInfo[] = {
-	{ NULL, NULL }
+static enumTypeInfo_t enumTypeInfo[] = 
+{
+	{ nullptr, nullptr }
 };
 
-static classTypeInfo_t classTypeInfo[] = {
-	{ NULL, NULL, 0, NULL }
+static classTypeInfo_t classTypeInfo[] = 
+{
+	{ nullptr, nullptr, 0, nullptr }
 };
 
 #endif /* !__GAMETYPEINFO_H__ */

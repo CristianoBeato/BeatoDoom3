@@ -943,18 +943,18 @@ void idGameLocal::UpdateLagometer( int aheadOfServer, int dupeUsercmds ) {
 		}
 		ahead = idMath::Rint( (float)aheadOfServer / 16.0f );
 		if ( ahead >= 0 ) {
-			for ( i = 2 * Max( 0, 5 - ahead ); i < 2 * 5; i++ ) {
+			for ( i = 2 * max( 0, 5 - ahead ); i < 2 * 5; i++ ) {
 				lagometer[i][j][1] = 255;
 				lagometer[i][j][3] = 255;
 			}
 		} else {
-			for ( i = 2 * 5; i < 2 * ( 5 + Min( 10, -ahead ) ); i++ ) {
+			for ( i = 2 * 5; i < 2 * ( 5 + min( 10, -ahead ) ); i++ ) {
 				lagometer[i][j][0] = 255;
 				lagometer[i][j][1] = 255;
 				lagometer[i][j][3] = 255;
 			}
 		}
-		for ( i = LAGO_HEIGHT - 2 * Min( 6, dupeUsercmds ); i < LAGO_HEIGHT; i++ ) {
+		for ( i = LAGO_HEIGHT - 2 * min( 6, dupeUsercmds ); i < LAGO_HEIGHT; i++ ) {
 			lagometer[i][j][0] = 255;
 			if ( dupeUsercmds <= 2 ) {
 				lagometer[i][j][1] = 255;

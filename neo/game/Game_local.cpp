@@ -1245,13 +1245,16 @@ bool idGameLocal::InitFromSaveGame( const char *mapName, idRenderWorld *renderWo
 	FindEntityDef( "player_doommarine", false );
 
 	// precache any media specified in the map
-	for ( i = 0; i < mapFile->GetNumEntities(); i++ ) {
+	for ( i = 0; i < mapFile->GetNumEntities(); i++ ) 
+	{
 		idMapEntity *mapEnt = mapFile->GetEntity( i );
 
-		if ( !InhibitEntitySpawn( mapEnt->epairs ) ) {
+		if ( !InhibitEntitySpawn( mapEnt->epairs ) ) 
+		{
 			CacheDictionaryMedia( &mapEnt->epairs );
 			const char *classname = mapEnt->epairs.GetString( "classname" );
-			if ( classname != '\0' ) {
+			if ( classname != nullptr && classname[0] != '\0' ) // NOTE:
+			{
 				FindEntityDef( classname, false );
 			}
 		}
@@ -1615,12 +1618,13 @@ idGameLocal::GetShakeSounds
 ===================
 */
 void idGameLocal::GetShakeSounds( const idDict *dict ) {
-	const idSoundShader *soundShader;
-	const char *soundShaderName;
+	const idSoundShader *soundShader = nullptr;
+	const char *soundShaderName = nullptr;
 	idStr soundName;
 
 	soundShaderName = dict->GetString( "s_shader" );
-	if ( soundShaderName != '\0' && dict->GetFloat( "s_shakes" ) != 0.0f ) {
+	if ( soundShaderName != nullptr && soundShaderName[0] != '\0' && dict->GetFloat( "s_shakes" ) != 0.0f ) 
+	{
 		soundShader = declManager->FindSound( soundShaderName );
 
 		for ( int i = 0; i < soundShader->GetNumSounds(); i++ ) {

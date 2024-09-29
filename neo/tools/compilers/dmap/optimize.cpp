@@ -181,9 +181,51 @@ static	void LinkEdge( optEdge_t *e ) {
 	e->v2->edges = e;
 }
 
-#ifdef __linux__
+#ifdef __GNUC__
 
-optVertex_t *FindOptVertex( idDrawVert *v, optimizeGroup_t *opt );
+/*
+================
+FindOptVertex
+================
+*/
+static optVertex_t *FindOptVertex( idDrawVert *v, optimizeGroup_t *opt ) 
+{
+	int		i;
+	float	x, y;
+	optVertex_t	*vert;
+
+	// deal with everything strictly as 2D
+	x = v->xyz * opt->axis[0];
+	y = v->xyz * opt->axis[1];
+
+	// should we match based on the t-junction fixing hash verts?
+	for ( i = 0 ; i < numOptVerts ; i++ ) 
+	{
+		if ( optVerts[i].pv[0] == x && optVerts[i].pv[1] == y ) 
+		{
+			return &optVerts[i];
+		}
+	}
+
+	if ( numOptVerts >= MAX_OPT_VERTEXES ) 
+	{
+		common->Error( "MAX_OPT_VERTEXES" );
+		return nullptr;
+	}
+	
+	numOptVerts++;
+
+	vert = &optVerts[i];
+	memset( vert, 0, sizeof( *vert ) );
+	vert->v = *v;
+	vert->pv[0] = x;
+	vert->pv[1] = y;
+	vert->pv[2] = 0;
+
+	optBounds.AddPoint( vert->pv );
+
+	return vert;
+}
 
 #else
 
@@ -192,7 +234,8 @@ optVertex_t *FindOptVertex( idDrawVert *v, optimizeGroup_t *opt );
 FindOptVertex
 ================
 */
-static optVertex_t *FindOptVertex( idDrawVert *v, optimizeGroup_t *opt ) {
+static optVertex_t *FindOptVertex( idDrawVert *v, optimizeGroup_t *opt ) 
+{
 	int		i;
 	float	x, y;
 	optVertex_t	*vert;
@@ -234,15 +277,16 @@ static optVertex_t *FindOptVertex( idDrawVert *v, optimizeGroup_t *opt ) {
 DrawAllEdges
 ================
 */
-static	void DrawAllEdges( void ) {
+static	void DrawAllEdges( void ) 
+{
 	int		i;
 
-	if ( !dmapGlobals.drawflag ) {
+	if ( !dmapGlobals.drawflag ) 
 		return;
-	}
 
 	Draw_ClearWindow();
 
+#if DMAP_GL
 	qglBegin( GL_LINES );
 	for ( i = 0 ; i < numOptEdges ; i++ ) {
 		if ( optEdges[i].v1 == NULL ) {
@@ -255,6 +299,7 @@ static	void DrawAllEdges( void ) {
 	}
 	qglEnd();
 	qglFlush();
+#endif //DMAP_GL
 
 //	GLimp_SwapBuffers();
 }
@@ -264,13 +309,14 @@ static	void DrawAllEdges( void ) {
 DrawVerts
 ================
 */
-static void DrawVerts( optIsland_t *island ) {
+static void DrawVerts( optIsland_t *island ) 
+{
 	optVertex_t	*vert;
 
-	if ( !dmapGlobals.drawflag ) {
+	if ( !dmapGlobals.drawflag ) 
 		return;
-	}
 
+#if DMAP_GL
 	qglEnable( GL_BLEND );
 	qglBlendFunc( GL_ONE, GL_ONE );
 	qglColor3f( 0.3f, 0.3f, 0.3f );
@@ -282,6 +328,7 @@ static void DrawVerts( optIsland_t *island ) {
 	qglEnd();
 	qglDisable( GL_BLEND );
 	qglFlush();
+#endif //DMAP_GL
 }
 
 /*
@@ -289,15 +336,15 @@ static void DrawVerts( optIsland_t *island ) {
 DrawEdges
 ================
 */
-static	void DrawEdges( optIsland_t *island ) {
+static	void DrawEdges( optIsland_t *island ) 
+{
 	optEdge_t	*edge;
 
-	if ( !dmapGlobals.drawflag ) {
+	if ( !dmapGlobals.drawflag ) 
 		return;
-	}
 
 	Draw_ClearWindow();
-
+#if DMAP_GL
 	qglBegin( GL_LINES );
 	for ( edge = island->edges ; edge ; edge = edge->islandLink ) {
 		if ( edge->v1 == NULL ) {
@@ -310,6 +357,7 @@ static	void DrawEdges( optIsland_t *island ) {
 	}
 	qglEnd();
 	qglFlush();
+#endif //DMAP_GL
 
 //	GLimp_SwapBuffers();
 }
@@ -482,7 +530,9 @@ static	bool TryAddNewEdge( optVertex_t *v1, optVertex_t *v2, optIsland_t *island
 		}
 	}
 
-	if ( dmapGlobals.drawflag ) {
+#if DMAP_GL
+	if ( dmapGlobals.drawflag ) 
+	{
 		qglBegin( GL_LINES );
 		qglColor3f( 0, ( 128 + orandom.RandomInt( 127 ) )/ 255.0, 0 );
 		qglVertex3fv( v1->pv.ToFloatPtr() );
@@ -490,6 +540,8 @@ static	bool TryAddNewEdge( optVertex_t *v1, optVertex_t *v2, optIsland_t *island
 		qglEnd();
 		qglFlush();
 	}
+#endif DMAP_GL
+
 	// add it
 	e = AllocEdge();
 
@@ -685,7 +737,9 @@ static	void RemoveIfColinear( optVertex_t *ov, optIsland_t *island ) {
 		return;
 	}
 
-	if ( dmapGlobals.drawflag ) {
+#if DMAP_GL
+	if ( dmapGlobals.drawflag ) 
+	{
 		qglBegin( GL_LINES );
 		qglColor3f( 1, 1, 0 );
 		qglVertex3fv( v1->pv.ToFloatPtr() );
@@ -699,6 +753,7 @@ static	void RemoveIfColinear( optVertex_t *ov, optIsland_t *island ) {
 		qglEnd();
 		qglFlush();
 	}
+#endif //DMAP_GL
 
 	// replace the two edges with a single edge
 	UnlinkEdge( e1, island );
@@ -959,7 +1014,9 @@ static void CreateOptTri( optVertex_t *first, optEdge_t *e1, optEdge_t *e2, optI
 //DrawEdges( island );
 
 		// identify the third edge
-	if ( dmapGlobals.drawflag ) {
+#if DMAP_GL
+	if ( dmapGlobals.drawflag ) 
+	{
 		qglColor3f(1,1,0);
 		qglBegin( GL_LINES );
 		qglVertex3fv( e1->v1->pv.ToFloatPtr() );
@@ -973,6 +1030,8 @@ static void CreateOptTri( optVertex_t *first, optEdge_t *e1, optEdge_t *e2, optI
 		qglEnd();
 		qglFlush();
 	}
+#endif //DMAP_GL
+
 
 	for ( opposite = second->edges ; opposite ; ) {
 		if ( opposite != e1 && ( opposite->v1 == third || opposite->v2 == third ) ) {
@@ -987,12 +1046,15 @@ static void CreateOptTri( optVertex_t *first, optEdge_t *e1, optEdge_t *e2, optI
 		}
 	}
 
-	if ( !opposite ) {
+	if ( !opposite ) 
+	{
 		common->Printf( "Warning: BuildOptTriangles: couldn't locate opposite\n" );
 		return;
 	}
 
-	if ( dmapGlobals.drawflag ) {
+#if DMAP_GL
+	if ( dmapGlobals.drawflag ) 
+	{
 		qglColor3f(1,0,1);
 		qglBegin( GL_LINES );
 		qglVertex3fv( opposite->v1->pv.ToFloatPtr() );
@@ -1000,6 +1062,7 @@ static void CreateOptTri( optVertex_t *first, optEdge_t *e1, optEdge_t *e2, optI
 		qglEnd();
 		qglFlush();
 	}
+#endif 
 
 	// create new triangle
 	optTri = (optTri_t *)Mem_Alloc( sizeof( *optTri ) );
@@ -1010,7 +1073,9 @@ static void CreateOptTri( optVertex_t *first, optEdge_t *e1, optEdge_t *e2, optI
 	optTri->next = island->tris;
 	island->tris = optTri;
 
-	if ( dmapGlobals.drawflag ) {
+#if DMAP_GL
+	if ( dmapGlobals.drawflag ) 
+	{
 		qglColor3f( 1, 1, 1 );
 		qglPointSize( 4 );
 		qglBegin( GL_POINTS );
@@ -1018,6 +1083,7 @@ static void CreateOptTri( optVertex_t *first, optEdge_t *e1, optEdge_t *e2, optI
 		qglEnd();
 		qglFlush();
 	}
+#endif
 
 	// find the midpoint, and scan through all the original triangles to
 	// see if it is inside any of them
@@ -1031,12 +1097,19 @@ static void CreateOptTri( optVertex_t *first, optEdge_t *e1, optEdge_t *e2, optI
 	} else {
 		optTri->filled = false;
 	}
-	if ( dmapGlobals.drawflag ) {
-		if ( optTri->filled ) {
+	
+#if DMAP_GL
+	if ( dmapGlobals.drawflag ) 
+	{
+		if ( optTri->filled ) 
+		{
 			qglColor3f( ( 128 + orandom.RandomInt( 127 ) )/ 255.0, 0, 0 );
-		} else {
+		} 
+		else 
+		{
 			qglColor3f( 0, ( 128 + orandom.RandomInt( 127 ) ) / 255.0, 0 );
 		}
+		
 		qglBegin( GL_TRIANGLES );
 		qglVertex3fv( optTri->v[0]->pv.ToFloatPtr() );
 		qglVertex3fv( optTri->v[1]->pv.ToFloatPtr() );
@@ -1050,6 +1123,7 @@ static void CreateOptTri( optVertex_t *first, optEdge_t *e1, optEdge_t *e2, optI
 		qglEnd();
 		qglFlush();
 	}
+#endif
 
 	// link the triangle to it's edges
 	LinkTriToEdge( optTri, e1 );
@@ -1353,14 +1427,16 @@ void AddEdgeIfNotAlready( optVertex_t *v1, optVertex_t *v2 ) {
 DrawOriginalEdges
 =================
 */
-static void DrawOriginalEdges( int numOriginalEdges, originalEdges_t *originalEdges ) {
+static void DrawOriginalEdges( int numOriginalEdges, originalEdges_t *originalEdges ) 
+{
 	int		i;
 
-	if ( !dmapGlobals.drawflag ) {
+	if ( !dmapGlobals.drawflag ) 
 		return;
-	}
+	
 	Draw_ClearWindow();
 
+#if DMAP_GL
 	qglBegin( GL_LINES );
 	for ( i = 0 ; i < numOriginalEdges ; i++ ) {
 		qglColor3f( 1, 0, 0 );
@@ -1370,10 +1446,12 @@ static void DrawOriginalEdges( int numOriginalEdges, originalEdges_t *originalEd
 	}
 	qglEnd();
 	qglFlush();
+#endif 
 }
 
 
-typedef struct edgeCrossing_s {
+typedef struct edgeCrossing_s 
+{
 	struct edgeCrossing_s	*next;
 	optVertex_t		*ov;
 } edgeCrossing_t;
@@ -1484,8 +1562,11 @@ void SplitOriginalEdgesAtCrossings( optimizeGroup_t *opt ) {
 	// generate crossing points between all the original edges
 	crossings = (edgeCrossing_t **)Mem_ClearedAlloc( numOriginalEdges * sizeof( *crossings ) );
 
-	for ( i = 0 ; i < numOriginalEdges ; i++ ) {
-		if ( dmapGlobals.drawflag ) {
+	for ( i = 0 ; i < numOriginalEdges ; i++ ) 
+	{
+#if DMAP_GL
+		if ( dmapGlobals.drawflag ) 
+		{
 			DrawOriginalEdges( numOriginalEdges, originalEdges );
 			qglBegin( GL_LINES );
 			qglColor3f( 0, 1, 0 );
@@ -1495,6 +1576,7 @@ void SplitOriginalEdgesAtCrossings( optimizeGroup_t *opt ) {
 			qglEnd();
 			qglFlush();
 		}
+#endif 
 		for ( j = i+1 ; j < numOriginalEdges ; j++ ) {
 			optVertex_t	*v1, *v2, *v3, *v4;
 			optVertex_t	*newVert;

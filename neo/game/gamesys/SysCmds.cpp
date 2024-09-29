@@ -87,7 +87,7 @@ void Cmd_EntityList_f( const idCmdArgs &args ) {
 		size += check->spawnArgs.Allocated();
 	}
 
-	gameLocal.Printf( "...%d entities\n...%d bytes of spawnargs\n", count, size );
+	gameLocal.Printf( "...%d entities\n...%ld bytes of spawnargs\n", count, size );
 }
 
 /*
@@ -424,18 +424,20 @@ argv(0) notarget
 ==================
 */
 void Cmd_Notarget_f( const idCmdArgs &args ) {
-	char		*msg;
+	const char		*msg;
 	idPlayer	*player;
 
 	player = gameLocal.GetLocalPlayer();
-	if ( !player || !gameLocal.CheatsOk() ) {
+	if ( !player || !gameLocal.CheatsOk() ) 
 		return;
-	}
 
-	if ( player->fl.notarget ) {
+	if ( player->fl.notarget ) 
+	{
 		player->fl.notarget = false;
 		msg = "notarget OFF\n";
-	} else {
+	} 
+	else 
+	{
 		player->fl.notarget = true;
 		msg = "notarget ON\n";
 	}
@@ -1206,10 +1208,12 @@ static void Cmd_BlinkDebugLine_f( const idCmdArgs &args ) {
 PrintFloat
 ==================
 */
-static void PrintFloat( float f ) {
+static void PrintFloat( float f ) 
+{
 	char buf[128], i;
 
-	for ( i = sprintf( buf, "%3.2f", f ); i < 7; i++ ) {
+	for ( i = sprintf( buf, "%3.2f", f ); i < 7; i++ ) 
+	{
 		buf[i] = ' ';
 	}
 	buf[i] = '\0';
@@ -1442,7 +1446,7 @@ static void Cmd_ListAnims_f( const idCmdArgs &args ) {
 			}
 		}
 
-		gameLocal.Printf( "%d memory used in %d entity animators\n", size, num );
+		gameLocal.Printf( "%ld memory used in %d entity animators\n", size, num );
 	}
 }
 

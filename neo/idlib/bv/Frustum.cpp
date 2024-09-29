@@ -1286,8 +1286,8 @@ bool idFrustum::FromProjection( const idBox &box, const idVec3 &projectionOrigin
 	this->origin = projectionOrigin;
 	this->dNear = points[minX].x;
 	this->dFar = dFar;
-	this->dLeft = Max( idMath::Fabs( points[minY].y / points[minY].x ), idMath::Fabs( points[maxY].y / points[maxY].x ) ) * dFar;
-	this->dUp = Max( idMath::Fabs( points[minZ].z / points[minZ].x ), idMath::Fabs( points[maxZ].z / points[maxZ].x ) ) * dFar;
+	this->dLeft = max( idMath::Fabs( points[minY].y / points[minY].x ), idMath::Fabs( points[maxY].y / points[maxY].x ) ) * dFar;
+	this->dUp = max( idMath::Fabs( points[minZ].z / points[minZ].x ), idMath::Fabs( points[maxZ].z / points[maxZ].x ) ) * dFar;
 	this->invFar = 1.0f / dFar;
 
 #elif 1
@@ -2040,18 +2040,22 @@ bool idFrustum::BoundsRayIntersection( const idBounds &bounds, const idVec3 &sta
 idFrustum::ProjectionBounds
 ============
 */
-bool idFrustum::ProjectionBounds( const idBounds &bounds, idBounds &projectionBounds ) const {
+bool idFrustum::ProjectionBounds( const idBounds &bounds, idBounds &projectionBounds ) const 
+{
 	return ProjectionBounds( idBox( bounds, vec3_origin, mat3_identity ), projectionBounds );
 }
 
-#ifndef __linux__
+#ifdef __GCC__
+
+#else
 
 /*
 ============
 idFrustum::ProjectionBounds
 ============
 */
-bool idFrustum::ProjectionBounds( const idBox &box, idBounds &projectionBounds ) const {
+bool idFrustum::ProjectionBounds( const idBox &box, idBounds &projectionBounds ) const 
+{
 	int i, p1, p2, pointCull[8], culled, outside;
 	float scale1, scale2;
 	idFrustum localFrustum;
@@ -2166,7 +2170,8 @@ bool idFrustum::ProjectionBounds( const idBox &box, idBounds &projectionBounds )
 idFrustum::ProjectionBounds
 ============
 */
-bool idFrustum::ProjectionBounds( const idSphere &sphere, idBounds &projectionBounds ) const {
+bool idFrustum::ProjectionBounds( const idSphere &sphere, idBounds &projectionBounds ) const 
+{
 	float d, r, rs, sFar;
 	idVec3 center;
 
@@ -2552,8 +2557,10 @@ bool idFrustum::ClipLine( const idVec3 localPoints[8], const idVec3 points[8], i
 	d2 = fend + lend;
 	startCull |= FLOATSIGNBITSET( d1 ) << 3;
 	endCull |= FLOATSIGNBITSET( d2 ) << 3;
-	if ( FLOATNOTZERO( d1 ) ) {
-		if ( FLOATSIGNBITSET( d1 ) ^ FLOATSIGNBITSET( d2 ) ) {
+	if ( FLOATNOTZERO( d1 ) ) 
+	{
+		if ( FLOATSIGNBITSET( d1 ) ^ FLOATSIGNBITSET( d2 ) ) 
+		{
 			f = d1 / ( d1 - d2 );
 			x = localStart.x + f * localDir.x;
 			if ( x >= 0.0f ) {
@@ -2637,9 +2644,8 @@ bool idFrustum::ClippedProjectionBounds( const idFrustum &frustum, const idBox &
 		base = origin * axis[0];
 		clipBox.AxisProjection( axis[0], clipBoxMin, clipBoxMax );
 		frustum.AxisProjection( axis[0], frustumMin, frustumMax );
-
-		projectionBounds[0].x = Max( clipBoxMin, frustumMin ) - base;
-		projectionBounds[1].x = Min( clipBoxMax, frustumMax ) - base;
+		projectionBounds[0].x = max( clipBoxMin, frustumMin ) - base;
+		projectionBounds[1].x = min( clipBoxMax, frustumMax ) - base;
 		projectionBounds[0].y = projectionBounds[0].z = -1.0f;
 		projectionBounds[1].y = projectionBounds[1].z = 1.0f;
 		return true;

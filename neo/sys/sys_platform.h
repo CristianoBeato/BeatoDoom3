@@ -26,14 +26,25 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #ifndef _SYS_PLATFORM_H_
 #define _SYS_PLATFORM_H_
 
-#define BT_USE_SDL_MALLOC 1
+// c/c++ standarts
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <string.h>
+#include <time.h>
+#include <ctype.h>
+#include <typeinfo>
+#include <errno.h>
+#include <math.h>
+#include <algorithm>
 
-#include <SDL_stdinc.h>	
-#include <SDL_assert.h>
-#include <SDL_cpuinfo.h>
-#include <SDL_loadso.h>
-#include <SDL_cpuinfo.h>
-#include <SDL_endian.h>
+// SDL2 common
+#include <SDL2/SDL_stdinc.h>	
+#include <SDL2/SDL_assert.h>
+#include <SDL2/SDL_endian.h>
+#include <SDL2/SDL_cpuinfo.h>
+#include <SDL2/SDL_loadso.h>
+#include <SDL2/SDL_cpuinfo.h>
 
 /*
 #define _ARCH_x86_32_
@@ -75,7 +86,7 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #endif
 
 #ifndef ID_INLINE
-#define ID_INLINE SDL_INLINE
+#define ID_INLINE inline
 #endif //!ID_INLINE
 
 // 
@@ -130,8 +141,16 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #include <winsock2.h>
 #include <mmsystem.h>
 #include <mmreg.h>
+#include <malloc.h>							// no malloc.h on mac or unix
 #include <windows.h>						// for qgl.h
-#undef FindText								// stupid namespace poluting Microsoft monkeys
+
+// stupid namespace poluting Microsoft monkeys
+#ifdef FindText
+#undef FindText
+#endif //FindText
+#ifdef GetObject
+#undef GetObject
+#endif//GetObjec
 
 #define _ATL_CSTRING_EXPLICIT_CONSTRUCTORS	// prevent auto literal to string conversion
 
@@ -142,6 +161,8 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #define CPU_EASYARGS					1
 #define PATHSEPERATOR_STR				"\\"
 #define PATHSEPERATOR_CHAR				'\\'
+#define WINVER				0x501
+
 
 #elif  defined(MACOS_X) || defined(__APPLE__)
 #define BUILD_STRING				"MacOSX-universal"
@@ -156,26 +177,24 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #elif  defined(  __linux__ ) // Linux distro build
 #define	BUILD_STRING				"linux"
 #define _alloca							alloca
-
+#define BUILD_OS_ID						1
 
 #define PATHSEPERATOR_STR				"/"
 #define PATHSEPERATOR_CHAR				'/'
+
+#define __cdecl 
 
 #endif
 
 #if defined ( _MSVC_LANG ) // Microsof Visual C 
 
 #define  assertmem( x, y )	SDL_assert( _CrtIsValidPointer( x, y, true ) ) //may work on Clang on windows ?
-#define _ALIGN_(S) __declspec(align(S))
-#define TYPE_ALIGN( T, S ) _ALIGN_(S) T
+
 
 #elif defined( __GNUC__ ) // Gnu GCC
 
 #define id_attribute(x) __attribute__(x)
 #define PACKED			__attribute__((packed))
-#define _ALIGN_(X)		__attribute__ ((__aligned__ (X)))
-#define TYPE_ALIGN( T, S ) T _ALIGN_(S)
-
 
 #elif defined( __clang__ ) // Clang compile 
 
@@ -185,8 +204,11 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 
 #endif
 
-#define ALIGN16( X ) TYPE_ALIGN( X, 16 )
-#define ALIGN4( X ) TYPE_ALIGN( X, 4 )
+// Type alignament
+#define _ALIGN_(S) alignas(S)
+#define TYPE_ALIGN( T, S ) alignas(S) T
+#define ALIGN16( X ) alignas( 16 ) X
+#define ALIGN4( X ) alignas( 4) X
 
 #if !defined( id_attribute )
 #define id_attribute( x )
@@ -195,10 +217,6 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #if !defined (assertmem)
 #define assertmem( x, y )
 #endif // !assertmem
-
-//#if !defined( __cdecl )
-//#define __cdecl SDLCALL
-//#endif // !__cdecl
 
 #if !defined (PACKED )
 #define PACKED

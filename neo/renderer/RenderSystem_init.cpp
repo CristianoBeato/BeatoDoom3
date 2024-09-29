@@ -37,7 +37,7 @@ glconfig_t	glConfig;
 
 static void GfxInfo_f( void );
 
-const char *r_rendererArgs[] = { "best", "arb", "arb2", "Cg", "exp", "nv10", "nv20", "r200", NULL };
+const char *r_rendererArgs[] = { "best", "arb", "arb2", NULL };
 
 idCVar r_inhibitFragmentProgram( "r_inhibitFragmentProgram", "0", CVAR_RENDERER | CVAR_BOOL, "ignore the fragment program extension" );
 idCVar r_glDriver( "r_glDriver", "", CVAR_RENDERER, "\"opengl32\", etc." );
@@ -226,52 +226,33 @@ the values from r_customWidth, amd r_customHeight
 will be used instead.
 ====================
 */
-typedef struct vidmode_s {
-    const char *description;
-    int         width, height;
-} vidmode_t;
-
-vidmode_t r_vidModes[] = {
-    { "Mode  0: 320x240",		320,	240 },
-    { "Mode  1: 400x300",		400,	300 },
-    { "Mode  2: 512x384",		512,	384 },
-    { "Mode  3: 640x480",		640,	480 },
-    { "Mode  4: 800x600",		800,	600 },
-    { "Mode  5: 1024x768",		1024,	768 },
-    { "Mode  6: 1152x864",		1152,	864 },
-    { "Mode  7: 1280x1024",		1280,	1024 },
-    { "Mode  8: 1600x1200",		1600,	1200 },
-};
-static int	s_numVidModes = ( sizeof( r_vidModes ) / sizeof( r_vidModes[0] ) );
-
-#if MACOS_X
-bool R_GetModeInfo( int *width, int *height, int mode ) {
-#else
-static bool R_GetModeInfo( int *width, int *height, int mode ) {
-#endif
+static bool R_GetModeInfo( int *width, int *height, int mode ) 
+{
 	vidmode_t	*vm;
 
-    if ( mode < -1 ) {
-        return false;
-	}
-	if ( mode >= s_numVidModes ) {
-		return false;
-	}
+	uint32_t numVidModes = Sys_videoNumModes();
+	vidmode_t* vidModes = Sys_videoSuportedModes();
 
-	if ( mode == -1 ) {
+    if ( mode < -1 ) 
+        return false;
+	
+	if ( mode >= numVidModes ) 
+		return false;
+	
+	if ( mode == -1 ) 
+	{
 		*width = r_customWidth.GetInteger();
 		*height = r_customHeight.GetInteger();
 		return true;
 	}
 
-	vm = &r_vidModes[mode];
+	vm = &vidModes[mode];
 
-	if ( width ) {
+	if ( width ) 
 		*width  = vm->width;
-	}
-	if ( height ) {
+	
+	if ( height ) 
 		*height = vm->height;
-	}
 
     return true;
 }
@@ -293,9 +274,14 @@ all renderSystem functions will still operate properly, notably the material
 and model information functions.
 ==================
 */
-void R_InitOpenGL( void ) {
+void R_InitOpenGL( void ) 
+{
 	GLint			temp;
+#if CR_USE_VULKAN
+	vkParms_t		parms;
+#else
 	glimpParms_t	parms;
+#endif
 	int				i;
 
 	common->Printf( "----- R_InitOpenGL -----\n" );
@@ -311,7 +297,8 @@ void R_InitOpenGL( void ) {
 	//
 	// initialize OS specific portions of the renderSystem
 	//
-	for ( i = 0 ; i < 2 ; i++ ) {
+	for ( i = 0 ; i < 2 ; i++ ) 
+	{
 		// set the parameters we are trying
 		R_GetModeInfo( &glConfig.vidWidth, &glConfig.vidHeight, r_mode.GetInteger() );
 
@@ -322,14 +309,16 @@ void R_InitOpenGL( void ) {
 		parms.multiSamples = r_multiSamples.GetInteger();
 		parms.stereo = false;
 
-		if ( GLimp_Init( parms ) ) {
-			// it worked
+#if 	CR_USE_VULKAN
+		if ( Sys_InitVulkanDevice( parms ) ) 
+			break; // it worked
+#else
+		if( Sys_InitOpenGLContext( parms ) )
 			break;
-		}
+#endif
 
-		if ( i == 1 ) {
+		if ( i == 1 ) 
 			common->FatalError( "Unable to initialize OpenGL" );
-		}
 
 		// if we failed, set everything back to "safe mode"
 		// and try again
@@ -338,10 +327,6 @@ void R_InitOpenGL( void ) {
 		r_displayRefresh.SetInteger( 0 );
 		r_multiSamples.SetInteger( 0 );
 	}
-
-	// input and sound systems need to be tied to the new window
-	Sys_InitInput();
-	soundSystem->InitHW();
 
 	// get our config strings
 	glConfig.vendor_string = (const char *)glGetString(GL_VENDOR);
@@ -354,9 +339,8 @@ void R_InitOpenGL( void ) {
 	glConfig.maxTextureSize = temp;
 
 	// stubbed or broken drivers may have reported 0...
-	if ( glConfig.maxTextureSize <= 0 ) {
+	if ( glConfig.maxTextureSize <= 0 ) 
 		glConfig.maxTextureSize = 256;
-	}
 
 	glConfig.isInitialized = true;
 //BEATO Begin: extencion cehck is done at context creation
@@ -385,68 +369,22 @@ void R_InitOpenGL( void ) {
 }
 
 /*
-==================
-GL_CheckErrors
-==================
-*/
-void GL_CheckErrors( void ) {
-    int		err;
-    char	s[64];
-	int		i;
-
-	// check for up to 10 errors pending
-	for ( i = 0 ; i < 10 ; i++ ) {
-		err = glGetError();
-		if ( err == GL_NO_ERROR ) {
-			return;
-		}
-		switch( err ) {
-			case GL_INVALID_ENUM:
-				strcpy( s, "GL_INVALID_ENUM" );
-				break;
-			case GL_INVALID_VALUE:
-				strcpy( s, "GL_INVALID_VALUE" );
-				break;
-			case GL_INVALID_OPERATION:
-				strcpy( s, "GL_INVALID_OPERATION" );
-				break;
-			case GL_STACK_OVERFLOW:
-				strcpy( s, "GL_STACK_OVERFLOW" );
-				break;
-			case GL_STACK_UNDERFLOW:
-				strcpy( s, "GL_STACK_UNDERFLOW" );
-				break;
-			case GL_OUT_OF_MEMORY:
-				strcpy( s, "GL_OUT_OF_MEMORY" );
-				break;
-			default:
-				idStr::snPrintf( s, sizeof(s), "%i", err);
-				break;
-		}
-
-		if ( !r_ignoreGLErrors.GetBool() ) {
-			common->Printf( "GL_CheckErrors: %s\n", s );
-		}
-	}
-}
-
-/*
 =====================
 R_ReloadSurface_f
 
 Reload the material displayed by r_showSurfaceInfo
 =====================
 */
-static void R_ReloadSurface_f( const idCmdArgs &args ) {
+static void R_ReloadSurface_f( const idCmdArgs &args ) 
+{
 	modelTrace_t mt;
 	idVec3 start, end;
 	
 	// start far enough away that we don't hit the player model
 	start = tr.primaryView->renderView.vieworg + tr.primaryView->renderView.viewaxis[0] * 16;
 	end = start + tr.primaryView->renderView.viewaxis[0] * 1000.0f;
-	if ( !tr.primaryWorld->Trace( mt, start, end, 0.0f, false ) ) {
+	if ( !tr.primaryWorld->Trace( mt, start, end, 0.0f, false ) ) 
 		return;
-	}
 
 	common->Printf( "Reloading %s\n", mt.material->GetName() );
 
@@ -464,12 +402,16 @@ static void R_ReloadSurface_f( const idCmdArgs &args ) {
 R_ListModes_f
 ==============
 */
-static void R_ListModes_f( const idCmdArgs &args ) {
+static void R_ListModes_f( const idCmdArgs &args ) 
+{
 	int i;
-
+	int numVidModes = Sys_videoNumModes();
+	vidmode_t* vidModes = Sys_videoSuportedModes();
 	common->Printf( "\n" );
-	for ( i = 0; i < s_numVidModes; i++ ) {
-		common->Printf( "%s\n", r_vidModes[i].description );
+	
+	for ( i = 0; i < numVidModes; i++ ) 
+	{
+		common->Printf( "%s\n", vidModes[i].description );
 	}
 	common->Printf( "\n" );
 }
@@ -1388,7 +1330,8 @@ void R_MakeAmbientMap_f( const idCmdArgs &args ) {
 R_SetColorMappings
 ===============
 */
-void R_SetColorMappings( void ) {
+void R_SetColorMappings( void ) 
+{
 	int		i, j;
 	float	g, b;
 	int		inf;
@@ -1417,7 +1360,8 @@ void R_SetColorMappings( void ) {
 		tr.gammaTable[i] = inf;
 	}
 
-	GLimp_SetGamma( tr.gammaTable, tr.gammaTable, tr.gammaTable );
+	// TODO: set custom gamma
+	//GLimp_SetGamma( tr.gammaTable, tr.gammaTable, tr.gammaTable );
 }
 
 
@@ -1546,13 +1490,20 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 
 	// sound and input are tied to the window we are about to destroy
 
-	if ( full ) {
+	if ( full ) 
+	{
 		// free all of our texture numbers
 		soundSystem->ShutdownHW();
 		Sys_ShutdownInput();
 		globalImages->PurgeAllImages();
-		// free the context and close the window
-		GLimp_Shutdown();
+	
+		// free the context 
+#if CR_USE_VULKAN
+	Sys_ShutDownVulkanDevice();
+#else
+	Sys_ShutDownOpenGLContext();
+#endif
+		
 		glConfig.isInitialized = false;
 
 		// create the new context and vertex cache
@@ -1565,7 +1516,9 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 
 		// regenerate all images
 		globalImages->ReloadAllImages();
-	} else {
+	} 
+	else 
+	{
 		glimpParms_t	parms;
 		parms.width = glConfig.vidWidth;
 		parms.height = glConfig.vidHeight;
@@ -1573,23 +1526,25 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 		parms.displayHz = r_displayRefresh.GetInteger();
 		parms.multiSamples = r_multiSamples.GetInteger();
 		parms.stereo = false;
-		GLimp_SetScreenParms( parms );
+		// TODO: update window 
+//		GLimp_SetScreenParms( parms );
 	}
-
-
 
 	// make sure the regeneration doesn't use anything no longer valid
 	tr.viewCount++;
-	tr.viewDef = NULL;
+	tr.viewDef = nullptr;
 
 	// regenerate all necessary interactions
 	R_RegenerateWorld_f( idCmdArgs() );
 
 	// check for problems
+#if !CR_USE_VULKAN
 	err = glGetError();
-	if ( err != GL_NO_ERROR ) {
+	if ( err != GL_NO_ERROR ) 
+	{
 		common->Printf( "glGetError() = 0x%x\n", err );
 	}
+#endif
 
 	// start sound playing again
 	soundSystem->SetMute( false );
@@ -1812,7 +1767,8 @@ void idRenderSystemLocal::Init( void ) {
 idRenderSystemLocal::Shutdown
 ===============
 */
-void idRenderSystemLocal::Shutdown( void ) {	
+void idRenderSystemLocal::Shutdown( void ) 
+{	
 	common->Printf( "idRenderSystem::Shutdown()\n" );
 
 	R_DoneFreeType( );
@@ -1849,7 +1805,7 @@ void idRenderSystemLocal::Shutdown( void ) {
 
 	Clear();
 
-	ShutdownOpenGL();
+	ShutdownAPI();
 }
 
 /*
@@ -1857,7 +1813,8 @@ void idRenderSystemLocal::Shutdown( void ) {
 idRenderSystemLocal::BeginLevelLoad
 ========================
 */
-void idRenderSystemLocal::BeginLevelLoad( void ) {
+void idRenderSystemLocal::BeginLevelLoad( void ) 
+{
 	renderModelManager->BeginLevelLoad();
 	globalImages->BeginLevelLoad();
 }
@@ -1880,9 +1837,11 @@ void idRenderSystemLocal::EndLevelLoad( void ) {
 idRenderSystemLocal::InitOpenGL
 ========================
 */
-void idRenderSystemLocal::InitOpenGL( void ) {
+void idRenderSystemLocal::InitAPI( void ) 
+{
 	// if OpenGL isn't started, start it now
-	if ( !glConfig.isInitialized ) {
+	if ( !glConfig.isInitialized ) 
+	{
 		int	err;
 
 		R_InitOpenGL();
@@ -1901,10 +1860,17 @@ void idRenderSystemLocal::InitOpenGL( void ) {
 idRenderSystemLocal::ShutdownOpenGL
 ========================
 */
-void idRenderSystemLocal::ShutdownOpenGL( void ) {
+void idRenderSystemLocal::ShutdownAPI( void ) 
+{
 	// free the context and close the window
 	R_ShutdownFrameData();
-	GLimp_Shutdown();
+	
+#if CR_USE_VULKAN
+	Sys_ShutDownVulkanDevice();
+#else
+	Sys_ShutDownOpenGLContext();
+#endif
+
 	glConfig.isInitialized = false;
 }
 
@@ -1913,11 +1879,11 @@ void idRenderSystemLocal::ShutdownOpenGL( void ) {
 idRenderSystemLocal::IsOpenGLRunning
 ========================
 */
-bool idRenderSystemLocal::IsOpenGLRunning( void ) const
+bool idRenderSystemLocal::IsAPIRunning( void ) const
 {
-	if ( !glConfig.isInitialized ) {
+	if ( !glConfig.isInitialized ) 
 		return false;
-	}
+
 	return true;
 }
 
@@ -1946,15 +1912,5 @@ idRenderSystemLocal::GetScreenHeight
 */
 int idRenderSystemLocal::GetScreenHeight( void ) const {
 	return glConfig.vidHeight;
-}
-
-/*
-========================
-idRenderSystemLocal::GetCardCaps
-========================
-*/
-void idRenderSystemLocal::GetCardCaps( bool &oldCard, bool &nv10or20 ) {
-	nv10or20 = ( tr.backEndRenderer == BE_NV10 || tr.backEndRenderer == BE_NV20 );
-	oldCard = ( tr.backEndRenderer == BE_ARB || tr.backEndRenderer == BE_R200 || tr.backEndRenderer == BE_NV10 || tr.backEndRenderer == BE_NV20 );
 }
 

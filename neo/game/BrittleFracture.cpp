@@ -252,7 +252,7 @@ void idBrittleFracture::Spawn( void ) {
 	decalMaterial = declManager->FindMaterial( spawnArgs.GetString( "mtr_decal" ) );
 	decalSize = spawnArgs.GetFloat( "decalSize", "40" );
 	maxShardArea = spawnArgs.GetFloat( "maxShardArea", "200" );
-	maxShardArea = idMath::ClampFloat( 100, 10000, maxShardArea );
+	maxShardArea = clamp(  maxShardArea, 100.0f, 10000.0f );
 	maxShatterRadius = spawnArgs.GetFloat( "maxShatterRadius", "40" );
 	minShatterRadius = spawnArgs.GetFloat( "minShatterRadius", "10" );
 	linearVelocityScale = spawnArgs.GetFloat( "linearVelocityScale", "0.1" );
@@ -260,14 +260,13 @@ void idBrittleFracture::Spawn( void ) {
 	fxFracture = spawnArgs.GetString( "fx" );
 
 	// get rigid body properties
-	shardMass = spawnArgs.GetFloat( "shardMass", "20" );
-	shardMass = idMath::ClampFloat( 0.001f, 1000.0f, shardMass );
+	shardMass = clamp( spawnArgs.GetFloat( "shardMass", "20" ), 0.001f, 1000.0f );
 	spawnArgs.GetFloat( "density", "0.1", density );
-	density = idMath::ClampFloat( 0.001f, 1000.0f, density );
+	density = clamp( density, 0.001f, 1000.0f );
 	spawnArgs.GetFloat( "friction", "0.4", friction );
-	friction = idMath::ClampFloat( 0.0f, 1.0f, friction );
+	friction = clamp( friction, 0.0f, 1.0f );
 	spawnArgs.GetFloat( "bouncyness", "0.01", bouncyness );
-	bouncyness = idMath::ClampFloat( 0.0f, 1.0f, bouncyness );
+	bouncyness = clamp( bouncyness, 0.0f, 1.0f );
 
 	disableFracture = spawnArgs.GetBool( "disableFracture", "0" );
 	health = spawnArgs.GetInt( "health", "40" );
@@ -330,7 +329,7 @@ idBrittleFracture::UpdateRenderEntity
 bool idBrittleFracture::UpdateRenderEntity( renderEntity_s *renderEntity, const renderView_t *renderView ) const {
 	int i, j, k, n, msec, numTris, numDecalTris;
 	float fade;
-	dword packedColor;
+	uint32_t packedColor;
 	srfTriangles_t *tris, *decalTris;
 	modelSurface_t surface;
 	idDrawVert *v;

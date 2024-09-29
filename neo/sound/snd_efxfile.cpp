@@ -30,6 +30,59 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "snd_local.h"
 
+
+// BEATO Begin
+// Use this structure for EAXREVERB_ALLPARAMETERS
+// - all levels are hundredths of decibels
+// - all times and delays are in seconds
+//
+// NOTE: This structure may change in future EAX versions.
+//       It is recommended to initialize fields by name:
+//              myReverb.lRoom = -1000;
+//              myReverb.lRoomHF = -100;
+//              ...
+//              myReverb.dwFlags = myFlags /* see EAXREVERBFLAGS below */ ;
+//       instead of:
+//              myReverb = { -1000, -100, ... , 0x00000009 };
+//       If you want to save and load presets in binary form, you 
+//       should define your own structure to insure future compatibility.
+//
+typedef struct ReverbVector_s
+{
+	float x;
+	float y;
+	float z;
+} ReverbVector_t;
+
+typedef struct ReverbProperties_s
+{
+    unsigned long	ulEnvironment;   		// sets all reverb properties
+    float 			flEnvironmentSize;      // environment size in meters
+    float 			flEnvironmentDiffusion; // environment diffusion
+    long 			lRoom;                  // room effect level (at mid frequencies)
+    long 			lRoomHF;                // relative room effect level at high frequencies
+    long			lRoomLF;                // relative room effect level at low frequencies  
+    float			flDecayTime;            // reverberation decay time at mid frequencies
+    float			flDecayHFRatio;         // high-frequency to mid-frequency decay time ratio
+    float			flDecayLFRatio;         // low-frequency to mid-frequency decay time ratio   
+    long			lReflections;           // early reflections level relative to room effect
+    float			flReflectionsDelay;     // initial reflection delay time
+    ReverbVector_t	vReflectionsPan;     	// early reflections panning vector
+    long			lReverb;                // late reverberation level relative to room effect
+    float			flReverbDelay;          // late reverberation delay time relative to initial reflection
+    ReverbVector_t	vReverbPan;          	// late reverberation panning vector
+    float 			flEchoTime;             // echo time
+    float 			flEchoDepth;            // echo depth
+    float 			flModulationTime;       // modulation time
+    float 			flModulationDepth;      // modulation depth
+    float 			flAirAbsorptionHF;      // change in level per meter at high frequencies
+    float 			flHFReference;          // reference high frequency
+    float 			flLFReference;          // reference low frequency 
+    float 			flRoomRolloffFactor;    // like DS3D flRolloffFactor but for room effect
+    unsigned long 	ulFlags;         		// modifies the behavior of properties
+} ReverbProperties_t;
+// BEATO End
+
 /*
 ===============
 idEFXFile::idEFXFile
@@ -78,16 +131,19 @@ bool idEFXFile::FindEffect( idStr &name, idSoundEffect **effect, int *index ) {
 idEFXFile::ReadEffect
 ===============
 */
-bool idEFXFile::ReadEffect( idLexer &src, idSoundEffect *effect ) {
+bool idEFXFile::ReadEffect( idLexer &src, idSoundEffect *effect ) 
+{
 	idToken name, token;
 	
 	if ( !src.ReadToken( &token ) )
 		return false;
 
 	// reverb effect
-	if ( token == "reverb" ) {
-		EAXREVERBPROPERTIES *reverb = ( EAXREVERBPROPERTIES * )Mem_Alloc( sizeof( EAXREVERBPROPERTIES ) );
-		if ( reverb ) {
+	if ( token == "reverb" ) 
+	{
+		ReverbProperties_t *reverb = ( ReverbProperties_t * )Mem_Alloc( sizeof( ReverbProperties_t ) );
+		if ( reverb ) 
+		{
 			src.ReadTokenOnLine( &token );
 			name = token;
 				
@@ -96,81 +152,134 @@ bool idEFXFile::ReadEffect( idLexer &src, idSoundEffect *effect ) {
 				return false;
 			}
 			
-			if ( token != "{" ) {
+			if ( token != "{" ) 
+			{
 				src.Error( "idEFXFile::ReadEffect: { not found, found %s", token.c_str() );
 				Mem_Free( reverb );
 				return false;
 			}
 			
-			do {
-				if ( !src.ReadToken( &token ) ) {
+			do 
+			{
+				if ( !src.ReadToken( &token ) ) 
+				{
 					src.Error( "idEFXFile::ReadEffect: EOF without closing brace" );
 					Mem_Free( reverb );
 					return false;
 				}
 
-				if ( token == "}" ) {
+				if ( token == "}" ) 
+				{
 					effect->name = name;
 					effect->data = ( void * )reverb;
-					effect->datasize = sizeof( EAXREVERBPROPERTIES );
+					effect->datasize = sizeof( ReverbProperties_t );
 					break;
 				}
 
-				if ( token == "environment" ) {
+				if ( token == "environment" ) 
+				{
 					src.ReadTokenOnLine( &token );
 					reverb->ulEnvironment = token.GetUnsignedLongValue();
-				} else if ( token == "environment size" ) {
+				} 
+				else if ( token == "environment size" ) 
+				{
 					reverb->flEnvironmentSize = src.ParseFloat();
-				} else if ( token == "environment diffusion" ) {
+				} 
+				else if ( token == "environment diffusion" ) 
+				{
 					reverb->flEnvironmentDiffusion = src.ParseFloat();
-				} else if ( token == "room" ) {
+				} 
+				else if ( token == "room" ) 
+				{
 					reverb->lRoom = src.ParseInt();
-				} else if ( token == "room hf" ) {
+				} 
+				else if ( token == "room hf" ) 
+				{
 					reverb->lRoomHF = src.ParseInt();
-				} else if ( token == "room lf" ) {
+				} 
+				else if ( token == "room lf" ) 
+				{
 					reverb->lRoomLF = src.ParseInt();
-				} else if ( token == "decay time" ) {
+				} 
+				else if ( token == "decay time" ) 
+				{
 					reverb->flDecayTime = src.ParseFloat();
-				} else if ( token == "decay hf ratio" ) {
+				} 
+				else if ( token == "decay hf ratio" ) 
+				{
 					reverb->flDecayHFRatio = src.ParseFloat();
-				} else if ( token == "decay lf ratio" ) {
+				} 
+				else if ( token == "decay lf ratio" ) 
+				{
 					reverb->flDecayLFRatio = src.ParseFloat();
-				} else if ( token == "reflections" ) {
+				} 
+				else if ( token == "reflections" ) 
+				{
 					reverb->lReflections = src.ParseInt();
-				} else if ( token == "reflections delay" ) {
+				} 
+				else if ( token == "reflections delay" ) 
+				{
 					reverb->flReflectionsDelay = src.ParseFloat();
-				} else if ( token == "reflections pan" ) {
+				} 
+				else if ( token == "reflections pan" ) 
+				{
 					reverb->vReflectionsPan.x = src.ParseFloat();
 					reverb->vReflectionsPan.y = src.ParseFloat();
 					reverb->vReflectionsPan.z = src.ParseFloat();
-				} else if ( token == "reverb" ) {
+				} 
+				else if ( token == "reverb" ) 
+				{
 					reverb->lReverb = src.ParseInt();
-				} else if ( token == "reverb delay" ) {
+				} 
+				else if ( token == "reverb delay" ) 
+				{
 					reverb->flReverbDelay = src.ParseFloat();
-				} else if ( token == "reverb pan" ) {
+				} 
+				else if ( token == "reverb pan" ) 
+				{
 					reverb->vReverbPan.x = src.ParseFloat();
 					reverb->vReverbPan.y = src.ParseFloat();
 					reverb->vReverbPan.z = src.ParseFloat();
-				} else if ( token == "echo time" ) {
+				} 
+				else if ( token == "echo time" ) 
+				{
 					reverb->flEchoTime = src.ParseFloat();
-				} else if ( token == "echo depth" ) {
+				} 
+				else if ( token == "echo depth" ) 
+				{
 					reverb->flEchoDepth = src.ParseFloat();
-				} else if ( token == "modulation time" ) {
+				} 
+				else if ( token == "modulation time" ) 
+				{
 					reverb->flModulationTime = src.ParseFloat();
-				} else if ( token == "modulation depth" ) {
+				} 
+				else if ( token == "modulation depth" )
+				 {
 					reverb->flModulationDepth = src.ParseFloat();
-				} else if ( token == "air absorption hf" ) {
+				} 
+				else if ( token == "air absorption hf" ) 
+				{
 					reverb->flAirAbsorptionHF = src.ParseFloat();
-				} else if ( token == "hf reference" ) {
+				} 
+				else if ( token == "hf reference" ) 
+				{
 					reverb->flHFReference = src.ParseFloat();
-				} else if ( token == "lf reference" ) {
+				}
+				else if ( token == "lf reference" ) 
+				{
 					reverb->flLFReference = src.ParseFloat();
-				} else if ( token == "room rolloff factor" ) {
+				}
+				else if ( token == "room rolloff factor" ) 
+				{
 					reverb->flRoomRolloffFactor = src.ParseFloat();
-				} else if ( token == "flags" ) {
+				}
+				else if ( token == "flags" ) 
+				{
 					src.ReadTokenOnLine( &token );
 					reverb->ulFlags = token.GetUnsignedLongValue();
-				} else {
+				} 
+				else 
+				{
 					src.ReadTokenOnLine( &token );
 					src.Error( "idEFXFile::ReadEffect: Invalid parameter in reverb definition" );
 					Mem_Free( reverb );
@@ -179,7 +288,9 @@ bool idEFXFile::ReadEffect( idLexer &src, idSoundEffect *effect ) {
 
 			return true;
 		}
-	} else {
+	} 
+	else 
+	{
 		// other effect (not supported at the moment)
 		src.Error( "idEFXFile::ReadEffect: Unknown effect definition" );
 	}

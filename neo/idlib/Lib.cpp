@@ -29,12 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
-#if defined( MACOS_X )
-#include <signal.h>
-#include <sys/types.h>
-#include <unistd.h>
-#endif
-
 /*
 ===============================================================================
 
@@ -43,10 +37,10 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
-idSys *			idLib::sys			= NULL;
-idCommon *		idLib::common		= NULL;
-idCVarSystem *	idLib::cvarSystem	= NULL;
-idFileSystem *	idLib::fileSystem	= NULL;
+idSys *			idLib::sys			= nullptr;
+idCommon *		idLib::common		= nullptr;
+idCVarSystem *	idLib::cvarSystem	= nullptr;
+idFileSystem *	idLib::fileSystem	= nullptr;
 int				idLib::frameNumber	= 0;
 
 /*
@@ -54,7 +48,8 @@ int				idLib::frameNumber	= 0;
 idLib::Init
 ================
 */
-void idLib::Init( void ) {
+void idLib::Init( void ) 
+{
 
 	assert( sizeof( bool ) == 1 );
 
@@ -73,11 +68,13 @@ void idLib::Init( void ) {
 	// initialize math
 	idMath::Init();
 
+#if 0
 	// test idMatX
-	//idMatX::Test();
+	idMatX::Test();
 
 	// test idPolynomial
 	idPolynomial::Test();
+#endif
 
 	// initialize the dictionary string pools
 	idDict::Init();
@@ -128,7 +125,7 @@ idVec4	colorLtGrey	= idVec4( 0.75f, 0.75f, 0.75f, 1.00f );
 idVec4	colorMdGrey	= idVec4( 0.50f, 0.50f, 0.50f, 1.00f );
 idVec4	colorDkGrey	= idVec4( 0.25f, 0.25f, 0.25f, 1.00f );
 
-static dword colorMask[2] = { 255, 0 };
+static uint32_t colorMask[2] = { 255, 0 };
 
 /*
 ================
@@ -136,7 +133,7 @@ ColorFloatToByte
 ================
 */
 ID_INLINE static byte ColorFloatToByte( float c ) {
-	return (byte) ( ( (dword) ( c * 255.0f ) ) & colorMask[FLOATSIGNBITSET(c)] );
+	return (byte) ( ( (uint32_t) ( c * 255.0f ) ) & colorMask[FLOATSIGNBITSET(c)] );
 }
 
 /*
@@ -144,8 +141,8 @@ ID_INLINE static byte ColorFloatToByte( float c ) {
 PackColor
 ================
 */
-dword PackColor( const idVec4 &color ) {
-	dword dw, dx, dy, dz;
+uint32_t PackColor( const idVec4 &color ) {
+	uint32_t dw, dx, dy, dz;
 
 	dx = ColorFloatToByte( color.x );
 	dy = ColorFloatToByte( color.y );
@@ -166,7 +163,8 @@ dword PackColor( const idVec4 &color ) {
 UnpackColor
 ================
 */
-void UnpackColor( const dword color, idVec4 &unpackedColor ) {
+void UnpackColor( const uint32_t color, idVec4 &unpackedColor ) 
+{
 #if defined(_WIN32) || defined(__linux__) || (defined(MACOS_X) && defined(__i386__))
 	unpackedColor.Set( ( ( color >> 0 ) & 255 ) * ( 1.0f / 255.0f ),
 						( ( color >> 8 ) & 255 ) * ( 1.0f / 255.0f ), 
@@ -187,8 +185,8 @@ void UnpackColor( const dword color, idVec4 &unpackedColor ) {
 PackColor
 ================
 */
-dword PackColor( const idVec3 &color ) {
-	dword dx, dy, dz;
+uint32_t PackColor( const idVec3 &color ) {
+	uint32_t dx, dy, dz;
 
 	dx = ColorFloatToByte( color.x );
 	dy = ColorFloatToByte( color.y );
@@ -208,7 +206,7 @@ dword PackColor( const idVec3 &color ) {
 UnpackColor
 ================
 */
-void UnpackColor( const dword color, idVec3 &unpackedColor ) {
+void UnpackColor( const uint32_t color, idVec3 &unpackedColor ) {
 #if defined(_WIN32) || defined(__linux__) || (defined(MACOS_X) && defined(__i386__))
 	unpackedColor.Set( ( ( color >> 0 ) & 255 ) * ( 1.0f / 255.0f ),
 						( ( color >> 8 ) & 255 ) * ( 1.0f / 255.0f ), 
@@ -243,7 +241,8 @@ void idLib::Error( const char *fmt, ... ) {
 idLib::Warning
 ===============
 */
-void idLib::Warning( const char *fmt, ... ) {
+void idLib::Warning( const char *fmt, ... ) 
+{
 	va_list		argptr;
 	char		text[MAX_STRING_CHARS];
 
@@ -560,7 +559,8 @@ void Swap_Init( void ) {
 Swap_IsBigEndian
 ==========
 */
-bool Swap_IsBigEndian( void ) {
+bool Swap_IsBigEndian( void ) 
+{
 	byte	swaptest[2] = {1,0};
 	return *(short *)swaptest != 1;
 }

@@ -104,16 +104,14 @@ unsigned int	com_msgID = -1;
 #endif
 
 #ifdef __DOOM_DLL__
-idGame *		game = NULL;
-idGameEdit *	gameEdit = NULL;
+idGame *		game = nullptr;
+idGameEdit *	gameEdit = nullptr;
 #endif
 
 // writes si_version to the config file - in a kinda obfuscated way
 //#define ID_WRITE_VERSION
 
-class idCommonLocal : 
-	public idCommon,
-	public btThreadExecution
+class idCommonLocal : public idCommon
 {
 public:
 								idCommonLocal( void );
@@ -161,12 +159,6 @@ public:
 
 	void						SetMachineSpec( void );
 
-// BEATO Begin
-protected:
-	virtual void				Run( void ) override;
-	virtual void				NotifyExit( void ) override;
-// BEATO end
-
 private:
 	void						InitCommands( void );
 	void						InitRenderSystem( void );
@@ -202,12 +194,7 @@ private:
 	idStrList					warningList;
 	idStrList					errorList;
 
-// BEATO Begin
 	void*						gameDLL;
-
-	btMutex*					m_asyncMutex;
-// BEATO End
-
 	idLangDict					languageDict;
 
 #ifdef ID_WRITE_VERSION
@@ -224,7 +211,7 @@ idCommon *		common = &commonLocal;
 idCommonLocal::idCommonLocal
 ==================
 */
-idCommonLocal::idCommonLocal( void ) : btThreadExecution( "AsyncThread" )
+idCommonLocal::idCommonLocal( void )
 
 {
 	com_fullyInitialized = false;
@@ -242,8 +229,6 @@ idCommonLocal::idCommonLocal( void ) : btThreadExecution( "AsyncThread" )
 
 // BEATO Begin
 	gameDLL = nullptr;
-
-	m_asyncMutex = nullptr;
 // BEATO End
 
 #ifdef ID_WRITE_VERSION
@@ -342,37 +327,43 @@ idCommonLocal::VPrintf
 A raw string should NEVER be passed as fmt, because of "%f" type crashes.
 ==================
 */
-void idCommonLocal::VPrintf( const char *fmt, va_list args ) {
+void idCommonLocal::VPrintf( const char *fmt, va_list args ) 
+{
 	char		msg[MAX_PRINT_MSG_SIZE];
 	int			timeLength;
 	static bool	logFileFailed = false;
 
 	// if the cvar system is not initialized
-	if ( !cvarSystem->IsInitialized() ) {
+	if ( !cvarSystem->IsInitialized() )
 		return;
-	}
 
 	// optionally put a timestamp at the beginning of each print,
 	// so we can see how long different init sections are taking
-	if ( com_timestampPrints.GetInteger() ) {
+	if ( com_timestampPrints.GetInteger() ) 
+	{
 		int	t = Sys_Milliseconds();
-		if ( com_timestampPrints.GetInteger() == 1 ) {
+		if ( com_timestampPrints.GetInteger() == 1 ) 
 			t /= 1000;
-		}
+		
 		sprintf( msg, "[%i]", t );
 		timeLength = strlen( msg );
-	} else {
+	} 
+	else 
+	{
 		timeLength = 0;
 	}
 
 	// don't overflow
-	if ( idStr::vsnPrintf( msg+timeLength, MAX_PRINT_MSG_SIZE-timeLength-1, fmt, args ) < 0 ) {
+	if ( idStr::vsnPrintf( msg+timeLength, MAX_PRINT_MSG_SIZE-timeLength-1, fmt, args ) < 0 ) 
+	{
 		msg[sizeof(msg)-2] = '\n'; msg[sizeof(msg)-1] = '\0'; // avoid output garbling
-		Sys_Printf( "idCommon::VPrintf: truncated to %d characters\n", strlen(msg)-1 );
+		Sys_Printf( "idCommon::VPrintf: truncated to %ld characters\n", strlen(msg)-1 );
 	}
 
-	if ( rd_buffer ) {
-		if ( (int)( strlen( msg ) + strlen( rd_buffer ) ) > ( rd_buffersize - 1 ) ) {
+	if ( rd_buffer ) 
+	{
+		if ( (int)( strlen( msg ) + strlen( rd_buffer ) ) > ( rd_buffersize - 1 ) ) 
+		{
 			rd_flush( rd_buffer );
 			*rd_buffer = 0;
 		}
@@ -394,17 +385,20 @@ void idCommonLocal::VPrintf( const char *fmt, va_list args ) {
 
 #if 0	// !@#
 #if defined(_DEBUG) && defined(WIN32)
-	if ( strlen( msg ) < 512 ) {
+	if ( strlen( msg ) < 512 ) 
+	{
 		TRACE( msg );
 	}
 #endif
 #endif
 
 	// logFile
-	if ( com_logFile.GetInteger() && !logFileFailed && fileSystem->IsInitialized() ) {
+	if ( com_logFile.GetInteger() && !logFileFailed && fileSystem->IsInitialized() ) 
+	{
 		static bool recursing;
 
-		if ( !logFile && !recursing ) {
+		if ( !logFile && !recursing ) 
+		{
 			struct tm *newtime;
 			ID_TIME_T aclock;
 			const char *fileName = com_logFileName.GetString()[0] ? com_logFileName.GetString() : "qconsole.log";
@@ -413,14 +407,16 @@ void idCommonLocal::VPrintf( const char *fmt, va_list args ) {
 			recursing = true;
 
 			logFile = fileSystem->OpenFileWrite( fileName );
-			if ( !logFile ) {
+			if ( !logFile ) 
+			{
 				logFileFailed = true;
 				FatalError( "failed to open log file '%s'\n", fileName );
 			}
 
 			recursing = false;
 
-			if ( com_logFile.GetInteger() > 1 ) {
+			if ( com_logFile.GetInteger() > 1 ) 
+			{
 				// force it to not buffer so we get valid
 				// data even if we are crashing
 				logFile->ForceFlush();
@@ -430,16 +426,20 @@ void idCommonLocal::VPrintf( const char *fmt, va_list args ) {
 			newtime = localtime( &aclock );
 			Printf( "log file '%s' opened on %s\n", fileName, asctime( newtime ) );
 		}
-		if ( logFile ) {
+
+		if ( logFile ) 
+		{
 			logFile->Write( msg, strlen( msg ) );
 			logFile->Flush();	// ForceFlush doesn't help a whole lot
 		}
 	}
 
 	// don't trigger any updates if we are in the process of doing a fatal error
-	if ( com_errorEntered != ERP_FATAL ) {
+	if ( com_errorEntered != ERP_FATAL ) 
+	{
 		// update the console if we are in a long-running command, like dmap
-		if ( com_refreshOnPrint ) {
+		if ( com_refreshOnPrint ) 
+		{
 			session->UpdateScreen();
 		}
 
@@ -476,7 +476,8 @@ Both client and server can use this, and it will output to the appropriate place
 A raw string should NEVER be passed as fmt, because of "%f" type crashers.
 ==================
 */
-void idCommonLocal::Printf( const char *fmt, ... ) {
+void idCommonLocal::Printf( const char *fmt, ... ) 
+{
 	va_list argptr;
 	va_start( argptr, fmt );
 	VPrintf( fmt, argptr );
@@ -663,14 +664,12 @@ void idCommonLocal::Error( const char *fmt, ... ) {
 
 	// when we are running automated scripts, make sure we
 	// know if anything failed
-	if ( cvarSystem->GetCVarInteger( "fs_copyfiles" ) ) {
+	if ( cvarSystem->GetCVarInteger( "fs_copyfiles" ) ) 
 		code = ERP_FATAL;
-	}
 
 	// if we don't have GL running, make it a fatal error
-	if ( !renderSystem->IsOpenGLRunning() ) {
+	if ( !renderSystem->IsAPIRunning() ) 
 		code = ERP_FATAL;
-	}
 
 	// if we got a recursive error, make it fatal
 	if ( com_errorEntered ) {
@@ -679,8 +678,9 @@ void idCommonLocal::Error( const char *fmt, ... ) {
 		// process immediately, which will prevent a
 		// full screen rendering window covering the
 		// error dialog
-		if ( com_errorEntered == ERP_FATAL ) {
-			Sys_Quit();
+		if ( com_errorEntered == ERP_FATAL ) 
+		{
+			Sys_Quit( EXIT_FAILURE );
 		}
 		code = ERP_FATAL;
 	}
@@ -745,11 +745,13 @@ idCommonLocal::FatalError
 Dump out of the game to a system dialog
 ==================
 */
-void idCommonLocal::FatalError( const char *fmt, ... ) {
+void idCommonLocal::FatalError( const char *fmt, ... ) 
+{
 	va_list		argptr;
 
 	// if we got a recursive error, make it fatal
-	if ( com_errorEntered ) {
+	if ( com_errorEntered ) 
+	{
 		// if we are recursively erroring while exiting
 		// from a fatal error, just kill the entire
 		// process immediately, which will prevent a
@@ -766,7 +768,7 @@ void idCommonLocal::FatalError( const char *fmt, ... ) {
 		Sys_Printf( "%s\n", errorMessage );
 
 		// write the console to a log file?
-		Sys_Quit();
+		Sys_Quit( EXIT_FAILURE );
 	}
 	com_errorEntered = ERP_FATAL;
 
@@ -775,7 +777,8 @@ void idCommonLocal::FatalError( const char *fmt, ... ) {
 	va_end( argptr );
 	errorMessage[sizeof(errorMessage)-1] = '\0';
 
-	if ( cvarSystem->GetCVarBool( "r_fullscreen" ) ) {
+	if ( cvarSystem->GetCVarBool( "r_fullscreen" ) ) 
+	{
 		cmdSystem->BufferCommandText( CMD_EXEC_NOW, "vid_restart partial windowed\n" );
 	}
 
@@ -791,21 +794,21 @@ void idCommonLocal::FatalError( const char *fmt, ... ) {
 idCommonLocal::Quit
 ==================
 */
-void idCommonLocal::Quit( void ) {
-
+void idCommonLocal::Quit( void ) 
+{
 #ifdef ID_ALLOW_TOOLS
-	if ( com_editors & EDITOR_RADIANT ) {
+	if ( com_editors & EDITOR_RADIANT ) 
+	{
 		RadiantInit();
 		return;
 	}
 #endif
 
 	// don't try to shutdown if we are in a recursive error
-	if ( !com_errorEntered ) {
+	if ( !com_errorEntered )
 		Shutdown();
-	}
-
-	Sys_Quit();
+	
+	Sys_Quit( EXIT_FAILURE );
 }
 
 
@@ -1533,23 +1536,26 @@ void Com_ExecMachineSpec_f( const idCmdArgs &args ) {
 		cvarSystem->SetCVarBool( "r_forceLoadImages", false, CVAR_ARCHIVE );
 	}
 
-	bool oldCard = false;
-	bool nv10or20 = false;
-	renderSystem->GetCardCaps( oldCard, nv10or20 );
-	if ( oldCard ) {
-		cvarSystem->SetCVarBool( "g_decals", false, CVAR_ARCHIVE );
-		cvarSystem->SetCVarBool( "g_projectileLights", false, CVAR_ARCHIVE );
-		cvarSystem->SetCVarBool( "g_doubleVision", false, CVAR_ARCHIVE );
-		cvarSystem->SetCVarBool( "g_muzzleFlash", false, CVAR_ARCHIVE );
-	} else {
+	//renderSystem->GetCardCaps( oldCard, nv10or20 );
+	//if ( oldCard ) 
+	//{
+	//	cvarSystem->SetCVarBool( "g_decals", false, CVAR_ARCHIVE );
+	//	cvarSystem->SetCVarBool( "g_projectileLights", false, CVAR_ARCHIVE );
+	//	cvarSystem->SetCVarBool( "g_doubleVision", false, CVAR_ARCHIVE );
+	//	cvarSystem->SetCVarBool( "g_muzzleFlash", false, CVAR_ARCHIVE );
+	//} 
+	//else 
+	{
 		cvarSystem->SetCVarBool( "g_decals", true, CVAR_ARCHIVE );
 		cvarSystem->SetCVarBool( "g_projectileLights", true, CVAR_ARCHIVE );
 		cvarSystem->SetCVarBool( "g_doubleVision", true, CVAR_ARCHIVE );
 		cvarSystem->SetCVarBool( "g_muzzleFlash", true, CVAR_ARCHIVE );
-	}
-	if ( nv10or20 ) {
 		cvarSystem->SetCVarInteger( "image_useNormalCompression", 1, CVAR_ARCHIVE );
 	}
+	
+//	if ( nv10or20 ) 
+//	{
+//	}
 
 #if MACOS_X
 	// On low settings, G4 systems & 64MB FX5200/NV34 Systems should default shadows off
@@ -2356,8 +2362,12 @@ void idCommonLocal::InitCommands( void ) {
 #if	!defined( ID_DEMO_BUILD ) && !defined( ID_DEDICATED )
 	// compilers
 	cmdSystem->AddCommand( "dmap", Dmap_f, CMD_FL_TOOL, "compiles a map", idCmdSystem::ArgCompletion_MapName );
+// Now done in the 3D tools
+#if 0
 	cmdSystem->AddCommand( "renderbump", RenderBump_f, CMD_FL_TOOL, "renders a bump map", idCmdSystem::ArgCompletion_ModelName );
 	cmdSystem->AddCommand( "renderbumpFlat", RenderBumpFlat_f, CMD_FL_TOOL, "renders a flat bump map", idCmdSystem::ArgCompletion_ModelName );
+#endif 
+// BEATO End
 	cmdSystem->AddCommand( "runAAS", RunAAS_f, CMD_FL_TOOL, "compiles an AAS file for a map", idCmdSystem::ArgCompletion_MapName );
 	cmdSystem->AddCommand( "runAASDir", RunAASDir_f, CMD_FL_TOOL, "compiles AAS files for all maps in a folder", idCmdSystem::ArgCompletion_MapName );
 	cmdSystem->AddCommand( "runReach", RunReach_f, CMD_FL_TOOL, "calculates reachability for an AAS file", idCmdSystem::ArgCompletion_MapName );
@@ -2415,12 +2425,13 @@ void idCommonLocal::InitCommands( void ) {
 idCommonLocal::InitRenderSystem
 =================
 */
-void idCommonLocal::InitRenderSystem( void ) {
-	if ( com_skipRenderer.GetBool() ) {
+void idCommonLocal::InitRenderSystem( void ) 
+{
+	if ( com_skipRenderer.GetBool() )
 		return;
-	}
 
-	renderSystem->InitOpenGL();
+
+	renderSystem->InitAPI();
 	PrintLoadingMessage( common->GetLanguageDict()->GetString( "#str_04343" ) );
 }
 
@@ -2429,10 +2440,11 @@ void idCommonLocal::InitRenderSystem( void ) {
 idCommonLocal::PrintLoadingMessage
 =================
 */
-void idCommonLocal::PrintLoadingMessage( const char *msg ) {
-	if ( !( msg && *msg ) ) {
+void idCommonLocal::PrintLoadingMessage( const char *msg ) 
+{
+	if ( !( msg && *msg ) ) 
 		return;
-	}
+	
 	renderSystem->BeginFrame( renderSystem->GetScreenWidth(), renderSystem->GetScreenHeight() );
 	renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 1, 1, declManager->FindMaterial( "splashScreen" ) );
 	int len = strlen( msg );
@@ -2567,14 +2579,15 @@ void idCommonLocal::SingleAsyncTic( void )
 {
 	// main thread code can prevent this from happening while modifying
 	// critical data structures
-	btScopeLock guard( m_asyncMutex ); // Sys_EnterCriticalSection();
+	soundSystem->EnterCriticalSection(); // Sys_EnterCriticalSection();
 
 	asyncStats_t *stat = &com_asyncStats[com_ticNumber & (MAX_ASYNC_STATS-1)];
 	memset( stat, 0, sizeof( *stat ) );
 	stat->milliseconds = Sys_Milliseconds();
 	stat->deltaMsec = stat->milliseconds - com_asyncStats[(com_ticNumber - 1) & (MAX_ASYNC_STATS-1)].milliseconds;
 
-	if ( usercmdGen && com_asyncInput.GetBool() ) {
+	if ( usercmdGen && com_asyncInput.GetBool() ) 
+	{
 		usercmdGen->UsercmdInterrupt();
 	}
 
@@ -2593,7 +2606,7 @@ void idCommonLocal::SingleAsyncTic( void )
 
 	stat->timeConsumed = Sys_Milliseconds() - stat->milliseconds;
 
-	//Sys_LeaveCriticalSection();
+	soundSystem->LeaveCriticalSection(); //Sys_LeaveCriticalSection();
 }
 
 /*
@@ -2759,31 +2772,34 @@ bool idCommonLocal::IsInitialized( void ) const {
 idCommonLocal::SetMachineSpec
 =================
 */
-void idCommonLocal::SetMachineSpec( void ) {
+void idCommonLocal::SetMachineSpec( void ) 
+{
 	cpuid_t	cpu = Sys_GetProcessorId();
 	double ghz = Sys_ClockTicksPerSecond() * 0.000000001f;
 	int vidRam = Sys_GetVideoRam();
 	int sysRam = Sys_GetSystemRam();
-	bool oldCard = false;
-	bool nv10or20 = false;
 
-	renderSystem->GetCardCaps( oldCard, nv10or20 );
-
-	Printf( "Detected\n \t%.2f GHz CPU\n\t%i MB of System memory\n\t%i MB of Video memory on %s\n\n", ghz, sysRam, vidRam, ( oldCard ) ? "a less than optimal video architecture" : "an optimal video architecture" );
-
-	if ( ghz >= 2.75f && vidRam >= 512 && sysRam >= 1024 && !oldCard ) {
+	if ( ghz >= 2.75f && vidRam >= 512 && sysRam >= 1024  ) 
+	{
 		Printf( "This system qualifies for Ultra quality!\n" );
 		com_machineSpec.SetInteger( 3 );
-	} else if ( ghz >= ( ( cpu & CPUID_AMD ) ? 1.9f : 2.19f ) && vidRam >= 256 && sysRam >= 512 && !oldCard ) {
+	} 
+	else if ( ghz >= ( ( cpu & CPUID_AMD ) ? 1.9f : 2.19f ) && vidRam >= 256 && sysRam >= 512  )
+	{
 		Printf( "This system qualifies for High quality!\n" );
 		com_machineSpec.SetInteger( 2 );
-	} else if ( ghz >= ( ( cpu & CPUID_AMD ) ? 1.1f : 1.25f ) && vidRam >= 128 && sysRam >= 384 ) {
+	} 
+	else if ( ghz >= ( ( cpu & CPUID_AMD ) ? 1.1f : 1.25f ) && vidRam >= 128 && sysRam >= 384 ) 
+	{
 		Printf( "This system qualifies for Medium quality.\n" );
 		com_machineSpec.SetInteger( 1 );
-	} else {
+	} 
+	else 
+	{
 		Printf( "This system qualifies for Low quality.\n" );
 		com_machineSpec.SetInteger( 0 );
 	}
+	
 	com_videoRam.SetInteger( vidRam );
 }
 
@@ -2792,13 +2808,10 @@ void idCommonLocal::SetMachineSpec( void ) {
 idCommonLocal::Init
 =================
 */
-void idCommonLocal::Init( int argc, const char **argv, const char *cmdline ) {
-	try {
-
-		// BEATO Begin:
-		m_asyncMutex = new btMutex();
-		// BEATO End
-
+void idCommonLocal::Init( int argc, const char **argv, const char *cmdline ) 
+{
+	try 
+	{
 		// set interface pointers used by idLib
 		idLib::sys			= sys;
 		idLib::common		= common;
@@ -2813,11 +2826,13 @@ void idCommonLocal::Init( int argc, const char **argv, const char *cmdline ) {
 		
 		// parse command line options
 		idCmdArgs args;
-		if ( cmdline ) {
+		if ( cmdline ) 
+		{
 			// tokenize if the OS doesn't do it for us
 			args.TokenizeString( cmdline, true );
 			argv = args.GetArgs( &argc );
 		}
+
 		ParseCommandLine( argc, argv );
 
 		// init console command system
@@ -2848,10 +2863,11 @@ void idCommonLocal::Init( int argc, const char **argv, const char *cmdline ) {
 		Sys_InitNetworking();
 
 		// override cvars from command line
-		StartupVariable( NULL, false );
+		StartupVariable( nullptr, false );
 
-		if ( !idAsyncNetwork::serverDedicated.GetInteger() && Sys_AlreadyRunning() ) {
-			Sys_Quit();
+		if ( !idAsyncNetwork::serverDedicated.GetInteger() && Sys_AlreadyRunning() ) 
+		{
+			Sys_Quit( EXIT_FAILURE );
 		}
 
 		// initialize processor specific SIMD implementation
@@ -2864,15 +2880,23 @@ void idCommonLocal::Init( int argc, const char **argv, const char *cmdline ) {
 		config_compressor = idCompressor::AllocArithmetic();
 #endif
 
+// BEATO Begin:
+#ifndef	ID_DEDICATED
+		// Initialization done 
+		Sys_videoSetWindowFocus( );
+#endif // ID_DEDICATED
+// BEATO End
+
 		// game specific initialization
 		InitGame();
 
 		// don't add startup commands if no CD key is present
 #if ID_ENFORCE_KEY
-		if ( !session->CDKeysAreValid( false ) || !AddStartupCommands() ) {
+		if ( !session->CDKeysAreValid( false ) || !AddStartupCommands() ) 
 #else
-		if ( !AddStartupCommands() ) {
+		if ( !AddStartupCommands() ) 
 #endif
+		{
 			// if the user didn't give any commands, run default action
 			session->StartMenu( true );
 		}
@@ -2892,13 +2916,9 @@ void idCommonLocal::Init( int argc, const char **argv, const char *cmdline ) {
 		ClearCommandLine();
 
 		com_fullyInitialized = true;
-
-	// BEATO Begin: initialize async thread 
-		StartExecution();
-	// BEATO End
 	}
-
-	catch( idException & ) {
+	catch( idException & ) 
+	{
 		Sys_Error( "Error during initialization" );
 	}
 }
@@ -2909,13 +2929,9 @@ void idCommonLocal::Init( int argc, const char **argv, const char *cmdline ) {
 idCommonLocal::Shutdown
 =================
 */
-void idCommonLocal::Shutdown( void ) {
-
+void idCommonLocal::Shutdown( void )
+{
 	com_shuttingDown = true;
-
-	// BEATO Begin: shutdown async thread 
-	FinishExecution();
-	// BEATO End
 
 	idAsyncNetwork::server.Kill();
 	idAsyncNetwork::client.Shutdown();
@@ -2953,11 +2969,7 @@ void idCommonLocal::Shutdown( void ) {
 
 	// enable leak test
 	Mem_EnableLeakTest( "doom" );
-
-	// BEATO Begin
-	SAFE_DELETE( m_asyncMutex );
-	// BEATO End
-
+	
 	// shutdown idLib
 	idLib::ShutDown();
 }
@@ -2967,7 +2979,8 @@ void idCommonLocal::Shutdown( void ) {
 idCommonLocal::InitGame
 =================
 */
-void idCommonLocal::InitGame( void ) {
+void idCommonLocal::InitGame( void ) 
+{
 	// initialize the file system
 	fileSystem->Init();
 
@@ -2978,16 +2991,20 @@ void idCommonLocal::InitGame( void ) {
 	CheckToolMode();
 
 	idFile *file = fileSystem->OpenExplicitFileRead( fileSystem->RelativePathToOSPath( CONFIG_SPEC, "fs_savepath" ) );
-	bool sysDetect = ( file == NULL );
-	if ( file ) {
+	bool sysDetect = ( file == nullptr );
+	if ( file ) 
+	{
 		fileSystem->CloseFile( file );
-	} else {
+	} 
+	else 
+	{
 		file = fileSystem->OpenFileWrite( CONFIG_SPEC );
 		fileSystem->CloseFile( file );
 	}
 	
 	idCmdArgs args;
-	if ( sysDetect ) {
+	if ( sysDetect ) 
+	{
 		SetMachineSpec();
 		Com_ExecMachineSpec_f( args );
 	}
@@ -3095,13 +3112,14 @@ void idCommonLocal::InitGame( void ) {
 idCommonLocal::ShutdownGame
 =================
 */
-void idCommonLocal::ShutdownGame( bool reloading ) {
+void idCommonLocal::ShutdownGame( bool reloading ) 
+{
 
 	// kill sound first
 	idSoundWorld *sw = soundSystem->GetPlayingSoundWorld();
-	if ( sw ) {
+	if ( sw )
 		sw->StopAllSounds();
-	}
+	
 	soundSystem->ClearBuffer();
 
 	// shutdown the script debugger
@@ -3146,39 +3164,3 @@ void idCommonLocal::ShutdownGame( bool reloading ) {
 	// shut down the file system
 	fileSystem->Shutdown( reloading );
 }
-
-// BEATO Begin
-/*
-=================
-idCommonLocal::Run
-=================
-*/
-void idCommonLocal::Run( void )
-{
-	Uint32	startTime = 0;
-
-	// this will trigger 60 times a second
-	Uint32	stepTime = 1000 / 60;
-	do
-	{
-		startTime = Sys_Milliseconds();
-		this->Async();
-		Uint32 elapsed = Sys_Milliseconds() - startTime;
-
-		// wait the remain time
-		Sys_Sleep( stepTime - elapsed );
-	}
-	while (IsExitPending());
-	NotifyExit();
-}
-
-
-/*
-=================
-idCommonLocal::NotifyExit
-=================
-*/
-void idCommonLocal::NotifyExit( void )
-{
-}
-// BEATO End

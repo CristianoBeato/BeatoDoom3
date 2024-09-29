@@ -440,14 +440,12 @@ bool idIK_Walk::Init( idEntity *self, const char *anim, const idVec3 &modelOffse
 		return false;
 	}
 
-	numLegs = Min( self->spawnArgs.GetInt( "ik_numLegs", "0" ), MAX_LEGS );
-	if ( numLegs == 0 ) {
+	numLegs = min( self->spawnArgs.GetInt( "ik_numLegs", "0" ), MAX_LEGS );
+	if ( numLegs == 0 ) 
 		return true;
-	}
 
-	if ( !idIK::Init( self, anim, modelOffset ) ) {
+	if ( !idIK::Init( self, anim, modelOffset ) ) 
 		return false;
-	}
 
 	int numJoints = animator->NumJoints();
 	idJointMat *joints = ( idJointMat * )_alloca16( numJoints * sizeof( joints[0] ) );
@@ -962,8 +960,9 @@ bool idIK_Reach::Init( idEntity *self, const char *anim, const idVec3 &modelOffs
 		return false;
 	}
 
-	numArms = Min( self->spawnArgs.GetInt( "ik_numArms", "0" ), MAX_ARMS );
-	if ( numArms == 0 ) {
+	numArms = min( self->spawnArgs.GetInt( "ik_numArms", "0" ), MAX_ARMS );
+	if ( numArms == 0 ) 
+	{
 		return true;
 	}
 

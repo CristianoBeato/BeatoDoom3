@@ -294,7 +294,7 @@ void idItem::Spawn( void ) {
 		if ( !ent ) {
 			gameLocal.Error( "Item couldn't find owner '%s'", giveTo.c_str() );
 		}
-		PostEventMS( &EV_Touch, 0, ent, NULL );
+		PostEventMS( &EV_Touch, 0, ent, 0 );
 	}
 
 	if ( spawnArgs.GetBool( "spin" ) || gameLocal.isMultiplayer ) {
@@ -944,11 +944,11 @@ void idMoveableItem::Spawn( void ) {
 
 	// get rigid body properties
 	spawnArgs.GetFloat( "density", "0.5", density );
-	density = idMath::ClampFloat( 0.001f, 1000.0f, density );
+	density = clamp( density, 0.001f, 1000.0f );
 	spawnArgs.GetFloat( "friction", "0.05", friction );
-	friction = idMath::ClampFloat( 0.0f, 1.0f, friction );
+	friction = clamp( friction, 0.0f, 1.0f );
 	spawnArgs.GetFloat( "bouncyness", "0.6", bouncyness );
-	bouncyness = idMath::ClampFloat( 0.0f, 1.0f, bouncyness );
+	bouncyness = clamp( bouncyness, 0.0f, 1.0f );
 
 	// setup the physics
 	physicsObj.SetSelf( this );

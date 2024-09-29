@@ -1435,7 +1435,7 @@ void FullscreenFX_InfluenceVision::HighQuality() {
 		distance = ( player->GetInfluenceEntity()->GetPhysics()->GetOrigin() - player->GetPhysics()->GetOrigin() ).Length();
 		if ( player->GetInfluenceRadius() != 0.0f && distance < player->GetInfluenceRadius() ) {
 			pct = distance / player->GetInfluenceRadius();
-			pct = 1.0f - idMath::ClampFloat( 0.0f, 1.0f, pct );
+			pct = 1.0f - std::clamp( pct, 0.0f, 1.0f ); //idMath::ClampFloat( 0.0f, 1.0f, pct );
 		}
 	}
 

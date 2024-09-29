@@ -669,11 +669,9 @@ typedef struct {
 const int MAX_GUI_SURFACES	= 1024;		// default size of the drawSurfs list for guis, will
 										// be automatically expanded as needed
 
-typedef enum {
+typedef enum 
+{
 	BE_ARB,
-	BE_NV10,
-	BE_NV20,
-	BE_R200,
 	BE_ARB2,
 	BE_BAD
 } backEndName_t;
@@ -694,9 +692,9 @@ public:
 	// external functions
 	virtual void			Init( void );
 	virtual void			Shutdown( void );
-	virtual void			InitOpenGL( void );
-	virtual void			ShutdownOpenGL( void );
-	virtual bool			IsOpenGLRunning( void ) const;
+	virtual void			InitAPI( void );
+	virtual void			ShutdownAPI( void );
+	virtual bool			IsAPIRunning( void ) const;
 	virtual bool			IsFullScreen( void ) const;
 	virtual int				GetScreenWidth( void ) const;
 	virtual int				GetScreenHeight( void ) const;
@@ -729,7 +727,6 @@ public:
 	virtual void			CaptureRenderToImage( const char *imageName );
 	virtual void			CaptureRenderToFile( const char *fileName, bool fixAlpha );
 	virtual void			UnCrop();
-	virtual void			GetCardCaps( bool &oldCard, bool &nv10or20 );
 	virtual bool			UploadImage( const char *imageName, const byte *data, int width, int height );
 
 public:
@@ -994,14 +991,6 @@ GL wrapper/helper functions
 
 ====================================================================
 */
-
-void	GL_SelectTexture( int unit );
-void	GL_CheckErrors( void );
-void	GL_ClearStateDelta( void );
-void	GL_State( int stateVector );
-void	GL_TexEnv( int env );
-void	GL_Cull( int cullType );
-
 const int GLS_SRCBLEND_ZERO						= 0x00000001;
 const int GLS_SRCBLEND_ONE						= 0x0;
 const int GLS_SRCBLEND_DST_COLOR				= 0x00000003;
@@ -1055,69 +1044,6 @@ void R_SetColorMappings( void );
 
 void R_ScreenShot_f( const idCmdArgs &args );
 void R_StencilShot( void );
-
-/*
-====================================================================
-
-IMPLEMENTATION SPECIFIC FUNCTIONS
-
-====================================================================
-*/
-
-typedef struct {
-	int			width;
-	int			height;
-	bool		fullScreen;
-	bool		stereo;
-	int			displayHz;
-	int			multiSamples;
-} glimpParms_t;
-
-bool		GLimp_Init( glimpParms_t parms );
-// If the desired mode can't be set satisfactorily, false will be returned.
-// The renderer will then reset the glimpParms to "safe mode" of 640x480
-// fullscreen and try again.  If that also fails, the error will be fatal.
-
-bool		GLimp_SetScreenParms( glimpParms_t parms );
-// will set up gl up with the new parms
-
-void		GLimp_Shutdown( void );
-// Destroys the rendering context, closes the window, resets the resolution,
-// and resets the gamma ramps.
-
-void		GLimp_SwapBuffers( void );
-// Calls the system specific swapbuffers routine, and may also perform
-// other system specific cvar checks that happen every frame.
-// This will not be called if 'r_drawBuffer GL_FRONT'
-
-void		GLimp_SetGamma( unsigned short red[256], 
-						    unsigned short green[256],
-							unsigned short blue[256] );
-// Sets the hardware gamma ramps for gamma and brightness adjustment.
-// These are now taken as 16 bit values, so we can take full advantage
-// of dacs with >8 bits of precision
-
-
-bool		GLimp_SpawnRenderThread( void (*function)( void ) );
-// Returns false if the system only has a single processor
-
-void *		GLimp_BackEndSleep( void );
-void		GLimp_FrontEndSleep( void );
-void		GLimp_WakeBackEnd( void *data );
-// these functions implement the dual processor syncronization
-
-void		GLimp_ActivateContext( void );
-void		GLimp_DeactivateContext( void );
-// These are used for managing SMP handoffs of the OpenGL context
-// between threads, and as a performance tunining aid.  Setting
-// 'r_skipRenderContext 1' will call GLimp_DeactivateContext() before
-// the 3D rendering code, and GLimp_ActivateContext() afterwards.  On
-// most OpenGL implementations, this will result in all OpenGL calls
-// being immediate returns, which lets us guage how much time is
-// being spent inside OpenGL.
-
-void		GLimp_EnableLogging( bool enable );
-
 
 /*
 ====================================================================

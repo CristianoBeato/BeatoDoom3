@@ -73,20 +73,11 @@ public:
 */
 
 typedef unsigned char			byte;		// 8 bits
-typedef unsigned short			word;		// 16 bits
-typedef unsigned int			dword;		// 32 bits
-typedef unsigned int			uint;
-typedef unsigned long			ulong;
-
 typedef int						qhandle_t;
 
 class idFile;
 class idVec3;
 class idVec4;
-
-#ifndef NULL
-#define NULL					((void *)0)
-#endif
 
 #ifndef BIT
 #define BIT( num )				( 1 << ( num ) )
@@ -117,10 +108,10 @@ extern	idVec4 colorMdGrey;
 extern	idVec4 colorDkGrey;
 
 // packs color floats in the range [0,1] into an integer
-dword	PackColor( const idVec3 &color );
-void	UnpackColor( const dword color, idVec3 &unpackedColor );
-dword	PackColor( const idVec4 &color );
-void	UnpackColor( const dword color, idVec4 &unpackedColor );
+uint32_t	PackColor( const idVec3 &color );
+void		UnpackColor( const uint32_t color, idVec3 &unpackedColor );
+uint32_t	PackColor( const idVec4 &color );
+void		UnpackColor( const uint32_t color, idVec4 &unpackedColor );
 
 // little/big endian conversion
 short	BigShort( short l );
@@ -153,24 +144,25 @@ void AssertFailed( const char *file, int line, const char *expression );
 #endif
 // BEATO End
 
-class idException {
-public:
-	char error[MAX_STRING_CHARS];
-
-	idException( const char *text = "" ) { strcpy( error, text ); }
-};
-
-// move from Math.h to keep gcc happy
-template<class T> ID_INLINE T	Max( T x, T y ) { return ( x > y ) ? x : y; }
-template<class T> ID_INLINE T	Min( T x, T y ) { return ( x < y ) ? x : y; }
-// BEATO Begin
-template< typename t_> ID_INLINE const t_ Clamp( const t_ val, const t_ min, const t_ max ) { return Max( min, Min( max, val ) ); }
-// BEATO End
-
 // BEATO begin
 #define SAFE_FREE( p )  { if(p) { Mem_Free(p);     (p)=nullptr; } }
 #define SAFE_DELETE(p)       { if(p) { delete (p);     (p)=nullptr; } }
 #define SAFE_DELETE_ARRAY(p) { if(p) { delete[] (p);   (p)=nullptr; } }
+
+#ifdef min
+#	undef min
+#endif
+#ifdef max 
+#	undef max
+#endif //max
+
+// X < Y = X else Y
+template<typename _t> ID_INLINE constexpr const _t& min( const _t& x, const _t& y ) { return ( x < y ) ? x : y; }
+
+// X > Y = X else Y
+template<typename _t> ID_INLINE constexpr const _t& max( const _t& x, const _t& y ) { return ( x > y ) ? x : y; }
+
+template<typename _t> ID_INLINE constexpr const _t& clamp( const _t& v, const _t& l, const _t& h ) { return ( v < l ) ? l : ( v > h ) ? h : v;  }
 // BEATO end
 
 /*
@@ -184,6 +176,12 @@ template< typename t_> ID_INLINE const t_ Clamp( const t_ val, const t_ min, con
 // memory management and arrays
 #include "Heap.h"
 #include "containers/List.h"
+
+// BEATO Begin:
+#include "system/intrinsics.h"
+#include "Exception.h"
+#include "Pointers.h"
+// BEATO End
 
 // math
 #include "math/Simd.h"
@@ -261,7 +259,8 @@ template< typename t_> ID_INLINE const t_ Clamp( const t_ val, const t_ min, con
 #include "Timer.h"
 
 // BEATO Begin
-#include "Thread.h"
+#include "system/Atomic.h"
+#include "system/Mutex.h"
 #include "SmartPointer.h"
 // BEATO End
 

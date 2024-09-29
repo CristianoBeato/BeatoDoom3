@@ -965,8 +965,8 @@ void idParticleStage::ParticleOrigin( particleGen_t *g, idVec3 &origin ) const {
 				break;
 			}
 			case PPATH_FLIES: {		// ( radialSpeed axialSpeed size )
-				speed1 = idMath::ClampFloat( 0.4f, 1.0f, g->random.CRandomFloat() );
-				speed2 = idMath::ClampFloat( 0.4f, 1.0f, g->random.CRandomFloat() );
+				speed1 = clamp( g->random.CRandomFloat(), 0.4f, 1.0f );
+				speed2 = clamp( g->random.CRandomFloat(), 0.4f, 1.0f );
 				angle1 = g->random.RandomFloat() * idMath::PI * 2 + customPathParms[0] * speed1 * g->age;
 				angle2 = g->random.RandomFloat() * idMath::PI * 2 + customPathParms[1] * speed1 * g->age;
 

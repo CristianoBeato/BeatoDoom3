@@ -80,7 +80,8 @@ const int USERCMD_PER_DEMO_FRAME	= 2;
 const int CONNECT_TRANSMIT_TIME		= 1000;
 const int MAX_LOGGED_USERCMDS		= 60*60*60;	// one hour of single player, 15 minutes of four player
 
-class idSessionLocal : public idSession {
+class idSessionLocal : public idSession 
+{
 public:
 
 						idSessionLocal();
@@ -126,6 +127,11 @@ public:
 
 	virtual int			GetSaveGameVersion( void );
 
+// BEATO Begin: 
+	virtual void		TriggerAsyncEvent( void );
+	virtual void		WaitForAsyncEvent( void );
+// BEATO End
+
 	virtual const char *GetCurrentMapName();
 
 	//=====================================
@@ -154,6 +160,7 @@ public:
 
 	bool				LoadGame(const char *saveName);
 	bool				SaveGame(const char *saveName, bool autosave = false);
+
 
 	const char			*GetAuthMsg( void );
 
@@ -356,6 +363,12 @@ private:
 	bool				authWaitBox;
 
 	idStr				authMsg;
+
+// BEATO Begin:
+	crMutex*					asyncLock;
+	crCondition*				asyncSygnal;
+// BEATO End
+
 };
 
 extern idSessionLocal	sessLocal;

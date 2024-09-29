@@ -918,29 +918,39 @@ void idGameLocal::ClientShowSnapshot( int clientNum ) const {
 idGameLocal::UpdateLagometer
 ================
 */
-void idGameLocal::UpdateLagometer( int aheadOfServer, int dupeUsercmds ) {
+void idGameLocal::UpdateLagometer( int aheadOfServer, int dupeUsercmds ) 
+{
 		int i, j, ahead;
-		for ( i = 0; i < LAGO_HEIGHT; i++ ) {
+		for ( i = 0; i < LAGO_HEIGHT; i++ ) 
+		{
 			memmove( (byte *)lagometer + LAGO_WIDTH * 4 * i, (byte *)lagometer + LAGO_WIDTH * 4 * i + 4, ( LAGO_WIDTH - 1 ) * 4 );
 		}
 		j = LAGO_WIDTH - 1;
-		for ( i = 0; i < LAGO_HEIGHT; i++ ) {
+
+		for ( i = 0; i < LAGO_HEIGHT; i++ ) 
+		{
 			lagometer[i][j][0] = lagometer[i][j][1] = lagometer[i][j][2] = lagometer[i][j][3] = 0;
 		}
+		
 		ahead = idMath::Rint( (float)aheadOfServer / 16.0f );
-		if ( ahead >= 0 ) {
-			for ( i = 2 * Max( 0, 5 - ahead ); i < 2 * 5; i++ ) {
+		if ( ahead >= 0 ) 
+		{
+			for ( i = 2 * max( 0, 5 - ahead ); i < 2 * 5; i++ ) 
+			{
 				lagometer[i][j][1] = 255;
 				lagometer[i][j][3] = 255;
 			}
-		} else {
-			for ( i = 2 * 5; i < 2 * ( 5 + Min( 10, -ahead ) ); i++ ) {
+		} 
+		else 
+		{
+			for ( i = 2 * 5; i < 2 * ( 5 + min( 10, -ahead ) ); i++ ) {
 				lagometer[i][j][0] = 255;
 				lagometer[i][j][1] = 255;
 				lagometer[i][j][3] = 255;
 			}
 		}
-		for ( i = LAGO_HEIGHT - 2 * Min( 6, dupeUsercmds ); i < LAGO_HEIGHT; i++ ) {
+		
+		for ( i = LAGO_HEIGHT - 2 * min( 6, dupeUsercmds ); i < LAGO_HEIGHT; i++ ) {
 			lagometer[i][j][0] = 255;
 			if ( dupeUsercmds <= 2 ) {
 				lagometer[i][j][1] = 255;

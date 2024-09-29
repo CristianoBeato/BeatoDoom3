@@ -44,13 +44,15 @@ ID_INLINE unsigned int FloatCRC( float f ) {
 StringCRC
 ===============
 */
-ID_INLINE unsigned int StringCRC( const char *str ) {
+ID_INLINE unsigned int StringCRC( const char *str ) 
+{
 	unsigned int i, crc;
-	const unsigned char *ptr;
+//	const unsigned char *ptr;
 
 	crc = 0;
-	ptr = reinterpret_cast<const unsigned char*>(str);
-	for ( i = 0; str[i]; i++ ) {
+//	ptr = reinterpret_cast<const unsigned char*>(str);
+	for ( i = 0; str[i]; i++ ) 
+	{
 		crc ^= str[i] << (i & 3);
 	}
 	return crc;
@@ -439,10 +441,11 @@ idMapBrush *idMapBrush::ParseQ3( idLexer &src, const idVec3 &origin ) {
 		side->plane.FromPoints( planepts[0], planepts[1], planepts[2] );
 
 		// read the material
-		if ( !src.ReadTokenOnLine( &token ) ) {
+		if ( !src.ReadTokenOnLine( &token ) ) 
+		{
 			src.Error( "idMapBrush::ParseQ3: unable to read brush side material" );
 			sides.DeleteContents( true );
-			return NULL;
+			return nullptr;
 		}
 
 		// we have an implicit 'textures/' in the old format
@@ -459,9 +462,12 @@ idMapBrush *idMapBrush::ParseQ3( idLexer &src, const idVec3 &origin ) {
 		side->origin = origin;
 		
 		// Q2 allowed override of default flags and values, but we don't any more
-		if ( src.ReadTokenOnLine( &token ) ) {
-			if ( src.ReadTokenOnLine( &token ) ) {
-				if ( src.ReadTokenOnLine( &token ) ) {
+		if ( src.ReadTokenOnLine( &token ) ) 
+		{
+			if ( src.ReadTokenOnLine( &token ) ) 
+			{
+				if ( src.ReadTokenOnLine( &token ) ) 
+				{
 				}
 			}
 		}

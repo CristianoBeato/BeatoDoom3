@@ -26,13 +26,15 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #include "idlib/precompiled.h"
 #pragma hdrstop
 
-#include <SDL_cpuinfo.h>
+#include <SDL2/SDL_cpuinfo.h>
 
 #if ID_USE_INSTRINSEC
 
 #include <immintrin.h>
 #include <xmmintrin.h>
 #include <pmmintrin.h>
+
+#include <bitset>
 
 #define _REG_EAX		0
 #define _REG_EBX		1
@@ -49,6 +51,9 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #define BIT_SSE2				( 1 << 26 ) // bit 26 of EDX denotes SSE2 existence
 #define BIT_HTT					( 1 << 28 ) // bit 28 of EDX denotes HTT existence
 #define BIT_3DNOW				( 1 << 31 ) // bit 31 of EDX denotes 3DNow! support
+
+static char	vendorName[32] = { "Generic" };
+static char	cpuBrand[64] = { "Generic" };
 
 #if _WIN32 || _WIN64
 #include <intrin.h>
@@ -73,8 +78,6 @@ inline unsigned int __get_cpuid( unsigned int level, unsigned int* eax, unsigned
 
 #include "sys_platform.h"
 #include "sys_main.h"
-
-idCVar sys_cpustring( "sys_cpustring", "detect", CVAR_SYSTEM | CVAR_INIT, "" );
 
 #if _WIN32
 /*
@@ -243,17 +246,20 @@ Sys_GetCPUId
 void Sys_getCPUInfo( void )
 {
 	int flags;
+	char vendor[0x20];
+	char brand[0x40];
 
 #if !ID_USE_INSTRINSEC
 	// verify we're at least a Pentium or 486 with CPUID support
-	return CPUID_UNSUPPORTED;
+	sysVars.cpuid = CPUID_GENERIC;
 #else
-	idStr	vendorName = idStr("Generic");
-	idStr	cpuBrand = idStr("Generic");
 
-	unsigned int nIds = 0;
-	unsigned int nExIds = 0;
-	unsigned int cpui[4] = { 0, 0, 0, 0 };
+	uint32_t nIds = 0;
+	uint32_t nExIds = 0;
+	uint32_t cpui[4] = { 0, 0, 0, 0 };
+	memset( vendor, 0, sizeof( vendor ) );
+	memset( brand, 0, sizeof( brand ) );
+
 
 	// Calling __cpuid with 0x0 as the function_id argument
 	// gets the number of the highest valid function ID.
@@ -267,21 +273,18 @@ void Sys_getCPUInfo( void )
 	nExIds = cpui[_REG_EAX];
 
 	// Capture vendor string
-	char vendor[0x20];
-	memset( vendor, 0, sizeof( vendor ) );
 	__get_cpuid( CPU_BRAND_BIT, &cpui[_REG_EAX], &cpui[_REG_EBX], &cpui[_REG_ECX], &cpui[_REG_EDX] );
-	*reinterpret_cast<unsigned int*>(vendor) = cpui[_REG_EBX];
-	*reinterpret_cast<unsigned int*>(vendor + 4) = cpui[_REG_EDX];
-	*reinterpret_cast<unsigned int*>(vendor + 8) = cpui[_REG_ECX];
-	vendorName = idStr( vendor );
+	*reinterpret_cast<uint32_t*>(vendor) = cpui[_REG_EBX];
+	*reinterpret_cast<uint32_t*>(vendor + 4) = cpui[_REG_EDX];
+	*reinterpret_cast<uint32_t*>(vendor + 8) = cpui[_REG_ECX];
+	strcpy( const_cast<char*>(vendorName), vendor );
 
 	// Interpret CPU brand string if reported
 	if (nExIds >= 0x80000004)
 	{
-		char brand[0x40];
-		memset( brand, 0, sizeof( brand ) );
+		
 
-		for (int i = CPU_BRAND_BIT; i <= nExIds; ++i)
+		for ( uint32_t i = CPU_BRAND_BIT; i <= nExIds; ++i )
 		{
 			__get_cpuid( i, &cpui[_REG_EAX], &cpui[_REG_EBX], &cpui[_REG_ECX], &cpui[_REG_EDX] );
 
@@ -293,14 +296,14 @@ void Sys_getCPUInfo( void )
 				memcpy( brand + 32, cpui, sizeof( cpui ) );
 		}
 
-		cpuBrand = idStr( brand );
+		strcpy( const_cast<char*>(cpuBrand), brand );
 	}
 	
 	// check for an AMD
-	if (vendorName.Cmp( "AuthenticAMD" ) == 0)
+	if ( strcmp( vendor, "AuthenticAMD" ) == 0)
 		flags = CPUID_AMD;
 	// check for an Intel
-	else if (vendorName.Cmp( "GenuineIntel" ) == 0)
+	else if (strcmp( vendor, "GenuineIntel" ) == 0)
 		flags = CPUID_INTEL;
 	else
 		flags = CPUID_GENERIC;
@@ -345,88 +348,14 @@ void Sys_getCPUInfo( void )
 	}
 
 	// check for Denormals-Are-Zero mode
-	dword dwMask = _MM_GET_DENORMALS_ZERO_MODE();
+	uint32_t dwMask = _MM_GET_DENORMALS_ZERO_MODE();
 	if ((dwMask & (1 << 6)) == (1 << 6))
 		flags |= CPUID_DAZ;
 
 	sysVars.cpuid = (cpuid_t)flags;
 
-	//
-	// CPU type
-	//
-	if (!idStr::Icmp( sys_cpustring.GetString(), "detect" ))
-	{
-		idStr string;
-
-		common->Printf( "%1.0f MHz ", Sys_ClockTicksPerSecond() / 1000000.0f );
-
-		string.Clear();
-
-		if (sysVars.cpuid & CPUID_AMD)
-			string += "AMD CPU";
-		else if (sysVars.cpuid & CPUID_INTEL)
-			string += "Intel CPU";
-		else if (sysVars.cpuid & CPUID_UNSUPPORTED)
-			string += "unsupported CPU";
-		else
-			string += "generic CPU";
-
-		string += " with ";
-		if (sysVars.cpuid & CPUID_MMX)
-			string += "MMX & ";
-		if (sysVars.cpuid & CPUID_3DNOW)
-			string += "3DNow! & ";
-		if (sysVars.cpuid & CPUID_SSE)
-			string += "SSE & ";
-		if (sysVars.cpuid & CPUID_SSE2)
-			string += "SSE2 & ";
-		if (sysVars.cpuid & CPUID_SSE3)
-			string += "SSE3 & ";
-		if (sysVars.cpuid & CPUID_HTT)
-			string += "HTT & ";
-
-		string.StripTrailing( " & " );
-		string.StripTrailing( " with " );
-	}
-	else
-	{
-		common->Printf( "forcing CPU type to " );
-		idLexer src( sys_cpustring.GetString(), idStr::Length( sys_cpustring.GetString() ), "sys_cpustring" );
-		idToken token;
-
-		int id = CPUID_NONE;
-		while (src.ReadToken( &token ))
-		{
-			if (token.Icmp( "generic" ) == 0)
-				id |= CPUID_GENERIC;
-			else if (token.Icmp( "intel" ) == 0)
-				id |= CPUID_INTEL;
-			else if (token.Icmp( "amd" ) == 0)
-				id |= CPUID_AMD;
-			else if (token.Icmp( "mmx" ) == 0)
-				id |= CPUID_MMX;
-			else if (token.Icmp( "3dnow" ) == 0)
-				id |= CPUID_3DNOW;
-			else if (token.Icmp( "sse" ) == 0)
-				id |= CPUID_SSE;
-			else if (token.Icmp( "sse2" ) == 0)
-				id |= CPUID_SSE2;
-			else if (token.Icmp( "sse3" ) == 0)
-				id |= CPUID_SSE3;
-			else if (token.Icmp( "htt" ) == 0)
-				id |= CPUID_HTT;
-		}
-		if (id == CPUID_NONE)
-		{
-			common->Printf( "WARNING: unknown sys_cpustring '%s'\n", sys_cpustring.GetString() );
-			id = CPUID_GENERIC;
-		}
-	}
-
-	common->Printf( "%s\n", sys_cpustring.GetString() );
-	common->Printf( "%d MB System Memory\n", Sys_GetSystemRam() );
-	common->Printf( "%d MB Video Memory\n", Sys_GetVideoRam() );
-
+	common->Printf( "Running on %s %s", vendorName, cpuBrand );
+	
 #endif //ID_USE_INSTRINSEC
 }
 
@@ -441,23 +370,21 @@ cpuid_t Sys_GetProcessorId( void )
 }
 
 /*
-================
-Sys_GetProcessorString
-================
-*/
-const char *Sys_GetProcessorString( void )
-{
-	return sys_cpustring.GetString();
-}
-
-
-/*
 ===============================================================================
 
 	FPU
 
 ===============================================================================
 */
+struct FPUEnvironment 
+{
+    uint16_t controlWord;
+    uint16_t statusWord;
+    uint16_t tagWord;
+    uint32_t instructionPointer;
+    uint32_t dataPointer;
+    uint16_t opcode;
+};
 
 typedef struct bitFlag_s
 {
@@ -465,8 +392,6 @@ typedef struct bitFlag_s
 	int			bit;
 } bitFlag_t;
 
-static byte fpuState[128], *statePtr = fpuState;
-static char fpuString[2048];
 static bitFlag_t controlWordFlags[] = {
 	{ "Invalid operation", 0 },
 	{ "Denormalized operand", 1 },
@@ -502,43 +427,31 @@ static bitFlag_t statusWordFlags[] = {
 	{ "", 0 }
 };
 
-/*
-===============
-Sys_FPU_PrintStateFlags
-===============
-*/
-int Sys_FPU_PrintStateFlags( char *ptr, int ctrl, int stat, int tags, int inof, int inse, int opof, int opse )
-{
-	int i, length = 0;
+// EXEPTION FLAGS
+static const uint32_t CTW_EXCEPTION_INVALID_OPERATION = 1 << 0;
+static const uint32_t CTW_EXCEPTION_DENORMALIZED_OPERAND = 1 << 1;
+static const uint32_t CTW_EXCEPTION_DIVIDE_BY_ZERO = 1 << 2;
+static const uint32_t CTW_EXCEPTION_NUMERIC_OVERFLOW = 1 << 3;
+static const uint32_t CTW_EXCEPTION_NUMERIC_UNDERFLOW = 1 << 4;
+static const uint32_t CTW_EXCEPTION_INEXACT_RESULT = 1 << 5;
 
-	length += sprintf( ptr + length, "CTRL = %08x\n"
-		"STAT = %08x\n"
-		"TAGS = %08x\n"
-		"INOF = %08x\n"
-		"INSE = %08x\n"
-		"OPOF = %08x\n"
-		"OPSE = %08x\n"
-		"\n",
-		ctrl, stat, tags, inof, inse, opof, opse );
+//
+static const uint32_t CTW_PRECISION_SINGLE24 = 0 << 8;
+static const uint32_t CTW_PRECISION_NAD = 1 << 8;
+static const uint32_t CTW_PRECISION_DOUBLE52 = 2 << 8;
+static const uint32_t CTW_PRECISION_EXTENDEND64 = 3 << 8;
 
-	length += sprintf( ptr + length, "Control Word:\n" );
-	for (i = 0; controlWordFlags[i].name[0]; i++)
-	{
-		length += sprintf( ptr + length, "  %-30s = %s\n", controlWordFlags[i].name, (ctrl & (1 << controlWordFlags[i].bit)) ? "true" : "false" );
-	}
-	length += sprintf( ptr + length, "  %-30s = %s\n", "Precision control", precisionControlField[(ctrl >> 8) & 3] );
-	length += sprintf( ptr + length, "  %-30s = %s\n", "Rounding control", roundingControlField[(ctrl >> 10) & 3] );
+//
+static const uint32_t CTW_ROUNDING_NEAREST = 0 << 10;
+static const uint32_t CTW_ROUNDING_DOWN = 1 << 10;
+static const uint32_t CTW_ROUNDING_UP = 2 << 10;
+static const uint32_t CTW_ROUNDING_TRUNCATE = 3 << 10;
 
-	length += sprintf( ptr + length, "Status Word:\n" );
-	for (i = 0; statusWordFlags[i].name[0]; i++)
-	{
-		ptr += sprintf( ptr + length, "  %-30s = %s\n", statusWordFlags[i].name, (stat & (1 << statusWordFlags[i].bit)) ? "true" : "false" );
-	}
-	length += sprintf( ptr + length, "  %-30s = %d%d%d%d\n", "Condition code", (stat >> 8) & 1, (stat >> 9) & 1, (stat >> 10) & 1, (stat >> 14) & 1 );
-	length += sprintf( ptr + length, "  %-30s = %d\n", "Top of stack pointer", (stat >> 11) & 7 );
-
-	return length;
-}
+//
+static const uint32_t TAG_STATE_VALID = 0;
+static const uint32_t TAG_STATE_ZERO = 1;
+static const uint32_t TAG_STATE_SPECIAL = 2;
+static const uint32_t TAG_STATE_EMPTY = 3;
 
 /*
 ===============
@@ -547,23 +460,19 @@ Sys_FPU_StackIsEmpty
 */
 bool Sys_FPU_StackIsEmpty( void )
 {
-#if 0
-	__asm {
-		mov			eax, statePtr
-		fnstenv[eax]
-		mov			eax, [eax + 8]
-		xor eax, 0xFFFFFFFF
-		and eax, 0x0000FFFF
-		jz			empty
-	}
-	return false;
-empty:
-	return true;
-#else
-	
-	return false;
-#endif
+#if ID_USE_INSTRINSEC
+	// Inline assembly to obtain FPU status word
+	uint16_t tagWord = _mm_fstenv();
 
+// Verifica cada par de bits do Tag Word (16 bits no total, 2 bits por registrador)
+    for (int i = 0; i < 8; ++i) 
+	{
+        // Verifica se o par de bits para o registrador st(i) é diferente de 00 (registrador vazio)
+        if ( ( (tagWord >> ( i * 2 ) ) & 0x3 ) != 0x0) 
+            return false;  // Se algum registrador não estiver vazio, a pilha não está vazia
+    }
+#endif	
+	return true;
 }
 
 /*
@@ -571,25 +480,12 @@ empty:
 Sys_FPU_ClearStack
 ===============
 */
+
 void Sys_FPU_ClearStack( void )
 {
-#if 0
-	__asm {
-		mov			eax, statePtr
-		fnstenv[eax]
-		mov			eax, [eax + 8]
-		xor eax, 0xFFFFFFFF
-		mov			edx, (3 << 14)
-		emptyStack:
-		mov			ecx, eax
-			and			ecx, edx
-			jz			done
-			fstp		st
-			shr			edx, 2
-			jmp			emptyStack
-			done :
-	}
-#endif
+#if ID_USE_INSTRINSEC
+	_mm_fninit(); 
+#endif 
 }
 
 /*
@@ -601,103 +497,10 @@ Sys_FPU_GetState
 */
 const char *Sys_FPU_GetState( void )
 {
-	double fpuStack[8] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-	double *fpuStackPtr = fpuStack;
-	int i, numValues;
-	char *ptr;
-#if 0
-	__asm {
-		mov			esi, statePtr
-		mov			edi, fpuStackPtr
-		fnstenv[esi]
-		mov			esi, [esi + 8]
-		xor esi, 0xFFFFFFFF
-		mov			edx, (3 << 14)
-		xor eax, eax
-		mov			ecx, esi
-		and			ecx, edx
-		jz			done
-		fst			qword ptr[edi + 0]
-		inc			eax
-		shr			edx, 2
-		mov			ecx, esi
-		and			ecx, edx
-		jz			done
-		fxch		st( 1 )
-		fst			qword ptr[edi + 8]
-		inc			eax
-		fxch		st( 1 )
-		shr			edx, 2
-		mov			ecx, esi
-		and			ecx, edx
-		jz			done
-		fxch		st( 2 )
-		fst			qword ptr[edi + 16]
-		inc			eax
-		fxch		st( 2 )
-		shr			edx, 2
-		mov			ecx, esi
-		and			ecx, edx
-		jz			done
-		fxch		st( 3 )
-		fst			qword ptr[edi + 24]
-		inc			eax
-		fxch		st( 3 )
-		shr			edx, 2
-		mov			ecx, esi
-		and			ecx, edx
-		jz			done
-		fxch		st( 4 )
-		fst			qword ptr[edi + 32]
-		inc			eax
-		fxch		st( 4 )
-		shr			edx, 2
-		mov			ecx, esi
-		and			ecx, edx
-		jz			done
-		fxch		st( 5 )
-		fst			qword ptr[edi + 40]
-		inc			eax
-		fxch		st( 5 )
-		shr			edx, 2
-		mov			ecx, esi
-		and			ecx, edx
-		jz			done
-		fxch		st( 6 )
-		fst			qword ptr[edi + 48]
-		inc			eax
-		fxch		st( 6 )
-		shr			edx, 2
-		mov			ecx, esi
-		and			ecx, edx
-		jz			done
-		fxch		st( 7 )
-		fst			qword ptr[edi + 56]
-		inc			eax
-		fxch		st( 7 )
-		done:
-		mov			numValues, eax
-	}
+	FPUEnvironment env;
+	__asm__ __volatile__ ( "fnstenv %0" : "=m" ( env ) );
 
-	int ctrl = *(int *)&fpuState[0];
-	int stat = *(int *)&fpuState[4];
-	int tags = *(int *)&fpuState[8];
-	int inof = *(int *)&fpuState[12];
-	int inse = *(int *)&fpuState[16];
-	int opof = *(int *)&fpuState[20];
-	int opse = *(int *)&fpuState[24];
-
-	ptr = fpuString;
-	ptr += sprintf( ptr, "FPU State:\n"
-		"num values on stack = %d\n", numValues );
-	for (i = 0; i < 8; i++)
-	{
-		ptr += sprintf( ptr, "ST%d = %1.10e\n", i, fpuStack[i] );
-	}
-
-	Sys_FPU_PrintStateFlags( ptr, ctrl, stat, tags, inof, inse, opof, opse );
-#endif
-	return fpuString;
+	return "TODO:";
 }
 
 /*
@@ -707,9 +510,14 @@ Sys_FPU_EnableExceptions
 */
 void Sys_FPU_EnableExceptions( int exceptions )
 {
-	int mode = _MM_GET_EXCEPTION_STATE();
-	if (exceptions != mode)
-		_MM_SET_EXCEPTION_STATE( exceptions );
+#if ID_USE_INSTRINSEC
+	// Get current control world state 
+	unsigned short controlWord = _mm_fnstcw();
+	controlWord |= exceptions;
+
+	// Update control world state
+	_mm_fldcw( controlWord );
+#endif
 }
 
 /*
@@ -720,10 +528,34 @@ Sys_FPU_SetPrecision
 void Sys_FPU_SetPrecision( int precision )
 {
 #if ID_USE_INSTRINSEC
-	short precisionBitTable[4] = { 0, 1, 3, 0 };
-	short precisionBits = precisionBitTable[precision & 3] << 8;
-	short precisionMask = ~((1 << 9) | (1 << 8));
-	_mm_setcsr( (_mm_getcsr() & ~precisionMask) | (precisionBits) );
+	
+	// Get current control world state 
+	unsigned short controlWord = _mm_fnstcw();
+	
+	// Limpa os bits de precisão (bits 11-10)
+    // Configura os bits de precisão desejados
+	switch ( precision )
+	{
+	case FPU_PRECISION_SINGLE:
+		controlWord |= CTW_PRECISION_SINGLE24;
+		break;
+	case FPU_PRECISION_DOUBLE:
+		controlWord |= CTW_PRECISION_DOUBLE52;
+		break;
+	case FPU_PRECISION_DOUBLE_EXTENDED:
+		controlWord |= CTW_PRECISION_EXTENDEND64;
+		break;
+	default:
+		break;
+	}
+
+    controlWord |= CTW_ROUNDING_NEAREST;
+	controlWord |= CTW_ROUNDING_DOWN;
+	controlWord |= CTW_ROUNDING_UP;
+
+	// update control world
+	_mm_fldcw( controlWord );
+
 #endif // ID_USE_INSTRINSEC
 }
 
@@ -735,9 +567,22 @@ Sys_FPU_SetRounding
 void Sys_FPU_SetRounding( int rounding )
 {
 #if ID_USE_INSTRINSEC
-	short roundingBitTable[4] = { 0, 1, 2, 3 };
-	short roundingBits = roundingBitTable[rounding & 3] << 10;
-	_MM_SET_ROUNDING_MODE( roundingBits );
+
+	unsigned short roundingBitTable[4] = { 0, 1, 2, 3 };
+	unsigned short roundingBits = roundingBitTable[rounding & 3] << 10;
+	
+	// Get current control world state 
+	unsigned short controlWord = _mm_fnstcw();
+
+	// Limpa os bits de arredondamento (bits 10-12)
+    controlWord &= 0xF3FF;
+
+	// Configura os bits de arredondamento desejados
+    controlWord |= roundingBits;
+
+	// update control world
+	_mm_fldcw( controlWord );
+
 #endif // ID_USE_INSTRINSEC
 }
 

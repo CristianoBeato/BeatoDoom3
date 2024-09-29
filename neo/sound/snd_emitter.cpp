@@ -767,7 +767,7 @@ int idSoundEmitterLocal::StartSound( const idSoundShader *shader, const s_channe
 	}
 
 	// BEATO Begin
-	idSoundSystemLocal::m_soundLock->Lock(); // Sys_EnterCriticalSection();
+	idSoundSystemLocal::soundLock->Lock(); // Sys_EnterCriticalSection();
 
 	// kill any sound that is currently playing on this channel
 	if ( channel != SCHANNEL_ANY ) {
@@ -799,10 +799,12 @@ int idSoundEmitterLocal::StartSound( const idSoundShader *shader, const s_channe
 		}
 	}
 
-	if ( i == SOUND_MAX_CHANNELS ) {
+	if ( i == SOUND_MAX_CHANNELS ) 
+	{
 		// we couldn't find a channel for it
-		idSoundSystemLocal::m_soundLock->Unlock(); //Sys_LeaveCriticalSection();
-		if ( idSoundSystemLocal::s_showStartSound.GetInteger() ) {
+		idSoundSystemLocal::soundLock->Unlock(); //Sys_LeaveCriticalSection();
+		if ( idSoundSystemLocal::s_showStartSound.GetInteger() ) 
+		{
 			common->Printf( "no channels available\n" );
 		}
 		return 0;
@@ -876,7 +878,7 @@ int idSoundEmitterLocal::StartSound( const idSoundShader *shader, const s_channe
 	
 	length *= 1000 / (float)PRIMARYFREQ;
 
-	idSoundSystemLocal::m_soundLock->Unlock(); //Sys_LeaveCriticalSection();
+	idSoundSystemLocal::soundLock->Unlock(); //Sys_LeaveCriticalSection();
 	//BEATO End
 
 	return length;
@@ -947,18 +949,18 @@ void idSoundEmitterLocal::StopSound( const s_channelType channel ) {
 	}
 
 // BEATO Begin
-	idSoundSystemLocal::m_soundLock->Lock();// Sys_EnterCriticalSection();
+	idSoundSystemLocal::soundLock->Lock();// Sys_EnterCriticalSection();
 
-	for( i = 0; i < SOUND_MAX_CHANNELS; i++ ) {
+	for( i = 0; i < SOUND_MAX_CHANNELS; i++ ) 
+	{
 		idSoundChannel	*chan = &channels[i];
 
-		if ( !chan->triggerState ) {
+		if ( !chan->triggerState ) 
 			continue;
-		}
-		if ( channel != SCHANNEL_ANY && chan->triggerChannel != channel ) {
+		
+		if ( channel != SCHANNEL_ANY && chan->triggerChannel != channel ) 
 			continue;
-		}
-
+		
 		// stop it
 		chan->Stop();
 
@@ -974,7 +976,7 @@ void idSoundEmitterLocal::StopSound( const s_channelType channel ) {
 		chan->soundShader = NULL;
 	}
 
-	idSoundSystemLocal::m_soundLock->Unlock(); //Sys_LeaveCriticalSection();
+	idSoundSystemLocal::soundLock->Unlock(); //Sys_LeaveCriticalSection();
 }
 
 /*
@@ -984,14 +986,18 @@ idSoundEmitterLocal::FadeSound
 to is in Db (sigh), over is in seconds
 ===================
 */
-void idSoundEmitterLocal::FadeSound( const s_channelType channel, float to, float over ) {
-	if ( idSoundSystemLocal::s_showStartSound.GetInteger() ) {
+void idSoundEmitterLocal::FadeSound( const s_channelType channel, float to, float over ) 
+{
+	if ( idSoundSystemLocal::s_showStartSound.GetInteger() ) 
+	{
 		common->Printf( "FadeSound(%i,%i,%f,%f )\n", index, channel, to, over );
 	}
-	if ( !soundWorld ) {
+	if ( !soundWorld ) 
 		return;
-	}
-	if ( soundWorld->writeDemo ) {
+	
+	
+	if ( soundWorld->writeDemo ) 
+	{
 		soundWorld->writeDemo->WriteInt( DS_SOUND );
 		soundWorld->writeDemo->WriteInt( SCMD_FADE );
 		soundWorld->writeDemo->WriteInt( index );

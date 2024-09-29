@@ -48,7 +48,8 @@ Free memory used by an lwClip.
 
 void lwFreeClip( lwClip *clip )
 {
-   if ( clip ) {
+   if ( clip ) 
+   {
       lwListFree( clip->ifilter, (void (__cdecl *)(void *))lwFreePlugin );
       lwListFree( clip->pfilter, (void (__cdecl *)(void *))lwFreePlugin );
 	  switch( clip->type ) {
@@ -2696,7 +2697,7 @@ int lwResolvePolySurfaces( lwPolygonList *polygon, lwTagList *tlist,
    }
 
    for ( i = 0; i < polygon->count; i++ ) {
-      index = ( int ) polygon->pol[ i ].surf;
+      index = ( intptr_t ) polygon->pol[ i ].surf;
       if ( index < 0 || index > tlist->count ) return 0;
       if ( !s[ index ] ) {
          s[ index ] = lwDefaultSurface();

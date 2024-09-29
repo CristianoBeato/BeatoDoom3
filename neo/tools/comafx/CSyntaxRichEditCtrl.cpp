@@ -960,19 +960,19 @@ bool CSyntaxRichEditCtrl::FindNext( const char *find, bool matchCase, bool match
 
 	if ( range->FindShit( A2BSTR(find), search, flags, &length ) == S_OK ) {
 
-		m_TextDoc->Freeze( NULL );
+		m_TextDoc->Freeze( nullptr );
 
 		range->get_Start( &start );
 		range->Release();
 
 		SetSel( start, start + length );
 
-		int line = Max( (int) LineFromChar( start ) - 5, 0 );
+		int line = std:max( (int) LineFromChar( start ) - 5, 0 );
 		LineScroll( line - GetFirstVisibleLine(), 0 );
 
 		UpdateVisibleRange();
 
-		m_TextDoc->Unfreeze( NULL );
+		m_TextDoc->Unfreeze( nullptr );
 		return true;
 	} else {
 		range->Release();
@@ -1457,16 +1457,15 @@ CSyntaxRichEditCtrl::OnKeyDown
 */
 void CSyntaxRichEditCtrl::OnKeyDown( UINT nKey, UINT nRepCnt, UINT nFlags ) {
 
-	if ( m_TextDoc == NULL ) {
+	if ( m_TextDoc == nullptr ) 
 		return;
-	}
 
 	if ( autoCompleteStart >= 0 ) {
 		int sel;
 
 		switch( nKey ) {
 			case VK_UP: {		// up arrow
-				sel = Max( 0, autoCompleteListBox.GetCurSel() - 1 );
+				sel = std:max( 0, autoCompleteListBox.GetCurSel() - 1 );
 				autoCompleteListBox.SetCurSel( sel );
 				return;
 			}
@@ -1476,7 +1475,7 @@ void CSyntaxRichEditCtrl::OnKeyDown( UINT nKey, UINT nRepCnt, UINT nFlags ) {
 				return;
 			}
 			case VK_PRIOR: {	// page up key
-				sel = Max( 0, autoCompleteListBox.GetCurSel() - 10 );
+				sel = std:max( 0, autoCompleteListBox.GetCurSel() - 10 );
 				autoCompleteListBox.SetCurSel( sel );
 				return;
 			}
@@ -1735,20 +1734,22 @@ void CSyntaxRichEditCtrl::OnLButtonDown( UINT nFlags, CPoint point ) {
 CSyntaxRichEditCtrl::OnMouseWheel
 ================
 */
-BOOL CSyntaxRichEditCtrl::OnMouseWheel( UINT nFlags, short zDelta, CPoint pt ) {
-	if ( autoCompleteStart >= 0 ) {
+BOOL CSyntaxRichEditCtrl::OnMouseWheel( UINT nFlags, short zDelta, CPoint pt ) 
+{
+	if ( autoCompleteStart >= 0 ) 
+	{
 		int sel;
 
-		if ( zDelta > 0  ) {
-			sel = Max( 0, autoCompleteListBox.GetCurSel() - ( zDelta / WHEEL_DELTA ) );
-		} else {
-			sel = Min( autoCompleteListBox.GetCount() - 1, autoCompleteListBox.GetCurSel() - ( zDelta / WHEEL_DELTA ) );
-		}
+		if ( zDelta > 0  )
+			sel = std:max( 0, autoCompleteListBox.GetCurSel() - ( zDelta / WHEEL_DELTA ) );
+		else
+			sel = std:min( autoCompleteListBox.GetCount() - 1, autoCompleteListBox.GetCurSel() - ( zDelta / WHEEL_DELTA ) );
+		
 		autoCompleteListBox.SetCurSel( sel );
 		return TRUE;
 	}
 
-	m_TextDoc->Freeze( NULL );
+	m_TextDoc->Freeze( nullptr );
 
 	LineScroll( -3 * ( (int) zDelta ) / WHEEL_DELTA, 0 );
 
@@ -1865,8 +1866,8 @@ void CSyntaxRichEditCtrl::OnChange() {
 	}
 
 	GetSel( selStart, selEnd );
-	selStart = Min( selStart, updateRange.cpMin );
-	selEnd = Max( selEnd, updateRange.cpMax );
+	selStart = std:min( selStart, updateRange.cpMin );
+	selEnd = std:max( selEnd, updateRange.cpMax );
 
 	HighlightSyntax( selStart, selEnd );
 

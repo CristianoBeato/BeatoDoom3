@@ -33,20 +33,13 @@ If you have questions concerning this license or the applicable additional terms
 
 //-----------------------------------------------------
 
-#define ID_TIME_T time_t
-
 #ifdef _WIN32
-
-#define _ATL_CSTRING_EXPLICIT_CONSTRUCTORS	// prevent auto literal to string conversion
 
 #ifndef _D3SDK
 #ifndef GAME_DLL
 
-#define WINVER				0x501
-
 #if 0
 // Dedicated server hits unresolved when trying to link this way now. Likely because of the 2010/Win7 transition? - TTimo
-
 #ifdef	ID_DEDICATED
 // dedicated sets windows version here
 #define	_WIN32_WINNT WINVER
@@ -55,54 +48,12 @@ If you have questions concerning this license or the applicable additional terms
 // non-dedicated includes MFC and sets windows version here
 #include "../tools/comafx/StdAfx.h"			// this will go away when MFC goes away
 #endif
-
-#else
-
-//#include "../tools/comafx/StdAfx.h"
-
 #endif
-
-#include <winsock2.h>
-#include <mmsystem.h>
-#include <mmreg.h>
-
 #endif /* !GAME_DLL */
 #endif /* !_D3SDK */
-
-#pragma warning(disable : 4100)				// unreferenced formal parameter
-#pragma warning(disable : 4244)				// conversion to smaller type, possible loss of data
-#pragma warning(disable : 4714)				// function marked as __forceinline not inlined
-#pragma warning(disable : 4996)				// unsafe string operations
-
-#include <malloc.h>							// no malloc.h on mac or unix
-#include <windows.h>						// for qgl.h
-
-// stupid namespace poluting Microsoft monkeys
-#ifdef FindText
-#undef FindText
-#endif //FindText
-#ifdef GetObject
-#undef GetObject
-#endif//GetObject
 #endif /* _WIN32 */
 
 //-----------------------------------------------------
-
-#if !defined( _DEBUG ) && !defined( NDEBUG )
-	// don't generate asserts
-	#define NDEBUG
-#endif
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
-#include <assert.h>
-#include <time.h>
-#include <ctype.h>
-#include <typeinfo>
-#include <errno.h>
-#include <math.h>
 
 //-----------------------------------------------------
 

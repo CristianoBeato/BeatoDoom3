@@ -337,17 +337,21 @@ private:
 	idStr				extension;
 };
 
-class idFileSystemLocal :
-	public idFileSystem,
-// BEATO Begin
-	public btThreadExecution
-// BEATO end
+class idFileSystemLocal : public idFileSystem
 {
 public:
 							idFileSystemLocal( void );
 
 	virtual void			Init( void );
+
+// BEATO Begin:
+#if 0 // No Background dowload
 	virtual void			StartBackgroundDownloadThread( void );
+	virtual void			BackgroundDownload( backgroundDownload_t *bgl );
+	virtual int				ValidateDownloadPakForChecksum( int checksum, char path[ MAX_STRING_CHARS ], bool isBinary );
+#endif 
+// BEATO End
+	
 	virtual void			Restart( void );
 	virtual void			Shutdown( bool reloading );
 	virtual bool			IsInitialized( void ) const;
@@ -381,7 +385,6 @@ public:
 	virtual idFile *		OpenExplicitFileRead( const char *OSPath );
 	virtual idFile *		OpenExplicitFileWrite( const char *OSPath );
 	virtual void			CloseFile( idFile *f );
-	virtual void			BackgroundDownload( backgroundDownload_t *bgl );
 	virtual void			ResetReadCount( void ) { readCount = 0; }
 	virtual void			AddToReadCount( int c ) { readCount += c; }
 	virtual int				GetReadCount( void ) { return readCount; }
@@ -390,7 +393,6 @@ public:
 	virtual bool			HasD3XP( void );
 	virtual bool			RunningD3XP( void );
 	virtual void			CopyFile( const char *fromOSPath, const char *toOSPath );
-	virtual int				ValidateDownloadPakForChecksum( int checksum, char path[ MAX_STRING_CHARS ], bool isBinary );
 	virtual idFile *		MakeTemporaryFile( void );
 	virtual int				AddZipFile( const char *path );
 	virtual findFile_t		FindFile( const char *path, bool scheduleAddons );
@@ -406,13 +408,15 @@ public:
 	static void				TouchFileList_f( const idCmdArgs &args );
 
 // Beato Begin
+#if 0
 protected:
 	virtual void			Run( void ) override;
 	virtual void			NotifyExit( void ) override;
+	//friend dword 			BackgroundDownloadThread( void *parms );
+#endif
+// BEATO End
 
 private:
-	//friend dword 			BackgroundDownloadThread( void *parms );
-// BEATO End
 
 	searchpath_t *			searchPaths;
 	int						readCount;			// total bytes read
@@ -436,13 +440,15 @@ private:
 	static idCVar			fs_caseSensitiveOS;
 	static idCVar			fs_searchAddons;
 
+	// BEATO Begin
+#if 0
 	backgroundDownload_t *	backgroundDownloads;
 	backgroundDownload_t	defaultBackgroundDownload;
-
-	// BEATO Begin
-	btMutex*				m_backgroundDownloadLock;
-	btSemaphore*			m_backgroundDownloadSemaphore;
+	crMutex*				m_backgroundDownloadLock;
+	crSemaphore*			m_backgroundDownloadSemaphore;
+#endif
 	// BEATO End
+
 
 	idList<pack_t *>		serverPaks;
 	bool					loadedFileFromDir;		// set to true once a file was loaded from a directory - can't switch to pure anymore
@@ -519,10 +525,9 @@ idFileSystem *		fileSystem = &fileSystemLocal;
 idFileSystemLocal::idFileSystemLocal
 ================
 */
-idFileSystemLocal::idFileSystemLocal( void ) :
-	btThreadExecution( "backgroundDownload" )
+idFileSystemLocal::idFileSystemLocal( void )
 {
-	searchPaths = NULL;
+	searchPaths = nullptr;
 	readCount = 0;
 	loadCount = 0;
 	loadStack = 0;
@@ -531,11 +536,13 @@ idFileSystemLocal::idFileSystemLocal( void ) :
 	d3xp = 0;
 	loadedFileFromDir = false;
 	restartGamePakChecksum = 0;
-	addonPaks = NULL;
+	addonPaks = nullptr;
 
 // BEATO Begin
+#if 0
 	m_backgroundDownloadLock = nullptr;
 	m_backgroundDownloadSemaphore = nullptr;
+#endif
 // BEATO End
 }
 
@@ -2540,13 +2547,15 @@ bool idFileSystemLocal::UpdateGamePakChecksums( void ) {
 
 	// some sanity checks on the game code references
 	// make sure that at least the local OS got a pure reference
-	if ( !gamePakForOS[ BUILD_OS_ID ] ) {
+	if ( !gamePakForOS[ BUILD_OS_ID ] ) 
+	{
 		common->Warning( "No game code pak reference found for the local OS" );
 		return false;
 	}
 
 	if ( !cvarSystem->GetCVarBool( "net_serverAllowServerMod" ) &&
-		gamePakChecksum != gamePakForOS[ BUILD_OS_ID ] ) {
+		gamePakChecksum != gamePakForOS[ BUILD_OS_ID ] ) 
+		{
 		common->Warning( "The current game code doesn't match pak files (net_serverAllowServerMod is off)" );
 		return false;
 	}
@@ -2585,7 +2594,9 @@ pack_t* idFileSystemLocal::GetPackForChecksum( int checksum, bool searchAddons )
 idFileSystemLocal::ValidateDownloadPakForChecksum
 ===============
 */
-int idFileSystemLocal::ValidateDownloadPakForChecksum( int checksum, char path[ MAX_STRING_CHARS ], bool isBinary ) {
+#if 0
+int idFileSystemLocal::ValidateDownloadPakForChecksum( int checksum, char path[ MAX_STRING_CHARS ], bool isBinary ) 
+{
 	int			i;
 	idStrList	testList;
 	idStr		name;
@@ -2632,6 +2643,7 @@ int idFileSystemLocal::ValidateDownloadPakForChecksum( int checksum, char path[ 
 	idStr::Copynz( path, relativePath, MAX_STRING_CHARS );
 	return pak->length;
 }
+#endif
 
 /*
 =====================
@@ -2876,8 +2888,10 @@ void idFileSystemLocal::Init( void )
 	common->StartupVariable( "fs_searchAddons", false );
 
 	// BEATO Begin
-	m_backgroundDownloadLock = new btMutex();
-	m_backgroundDownloadSemaphore = new btSemaphore();
+#if 0
+	m_backgroundDownloadLock = new crMutex();
+	m_backgroundDownloadSemaphore = new crSemaphore();
+#endif
 	// BEATO end
 
 #if !ID_ALLOW_D3XP
@@ -2913,8 +2927,12 @@ void idFileSystemLocal::Init( void )
 	// see if we are going to allow add-ons
 	SetRestrictions();
 
+// BEATO Begin:
+#if 0
 	// spawn a thread to handle background file reads
 	StartBackgroundDownloadThread();
+#endif
+// BEATO End
 
 	// if we can't find default.cfg, assume that the paths are
 	// busted and error out now, rather than getting an unreadable
@@ -2975,10 +2993,12 @@ void idFileSystemLocal::Shutdown( bool reloading ) {
 		for ( sp = loop; sp; sp = next ) {
 			next = sp->next;
 
-			if ( sp->pack ) {
+			if ( sp->pack ) 
+			{
 				unzClose( sp->pack->handle );
 				delete [] sp->pack->buildBuffer;
-				if ( sp->pack->addon_info ) {
+				if ( sp->pack->addon_info ) 
+				{
 					sp->pack->addon_info->mapDecls.DeleteContents( true );
 					delete sp->pack->addon_info;
 				}
@@ -2992,12 +3012,14 @@ void idFileSystemLocal::Shutdown( bool reloading ) {
 	}
 
 	// any FS_ calls will now be an error until reinitialized
-	searchPaths = NULL;
-	addonPaks = NULL;
+	searchPaths = nullptr;
+	addonPaks = nullptr;
 
 	//BEATO Begin
+#if 0
 	SAFE_DELETE(m_backgroundDownloadLock)
 	SAFE_DELETE( m_backgroundDownloadSemaphore )
+#endif
 	//BEATO End
 
 	cmdSystem->RemoveCommand( "path" );
@@ -3150,7 +3172,7 @@ idFile_InZip * idFileSystemLocal::ReadFileFromZip( pack_t *pak, fileInPack_t *pa
 	unz_file_info64	file_info;
 	int err = unzGetCurrentFileInfo64( uf, &file_info, filename_inzip, sizeof( filename_inzip ), NULL, 0, NULL, 0 );
 	if (err != UNZ_OK)
-		common->FatalError( "Couldn't get file info for %s in %s, pos %llu", relativePath, pak->pakFilename.c_str(), pakFile->pos );
+		common->FatalError( "Couldn't get file info for %s in %s, pos %lu", relativePath, pak->pakFilename.c_str(), pakFile->pos );
 
 	// create idFile_InZip and set fields accordingly
 	idFile_InZip *file = new idFile_InZip();
@@ -3660,6 +3682,7 @@ BackgroundDownload
 Reads part of a file from a background thread.
 ===================
 */
+#if 0
 //dword BackgroundDownloadThread( void *parms )
 void idFileSystemLocal::Run( void )
 {
@@ -3782,12 +3805,15 @@ void idFileSystemLocal::Run( void )
 void idFileSystemLocal::NotifyExit( void )
 {
 }
+#endif
+// BEATO End
 
 /*
 =================
 idFileSystemLocal::StartBackgroundReadThread
 =================
 */
+#if 0
 void idFileSystemLocal::StartBackgroundDownloadThread() 
 {
 #if 0
@@ -3803,6 +3829,7 @@ void idFileSystemLocal::StartBackgroundDownloadThread()
 	StartExecution();
 #endif
 }
+#endif
 
 // BEATO End
 
@@ -3811,6 +3838,7 @@ void idFileSystemLocal::StartBackgroundDownloadThread()
 idFileSystemLocal::BackgroundDownload
 =================
 */
+#if 0
 void idFileSystemLocal::BackgroundDownload( backgroundDownload_t *bgl )
 {
 	if ( bgl->opcode == DLTYPE_FILE ) {
@@ -3845,13 +3873,16 @@ void idFileSystemLocal::BackgroundDownload( backgroundDownload_t *bgl )
 	}
 // BEATO End
 }
+#endif
+// BEATO End
 
 /*
 =================
 idFileSystemLocal::PerformingCopyFiles
 =================
 */
-bool idFileSystemLocal::PerformingCopyFiles( void ) const {
+bool idFileSystemLocal::PerformingCopyFiles( void ) const 
+{
 	return fs_copyfiles.GetInteger() > 0;
 }
 
@@ -4006,12 +4037,13 @@ void idFileSystemLocal::FindDLL( const char *name, char _dllPath[ MAX_OSPATH ], 
 			}
 		}
 	}
-	if ( updateChecksum ) {
-		if ( dllFile ) {
+	if ( updateChecksum ) 
+	{
+		if ( dllFile ) 
 			gameDLLChecksum = GetFileChecksum( dllFile );
-		} else {
+		else 
 			gameDLLChecksum = 0;
-		}
+		
 		gamePakChecksum = 0;
 	}
 	if ( dllFile ) {
@@ -4179,9 +4211,10 @@ idFileSystemLocal::GetNumMaps
 account for actual decls and for addon maps
 ===============
 */
-int idFileSystemLocal::GetNumMaps() {
+int idFileSystemLocal::GetNumMaps() 
+{
 	int				i;
-	searchpath_t	*search = NULL;
+	searchpath_t	*search = nullptr;
 	int				ret = declManager->GetNumDecls( DECL_MAPDEF );
 	
 	// add to this all addon decls - coming from all addon packs ( searched or not )

@@ -373,29 +373,35 @@ void idMultiplayerGame::UpdateScoreboard( idUserInterface *scoreBoard, idPlayer 
 	idStr timeinfo;
 	idEntity *ent;
 	idPlayer *p;
-	int value;
+	int value = 0;
 
 	scoreBoard->SetStateString( "scoretext", gameLocal.gameType == GAME_LASTMAN ? common->GetLanguageDict()->GetString( "#str_04242" ) : common->GetLanguageDict()->GetString( "#str_04243" ) );
 
 	iline = 0; // the display lines
-	if ( gameState != WARMUP ) {
-		for ( i = 0; i < numRankedPlayers; i++ ) {
+	if ( gameState != WARMUP ) 
+	{
+		for ( i = 0; i < numRankedPlayers; i++ ) 
+		{
 			// ranked player
 			iline++;
 			scoreBoard->SetStateString( va( "player%i", iline ), rankedPlayers[ i ]->GetUserInfo()->GetString( "ui_name" ) );
-			if ( gameLocal.gameType == GAME_TDM ) {
-				value = idMath::ClampInt( MP_PLAYER_MINFRAGS, MP_PLAYER_MAXFRAGS, playerState[ rankedPlayers[ i ]->entityNumber ].fragCount );
+			if ( gameLocal.gameType == GAME_TDM ) 
+			{
+				value = clamp( playerState[ rankedPlayers[ i ]->entityNumber ].fragCount, MP_PLAYER_MINFRAGS, MP_PLAYER_MAXFRAGS );
 				scoreBoard->SetStateInt( va( "player%i_tdm_score", iline ), value );
-				value = idMath::ClampInt( MP_PLAYER_MINFRAGS, MP_PLAYER_MAXFRAGS, playerState[ rankedPlayers[ i ]->entityNumber ].teamFragCount );
+				value = clamp( playerState[ rankedPlayers[ i ]->entityNumber ].teamFragCount, MP_PLAYER_MINFRAGS, MP_PLAYER_MAXFRAGS );
 				scoreBoard->SetStateString( va( "player%i_tdm_tscore", iline ), va( "/ %i", value ) );
 				scoreBoard->SetStateString( va( "player%i_score", iline ), "" );
-			} else {
-				value = idMath::ClampInt( MP_PLAYER_MINFRAGS, MP_PLAYER_MAXFRAGS, playerState[ rankedPlayers[ i ]->entityNumber ].fragCount );
+			} 
+			else 
+			{
+				value = clamp( MP_PLAYER_MINFRAGS, MP_PLAYER_MAXFRAGS, playerState[ rankedPlayers[ i ]->entityNumber ].fragCount );
 				scoreBoard->SetStateInt( va( "player%i_score", iline ), value );
 				scoreBoard->SetStateString( va( "player%i_tdm_tscore", iline ), "" );
 				scoreBoard->SetStateString( va( "player%i_tdm_score", iline ), "" );
 			}
-			value = idMath::ClampInt( 0, MP_PLAYER_MAXWINS, playerState[ rankedPlayers[ i ]->entityNumber ].wins );
+
+			value = clamp( playerState[ rankedPlayers[ i ]->entityNumber ].wins, 0, MP_PLAYER_MAXWINS );
 			scoreBoard->SetStateInt( va( "player%i_wins", iline ), value );
 			scoreBoard->SetStateInt( va( "player%i_ping", iline ), playerState[ rankedPlayers[ i ]->entityNumber ].ping );
 			// set the color band
@@ -522,28 +528,31 @@ void idMultiplayerGame::UpdateScoreboard( idUserInterface *scoreBoard, idPlayer 
 idMultiplayerGame::GameTime
 ================
 */
-const char *idMultiplayerGame::GameTime() {
+const char *idMultiplayerGame::GameTime( void ) 
+{
 	static char buff[16];
 	int m, s, t, ms;
 
-	if ( gameState == COUNTDOWN ) {
+	if ( gameState == COUNTDOWN ) 
+	{
 		ms = warmupEndTime - gameLocal.realClientTime;
 		s = ms / 1000 + 1;
-		if ( ms <= 0 ) {
+		if ( ms <= 0 )
 			strcpy( buff, "WMP --" );
-		} else {
+		else
 			sprintf( buff, "WMP %i", s );
-		}
-	} else {
+		
+	} 
+	else 
+	{
 		int timeLimit = gameLocal.serverInfo.GetInt( "si_timeLimit" );
-		if ( timeLimit ) {
+		if ( timeLimit )
 			ms = ( timeLimit * 60000 ) - ( gameLocal.time - matchStartedTime );
-		} else {
+		else 
 			ms = gameLocal.time - matchStartedTime;
-		}
-		if ( ms < 0 ) {
+		
+		if ( ms < 0 )
 			ms = 0;
-		}
 	
 		s = ms / 1000;
 		m = s / 60;
@@ -553,6 +562,7 @@ const char *idMultiplayerGame::GameTime() {
 
 		sprintf( buff, "%i:%i%i", m, t, s );
 	}
+
 	return &buff[0];
 }
 
@@ -561,26 +571,28 @@ const char *idMultiplayerGame::GameTime() {
 idMultiplayerGame::NumActualClients
 ================
 */
-int idMultiplayerGame::NumActualClients( bool countSpectators, int *teamcounts ) {
+int idMultiplayerGame::NumActualClients( bool countSpectators, int *teamcounts ) 
+{
 	idPlayer *p;
 	int c = 0;
 
-	if ( teamcounts ) {
+	if ( teamcounts ) 
 		teamcounts[ 0 ] = teamcounts[ 1 ] = 0;
-	}
-	for( int i = 0 ; i < gameLocal.numClients ; i++ ) {
+
+	for( int i = 0 ; i < gameLocal.numClients ; i++ ) 
+	{
 		idEntity *ent = gameLocal.entities[ i ];
-		if ( !ent || !ent->IsType( idPlayer::Type ) ) {
+		if ( !ent || !ent->IsType( idPlayer::Type ) ) 
 			continue;
-		}
+		
 		p = static_cast< idPlayer * >( ent );
-		if ( countSpectators || CanPlay( p ) ) {
+		if ( countSpectators || CanPlay( p ) ) 
 			c++;
-		}
-		if ( teamcounts && CanPlay( p ) ) {
+		
+		if ( teamcounts && CanPlay( p ) )
 			teamcounts[ p->team ]++;
-		}
 	}
+
 	return c;
 }
 
@@ -589,14 +601,14 @@ int idMultiplayerGame::NumActualClients( bool countSpectators, int *teamcounts )
 idMultiplayerGame::EnoughClientsToPlay
 ================
 */
-bool idMultiplayerGame::EnoughClientsToPlay() {
+bool idMultiplayerGame::EnoughClientsToPlay( void )
+{
 	int team[ 2 ];
 	int clients = NumActualClients( false, &team[ 0 ] );
-	if ( gameLocal.gameType == GAME_TDM ) {
+	if ( gameLocal.gameType == GAME_TDM ) 
 		return clients >= 2 && team[ 0 ] && team[ 1 ];
-	} else {
+	else 
 		return clients >= 2;
-	}
 }
 
 /*
@@ -604,34 +616,34 @@ bool idMultiplayerGame::EnoughClientsToPlay() {
 idMultiplayerGame::AllPlayersReady
 ================
 */
-bool idMultiplayerGame::AllPlayersReady() {
+bool idMultiplayerGame::AllPlayersReady( void )
+{
 	int			i;
 	idEntity	*ent;
 	idPlayer	*p;
 	int			team[ 2 ];
 
-	if ( NumActualClients( false, &team[ 0 ] ) <= 1 ) {
+	if ( NumActualClients( false, &team[ 0 ] ) <= 1 ) 
 		return false;
-	}
 
-	if ( gameLocal.gameType == GAME_TDM ) {
-		if ( !team[ 0 ] || !team[ 1 ] ) {
+	if ( gameLocal.gameType == GAME_TDM ) 
+	{
+		if ( !team[ 0 ] || !team[ 1 ] )
 			return false;
-		}
 	}
 
-	if ( !gameLocal.serverInfo.GetBool( "si_warmup" ) ) {
+	if ( !gameLocal.serverInfo.GetBool( "si_warmup" ) )
 		return true;
-	}
 
-	for( i = 0; i < gameLocal.numClients; i++ ) {
-		if ( gameLocal.gameType == GAME_TOURNEY && i != currentTourneyPlayer[ 0 ] && i != currentTourneyPlayer[ 1 ] ) {
+	for( i = 0; i < gameLocal.numClients; i++ ) 
+	{
+		if ( gameLocal.gameType == GAME_TOURNEY && i != currentTourneyPlayer[ 0 ] && i != currentTourneyPlayer[ 1 ] ) 
 			continue;
-		}
+		
 		ent = gameLocal.entities[ i ];
-		if ( !ent || !ent->IsType( idPlayer::Type ) ) {
+		if ( !ent || !ent->IsType( idPlayer::Type ) ) 
 			continue;
-		}
+		
 		p = static_cast< idPlayer * >( ent );
 		if ( CanPlay( p ) && !p->IsReady() ) {
 			return false;
@@ -935,7 +947,7 @@ void idMultiplayerGame::PlayerStats( int clientNum, char *data, const int len ) 
 		return;
 	}
 
-	idStr::snPrintf( data, len, "team=%d score=%ld tks=%ld", team, playerState[ clientNum ].fragCount, playerState[ clientNum ].teamFragCount );
+	idStr::snPrintf( data, len, "team=%d score=%d tks=%d", team, playerState[ clientNum ].fragCount, playerState[ clientNum ].teamFragCount );
 
 	return;
 
@@ -2076,7 +2088,7 @@ void idMultiplayerGame::DrawChat() {
 			while ( i < chatHistoryIndex ) {
 				guiChat->SetStateString( va( "chat%i", j ), chatHistory[ i % NUM_CHAT_NOTIFY ].line );
 				// don't set alpha above 4, the gui only knows that
-				guiChat->SetStateInt( va( "alpha%i", j ), Min( 4, (int)chatHistory[ i % NUM_CHAT_NOTIFY ].fade ) );
+				guiChat->SetStateInt( va( "alpha%i", j ), min( 4, (int)chatHistory[ i % NUM_CHAT_NOTIFY ].fade ) );
 				j++; i++;
 			}
 			while ( j < NUM_CHAT_NOTIFY ) {
@@ -2099,24 +2111,21 @@ const int ASYNC_PLAYER_PING_BITS = idMath::BitsForInteger( MP_PLAYER_MAXPING );
 idMultiplayerGame::WriteToSnapshot
 ================
 */
-void idMultiplayerGame::WriteToSnapshot( idBitMsgDelta &msg ) const {
+void idMultiplayerGame::WriteToSnapshot( idBitMsgDelta &msg ) const 
+{
 	int i;
-	int value;
-
 	msg.WriteByte( gameState );
 	msg.WriteShort( currentTourneyPlayer[ 0 ] );
 	msg.WriteShort( currentTourneyPlayer[ 1 ] );
-	for ( i = 0; i < MAX_CLIENTS; i++ ) {
-		// clamp all values to min/max possible value that we can send over
-		value = idMath::ClampInt( MP_PLAYER_MINFRAGS, MP_PLAYER_MAXFRAGS, playerState[i].fragCount );
-		msg.WriteBits( value, ASYNC_PLAYER_FRAG_BITS );
-		value = idMath::ClampInt( MP_PLAYER_MINFRAGS, MP_PLAYER_MAXFRAGS, playerState[i].teamFragCount );
-		msg.WriteBits( value, ASYNC_PLAYER_FRAG_BITS );
-		value = idMath::ClampInt( 0, MP_PLAYER_MAXWINS, playerState[i].wins );
-		msg.WriteBits( value, ASYNC_PLAYER_WINS_BITS );
-		value = idMath::ClampInt( 0, MP_PLAYER_MAXPING, playerState[i].ping );
-		msg.WriteBits( value, ASYNC_PLAYER_PING_BITS );
+	for ( i = 0; i < MAX_CLIENTS; i++ ) 
+	{
+// BEATO Begin:
+		msg.WriteBits( clamp( playerState[i].fragCount, MP_PLAYER_MINFRAGS, MP_PLAYER_MAXFRAGS ), ASYNC_PLAYER_FRAG_BITS );
+		msg.WriteBits( clamp( playerState[i].teamFragCount, MP_PLAYER_MINFRAGS, MP_PLAYER_MAXFRAGS ), ASYNC_PLAYER_FRAG_BITS );
+		msg.WriteBits( clamp( playerState[i].wins, 0, MP_PLAYER_MAXWINS ), ASYNC_PLAYER_WINS_BITS );
+		msg.WriteBits( clamp( playerState[i].ping, 0, MP_PLAYER_MAXPING ), ASYNC_PLAYER_PING_BITS );
 		msg.WriteBits( playerState[i].ingame, 1 );
+// BEATO End
 	}
 }
 
@@ -2125,16 +2134,19 @@ void idMultiplayerGame::WriteToSnapshot( idBitMsgDelta &msg ) const {
 idMultiplayerGame::ReadFromSnapshot
 ================
 */
-void idMultiplayerGame::ReadFromSnapshot( const idBitMsgDelta &msg ) {
+void idMultiplayerGame::ReadFromSnapshot( const idBitMsgDelta &msg ) 
+{
 	int i;
 	gameState_t newState;
 
 	newState = (idMultiplayerGame::gameState_t)msg.ReadByte();
-	if ( newState != gameState ) {
+	if ( newState != gameState ) 
+	{
 		gameLocal.DPrintf( "%s -> %s\n", GameStateStrings[ gameState ], GameStateStrings[ newState ] );
 		gameState = newState;
 		// these could be gathered in a BGNewState() kind of thing, as we have to do them in NewState as well
-		if ( gameState == GAMEON ) {
+		if ( gameState == GAMEON ) 
+		{
 			matchStartedTime = gameLocal.time;
 			cvarSystem->SetCVarString( "ui_ready", "Not Ready" );
 			switchThrottle[ 1 ] = 0;	// passby the throttle
@@ -2143,7 +2155,8 @@ void idMultiplayerGame::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 	}
 	currentTourneyPlayer[ 0 ] = msg.ReadShort();
 	currentTourneyPlayer[ 1 ] = msg.ReadShort();
-	for ( i = 0; i < MAX_CLIENTS; i++ ) {
+	for ( i = 0; i < MAX_CLIENTS; i++ ) 
+	{
 		playerState[i].fragCount = msg.ReadBits( ASYNC_PLAYER_FRAG_BITS );
 		playerState[i].teamFragCount = msg.ReadBits( ASYNC_PLAYER_FRAG_BITS );
 		playerState[i].wins = msg.ReadBits( ASYNC_PLAYER_WINS_BITS );
@@ -2157,18 +2170,20 @@ void idMultiplayerGame::ReadFromSnapshot( const idBitMsgDelta &msg ) {
 idMultiplayerGame::PlayGlobalSound
 ================
 */
-void idMultiplayerGame::PlayGlobalSound( int to, snd_evt_t evt, const char *shader ) {
+void idMultiplayerGame::PlayGlobalSound( int to, snd_evt_t evt, const char *shader ) 
+{
 	const idSoundShader *shaderDecl;
 
-	if ( to == -1 || to == gameLocal.localClientNum ) {
-		if ( shader ) {
+	if ( to == -1 || to == gameLocal.localClientNum ) 
+	{
+		if ( shader ) 
 			gameSoundWorld->PlayShaderDirectly( shader );
-		} else {
+		else 
 			gameSoundWorld->PlayShaderDirectly( GlobalSoundStrings[ evt ] );
-		}
 	}
 
-	if ( !gameLocal.isClient ) {
+	if ( !gameLocal.isClient ) 
+	{
 		idBitMsg outMsg;
 		byte msgBuf[1024];
 		outMsg.Init( msgBuf, sizeof( msgBuf ) );

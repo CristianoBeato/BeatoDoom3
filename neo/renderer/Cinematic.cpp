@@ -168,9 +168,9 @@ void idCinematic::InitCinematic( void ) {
 	}
 
 	file = (byte *)Mem_Alloc( 65536 );
-	vq2 = (word *)Mem_Alloc( 256*16*4 * sizeof( word ) );
-	vq4 = (word *)Mem_Alloc( 256*64*4 * sizeof( word ) );
-	vq8 = (word *)Mem_Alloc( 256*256*4 * sizeof( word ) );
+	vq2 = (uint16_t *)Mem_Alloc( 256*16*4 * sizeof( uint16_t ) );
+	vq4 = (uint16_t *)Mem_Alloc( 256*64*4 * sizeof( uint16_t ) );
+	vq8 = (uint16_t *)Mem_Alloc( 256*256*4 * sizeof( uint16_t ) );
 }
 
 /*
@@ -178,15 +178,16 @@ void idCinematic::InitCinematic( void ) {
 idCinematicLocal::ShutdownCinematic
 ==============
 */
-void idCinematic::ShutdownCinematic( void ) {
+void idCinematic::ShutdownCinematic( void ) 
+{
 	Mem_Free( file );
-	file = NULL;
+	file = nullptr;
 	Mem_Free( vq2 );
-	vq2 = NULL;
+	vq2 = nullptr;
 	Mem_Free( vq4 );
-	vq4 = NULL;
+	vq4 = nullptr;
 	Mem_Free( vq8 );
-	vq8 = NULL;
+	vq8 = nullptr;
 }
 
 /*
@@ -1222,7 +1223,8 @@ void idCinematicLocal::setupQuad( long xOff, long yOff ) {
 idCinematicLocal::readQuadInfo
 ==============
 */
-void idCinematicLocal::readQuadInfo( byte *qData ) {
+void idCinematicLocal::readQuadInfo( byte *qData ) 
+{
 	xsize    = qData[0]+qData[1]*256;
 	ysize    = qData[2]+qData[3]*256;
 	maxsize  = qData[4]+qData[5]*256;
@@ -1241,8 +1243,8 @@ void idCinematicLocal::readQuadInfo( byte *qData ) {
 	half = false;
 	smootheddouble = false;
 	
-	t[0] = (0 - (unsigned int)image)+(unsigned int)image+screenDelta;
-	t[1] = (0 - ((unsigned int)image + screenDelta))+(unsigned int)image;
+	t[0] = (0 - (uintptr_t)image)+(uintptr_t)image+screenDelta;
+	t[1] = (0 - ((uintptr_t)image + screenDelta))+(uintptr_t)image;
 
 	drawX = CIN_WIDTH;
 	drawY = CIN_HEIGHT;

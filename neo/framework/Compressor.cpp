@@ -1860,12 +1860,12 @@ bool idCompressor_LZSS::FindMatch( int startWord, int startValue, int &wordOffse
 	wordOffset = startWord;
 	numWords = minMatchWords - 1;
 
-	bottom = Max( 0, startWord - ( ( 1 << offsetBits ) - 1 ) );
+	bottom = max( 0, startWord - ( ( 1 << offsetBits ) - 1 ) );
 	maxBits = ( blockSize << 3 ) - startWord * wordLength;
 
 	hash = startValue & LZSS_HASH_MASK;
 	for ( i = hashTable[hash]; i >= bottom; i = hashNext[i] ) {
-		n = Compare( block, i * wordLength, block, startWord * wordLength, Min( maxBits, ( startWord - i ) * wordLength ) );
+		n = Compare( block, i * wordLength, block, startWord * wordLength, min( maxBits, ( startWord - i ) * wordLength ) );
 		if ( n > numWords * wordLength ) {
 			numWords = n / wordLength;
 			wordOffset = i;
@@ -1990,7 +1990,7 @@ void idCompressor_LZSS::DecompressBlock( void ) {
 		}
 	}
 
-	blockSize = Min( writeByte, LZSS_BLOCK_SIZE );
+	blockSize = min( writeByte, LZSS_BLOCK_SIZE );
 }
 
 /*
@@ -2170,7 +2170,7 @@ void idCompressor_LZSS_WordAligned::DecompressBlock( void ) {
 		}
 	}
 
-	blockSize = Min( writeByte, LZSS_BLOCK_SIZE );
+	blockSize = min( writeByte, LZSS_BLOCK_SIZE );
 }
 
 /*
@@ -2221,6 +2221,12 @@ void idCompressor_LZSS_WordAligned::DecompressBlock( void ) {
 =================================================================================
 */
 
+static const int LZW_BLOCK_SIZE = 32767;
+static const int LZW_START_BITS = 9;
+static const int LZW_FIRST_CODE = (1 << (LZW_START_BITS-1));
+static const int LZW_DICT_BITS = 12;
+static const int LZW_DICT_SIZE = 1 << LZW_DICT_BITS;
+
 class idCompressor_LZW : public idCompressor_BitStream {
 public:
 					idCompressor_LZW( void ) {}
@@ -2239,12 +2245,6 @@ protected:
 
 	int				WriteChain( int code );
 	void			DecompressBlock();
-
-	static const int LZW_BLOCK_SIZE = 32767;
-	static const int LZW_START_BITS = 9;
-	static const int LZW_FIRST_CODE = (1 << (LZW_START_BITS-1));
-	static const int LZW_DICT_BITS = 12;
-	static const int LZW_DICT_SIZE = 1 << LZW_DICT_BITS;
 
 	// Dictionary data
 	struct {
@@ -2483,7 +2483,7 @@ void idCompressor_LZW::DecompressBlock() {
 		}
 	}
 
-	blockSize = Min( writeByte, LZW_BLOCK_SIZE );
+	blockSize = min( writeByte, LZW_BLOCK_SIZE );
 }
 
 /*
@@ -2499,7 +2499,8 @@ void idCompressor_LZW::DecompressBlock() {
 idCompressor::AllocNoCompression
 ================
 */
-idCompressor * idCompressor::AllocNoCompression( void ) {
+idCompressor * idCompressor::AllocNoCompression( void ) 
+{
 	return new idCompressor_None();
 }
 

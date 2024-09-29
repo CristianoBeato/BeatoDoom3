@@ -189,10 +189,10 @@ idBounds idRenderModelSprite::Bounds( const struct renderEntity_s *renderEntity 
 	idBounds b;
 
 	b.Zero();
-	if ( renderEntity == NULL ) {
+	if ( renderEntity == nullptr ) 
 		b.ExpandSelf( 8.0f );
-	} else {
-		b.ExpandSelf( Max( renderEntity->shaderParms[ SHADERPARM_SPRITE_WIDTH ], renderEntity->shaderParms[ SHADERPARM_SPRITE_HEIGHT ] ) * 0.5f );
-	}
+	else 
+		b.ExpandSelf( max( renderEntity->shaderParms[ SHADERPARM_SPRITE_WIDTH ], renderEntity->shaderParms[ SHADERPARM_SPRITE_HEIGHT ] ) * 0.5f );
+	
 	return b;
 }

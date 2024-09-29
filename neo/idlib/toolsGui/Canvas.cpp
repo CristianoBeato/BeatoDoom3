@@ -67,7 +67,7 @@ void btCanvas::ReMesh( void )
 
 	m_rectOffset = renderer->Cache( size, (void*)rect );
 
-	SDL_Rect bounds = GetBounds();
+	btRect_t bounds = GetBounds();
 
 	// 0____2
 	// |  / |

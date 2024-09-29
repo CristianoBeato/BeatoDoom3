@@ -305,28 +305,30 @@ void idAsyncNetwork::SpawnServer_f( const idCmdArgs &args ) {
 	}
 	com_asyncInput.SetBool( false );
 	// make sure the current system state is compatible with net_serverDedicated
-	switch ( cvarSystem->GetCVarInteger( "net_serverDedicated" ) ) {
+	switch ( cvarSystem->GetCVarInteger( "net_serverDedicated" ) ) 
+	{
 		case 0:
 		case 2:
-			if ( !renderSystem->IsOpenGLRunning() ) {
+			if ( !renderSystem->IsAPIRunning() ) 
+			{
 				common->Warning( "OpenGL is not running, net_serverDedicated == %d", cvarSystem->GetCVarInteger( "net_serverDedicated" ) );
 			}
 			break;
 		case 1:
-			if ( renderSystem->IsOpenGLRunning() ) {
+			if ( renderSystem->IsAPIRunning() ) 
+			{
 				Sys_ShowConsole( 1, false );
-				renderSystem->ShutdownOpenGL();
+				renderSystem->ShutdownAPI();
 			}
 			soundSystem->SetMute( true );
 			soundSystem->ShutdownHW();
 			break;
 	}
 	// use serverMapRestart if we already have a running server
-	if ( server.IsActive() ) {
+	if ( server.IsActive() ) 
 		cmdSystem->BufferCommandText( CMD_EXEC_NOW, "serverMapRestart" );
-	} else {
+	else 
 		server.Spawn();
-	}
 }
 
 /*
@@ -334,7 +336,8 @@ void idAsyncNetwork::SpawnServer_f( const idCmdArgs &args ) {
 idAsyncNetwork::NextMap_f
 ==================
 */
-void idAsyncNetwork::NextMap_f( const idCmdArgs &args ) {
+void idAsyncNetwork::NextMap_f( const idCmdArgs &args ) 
+{
 	server.ExecuteMapChange();
 }
 

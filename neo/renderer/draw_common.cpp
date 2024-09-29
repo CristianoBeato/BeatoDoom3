@@ -201,11 +201,11 @@ void RB_PrepareStageTexturing( const shaderStage_t *pStage,  const drawSurf_t *s
 				GL_SelectTexture( 0 );
 
 				glNormalPointer( GL_FLOAT, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
-				glVertexAttribPointerARB( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
-				glVertexAttribPointerARB( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
+				glVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
+				glVertexAttribPointer( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
 
-				glEnableVertexAttribArrayARB( 9 );
-				glEnableVertexAttribArrayARB( 10 );
+				glEnableVertexAttribArray( 9 );
+				glEnableVertexAttribArray( 10 );
 				glEnableClientState( GL_NORMAL_ARRAY );
 
 				// Program env 5, 6, 7, 8 have been set in RB_SetProgramEnvironmentSpace
@@ -290,7 +290,8 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 		}
 	}
 
-	if ( pStage->texture.texgen == TG_REFLECT_CUBE ) {
+	if ( pStage->texture.texgen == TG_REFLECT_CUBE ) 
+	{
 		if ( tr.backEndRenderer == BE_ARB2 ) {
 			// see if there is also a bump map specified
 			const shaderStage_t *bumpStage = surf->material->GetBumpStage();
@@ -300,8 +301,8 @@ void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *sur
 				globalImages->BindNull();
 				GL_SelectTexture( 0 );
 
-				glDisableVertexAttribArrayARB( 9 );
-				glDisableVertexAttribArrayARB( 10 );
+				glDisableVertexAttribArray( 9 );
+				glDisableVertexAttribArray( 10 );
 			} else {
 				// per-pixel reflection mapping without bump mapping
 			}
@@ -793,13 +794,13 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 				continue;
 			}
 			glColorPointer( 4, GL_UNSIGNED_BYTE, sizeof( idDrawVert ), (void *)&ac->color );
-			glVertexAttribPointerARB( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
-			glVertexAttribPointerARB( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
+			glVertexAttribPointer( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
+			glVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
 			glNormalPointer( GL_FLOAT, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
 
 			glEnableClientState( GL_COLOR_ARRAY );
-			glEnableVertexAttribArrayARB( 9 );
-			glEnableVertexAttribArrayARB( 10 );
+			glEnableVertexAttribArray( 9 );
+			glEnableVertexAttribArray( 10 );
 			glEnableClientState( GL_NORMAL_ARRAY );
 
 			GL_State( pStage->drawStateBits );
@@ -854,8 +855,8 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) {
 			glBindProgramARB( GL_VERTEX_PROGRAM_ARB, 0 );
 
 			glDisableClientState( GL_COLOR_ARRAY );
-			glDisableVertexAttribArrayARB( 9 );
-			glDisableVertexAttribArrayARB( 10 );
+			glDisableVertexAttribArray( 9 );
+			glDisableVertexAttribArray( 10 );
 			glDisableClientState( GL_NORMAL_ARRAY );
 			continue;
 		}
@@ -1689,21 +1690,13 @@ void	RB_STD_DrawView( void ) {
 	RB_STD_FillDepthBuffer( drawSurfs, numDrawSurfs );
 
 	// main light renderer
-	switch( tr.backEndRenderer ) {
+	switch( tr.backEndRenderer ) 
+	{
 	case BE_ARB:
 		RB_ARB_DrawInteractions();
 		break;
 	case BE_ARB2:
 		RB_ARB2_DrawInteractions();
-		break;
-	case BE_NV20:
-		RB_NV20_DrawInteractions();
-		break;
-	case BE_NV10:
-		RB_NV10_DrawInteractions();
-		break;
-	case BE_R200:
-		RB_R200_DrawInteractions();
 		break;
 	}
 

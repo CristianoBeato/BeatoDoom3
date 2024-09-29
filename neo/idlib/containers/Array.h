@@ -80,24 +80,20 @@ public:
 		m_elementArray = Mem_AllocType< _elmt_ >( m_elementCount );
 	}
 
-	// Retorna a contagem de elementos
 	// Get the element count
 	ID_INLINE const size_t	Count( void ) const { return m_elementCount; }
 
-	// Retorna o tamanho alocado da lista
 	// Return the allocated size
 	ID_INLINE const size_t	Size( void ) const { return m_arraySize; }
 
-	// Verdadeiro se a lista está vazia
 	// True if the array is empty
-	ID_INLINE const bool		IsEmpty( void ) const { return m_elementArray == nullptr }
+	ID_INLINE const bool		IsEmpty( void ) const { return m_elementArray == nullptr; }
 
 	//
 	// 
 	ID_INLINE _elmt_&		operator[]( int ind ) { return m_elementArray; }
 	ID_INLINE _celmt_&		operator[]( int ind ) const { return m_elementArray; }
 
-	// Retorna o ponteiro da lista de elementos
 	// Get the element array pointer
 	ID_INLINE _array_		operator & ( void ) { return m_elementArray; }
 	ID_INLINE _carray_		operator & ( void ) const { return m_elementArray; }

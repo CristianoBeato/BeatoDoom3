@@ -1709,11 +1709,11 @@ void idMoveableItem::Spawn( void ) {
 
 	// get rigid body properties
 	spawnArgs.GetFloat( "density", "0.5", density );
-	density = idMath::ClampFloat( 0.001f, 1000.0f, density );
+	density = std::clamp( density, 0.001f, 1000.0f );//idMath::ClampFloat( 0.001f, 1000.0f, density );
 	spawnArgs.GetFloat( "friction", "0.05", friction );
-	friction = idMath::ClampFloat( 0.0f, 1.0f, friction );
+	friction = std::clamp( friction, 0.0f, 1.0f );//idMath::ClampFloat( 0.0f, 1.0f, friction );
 	spawnArgs.GetFloat( "bouncyness", "0.6", bouncyness );
-	bouncyness = idMath::ClampFloat( 0.0f, 1.0f, bouncyness );
+	bouncyness = std::clamp( bouncyness, 0.0f, 1.0f ); //idMath::ClampFloat( 0.0f, 1.0f, bouncyness );
 
 	// setup the physics
 	physicsObj.SetSelf( this );

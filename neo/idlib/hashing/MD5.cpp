@@ -52,15 +52,16 @@ reflect the addition of 16 longwords of new data.  MD5Update blocks
 the data and converts bytes into longwords for this routine.
 =================
 */
-void MD5_Transform( unsigned int state[4], unsigned int in[16] ) {
-    register unsigned int a, b, c, d;
+void MD5_Transform( uint32_t state[4], uint32_t in[16] ) 
+{
+    uint32_t a, b, c, d;
 
     a = state[0];
     b = state[1];
     c = state[2];
     d = state[3];
 
-	LittleRevBytes( in, sizeof(unsigned int), 16 );
+	LittleRevBytes( in, sizeof(uint32_t), 16 );
 
     MD5STEP(F1, a, b, c, d, in[0] + 0xd76aa478, 7);
     MD5STEP(F1, d, a, b, c, in[1] + 0xe8c7b756, 12);
@@ -145,7 +146,8 @@ MD5_Init
 MD5 initialization. Begins an MD5 operation, writing a new context.
 ==================
 */
-void MD5_Init( MD5_CTX *ctx ) {
+void MD5_Init( MD5_CTX *ctx ) 
+{
     ctx->state[0] = 0x67452301;
     ctx->state[1] = 0xefcdab89;
     ctx->state[2] = 0x98badcfe;

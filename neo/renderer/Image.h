@@ -26,6 +26,9 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
+#ifndef __IMAGE_H__
+#define __IMAGE_H__
+
 /*
 ====================================================================
 
@@ -55,7 +58,8 @@ qglDisable( GL_TEXTURE_* )
 ====================================================================
 */
 
-typedef enum {
+typedef enum 
+{
 	IS_UNLOADED,	// no gl texture number
 	IS_PARTIAL,		// has a texture number and the low mip levels loaded
 	IS_LOADED		// has a texture number and the full mip hierarchy
@@ -80,7 +84,7 @@ const unsigned long DDSF_RGB            = 0x00000040l;
 const unsigned long DDSF_RGBA           = 0x00000041l;
 
 // our extended flags
-const unsigned long DDSF_ID_INDEXCOLOR	= 0x10000000l;
+//const unsigned long DDSF_ID_INDEXCOLOR	= 0x10000000l;
 const unsigned long DDSF_ID_MONOCHROME	= 0x20000000l;
 
 // dwCaps1 flags
@@ -205,7 +209,7 @@ public:
 	void		ActuallyLoadImage( bool checkForPrecompressed, bool fromBackEnd );
 	void		StartBackgroundImageLoad();
 	int			BitsForInternalFormat( int internalFormat ) const;
-	void		UploadCompressedNormalMap( int width, int height, const byte *rgba, int mipLevel );
+//	void		UploadCompressedNormalMap( int width, int height, const byte *rgba, int mipLevel );
 	GLenum		SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, int width, int height,
 									 textureDepth_t minimumDepth, bool *monochromeResult ) const;
 	void		ImageProgramStringToCompressedFileName( const char *imageProg, char *fileName ) const;
@@ -414,7 +418,7 @@ public:
 	//--------------------------------------------------------
 	
 	idImage *			AllocImage( const char *name );
-	void				SetNormalPalette();
+//	void				SetNormalPalette();
 	void				ChangeTextureFilter();
 
 	idList<idImage*>	images;
@@ -494,3 +498,4 @@ IMAGEPROGRAM
 void R_LoadImageProgram( const char *name, byte **pic, int *width, int *height, ID_TIME_T *timestamp, textureDepth_t *depth = NULL );
 const char *R_ParsePastImageProgram( idLexer &src );
 
+#endif //!__IMAGE_H__

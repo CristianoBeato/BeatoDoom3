@@ -25,17 +25,45 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #ifndef _BASE_GUI_H_
 #define _BASE_GUI_H_
 
-#include <SDL_rect.h>
+static const uint32_t k_ALIGN_NONE	= 0;
+static const uint32_t k_ALIGN_LEFT	= (1 << 1);
+static const uint32_t k_ALIGN_RIGHT	= (1 << 2);
+static const uint32_t k_ALIGN_TOP		= (1 << 3);
+static const uint32_t k_ALIGN_BOTTOM	= (1 << 4);
+static const uint32_t k_ALIGN_CENTER_VERTICAL = (1 << 5);
+static const uint32_t k_ALIGN_CENTER_HORIZONTAL = (1 << 6);
+static const uint32_t k_ALIGN_FILL = (1 << 7);
+static const uint32_t k_ALIGN_CENTERED = k_ALIGN_CENTER_VERTICAL | k_ALIGN_CENTER_HORIZONTAL;
 
-static const Uint32 k_ALIGN_NONE	= 0;
-static const Uint32 k_ALIGN_LEFT	= (1 << 1);
-static const Uint32 k_ALIGN_RIGHT	= (1 << 2);
-static const Uint32 k_ALIGN_TOP		= (1 << 3);
-static const Uint32 k_ALIGN_BOTTOM	= (1 << 4);
-static const Uint32	k_ALIGN_CENTER_VERTICAL = (1 << 5);
-static const Uint32 k_ALIGN_CENTER_HORIZONTAL = (1 << 6);
-static const Uint32	k_ALIGN_FILL = (1 << 7);
-static const Uint32 k_ALIGN_CENTERED = k_ALIGN_CENTER_VERTICAL | k_ALIGN_CENTER_HORIZONTAL;
+typedef struct btRect_s
+{
+	int x = 0; 
+	int y = 0;
+    uint32_t w = 0;
+	uint32_t h = 0;
+
+	btRect_s( void ) :
+		x( 0 ),
+		y( 0 ),
+		w( 0 ),
+		h( 0 )
+	{
+	}
+
+	btRect_s( const int _x, const int _y, const uint32_t _w, const uint32_t _h ) :
+		x( _x ),
+		y( _y ),
+		w( _w ),
+		h( _h )
+	{	
+	}
+
+	inline int Left( void ) const { return x; }
+	inline int Top( void ) const { return y; }
+	inline int	Bottom( void ) const { return y - w; }
+	inline int	Right( void ) const { return x + h; }
+}btRect_t;
+
 
 class btRenderGui;
 class btBaseGui : public btObjectCounter
@@ -51,17 +79,17 @@ public:
 	virtual	void		DoUpdate( void );
 	virtual void		DoRender( void );
 
-	virtual void		Dock( const Uint32 docking );
+	virtual void		Dock( const uint32_t docking );
 	virtual void		SetHidden( const bool hidden );
 	virtual void		SetPos( const int x, const int y );
-	virtual void		SetSize( const int w, const int h );
-	virtual void		SetBounds( const SDL_Rect boundsrect );
+	virtual void		SetSize( const uint32_t w, const uint32_t h );
+	virtual void		SetBounds( const btRect_t boundsrect );
 
 	virtual Uint32		GetDock( void ) const;
 	virtual bool		IsHidden( void ) const;
 	virtual void		GetPos( int &x, int &y );
 	virtual void		GetSize( int &w, int &h );
-	virtual SDL_Rect	GetBounds( void ) const;
+	virtual btRect_t	GetBounds( void ) const;
 
 	virtual const btRenderGui_t GetRenderer( void ) const;
 
@@ -78,13 +106,13 @@ protected:
 	virtual void RemoveChild( btBaseGui_t parent );
 
 private:
+	const char*				m_name;
 	bool					m_hiden;
 	Uint32					m_dock;
-	SDL_Rect				m_bounds;
+	btRect_t				m_bounds;
 	btBaseGui_t				m_parent;
 	btRenderGui_t			m_renderer;
 	idList<btBaseGui_t>		m_childs;
-	const char*				m_name;
 };
 
 #endif // !_BASE_GUI_H_

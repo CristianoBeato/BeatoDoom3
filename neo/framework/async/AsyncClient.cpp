@@ -400,7 +400,8 @@ void idAsyncClient::GetNETServers( void ) {
 	msg.WriteBits( cvarSystem->GetCVarInteger( "gui_filter_gameType" ), 2 );
 
 	netadr_t adr;
-	if ( idAsyncNetwork::GetMasterAddress( 0, adr ) ) {
+	if ( idAsyncNetwork::GetMasterAddress( 0, adr ) ) 
+	{
 		clientPort.SendPacket( adr, msg.GetData(), msg.GetSize() );
 	}
 }
@@ -410,10 +411,12 @@ void idAsyncClient::GetNETServers( void ) {
 idAsyncClient::ListServers
 ==================
 */
-void idAsyncClient::ListServers( void ) {
+void idAsyncClient::ListServers( void ) 
+{
 	int i;
 
-	for ( i = 0; i < serverList.Num(); i++ ) {
+	for ( i = 0; i < serverList.Num(); i++ ) 
+	{
 		common->Printf( "%3d: %s %dms (%s)\n", i, serverList[i].serverInfo.GetString( "si_name" ), serverList[ i ].ping, Sys_NetAdrToString( serverList[i].adr ) );
 	}
 }
@@ -423,7 +426,8 @@ void idAsyncClient::ListServers( void ) {
 idAsyncClient::ClearServers
 ==================
 */
-void idAsyncClient::ClearServers( void ) {
+void idAsyncClient::ClearServers( void ) 
+{
 	serverList.Clear();
 }
 
@@ -432,24 +436,23 @@ void idAsyncClient::ClearServers( void ) {
 idAsyncClient::RemoteConsole
 ==================
 */
-void idAsyncClient::RemoteConsole( const char *command ) {
+void idAsyncClient::RemoteConsole( const char *command ) 
+{
 	netadr_t	adr;
 	idBitMsg	msg;
 	byte		msgBuf[MAX_MESSAGE_SIZE];
 
-	if ( !InitPort() ) {
+	if ( !InitPort() )
 		return;
-	}
 
-	if ( active ) {
+	if ( active )
 		adr = serverAddress;
-	} else {
+	else
 		Sys_StringToNetAdr( idAsyncNetwork::clientRemoteConsoleAddress.GetString(), &adr, true );
-	}
 	
-	if ( !adr.port ) {
+	if ( !adr.port ) 
 		adr.port = PORT_SERVER;
-	}
+	
 
 	lastRconAddress = adr;
 	lastRconTime = realTime;
@@ -468,12 +471,12 @@ void idAsyncClient::RemoteConsole( const char *command ) {
 idAsyncClient::GetPrediction
 ==================
 */
-int idAsyncClient::GetPrediction( void ) const {
-	if ( clientState < CS_CONNECTED ) {
+int idAsyncClient::GetPrediction( void ) const 
+{
+	if ( clientState < CS_CONNECTED ) 
 		return -1;
-	} else {
+	else 
 		return clientPrediction;
-	}
 }
 
 /*
@@ -481,12 +484,12 @@ int idAsyncClient::GetPrediction( void ) const {
 idAsyncClient::GetTimeSinceLastPacket
 ==================
 */
-int idAsyncClient::GetTimeSinceLastPacket( void ) const {
-	if ( clientState < CS_CONNECTED ) {
+int idAsyncClient::GetTimeSinceLastPacket( void ) const 
+{
+	if ( clientState < CS_CONNECTED ) 
 		return -1;
-	} else {
+	else
 		return clientTime - lastPacketTime;
-	}
 }
 
 /*
@@ -628,7 +631,8 @@ void idAsyncClient::SendEmptyToServer( bool force, bool mapLoad ) {
 
 	channel.SendMessage( clientPort, clientTime, msg );
 
-	while( channel.UnsentFragmentsLeft() ) {
+	while( channel.UnsentFragmentsLeft() ) 
+	{
 		channel.SendNextFragment( clientPort, clientTime );
 	}
 
@@ -666,13 +670,15 @@ void idAsyncClient::SendPingResponseToServer( int time ) {
 idAsyncClient::SendUsercmdsToServer
 ==================
 */
-void idAsyncClient::SendUsercmdsToServer( void ) {
+void idAsyncClient::SendUsercmdsToServer( void ) 
+{
 	int			i, numUsercmds, index;
 	idBitMsg	msg;
 	byte		msgBuf[MAX_MESSAGE_SIZE];
 	usercmd_t *	last;
 
-	if ( idAsyncNetwork::verbose.GetInteger() == 2 ) {
+	if ( idAsyncNetwork::verbose.GetInteger() == 2 ) 
+	{
 		common->Printf( "sending usercmd to server: gameInitId = %d, gameFrame = %d, gameTime = %d\n", gameInitId, gameFrame, gameTime );
 	}
 
@@ -690,12 +696,15 @@ void idAsyncClient::SendUsercmdsToServer( void ) {
 	msg.WriteByte( CLIENT_UNRELIABLE_MESSAGE_USERCMD );
 	msg.WriteShort( clientPrediction );
 
-	numUsercmds = idMath::ClampInt( 0, 10, idAsyncNetwork::clientUsercmdBackup.GetInteger() ) + 1;
+// BEATO Begin:
+	numUsercmds = clamp( idAsyncNetwork::clientUsercmdBackup.GetInteger(), 0, 10 ) + 1;
+// BEATO End
 
 	// write the user commands
 	msg.WriteLong( gameFrame );
 	msg.WriteByte( numUsercmds );
-	for ( last = NULL, i = gameFrame - numUsercmds + 1; i <= gameFrame; i++ ) {
+	for ( last = nullptr, i = gameFrame - numUsercmds + 1; i <= gameFrame; i++ ) 
+	{
 		index = i & ( MAX_USERCMD_BACKUP - 1 );
 		idAsyncNetwork::WriteUserCmdDelta( msg, userCmds[index][clientNum], last );
 		last = &userCmds[index][clientNum];
@@ -828,7 +837,8 @@ void idAsyncClient::ProcessUnreliableServerMessage( const idBitMsg &msg ) {
 			}
 
 			// if this is the first snapshot after a game init was received
-			if ( clientState == CS_CONNECTED ) {
+			if ( clientState == CS_CONNECTED ) 
+			{
 				gameTimeResidual = 0;
 				clientState = CS_INGAME;
 				assert( !sessLocal.GetActiveMenu( ) );
@@ -838,16 +848,21 @@ void idAsyncClient::ProcessUnreliableServerMessage( const idBitMsg &msg ) {
 			}
 
 			// if the snapshot is newer than the clients current game time
-			if ( gameTime < snapshotGameTime || gameTime > snapshotGameTime + idAsyncNetwork::clientMaxPrediction.GetInteger() ) {
+			if ( gameTime < snapshotGameTime || gameTime > snapshotGameTime + idAsyncNetwork::clientMaxPrediction.GetInteger() ) 
+			{
 				gameFrame = snapshotGameFrame;
 				gameTime = snapshotGameTime;
-				gameTimeResidual = idMath::ClampInt( -idAsyncNetwork::clientMaxPrediction.GetInteger(), idAsyncNetwork::clientMaxPrediction.GetInteger(), gameTimeResidual );
-				clientPredictTime = idMath::ClampInt( -idAsyncNetwork::clientMaxPrediction.GetInteger(), idAsyncNetwork::clientMaxPrediction.GetInteger(), clientPredictTime );
+// BEATO Begin:
+				gameTimeResidual = clamp( gameTimeResidual, -idAsyncNetwork::clientMaxPrediction.GetInteger(), idAsyncNetwork::clientMaxPrediction.GetInteger() );
+				clientPredictTime = clamp( clientPredictTime, -idAsyncNetwork::clientMaxPrediction.GetInteger(), idAsyncNetwork::clientMaxPrediction.GetInteger() );
+// BEATO End
 			}
 
 			// adjust the client prediction time based on the snapshot time
 			clientPrediction -= ( 1 - ( INTSIGNBITSET( aheadOfServer - idAsyncNetwork::clientPrediction.GetInteger() ) << 1 ) );
-			clientPrediction = idMath::ClampInt( idAsyncNetwork::clientPrediction.GetInteger(), idAsyncNetwork::clientMaxPrediction.GetInteger(), clientPrediction );
+// BEATO Begin:
+			clientPrediction = clamp( clientPrediction, idAsyncNetwork::clientPrediction.GetInteger(), idAsyncNetwork::clientMaxPrediction.GetInteger() );
+// BEATO End
 			delta = gameTime - ( snapshotGameTime + clientPrediction );
 			clientPredictTime -= ( delta / PREDICTION_FAST_ADJUST ) + ( 1 - ( INTSIGNBITSET( delta ) << 1 ) );
 
@@ -1130,15 +1145,17 @@ void idAsyncClient::ProcessConnectResponseMessage( const netadr_t from, const id
 	serverGameInitId = msg.ReadLong();
 	serverGameFrame = msg.ReadLong();
 	serverGameTime = msg.ReadLong();
-	msg.ReadDeltaDict( serverSI, NULL );
+	msg.ReadDeltaDict( serverSI, nullptr );
 
 	InitGame( serverGameInitId, serverGameFrame, serverGameTime, serverSI );
 
 	// load map
-	session->SetGUI( NULL, NULL );
+	session->SetGUI( nullptr, nullptr );
 	sessLocal.ExecuteMapChange();
 
-	clientPredictTime = clientPrediction = idMath::ClampInt( 0, idAsyncNetwork::clientMaxPrediction.GetInteger(), clientTime - lastConnectTime );
+// BEATO Begin:
+	clientPredictTime = clientPrediction = clamp( clientTime - lastConnectTime, 0, idAsyncNetwork::clientMaxPrediction.GetInteger() );
+// BEATO End
 }
 
 /*
@@ -1403,7 +1420,8 @@ bool idAsyncClient::ValidatePureServerChecksums( const netadr_t from, const idBi
 	inGamePakChecksum = msg.ReadLong();
 
 	fsPureReply_t reply = fileSystem->SetPureServerChecksums( inChecksums, inGamePakChecksum, missingChecksums, &missingGamePakChecksum );
-	switch ( reply ) {
+	switch ( reply ) 
+	{
 		case PURE_RESTART:
 			// need to restart the filesystem with a different pure configuration
 			cmdSystem->BufferCommandText( CMD_EXEC_NOW, "disconnect" );
@@ -1436,7 +1454,9 @@ bool idAsyncClient::ValidatePureServerChecksums( const netadr_t from, const idBi
 				common->Printf( message );
 				cmdSystem->BufferCommandText( CMD_EXEC_NOW, "disconnect" );
 				session->MessageBox( MSG_OK, message, common->GetLanguageDict()->GetString( "#str_06735" ), true );
-			} else {
+			} 
+			else 
+			{
 				if ( clientState >= CS_CONNECTED ) {
 					// we are already connected, reconnect to negociate the paks in connectionless mode
 					cmdSystem->BufferCommandText( CMD_EXEC_NOW, "reconnect" );
@@ -1444,11 +1464,16 @@ bool idAsyncClient::ValidatePureServerChecksums( const netadr_t from, const idBi
 				}
 				// ask the server to send back download info
 				common->DPrintf( "missing %d paks: %s\n", numMissingChecksums + ( missingGamePakChecksum ? 1 : 0 ), checksums.c_str() );
-				if ( missingGamePakChecksum ) {
+				if ( missingGamePakChecksum ) 
+				{
 					common->DPrintf( "game code pak: 0x%x\n", missingGamePakChecksum );
 				}
+// BEATO BEgin:
+#if 0
 				// store the requested downloads
 				GetDownloadRequest( missingChecksums, numMissingChecksums, missingGamePakChecksum );
+#endif
+				
 				// build the download request message
 				// NOTE: in a specific function?
 				dlmsg.Init( msgBuf, sizeof( msgBuf ) );
@@ -1589,9 +1614,14 @@ void idAsyncClient::ConnectionlessMessage( const netadr_t from, const idBitMsg &
 		return;
 	}
 
-	if ( idStr::Icmp( string, "downloadInfo" ) == 0 ) {
+// BEATO Begin:
+#if 0
+	if ( idStr::Icmp( string, "downloadInfo" ) == 0 ) 
+	{
 		ProcessDownloadInfoMessage( from, msg );
 	}
+#endif
+// BEATO End
 
 	if ( idStr::Icmp( string, "authrequired" ) == 0 ) {
 		// server telling us that he's expecting an auth mode connect, just in case we're trying to connect in LAN mode
@@ -1740,7 +1770,8 @@ void idAsyncClient::SendReliableGameMessage( const idBitMsg &msg ) {
 idAsyncClient::Idle
 ==================
 */
-void idAsyncClient::Idle( void ) {
+void idAsyncClient::Idle( void ) 
+{
 	// also need to read mouse for the connecting guis
 	usercmdGen->GetDirectUsercmd();
 
@@ -1752,11 +1783,14 @@ void idAsyncClient::Idle( void ) {
 idAsyncClient::UpdateTime
 ==================
 */
-int idAsyncClient::UpdateTime( int clamp ) {
+int idAsyncClient::UpdateTime( int _clamp ) 
+{
 	int time, msec;
 
 	time = Sys_Milliseconds();
-	msec = idMath::ClampInt( 0, clamp, time - realTime );
+// BEATO Begin:
+	msec = clamp( time - realTime, 0, _clamp );
+// BEATO End
 	realTime = time;
 	clientTime += msec;
 	return msec;
@@ -1780,8 +1814,12 @@ void idAsyncClient::RunFrame( void ) {
 		return;
 	}
 
+// BEATO Begin:
+#if 0
 	// handle ongoing pk4 downloads and patch downloads
 	HandleDownloads();
+#endif
+// BEATO End
 
 	gameTimeResidual += msec;
 
@@ -1943,7 +1981,8 @@ about what is going on. allows the update server to have a more precise view of 
 network load for the updates
 ==================
 */
-void idAsyncClient::SendVersionDLUpdate( int state ) {
+void idAsyncClient::SendVersionDLUpdate( int state ) 
+{
 	idBitMsg	msg;
 	byte		msgBuf[MAX_MESSAGE_SIZE];
 
@@ -1960,9 +1999,12 @@ void idAsyncClient::SendVersionDLUpdate( int state ) {
 idAsyncClient::HandleDownloads
 ==================
 */
+// BEATO Begin:
+#if 0
 void idAsyncClient::HandleDownloads( void ) {
 
-	if ( updateState == UPDATE_SENT && clientTime > updateSentTime + 2000 ) {
+	if ( updateState == UPDATE_SENT && clientTime > updateSentTime + 2000 ) 
+	{
 		// timing out on no reply
 		updateState = UPDATE_DONE;
 		if ( showUpdateMessage ) {
@@ -1970,7 +2012,9 @@ void idAsyncClient::HandleDownloads( void ) {
 			showUpdateMessage = false;
 		}
 		common->DPrintf( "No update available\n" );
-	} else if ( backgroundDownload.completed ) {
+	} 
+	else if ( backgroundDownload.completed ) 
+	{
 		// only enter these if the download slot is free
 		if ( updateState == UPDATE_READY ) {
 			// 
@@ -1978,7 +2022,9 @@ void idAsyncClient::HandleDownloads( void ) {
 				if ( !updateDirectDownload ) {
 					sys->OpenURL( updateURL, true );
 					updateState = UPDATE_DONE;
-				} else {
+				} 
+				else 
+				{
 
 					// we're just creating the file at toplevel inside fs_savepath
 					updateURL.ExtractFileName( updateFile );
@@ -2096,7 +2142,7 @@ void idAsyncClient::HandleDownloads( void ) {
 					remainlen = f->Tell();
 					f->Seek( 0, FS_SEEK_SET );
 					while ( remainlen ) {
-						readlen = Min( remainlen, CHUNK_SIZE );
+						readlen = std:min( remainlen, CHUNK_SIZE );
 						retlen = f->Read( buf, readlen );
 						if ( retlen != readlen ) {
 							common->FatalError( "short read %d of %d in idFileSystem::HandleDownload", retlen, readlen );
@@ -2147,6 +2193,8 @@ void idAsyncClient::HandleDownloads( void ) {
 		}
 	}
 }
+#endif 
+// BEATO End
 
 /*
 ===============
@@ -2175,7 +2223,8 @@ bool idAsyncClient::SendAuthCheck( const char *cdkey, const char *xpkey ) {
 idAsyncClient::CheckTimeout
 ===============
 */
-bool idAsyncClient::CheckTimeout( void ) {
+bool idAsyncClient::CheckTimeout( void ) 
+{
 	if ( lastPacketTime > 0 && ( lastPacketTime + idAsyncNetwork::clientServerTimeout.GetInteger()*1000 < clientTime ) ) {
 		session->StopBox();
 		session->MessageBox( MSG_OK, common->GetLanguageDict()->GetString ( "#str_04328" ), common->GetLanguageDict()->GetString ( "#str_04329" ), true );
@@ -2190,6 +2239,8 @@ bool idAsyncClient::CheckTimeout( void ) {
 idAsyncClient::ProcessDownloadInfoMessage
 ===============
 */
+// BEATO Begin
+#if 0
 void idAsyncClient::ProcessDownloadInfoMessage( const netadr_t from, const idBitMsg &msg ) {
 	char			buf[ MAX_STRING_CHARS ];
 	int				srvDlRequest = msg.ReadLong();
@@ -2310,12 +2361,16 @@ void idAsyncClient::ProcessDownloadInfoMessage( const netadr_t from, const idBit
 		session->MessageBox( MSG_OK, common->GetLanguageDict()->GetString( "#str_07223" ), common->GetLanguageDict()->GetString( "#str_07218" ), true );
 	}
 }
+#endif
+// BEATO End
 
 /*
 ===============
 idAsyncClient::GetDownloadRequest
 ===============
 */
+// BEATO Begin:
+#if 0
 int idAsyncClient::GetDownloadRequest( const int checksums[ MAX_PURE_PAKS ], int count, int gamePakChecksum ) {
 	assert( !checksums[ count ] ); // 0-terminated
 	if ( memcmp( dlChecksums + 1, checksums, sizeof( int ) * count ) || gamePakChecksum != dlChecksums[ 0 ] ) {
@@ -2332,3 +2387,5 @@ int idAsyncClient::GetDownloadRequest( const int checksums[ MAX_PURE_PAKS ], int
 	// this is the same dlRequest, we haven't heard from the server. keep the same id
 	return dlRequest;
 }
+#endif
+// BEATO End

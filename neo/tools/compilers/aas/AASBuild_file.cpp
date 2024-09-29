@@ -101,9 +101,9 @@ void idAASBuild::ClearHash( const idBounds &bounds ) {
 idAASBuild::HashVec
 ================
 */
-ID_INLINE int idAASBuild::HashVec( const idVec3 &vec ) {
+ID_INLINE int idAASBuild::HashVec( const idVec3 &vec ) 
+{
 	int x, y;
-
 	x = (((int) (vec[0] - aas_vertexBounds[0].x + 0.5)) + 2) >> 2;
 	y = (((int) (vec[1] - aas_vertexBounds[0].y + 0.5)) + 2) >> 2;
 	return (x + y * VERTEX_HASH_BOXSIZE) & (VERTEX_HASH_SIZE-1);
@@ -153,48 +153,57 @@ bool idAASBuild::GetVertex( const idVec3 &v, int *vertexNum ) {
 idAASBuild::GetEdge
 ================
 */
-bool idAASBuild::GetEdge( const idVec3 &v1, const idVec3 &v2, int *edgeNum, int v1num ) {
+bool idAASBuild::GetEdge( const idVec3 &v1, const idVec3 &v2, int *edgeNum, int v1num ) 
+{
 	int v2num, hashKey, e;
 	int *vertexNum;
 	aasEdge_t edge;
 	bool found;
 
-	if ( v1num != -1 ) {
+	if ( v1num != -1 ) 
 		found = true;
-	}
-	else {
+	else 
 		found = GetVertex( v1, &v1num );
-	}
+	
+	
 	found &= GetVertex( v2, &v2num );
 	// if both vertexes are the same or snapped onto each other
-	if ( v1num == v2num ) {
+	if ( v1num == v2num ) 
+	{
 		*edgeNum = 0;
 		return true;
 	}
 	hashKey = aas_edgeHash->GenerateKey( v1num, v2num );
+	
 	// if both vertexes where already stored
-	if ( found ) {
-		for ( e = aas_edgeHash->First( hashKey ); e >= 0; e = aas_edgeHash->Next( e ) ) {
+	if ( found ) 
+	{
+		for ( e = aas_edgeHash->First( hashKey ); e >= 0; e = aas_edgeHash->Next( e ) ) 
+		{
 
 			vertexNum = file->edges[e].vertexNum;
-			if ( vertexNum[0] == v2num ) {
-				if ( vertexNum[1] == v1num ) {
+			if ( vertexNum[0] == v2num ) 
+			{
+				if ( vertexNum[1] == v1num ) 
+				{
 					// negative for a reversed edge
 					*edgeNum = -e;
 					break;
 				}
 			}
-			else if ( vertexNum[0] == v1num ) {
-				if ( vertexNum[1] == v2num ) {
+			else if ( vertexNum[0] == v1num ) 
+			{
+				if ( vertexNum[1] == v2num ) 
+				{
 					*edgeNum = e;
 					break;
 				}
 			}
 		}
 		// if edge found in hash
-		if ( e >= 0 ) {
+		if ( e >= 0 ) 
 			return true;
-		}
+		
 	}
 
 	*edgeNum = file->edges.Num();
@@ -213,19 +222,20 @@ bool idAASBuild::GetEdge( const idVec3 &v1, const idVec3 &v2, int *edgeNum, int 
 idAASBuild::GetFaceForPortal
 ================
 */
-bool idAASBuild::GetFaceForPortal( idBrushBSPPortal *portal, int side, int *faceNum ) {
+bool idAASBuild::GetFaceForPortal( idBrushBSPPortal *portal, int side, int *faceNum ) 
+{
 	int i, j, v1num;
 	int numFaceEdges, faceEdges[MAX_POINTS_ON_WINDING];
 	idWinding *w;
 	aasFace_t face;
 
-	if ( portal->GetFaceNum() > 0 ) {
-		if ( side ) {
+	if ( portal->GetFaceNum() > 0 ) 
+	{
+		if ( side ) 
 			*faceNum = -portal->GetFaceNum();
-		}
-		else {
+		else 
 			*faceNum = portal->GetFaceNum();
-		}
+		
 		return true;
 	}
 
@@ -233,11 +243,13 @@ bool idAASBuild::GetFaceForPortal( idBrushBSPPortal *portal, int side, int *face
 	// turn the winding into a sequence of edges
 	numFaceEdges = 0;
 	v1num = -1;		// first vertex unknown
-	for ( i = 0; i < w->GetNumPoints(); i++ ) {
+	for ( i = 0; i < w->GetNumPoints(); i++ ) 
+	{
 
 		GetEdge( (*w)[i].ToVec3(), (*w)[(i+1)%w->GetNumPoints()].ToVec3(), &faceEdges[numFaceEdges], v1num );
 
-		if ( faceEdges[numFaceEdges] ) {
+		if ( faceEdges[numFaceEdges] ) 
+		{
 			// last vertex of this edge is the first vertex of the next edge
 			v1num = file->edges[ abs(faceEdges[numFaceEdges]) ].vertexNum[ INTSIGNBITNOTSET(faceEdges[numFaceEdges]) ];
 
@@ -247,16 +259,17 @@ bool idAASBuild::GetFaceForPortal( idBrushBSPPortal *portal, int side, int *face
 	}
 
 	// should have at least 3 edges
-	if ( numFaceEdges < 3 ) {
+	if ( numFaceEdges < 3 ) 
 		return false;
-	}
 
 	// the polygon is invalid if some edge is found twice
-	for ( i = 0; i < numFaceEdges; i++ ) {
-		for ( j = i+1; j < numFaceEdges; j++ ) {
-			if ( faceEdges[i] == faceEdges[j] || faceEdges[i] == -faceEdges[j] ) {
+	for ( i = 0; i < numFaceEdges; i++ ) 
+	{
+		for ( j = i+1; j < numFaceEdges; j++ ) 
+		{
+			if ( faceEdges[i] == faceEdges[j] || faceEdges[i] == -faceEdges[j] ) 
 				return false;
-			}
+			
 		}
 	}
 
@@ -267,15 +280,16 @@ bool idAASBuild::GetFaceForPortal( idBrushBSPPortal *portal, int side, int *face
 	face.areas[0] = face.areas[1] = 0;
 	face.firstEdge = file->edgeIndex.Num();
 	face.numEdges = numFaceEdges;
-	for ( i = 0; i < numFaceEdges; i++ ) {
+	for ( i = 0; i < numFaceEdges; i++ ) 
+	{
 		file->edgeIndex.Append( faceEdges[i] );
 	}
-	if ( side ) {
+	
+	if ( side ) 
 		*faceNum = -file->faces.Num();
-	}
-	else {
+	else 
 		*faceNum = file->faces.Num();
-	}
+	
 	file->faces.Append( face );
 
 	return true;
@@ -286,12 +300,14 @@ bool idAASBuild::GetFaceForPortal( idBrushBSPPortal *portal, int side, int *face
 idAASBuild::GetAreaForLeafNode
 ================
 */
-bool idAASBuild::GetAreaForLeafNode( idBrushBSPNode *node, int *areaNum ) {
+bool idAASBuild::GetAreaForLeafNode( idBrushBSPNode *node, int *areaNum ) 
+{
 	int s, faceNum;
 	idBrushBSPPortal *p;
 	aasArea_t area;
 
-	if ( node->GetAreaNum() ) {
+	if ( node->GetAreaNum() ) 
+	{
 		*areaNum = -node->GetAreaNum();
 		return true;
 	}
@@ -301,28 +317,27 @@ bool idAASBuild::GetAreaForLeafNode( idBrushBSPNode *node, int *areaNum ) {
 	area.contents = node->GetContents();
 	area.firstFace = file->faceIndex.Num();
 	area.numFaces = 0;
-	area.reach = NULL;
-	area.rev_reach = NULL;
+	area.reach = nullptr;
+	area.rev_reach = nullptr;
 
-	for ( p = node->GetPortals(); p; p = p->Next(s) ) {
+	for ( p = node->GetPortals(); p; p = p->Next(s) ) 
+	{
 		s = (p->GetNode(1) == node);
 
-		if ( !GetFaceForPortal( p, s, &faceNum ) ) {
+		if ( !GetFaceForPortal( p, s, &faceNum ) ) 
 			continue;
-		}
 
 		file->faceIndex.Append( faceNum );
 		area.numFaces++;
 
-		if ( faceNum > 0 ) {
+		if ( faceNum > 0 ) 
 			file->faces[abs(faceNum)].areas[0] = file->areas.Num();
-		}
-		else {
+		else 
 			file->faces[abs(faceNum)].areas[1] = file->areas.Num();
-		}
 	}
 
-	if ( !area.numFaces ) {
+	if ( !area.numFaces ) 
+	{
 		*areaNum = 0;
 		return false;
 	}

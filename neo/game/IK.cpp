@@ -429,25 +429,23 @@ bool idIK_Walk::Init( idEntity *self, const char *anim, const idVec3 &modelOffse
 	idVec3 dir, ankleOrigin, kneeOrigin, hipOrigin, dirOrigin;
 	idMat3 axis, ankleAxis, kneeAxis, hipAxis;
 
-	static idVec3 footWinding[4] = {
+	static idVec3 const footWinding[4] = 
+	{
 		idVec3(  1.0f,  1.0f, 0.0f ),
 		idVec3( -1.0f,  1.0f, 0.0f ),
 		idVec3( -1.0f, -1.0f, 0.0f ),
 		idVec3(  1.0f, -1.0f, 0.0f )
 	};
 
-	if ( !self ) {
+	if ( !self ) 
 		return false;
-	}
 
-	numLegs = Min( self->spawnArgs.GetInt( "ik_numLegs", "0" ), MAX_LEGS );
-	if ( numLegs == 0 ) {
+	numLegs = min( self->spawnArgs.GetInt( "ik_numLegs", "0" ), MAX_LEGS );
+	if ( numLegs == 0 ) 
 		return true;
-	}
 
-	if ( !idIK::Init( self, anim, modelOffset ) ) {
+	if ( !idIK::Init( self, anim, modelOffset ) ) 
 		return false;
-	}
 
 	int numJoints = animator->NumJoints();
 	idJointMat *joints = ( idJointMat * )_alloca16( numJoints * sizeof( joints[0] ) );
@@ -958,18 +956,15 @@ bool idIK_Reach::Init( idEntity *self, const char *anim, const idVec3 &modelOffs
 	idVec3 dir, handOrigin, elbowOrigin, shoulderOrigin, dirOrigin;
 	idMat3 axis, handAxis, elbowAxis, shoulderAxis;
 
-	if ( !self ) {
+	if ( !self ) 
 		return false;
-	}
 
-	numArms = Min( self->spawnArgs.GetInt( "ik_numArms", "0" ), MAX_ARMS );
-	if ( numArms == 0 ) {
+	numArms = min( self->spawnArgs.GetInt( "ik_numArms", "0" ), MAX_ARMS );
+	if ( numArms == 0 ) 
 		return true;
-	}
 
-	if ( !idIK::Init( self, anim, modelOffset ) ) {
+	if ( !idIK::Init( self, anim, modelOffset ) ) 
 		return false;
-	}
 
 	int numJoints = animator->NumJoints();
 	idJointMat *joints = ( idJointMat * )_alloca16( numJoints * sizeof( joints[0] ) );
@@ -1113,11 +1108,11 @@ idIK_Reach::ClearJointMods
 void idIK_Reach::ClearJointMods( void ) {
 	int i;
 
-	if ( !self || !ik_activate ) {
+	if ( !self || !ik_activate ) 
 		return;
-	}
 
-	for ( i = 0; i < numArms; i++ ) {
+	for ( i = 0; i < numArms; i++ ) 
+	{
 		animator->SetJointAxis( shoulderJoints[i], JOINTMOD_NONE, mat3_identity );
 		animator->SetJointAxis( elbowJoints[i], JOINTMOD_NONE, mat3_identity );
 		animator->SetJointAxis( handJoints[i], JOINTMOD_NONE, mat3_identity );

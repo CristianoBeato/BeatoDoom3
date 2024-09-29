@@ -107,25 +107,31 @@ private:
 	void			AppendDirty( const char a );		// append character without adding trailing zero
 };
 
-ID_INLINE idToken::idToken( void ) {
+ID_INLINE idToken::idToken( void ) 
+{
 }
 
-ID_INLINE idToken::idToken( const idToken *token ) {
+ID_INLINE idToken::idToken( const idToken *token ) 
+{
 	*this = *token;
 }
 
-ID_INLINE idToken::~idToken( void ) {
+ID_INLINE idToken::~idToken( void ) 
+{
 }
 
-ID_INLINE void idToken::operator=( const char *text) {
+ID_INLINE void idToken::operator=( const char *text) 
+{
 	*static_cast<idStr *>(this) = text;
 }
 
-ID_INLINE void idToken::operator=( const idStr& text ) {
+ID_INLINE void idToken::operator=( const idStr& text ) 
+{
 	*static_cast<idStr *>(this) = text;
 }
 
-ID_INLINE double idToken::GetDoubleValue( void ) {
+ID_INLINE double idToken::GetDoubleValue( void ) 
+{
 	if ( type != TT_NUMBER ) {
 		return 0.0;
 	}
@@ -135,7 +141,8 @@ ID_INLINE double idToken::GetDoubleValue( void ) {
 	return floatvalue;
 }
 
-ID_INLINE float idToken::GetFloatValue( void ) {
+ID_INLINE float idToken::GetFloatValue( void ) 
+{
 	return (float) GetDoubleValue();
 }
 

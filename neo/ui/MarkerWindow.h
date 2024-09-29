@@ -56,13 +56,13 @@ public:
 private:
 	virtual bool ParseInternalVar(const char *name, idParser *src);
 	void CommonInit();
-	void Line(int x1, int y1, int x2, int y2, dword* out, dword color);
-	void Point(int x, int y, dword *out, dword color);
+	void Line(int x1, int y1, int x2, int y2, uint32_t* out, uint32_t color);
+	void Point(int x, int y, uint32_t *out, uint32_t color);
 	logStats_t loggedStats[MAX_LOGGED_STATS];
 	idList<markerData_t> markerTimes;
 	idStr statData;
 	int numStats;
-	dword *imageBuff;
+	uint32_t *imageBuff;
 	const idMaterial *markerMat;
 	const idMaterial *markerStop;
 	idVec4 markerColor;

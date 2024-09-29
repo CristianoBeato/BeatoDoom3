@@ -2655,7 +2655,7 @@ void idMultiplayerGame::DrawChat() {
 			while ( i < chatHistoryIndex ) {
 				guiChat->SetStateString( va( "chat%i", j ), chatHistory[ i % NUM_CHAT_NOTIFY ].line );
 				// don't set alpha above 4, the gui only knows that
-				guiChat->SetStateInt( va( "alpha%i", j ), Min( 4, (int)chatHistory[ i % NUM_CHAT_NOTIFY ].fade ) );
+				guiChat->SetStateInt( va( "alpha%i", j ), min( (int)chatHistory[ i % NUM_CHAT_NOTIFY ].fade, 4 ) );
 				j++; i++;
 			}
 			while ( j < NUM_CHAT_NOTIFY ) {
@@ -2685,13 +2685,16 @@ idMultiplayerGame::WriteToSnapshot
 */
 void idMultiplayerGame::WriteToSnapshot( idBitMsgDelta &msg ) const {
 	int i;
-	int value;
+//	int value;
 
 	msg.WriteByte( gameState );
 	msg.WriteShort( currentTourneyPlayer[ 0 ] );
 	msg.WriteShort( currentTourneyPlayer[ 1 ] );
-	for ( i = 0; i < MAX_CLIENTS; i++ ) {
+	for ( i = 0; i < MAX_CLIENTS; i++ ) 
+	{
+// BEATO Begin:
 		// clamp all values to min/max possible value that we can send over
+#if 0
 		value = idMath::ClampInt( MP_PLAYER_MINFRAGS, MP_PLAYER_MAXFRAGS, playerState[i].fragCount );
 		msg.WriteBits( value, ASYNC_PLAYER_FRAG_BITS );
 		value = idMath::ClampInt( MP_PLAYER_MINFRAGS, MP_PLAYER_MAXFRAGS, playerState[i].teamFragCount );
@@ -2700,6 +2703,13 @@ void idMultiplayerGame::WriteToSnapshot( idBitMsgDelta &msg ) const {
 		msg.WriteBits( value, ASYNC_PLAYER_WINS_BITS );
 		value = idMath::ClampInt( 0, MP_PLAYER_MAXPING, playerState[i].ping );
 		msg.WriteBits( value, ASYNC_PLAYER_PING_BITS );
+#else
+	msg.WriteBits( std::clamp( playerState[i].fragCount, MP_PLAYER_MINFRAGS, MP_PLAYER_MAXFRAGS ), ASYNC_PLAYER_FRAG_BITS );
+	msg.WriteBits( std::clamp( playerState[i].teamFragCount, ), ASYNC_PLAYER_FRAG_BITS );
+	msg.WriteBits( std::clamp( playerState[i].wins, 0, MP_PLAYER_MAXWINS ), ASYNC_PLAYER_WINS_BITS );
+	msg.WriteBits( std::clamp( playerState[i].ping, 0, MP_PLAYER_MAXPING ), ASYNC_PLAYER_PING_BITS );
+#endif
+// BEATO End
 		msg.WriteBits( playerState[i].ingame, 1 );
 	}
 

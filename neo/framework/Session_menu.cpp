@@ -779,10 +779,10 @@ void idSessionLocal::HandleMainMenuCommands( const char *menuCommand ) {
 							break;
 					}
 					if ( n_clients > maxclients ) {
-						if ( MessageBox( MSG_OKCANCEL, va( common->GetLanguageDict()->GetString( "#str_04315" ), dedicated ? maxclients : Min( 8, maxclients + 1 ) ), common->GetLanguageDict()->GetString( "#str_04316" ), true, "OK" )[ 0 ] == '\0' ) {
+						if ( MessageBox( MSG_OKCANCEL, va( common->GetLanguageDict()->GetString( "#str_04315" ), dedicated ? maxclients : min( 8, maxclients + 1 ) ), common->GetLanguageDict()->GetString( "#str_04316" ), true, "OK" )[ 0 ] == '\0' ) {
 							continue;
 						}
-						cvarSystem->SetCVarInteger( "si_maxPlayers", dedicated ? maxclients : Min( 8, maxclients + 1 ) );
+						cvarSystem->SetCVarInteger( "si_maxPlayers", dedicated ? maxclients : min( 8, maxclients + 1 ) );
 					}
 				}
 			}
@@ -887,8 +887,8 @@ void idSessionLocal::HandleMainMenuCommands( const char *menuCommand ) {
 				}
 			}
 			if ( !vcmd.Icmp( "eax" ) ) {
-				if ( cvarSystem->GetCVarBool( "s_useEAXReverb" ) ) {
-					int eax = soundSystem->IsEAXAvailable();
+				if ( cvarSystem->GetCVarBool( "s_useEFXReverb" ) ) {
+					int eax = soundSystem->IsEFXAvailable();
 					switch ( eax ) {
 					case 2:
 						// OpenAL subsystem load failed
@@ -899,12 +899,12 @@ void idSessionLocal::HandleMainMenuCommands( const char *menuCommand ) {
 						MessageBox( MSG_OK, common->GetLanguageDict()->GetString( "#str_04137" ), common->GetLanguageDict()->GetString( "#str_07231" ), true );
 						break;
 					case -1:
-						cvarSystem->SetCVarBool( "s_useEAXReverb", false );
+						cvarSystem->SetCVarBool( "s_useEFXReverb", false );
 						// disabled
 						MessageBox( MSG_OK, common->GetLanguageDict()->GetString( "#str_07233" ), common->GetLanguageDict()->GetString( "#str_07231" ), true );
 						break;
 					case 0:
-						cvarSystem->SetCVarBool( "s_useEAXReverb", false );
+						cvarSystem->SetCVarBool( "s_useEFXReverb", false );
 						// not available
 						MessageBox( MSG_OK, common->GetLanguageDict()->GetString( "#str_07232" ), common->GetLanguageDict()->GetString( "#str_07231" ), true );
 						break;

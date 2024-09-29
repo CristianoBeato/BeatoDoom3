@@ -925,23 +925,23 @@ static void RenderBumpTriangles( srfTriangles_t *lowMesh, renderBump_t *rb ) {
 
 	RB_SetGL2D();
 
-	qglDisable( GL_CULL_FACE );
+	glDisable( GL_CULL_FACE );
 
-	qglColor3f( 1, 1, 1 );
+	glColor3f( 1, 1, 1 );
 
-	qglMatrixMode( GL_PROJECTION );
-	qglLoadIdentity();
-	qglOrtho( 0, 1, 1, 0, -1, 1 );
-	qglDisable( GL_BLEND );
-	qglMatrixMode( GL_MODELVIEW );
-	qglLoadIdentity();
+	glMatrixMode( GL_PROJECTION );
+	glLoadIdentity();
+	glOrtho( 0, 1, 1, 0, -1, 1 );
+	glDisable( GL_BLEND );
+	glMatrixMode( GL_MODELVIEW );
+	glLoadIdentity();
 
-	qglDisable( GL_DEPTH_TEST );
+	glDisable( GL_DEPTH_TEST );
 
-	qglClearColor(1,0,0,1);
-	qglClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+	glClearColor(1,0,0,1);
+	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-	qglColor3f( 1, 1, 1 );
+	glColor3f( 1, 1, 1 );
 
 	// create smoothed normals for the surface, which might be
 	// different than the normals at the vertexes if the
@@ -975,13 +975,13 @@ static void RenderBumpTriangles( srfTriangles_t *lowMesh, renderBump_t *rb ) {
 
 		RasterizeTriangle( lowMesh, lowMeshNormals, j/3, rb );
 
-		qglClearColor(1,0,0,1);
-		qglClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-		qglRasterPos2f( 0, 1 );
-		qglPixelZoom( glConfig.vidWidth / (float)rb->width, glConfig.vidHeight / (float)rb->height );
-		qglDrawPixels( rb->width, rb->height, GL_RGBA, GL_UNSIGNED_BYTE, rb->localPic );
-		qglPixelZoom( 1, 1 );
-		qglFlush();
+		glClearColor(1,0,0,1);
+		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+		glRasterPos2f( 0, 1 );
+		glPixelZoom( glConfig.vidWidth / (float)rb->width, glConfig.vidHeight / (float)rb->height );
+		glDrawPixels( rb->width, rb->height, GL_RGBA, GL_UNSIGNED_BYTE, rb->localPic );
+		glPixelZoom( 1, 1 );
+		glFlush();
 		GLimp_SwapBuffers();
 	}
 
@@ -1465,11 +1465,12 @@ void RenderBumpFlat_f( const idCmdArgs &args ) {
 		xOff = ( ( sample & 3 ) / 4.0 ) * ( bounds[1][0] - bounds[0][0] ) / width;
 		yOff = ( ( sample / 4 ) / 4.0 ) * ( bounds[1][2] - bounds[0][2] ) / height;
 
-		for ( int colorPass = 0 ; colorPass < 2 ; colorPass++ ) {
-			qglClearColor(0.5,0.5,0.5,0);
-			qglClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+		for ( int colorPass = 0 ; colorPass < 2 ; colorPass++ ) 
+		{
+			glClearColor(0.5,0.5,0.5,0);
+			glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-			qglBegin( GL_TRIANGLES );
+			glBegin( GL_TRIANGLES );
 			for ( i = 0 ; i < highPolyModel->NumSurfaces() ; i++ ) {
 				const modelSurface_t *surf = highPolyModel->Surface( i );
 

@@ -60,7 +60,8 @@ typedef enum {
 
 typedef const char * (*HandleGuiCommand_t)( const char * );
 
-class idSession {
+class idSession 
+{
 public:
 	virtual			~idSession() {}
 
@@ -148,6 +149,11 @@ public:
 	virtual const char *GetCurrentMapName( void ) = 0;
 
 	virtual int		GetSaveGameVersion( void ) = 0;
+
+// BEATO Begin: 
+	virtual void	TriggerAsyncEvent( void ) = 0;
+	virtual void	WaitForAsyncEvent( void ) = 0;
+// BEATO End
 
 	// The render world and sound world used for this session.
 	idRenderWorld *	rw;

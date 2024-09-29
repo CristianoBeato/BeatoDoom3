@@ -47,23 +47,25 @@ const float	idMath::INFINITY		= 1e30f;
 const float idMath::FLT_EPSILON		= 1.192092896e-07f;
 
 bool		idMath::initialized		= false;
-dword		idMath::iSqrt[SQRT_TABLE_SIZE];		// inverse square root lookup table
+uint32_t	idMath::iSqrt[SQRT_TABLE_SIZE];		// inverse square root lookup table
 
 /*
 ===============
 idMath::Init
 ===============
 */
-void idMath::Init( void ) {
+void idMath::Init( void ) 
+{
     union _flint fi, fo;
 
-    for ( int i = 0; i < SQRT_TABLE_SIZE; i++ ) {
+    for ( int i = 0; i < SQRT_TABLE_SIZE; i++ ) 
+	{
         fi.i	 = ((EXP_BIAS-1) << EXP_POS) | (i << LOOKUP_POS);
-        fo.f	 = (float)( 1.0 / sqrt( fi.f ) );
-        iSqrt[i] = ((dword)(((fo.i + (1<<(SEED_POS-2))) >> SEED_POS) & 0xFF))<<SEED_POS;
+        fo.f	 = (float)( 1.0 / std::sqrt( fi.f ) );
+        iSqrt[i] = ((uint32_t)(((fo.i + (1<<(SEED_POS-2))) >> SEED_POS) & 0xFF))<<SEED_POS;
     }
     
-	iSqrt[SQRT_TABLE_SIZE / 2] = ((dword)(0xFF))<<(SEED_POS); 
+	iSqrt[SQRT_TABLE_SIZE / 2] = ((uint32_t)(0xFF))<<(SEED_POS); 
 
 	initialized = true;
 }

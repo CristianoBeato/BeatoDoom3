@@ -254,78 +254,74 @@ void idSimpleWindow::Redraw(float x, float y) {
 	textRect.Offset(-x, -y);
 }
 
-int idSimpleWindow::GetWinVarOffset( idWinVar *wv, drawWin_t* owner) {
-	int ret = -1;
+intptr_t idSimpleWindow::GetWinVarOffset( idWinVar *wv, drawWin_t* owner) 
+{
+	intptr_t ret = -1;
 
-	if ( wv == &rect ) {
-		ret = (int)&( ( idSimpleWindow * ) 0 )->rect;
-	}
+	if ( wv == &rect ) 
+		ret = (intptr_t)&( ( idSimpleWindow * ) 0 )->rect;
 
-	if ( wv == &backColor ) {
-		ret = (int)&( ( idSimpleWindow * ) 0 )->backColor;
-	}
+	if ( wv == &backColor ) 
+		ret = (intptr_t)&( ( idSimpleWindow * ) 0 )->backColor;
 
-	if ( wv == &matColor ) {
-		ret = (int)&( ( idSimpleWindow * ) 0 )->matColor;
-	}
+	if ( wv == &matColor ) 
+		ret = (intptr_t)&( ( idSimpleWindow * ) 0 )->matColor;
+	
 
-	if ( wv == &foreColor ) {
-		ret = (int)&( ( idSimpleWindow * ) 0 )->foreColor;
-	}
+	if ( wv == &foreColor ) 
+		ret = (intptr_t)&( ( idSimpleWindow * ) 0 )->foreColor;
+	
 
-	if ( wv == &borderColor ) {
-		ret = (int)&( ( idSimpleWindow * ) 0 )->borderColor;
-	}
-
-	if ( wv == &textScale ) {
-		ret = (int)&( ( idSimpleWindow * ) 0 )->textScale;
-	}
-
-	if ( wv == &rotate ) {
-		ret = (int)&( ( idSimpleWindow * ) 0 )->rotate;
-	}
-
-	if ( ret != -1 ) {
+	if ( wv == &borderColor )
+		ret = (intptr_t)&( ( idSimpleWindow * ) 0 )->borderColor;
+	
+	if ( wv == &textScale ) 
+		ret = (intptr_t)&( ( idSimpleWindow * ) 0 )->textScale;
+	
+	if ( wv == &rotate ) 
+		ret = (intptr_t)&( ( idSimpleWindow * ) 0 )->rotate;
+	
+	if ( ret != -1 ) 
 		owner->simp = this;
-	}
+	
 	return ret;
 }
 
 idWinVar *idSimpleWindow::GetWinVarByName(const char *_name) {
-	idWinVar *retVar = NULL;
-	if (idStr::Icmp(_name, "background") == 0) {
+	idWinVar *retVar = nullptr;
+	if (idStr::Icmp(_name, "background") == 0) 
 		retVar = &backGroundName;
-	}
-	if (idStr::Icmp(_name, "visible") == 0) {
+
+	if (idStr::Icmp(_name, "visible") == 0) 
 		retVar = &visible;
-	}
-	if (idStr::Icmp(_name, "rect") == 0) {
+	
+	if (idStr::Icmp(_name, "rect") == 0) 
 		retVar = &rect;
-	}
-	if (idStr::Icmp(_name, "backColor") == 0) {
+	
+	if (idStr::Icmp(_name, "backColor") == 0) 
 		retVar = &backColor;
-	}
-	if (idStr::Icmp(_name, "matColor") == 0) {
+	
+	if (idStr::Icmp(_name, "matColor") == 0) 
 		retVar = &matColor;
-	}
-	if (idStr::Icmp(_name, "foreColor") == 0) {
+	
+	if (idStr::Icmp(_name, "foreColor") == 0) 
 		retVar = &foreColor;
-	}
-	if (idStr::Icmp(_name, "borderColor") == 0) {
+	
+	if (idStr::Icmp(_name, "borderColor") == 0) 
 		retVar = &borderColor;
-	}
-	if (idStr::Icmp(_name, "textScale") == 0) {
+	
+	if (idStr::Icmp(_name, "textScale") == 0) 
 		retVar = &textScale;
-	}
-	if (idStr::Icmp(_name, "rotate") == 0) {
+	
+	if (idStr::Icmp(_name, "rotate") == 0) 
 		retVar = &rotate;
-	}
-	if (idStr::Icmp(_name, "shear") == 0) {
+	
+	if (idStr::Icmp(_name, "shear") == 0) 
 		retVar = &shear;
-	}
-	if (idStr::Icmp(_name, "text") == 0) {
+	
+	if (idStr::Icmp(_name, "text") == 0) 
 		retVar = &text;
-	}
+	
 	return retVar;
 }
 

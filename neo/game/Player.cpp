@@ -3279,21 +3279,23 @@ void idPlayer::CompleteObjective( const char *title ) {
 idPlayer::GiveVideo
 ===============
 */
-void idPlayer::GiveVideo( const char *videoName, idDict *item ) {
-
-	if ( videoName == NULL || *videoName == NULL ) {
+void idPlayer::GiveVideo( const char *videoName, idDict *item ) 
+{
+	if ( videoName == nullptr || videoName[0] == '\0' )
 		return;
-	}
 
 	inventory.videos.AddUnique( videoName );
 
-	if ( item ) {
+	if ( item ) 
+	{
 		idItemInfo info;
 		info.name = item->GetString( "inv_name" );
 		info.icon = item->GetString( "inv_icon" );
 		inventory.pickupItemNames.Append( info );
 	}
-	if ( hud ) {
+
+	if ( hud ) 
+	{
 		hud->HandleNamedEvent( "videoPickup" );
 	}
 }
@@ -4881,7 +4883,7 @@ void idPlayer::UpdateViewAngles( void ) {
 	for ( i = 0; i < 3; i++ ) {
 		cmdAngles[i] = SHORT2ANGLE( usercmd.angles[i] );
 		if ( influenceActive == INFLUENCE_LEVEL3 ) {
-			viewAngles[i] += idMath::ClampFloat( -1.0f, 1.0f, idMath::AngleDelta( idMath::AngleNormalize180( SHORT2ANGLE( usercmd.angles[i]) + deltaViewAngles[i] ) , viewAngles[i] ) );
+			viewAngles[i] += clamp( idMath::AngleDelta( idMath::AngleNormalize180( SHORT2ANGLE( usercmd.angles[i]) + deltaViewAngles[i] ) , viewAngles[i] ), -1.0f, 1.0f );
 		} else {
 			viewAngles[i] = idMath::AngleNormalize180( SHORT2ANGLE( usercmd.angles[i]) + deltaViewAngles[i] );
 		}
@@ -4891,22 +4893,19 @@ void idPlayer::UpdateViewAngles( void ) {
 	}
 
 	// clamp the pitch
-	if ( noclip ) {
-		if ( viewAngles.pitch > 89.0f ) {
-			// don't let the player look down more than 89 degrees while noclipping
-			viewAngles.pitch = 89.0f;
-		} else if ( viewAngles.pitch < -89.0f ) {
-			// don't let the player look up more than 89 degrees while noclipping
-			viewAngles.pitch = -89.0f;
-		}
-	} else {
-		if ( viewAngles.pitch > pm_maxviewpitch.GetFloat() ) {
-			// don't let the player look down enough to see the shadow of his (non-existant) feet
-			viewAngles.pitch = pm_maxviewpitch.GetFloat();
-		} else if ( viewAngles.pitch < pm_minviewpitch.GetFloat() ) {
-			// don't let the player look up more than 89 degrees
-			viewAngles.pitch = pm_minviewpitch.GetFloat();
-		}
+	if ( noclip ) 
+	{
+		if ( viewAngles.pitch > 89.0f )
+			viewAngles.pitch = 89.0f; // don't let the player look down more than 89 degrees while noclipping
+		else if ( viewAngles.pitch < -89.0f ) 
+			viewAngles.pitch = -89.0f; // don't let the player look up more than 89 degrees while noclipping
+	} 
+	else 
+	{
+		if ( viewAngles.pitch > pm_maxviewpitch.GetFloat() )
+			viewAngles.pitch = pm_maxviewpitch.GetFloat(); // don't let the player look down enough to see the shadow of his (non-existant) feet
+		else if ( viewAngles.pitch < pm_minviewpitch.GetFloat() ) 
+			viewAngles.pitch = pm_minviewpitch.GetFloat(); // don't let the player look up more than 89 degrees
 	}
 
 	UpdateDeltaViewAngles( viewAngles );
@@ -4947,15 +4946,13 @@ Exception to the above rule is once the player is dead, the dying heart rate sta
 it is audible or -10db and scales to 8db on the last few beats
 ==============
 */
-void idPlayer::AdjustHeartRate( int target, float timeInSecs, float delay, bool force ) {
-
-	if ( heartInfo.GetEndValue() == target ) {
+void idPlayer::AdjustHeartRate( int target, float timeInSecs, float delay, bool force ) 
+{
+	if ( heartInfo.GetEndValue() == target ) 
 		return;
-	}
 
-	if ( AI_DEAD && !force ) {
+	if ( AI_DEAD && !force ) 
 		return;
-	}
 
     lastHeartAdjust = gameLocal.time;
 
@@ -4967,7 +4964,8 @@ void idPlayer::AdjustHeartRate( int target, float timeInSecs, float delay, bool 
 idPlayer::GetBaseHeartRate
 ==============
 */
-int idPlayer::GetBaseHeartRate( void ) {
+int idPlayer::GetBaseHeartRate( void ) 
+{
 	int base = idMath::FtoiFast( ( BASE_HEARTRATE + LOWHEALTH_HEARTRATE_ADJ ) - ( (float)health / 100.0f ) * LOWHEALTH_HEARTRATE_ADJ );
 	int rate = idMath::FtoiFast( base + ( ZEROSTAMINA_HEARTRATE - base ) * ( 1.0f - stamina / pm_stamina.GetFloat() ) );
 	int diff = ( lastDmgTime ) ? gameLocal.time - lastDmgTime : 99999;
@@ -6743,12 +6741,13 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 	// determine knockback
 	damageDef->dict.GetInt( "knockback", "20", knockback );
 
-	if ( knockback != 0 && !fl.noknockback ) {
-		if ( attacker == this ) {
+	if ( knockback != 0 && !fl.noknockback ) 
+	{
+		if ( attacker == this ) 
 			damageDef->dict.GetFloat( "attackerPushScale", "0", attackerPushScale );
-		} else {
+		else 
 			attackerPushScale = 1.0f;
-		}
+		
 
 		kick = dir;
 		kick.Normalize();
@@ -6756,16 +6755,16 @@ void idPlayer::Damage( idEntity *inflictor, idEntity *attacker, const idVec3 &di
 		physicsObj.SetLinearVelocity( physicsObj.GetLinearVelocity() + kick );
 
 		// set the timer so that the player can't cancel out the movement immediately
-		physicsObj.SetKnockBack( idMath::ClampInt( 50, 200, knockback * 2 ) );
+		physicsObj.SetKnockBack( clamp( knockback * 2, 50, 200 ) );
 	}
 
 	// give feedback on the player view and audibly when armor is helping
-	if ( armorSave ) {
+	if ( armorSave ) 
+	{
 		inventory.armor -= armorSave;
 
-		if ( gameLocal.time > lastArmorPulse + 200 ) {
-			StartSound( "snd_hitArmor", SND_CHANNEL_ITEM, 0, false, NULL );
-		}
+		if ( gameLocal.time > lastArmorPulse + 200 ) 
+			StartSound( "snd_hitArmor", SND_CHANNEL_ITEM, 0, false, nullptr );
 		lastArmorPulse = gameLocal.time;
 	}
 	

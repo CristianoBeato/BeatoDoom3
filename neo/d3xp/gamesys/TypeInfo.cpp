@@ -1150,14 +1150,18 @@ void idTypeInfoTools::WriteClass_r( const void *classPtr, const char *className,
 	int i;
 
 	const classTypeInfo_t *classInfo = FindClassInfo( classType );
-	if ( !classInfo ) {
+	if ( !classInfo ) 
+	{
 		return;
 	}
-	if ( *classInfo->superType != '\0' ) {
+
+	if ( *classInfo->superType != '\0' ) 
+	{
 		WriteClass_r( classPtr, className, classInfo->superType, scope, prefix, pointerDepth );
 	}
 
-	for ( i = 0; classInfo->variables[i].name != NULL; i++ ) {
+	for ( i = 0; classInfo->variables[i].name != nullptr; i++ ) 
+	{
 		const classVariableInfo_t &classVar = classInfo->variables[i];
 
 		void *varPtr = (void *) (((byte *)classPtr) + classVar.offset);

@@ -90,5 +90,4 @@ private:
 	GLuint	m_vertexArray;
 };
 
-
 #endif // !_RENDER_GUI_H_

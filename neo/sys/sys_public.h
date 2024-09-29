@@ -29,7 +29,8 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __SYS_PUBLIC__
 #define __SYS_PUBLIC__
 
-typedef enum {
+typedef enum 
+{
 	CPUID_NONE							= 0x00000,
 	CPUID_UNSUPPORTED					= 0x00001,	// unsupported (386/486)
 	CPUID_GENERIC						= 0x00002,	// unrecognized processor
@@ -48,28 +49,31 @@ typedef enum {
 } cpuid_t;
 
 typedef enum {
-	FPU_EXCEPTION_INVALID_OPERATION		= 1,
-	FPU_EXCEPTION_DENORMALIZED_OPERAND	= 2,
-	FPU_EXCEPTION_DIVIDE_BY_ZERO		= 4,
-	FPU_EXCEPTION_NUMERIC_OVERFLOW		= 8,
-	FPU_EXCEPTION_NUMERIC_UNDERFLOW		= 16,
-	FPU_EXCEPTION_INEXACT_RESULT		= 32
+	FPU_EXCEPTION_INVALID_OPERATION		= 1 << 0,
+	FPU_EXCEPTION_DENORMALIZED_OPERAND	= 1 << 1,
+	FPU_EXCEPTION_DIVIDE_BY_ZERO		= 1 << 2,
+	FPU_EXCEPTION_NUMERIC_OVERFLOW		= 1 << 3,
+	FPU_EXCEPTION_NUMERIC_UNDERFLOW		= 1 << 4,
+	FPU_EXCEPTION_INEXACT_RESULT		= 1 << 5
 } fpuExceptions_t;
 
-typedef enum {
+typedef enum 
+{
 	FPU_PRECISION_SINGLE				= 0,
 	FPU_PRECISION_DOUBLE				= 1,
 	FPU_PRECISION_DOUBLE_EXTENDED		= 2
 } fpuPrecision_t;
 
-typedef enum {
+typedef enum 
+{
 	FPU_ROUNDING_TO_NEAREST				= 0,
 	FPU_ROUNDING_DOWN					= 1,
 	FPU_ROUNDING_UP						= 2,
 	FPU_ROUNDING_TO_ZERO				= 3
 } fpuRounding_t;
 
-typedef enum {
+typedef enum 
+{
 	AXIS_SIDE,
 	AXIS_FORWARD,
 	AXIS_UP,
@@ -102,7 +106,8 @@ typedef enum {
 	M_DELTAZ
 } sys_mEvents;
 
-typedef struct sysEvent_s {
+typedef struct sysEvent_s 
+{
 	sysEventType_t	evType;
 	int				evValue;
 	int				evValue2;
@@ -110,7 +115,8 @@ typedef struct sysEvent_s {
 	void *			evPtr;				// this must be manually freed if not NULL
 } sysEvent_t;
 
-typedef struct sysMemoryStats_s {
+typedef struct sysMemoryStats_s 
+{
 	int memoryLoad;
 	int totalPhysical;
 	int availPhysical;
@@ -133,41 +139,50 @@ template<class type> class idList;		// for Sys_ListFiles
 ==============================================================
 */
 
-static const Uint32 MAX_THREADS = 16;
-static const Uint32 MIN_THREADS = 4;	// Need atleast 4 ( Main/Assync/Audio/Jobs )
+extern void			Sys_Init( void );
+extern void			Sys_Shutdown( void );
+extern void			Sys_Error( const char *error, ...);
+extern void			Sys_Quit( const int code );
 
-void			Sys_Init( void );
-void			Sys_Shutdown( void );
-void			Sys_Error( const char *error, ...);
-void			Sys_Quit( void );
+extern bool			Sys_AlreadyRunning( void );
 
-bool			Sys_AlreadyRunning( void );
+// BEATO Begin:
+extern const char*	Sys_ConsoleInput( void );
+// BEATO End
 
 // note that this isn't journaled...
-char *			Sys_GetClipboardData( void );
-void			Sys_SetClipboardData( const char *string );
+extern char *		Sys_GetClipboardData( void );
+extern void			Sys_SetClipboardData( const char *string );
 
 // will go to the various text consoles
 // NOT thread safe - never use in the async paths
-void			Sys_Printf( const char *msg, ... )id_attribute((format(printf,1,2)));
+extern void			Sys_Printf( const char *msg, ... )id_attribute((format(printf,1,2)));
 
 // guaranteed to be thread-safe
-void			Sys_DebugPrintf( const char *fmt, ... )id_attribute((format(printf,1,2)));
-void			Sys_DebugVPrintf( const char *fmt, va_list arg );
+extern void			Sys_DebugPrintf( const char *fmt, ... )id_attribute((format(printf,1,2)));
+extern void			Sys_DebugVPrintf( const char *fmt, va_list arg );
 
 // a decent minimum sleep time to avoid going below the process scheduler speeds
 #define			SYS_MINSLEEP	20
 
 // allow game to yield CPU time
 // NOTE: due to SYS_MINSLEEP this is very bad portability karma, and should be completely removed
-void			Sys_Sleep( int msec );
+extern void		Sys_Sleep( int msec );
 
 // Sys_Milliseconds should only be used for profiling purposes,
 // any game related timing information should come from event timestamps
-Uint32			Sys_Milliseconds( void );
+extern uint64_t	Sys_Milliseconds( void );
+
+// BEATO Begin
+extern uint64_t Sys_Microseconds( void );
+// BEATO End
+
+// BEATO Begin
+extern void 	Sys_YieldThread( void );
+// BEATO End
 
 // for accurate performance testing
-double			Sys_GetClockTicks( void );
+extern double	Sys_GetClockTicks( void );
 double			Sys_ClockTicksPerSecond( void );
 
 // returns a selection of the CPUID_* flags
@@ -199,87 +214,125 @@ void			Sys_FPU_SetFTZ( bool enable );
 void			Sys_FPU_SetDAZ( bool enable );
 
 // returns amount of system ram
-int				Sys_GetSystemRam( void );
+extern int				Sys_GetSystemRam( void );
 
 // returns amount of video ram
-int				Sys_GetVideoRam( void );
+extern int				Sys_GetVideoRam( void );
 
 // returns amount of drive space in path
-int				Sys_GetDriveFreeSpace( const char *path );
+extern uint64_t			Sys_GetDriveFreeSpace( const char *path );
 
 // returns memory stats
-void			Sys_GetCurrentMemoryStatus( sysMemoryStats_t &stats );
-void			Sys_GetExeLaunchMemoryStatus( sysMemoryStats_t &stats );
+extern void				Sys_GetCurrentMemoryStatus( sysMemoryStats_t &stats );
+extern void				Sys_GetExeLaunchMemoryStatus( sysMemoryStats_t &stats );
 
 // lock and unlock memory
-bool			Sys_LockMemory( void *ptr, int bytes );
-bool			Sys_UnlockMemory( void *ptr, int bytes );
+extern bool				Sys_LockMemory( void *ptr, const size_t bytes );
+extern bool				Sys_UnlockMemory( void *ptr, const size_t bytes );
 
 // set amount of physical work memory
-void			Sys_SetPhysicalWorkMemory( int minBytes, int maxBytes );
+extern void				Sys_SetPhysicalWorkMemory( const intptr_t minBytes, const intptr_t maxBytes );
 
 // allows retrieving the call stack at execution points
-void			Sys_GetCallStack( address_t *callStack, const int callStackSize );
-const char *	Sys_GetCallStackStr( const address_t *callStack, const int callStackSize );
-const char *	Sys_GetCallStackCurStr( int depth );
-const char *	Sys_GetCallStackCurAddressStr( int depth );
-void			Sys_ShutdownSymbols( void );
+void					Sys_GetCallStack( address_t *callStack, const int callStackSize );
+const char *			Sys_GetCallStackStr( const address_t *callStack, const int callStackSize );
+const char *			Sys_GetCallStackCurStr( int depth );
+const char *			Sys_GetCallStackCurAddressStr( int depth );
+void					Sys_ShutdownSymbols( void );
 
 // event generation
-void			Sys_GenerateEvents( void );
-sysEvent_t		Sys_GetEvent( void );
-void			Sys_ClearEvents( void );
+extern void				Sys_GenerateEvents( void );
+extern sysEvent_t		Sys_GetEvent( void );
+extern void				Sys_ClearEvents( void );
 
 // input is tied to windows, so it needs to be started up and shut down whenever 
 // the main window is recreated
-void			Sys_InitInput( void );
-void			Sys_ShutdownInput( void );
-void			Sys_InitScanTable( void );
-const unsigned char *Sys_GetScanTable( void );
-unsigned char	Sys_GetConsoleKey( bool shifted );
+extern void				Sys_InitInput( void );
+extern void				Sys_ShutdownInput( void );
+extern void				Sys_InitScanTable( void );
+extern const unsigned char*	Sys_GetScanTable( void );
+extern unsigned char	Sys_GetConsoleKey( bool shifted );
 // map a scancode key to a char
 // does nothing on win32, as SE_KEY == SE_CHAR there
 // on other OSes, consider the keyboard mapping
-unsigned char	Sys_MapCharForKey( int key );
+extern unsigned char	Sys_MapCharForKey( int key );
 
 // keyboard input polling
-int				Sys_PollKeyboardInputEvents( void );
-int				Sys_ReturnKeyboardInputEvent( const int n, int &ch, bool &state );
-void			Sys_EndKeyboardInputEvents( void );
+extern int				Sys_PollKeyboardInputEvents( void );
+extern int				Sys_ReturnKeyboardInputEvent( const int n, int &ch, bool &state );
+extern void				Sys_EndKeyboardInputEvents( void );
 
 // mouse input polling
-int				Sys_PollMouseInputEvents( void );
-int				Sys_ReturnMouseInputEvent( const int n, int &action, int &value );
-void			Sys_EndMouseInputEvents( void );
+extern int				Sys_PollMouseInputEvents( void );
+extern int				Sys_ReturnMouseInputEvent( const int n, int &action, int &value );
+extern void				Sys_EndMouseInputEvents( void );
+
+// BEATO Begin:
+extern int				Sys_PollJoystickInputEvents( void );
+extern int				Sys_ReturnJoystickInputEvent(const int n, int &action, int &value);
+extern void				Sys_EndJoystickInputEvents( void );
+// BEATO End
 
 // when the console is down, or the game is about to perform a lengthy
 // operation like map loading, the system can release the mouse cursor
 // when in windowed mode
-void			Sys_GrabMouseCursor( bool grabIt );
+extern void				Sys_GrabMouseCursor( bool grabIt );
 
-void			Sys_ShowWindow( bool show );
-bool			Sys_IsWindowVisible( void );
-void			Sys_ShowConsole( int visLevel, bool quitOnClose );
+// BEATO Begin:
+
+// Suported video mode info 
+typedef struct vidmode_s
+{
+	vidmode_s( void ) : 
+	display( 0 ),
+	width( 0 ),
+	height( 0 ),
+	refreshRate( 0 )
+	{
+	}
+
+	uint32_t 	display;
+	uint32_t	width;
+	uint32_t	height;
+	uint32_t	refreshRate;
+	char 		description[256];
+}vidmode_t;
+
+extern void				Sys_videoStartUp( void );			// Get Display info and create the main window 
+extern void				Sys_videoShutDown( void );		// Release the main window 
+extern void*			Sys_videoWindowHandler( void );
+extern uint32_t			Sys_videoWindowID( void );
+extern void				Sys_videoFullScreen( int mode );
+extern void				Sys_videoWindowSize( const int display, const uint32_t width, const uint32_t height );
+extern uint32_t			Sys_videoNumModes( void );
+extern vidmode_t*		Sys_videoSuportedModes( void );
+extern void				Sys_videoShowWindow( bool show );
+extern bool				Sys_videoIsWindowVisible( void );
+extern void				Sys_videoSetWindowFocus( void );
+// BEATO End
+
+extern void				Sys_ShowConsole( int visLevel, bool quitOnClose );
 
 
-void			Sys_Mkdir( const char *path );
-ID_TIME_T		Sys_FileTimeStamp( FILE *fp );
+extern void				Sys_Mkdir( const char *path );
+extern ID_TIME_T		Sys_FileTimeStamp( FILE *fp );
+
 // NOTE: do we need to guarantee the same output on all platforms?
-const char *	Sys_TimeStampToStr( ID_TIME_T timeStamp );
-const char *	Sys_DefaultCDPath( void );
-const char *	Sys_DefaultBasePath( void );
-const char *	Sys_DefaultSavePath( void );
-const char *	Sys_EXEPath( void );
+extern const char*		Sys_TimeStampToStr( ID_TIME_T timeStamp );
+extern const char*		Sys_DefaultCDPath( void );
+extern const char*		Sys_DefaultBasePath( void );
+extern const char*		Sys_DefaultSavePath( void );
+extern const char*		Sys_EXEPath( void );
 
 // use fs_debug to verbose Sys_ListFiles
 // returns -1 if directory was not found (the list is cleared)
-int				Sys_ListFiles( const char *directory, const char *extension, idList<class idStr> &list );
+extern int				Sys_ListFiles( const char *directory, const char *extension, idList<class idStr> &list );
 
 // know early if we are performing a fatal error shutdown so the error message doesn't get lost
-void			Sys_SetFatalError( const char *error );
+void					Sys_SetFatalError( const char *error );
 
 // display perference dialog
-void			Sys_DoPreferences( void );
+void					Sys_DoPreferences( void );
 
 /*
 ==============================================================

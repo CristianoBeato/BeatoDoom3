@@ -1037,7 +1037,8 @@ idRenderWorldLocal::ShowPortals
 Debugging tool, won't work correctly with SMP or when mirrors are present
 =====================
 */
-void idRenderWorldLocal::ShowPortals() {
+void idRenderWorldLocal::ShowPortals() 
+{
 	int			i, j;
 	portalArea_t	*area;
 	portal_t	*p;
@@ -1057,17 +1058,17 @@ void idRenderWorldLocal::ShowPortals() {
 
 			if ( portalAreas[ p->intoArea ].viewCount != tr.viewCount ) {
 				// red = can't see
-				qglColor3f( 1, 0, 0 );
+				glColor3f( 1, 0, 0 );
 			} else {
 				// green = see through
-				qglColor3f( 0, 1, 0 );
+				glColor3f( 0, 1, 0 );
 			}
 
-			qglBegin( GL_LINE_LOOP );
+			glBegin( GL_LINE_LOOP );
 			for ( j = 0 ; j < w->GetNumPoints() ; j++ ) {
-				qglVertex3fv( (*w)[j].ToFloatPtr() );
+				glVertex3fv( (*w)[j].ToFloatPtr() );
 			}
-			qglEnd();
+			glEnd();
 		}
 	}
 }

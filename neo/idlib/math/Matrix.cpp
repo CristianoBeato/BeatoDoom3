@@ -2936,7 +2936,7 @@ const char *idMat6::ToString( int precision ) const {
 //===============================================================
 
 float	idMatX::temp[MATX_MAX_TEMP+4];
-float *	idMatX::tempPtr = (float *) ( ( (int) idMatX::temp + 15 ) & ~15 );
+float *	idMatX::tempPtr = (float *) ( ( (intptr_t) idMatX::temp + 15 ) & ~15 );
 int		idMatX::tempIndex = 0;
 
 
@@ -2955,8 +2955,8 @@ void idMatX::ChangeSize( int rows, int columns, bool makeZero ) {
 		}
 		alloced = alloc;
 		if ( oldMat ) {
-			int minRow = Min( numRows, rows );
-			int minColumn = Min( numColumns, columns );
+			int minRow = min( numRows, rows );
+			int minColumn = min( numColumns, columns );
 			for ( int i = 0; i < minRow; i++ ) {
 				for ( int j = 0; j < minColumn; j++ ) {
 					mat[ i * columns + j ] = oldMat[ i * numColumns + j ];
@@ -2966,14 +2966,14 @@ void idMatX::ChangeSize( int rows, int columns, bool makeZero ) {
 		}
 	} else {
 		if ( columns < numColumns ) {
-			int minRow = Min( numRows, rows );
+			int minRow = min( numRows, rows );
 			for ( int i = 0; i < minRow; i++ ) {
 				for ( int j = 0; j < columns; j++ ) {
 					mat[ i * columns + j ] = mat[ i * numColumns + j ];
 				}
 			}
 		} else if ( columns > numColumns ) {
-			for ( int i = Min( numRows, rows ) - 1; i >= 0; i-- ) {
+			for ( int i = min( numRows, rows ) - 1; i >= 0; i-- ) {
 				if ( makeZero ) {
 					for ( int j = columns - 1; j >= numColumns; j-- ) {
 						mat[ i * columns + j ] = 0.0f;
@@ -3759,7 +3759,7 @@ bool idMatX::Inverse_UpdateRowColumn( const idVecX &v, const idVecX &w, int r ) 
 	assert( r >= 0 && r < numRows && r < numColumns );
 	assert( w[r] == 0.0f );
 
-	s.SetData( Max( numRows, numColumns ), VECX_ALLOCA( Max( numRows, numColumns ) ) );
+	s.SetData( max( numRows, numColumns ), VECX_ALLOCA( max( numRows, numColumns ) ) );
 	s.Zero();
 	s[r] = 1.0f;
 
@@ -3861,7 +3861,7 @@ idMatX::LU_Factor
 ============
 */
 bool idMatX::LU_Factor( int *index, float *det ) {
-	int i, j, k, newi, min;
+	int i, j, k, newi, nmin;
 	double s, t, d, w;
 
 	// if partial pivoting should be used
@@ -3872,8 +3872,8 @@ bool idMatX::LU_Factor( int *index, float *det ) {
 	}
 
 	w = 1.0f;
-	min = Min( numRows, numColumns );
-	for ( i = 0; i < min; i++ ) {
+	nmin = min( numRows, numColumns );
+	for ( i = 0; i < nmin; i++ ) {
 
 		newi = i;
 		s = idMath::Fabs( (*this)[i][i] );
@@ -3917,7 +3917,7 @@ bool idMatX::LU_Factor( int *index, float *det ) {
 			}
 		}
 
-		if ( i < min-1 ) {
+		if ( i < nmin -1 ) {
 			for ( j = i + 1; j < numRows; j++ ) {
 				d = (*this)[j][i];
 				for ( k = i + 1; k < numColumns; k++ ) {
@@ -3967,7 +3967,7 @@ bool idMatX::LU_UpdateRankOne( const idVecX &v, const idVecX &w, float alpha, in
 
 	memcpy( z, w.ToFloatPtr(), w.GetSize() * sizeof( float ) );
 
-	max = Min( numRows, numColumns );
+	max = min( numRows, numColumns );
 	for ( i = 0; i < max; i++ ) {
 		diag = (*this)[i][i];
 
@@ -4029,7 +4029,7 @@ bool idMatX::LU_UpdateRowColumn( const idVecX &v, const idVecX &w, int r, int *i
 	assert( r >= 0 && r < numRows && r < numColumns );
 	assert( w[r] == 0.0f );
 
-	s.SetData( Max( numRows, numColumns ), VECX_ALLOCA( Max( numRows, numColumns ) ) );
+	s.SetData( std:max( numRows, numColumns ), VECX_ALLOCA( std:max( numRows, numColumns ) ) );
 	s.Zero();
 	s[r] = 1.0f;
 
@@ -4043,7 +4043,7 @@ bool idMatX::LU_UpdateRowColumn( const idVecX &v, const idVecX &w, int r, int *i
 
 #else
 
-	int i, j, min, max, rp;
+	int i, j, nmin, nmax, rp;
 	float *y0, *y1, *z0, *z1;
 	double diag, beta0, beta1, p0, p1, q0, q1, d;
 
@@ -4082,8 +4082,8 @@ bool idMatX::LU_UpdateRowColumn( const idVecX &v, const idVecX &w, int r, int *i
 	memcpy( z1, w.ToFloatPtr(), w.GetSize() * sizeof( float ) );
 
 	// update the beginning of the to be updated row and column
-	min = Min( r, rp );
-	for ( i = 0; i < min; i++ ) {
+	nmin = min( r, rp );
+	for ( i = 0; i < nmin; i++ ) {
 		p0 = y0[i];
 		beta1 = z1[i] / (*this)[i][i];
 
@@ -4098,8 +4098,9 @@ bool idMatX::LU_UpdateRowColumn( const idVecX &v, const idVecX &w, int r, int *i
 	}
 
 	// update the lower right corner starting at r,r
-	max = Min( numRows, numColumns );
-	for ( i = min; i < max; i++ ) {
+	nmax = min( numRows, numColumns );
+	for ( i = nmin; i < nmax; i++ ) 
+	{
 		diag = (*this)[i][i];
 
 		p0 = y0[i];
@@ -4603,16 +4604,16 @@ bool idMatX::QR_UpdateRowColumn( idMatX &R, const idVecX &v, const idVecX &w, in
 	assert( r >= 0 && r < numRows && r < numColumns );
 	assert( w[r] == 0.0f );
 
-	s.SetData( Max( numRows, numColumns ), VECX_ALLOCA( Max( numRows, numColumns ) ) );
+	s.SetData( max( numRows, numColumns ), VECX_ALLOCA( max( numRows, numColumns ) ) );
 	s.Zero();
 	s[r] = 1.0f;
 
-	if ( !QR_UpdateRankOne( R, v, s, 1.0f ) ) {
+	if ( !QR_UpdateRankOne( R, v, s, 1.0f ) ) 
 		return false;
-	}
-	if ( !QR_UpdateRankOne( R, s, w, 1.0f ) ) {
+	
+	if ( !QR_UpdateRankOne( R, s, w, 1.0f ) ) 
 		return false;
-	}
+	
 	return true;
 }
 
@@ -6690,7 +6691,7 @@ bool idMatX::HessenbergToRealSchur( idMatX &H, idVecX &realEigenValues, idVecX &
 			realEigenValues[i] = H[i][i];
 			imaginaryEigenValues[i] = 0.0f;
 		}
-		for ( j = Max( i - 1, 0 ); j < numRows; j++ ) {
+		for ( j = max( i - 1, 0 ); j < numRows; j++ ) {
 			norm = norm + idMath::Fabs( H[i][j] );
 		}
 	}
@@ -6883,7 +6884,8 @@ bool idMatX::HessenbergToRealSchur( idMatX &H, idVecX &realEigenValues, idVecX &
 					r = r / p;
 
 					// modify row
-					for ( j = k; j < numRows; j++ ) {
+					for ( j = k; j < numRows; j++ ) 
+					{
 						p = H[k][j] + q * H[k+1][j];
 						if ( notlast ) {
 							p = p + r * H[k+2][j];
@@ -6894,7 +6896,8 @@ bool idMatX::HessenbergToRealSchur( idMatX &H, idVecX &realEigenValues, idVecX &
 					}
 
 					// modify column
-					for ( i = 0; i <= Min( n, k + 3 ); i++ ) {
+					for ( i = 0; i <= min( n, k + 3 ); i++ ) 
+					{
 						p = x * H[i][k] + y * H[i][k+1];
 						if ( notlast ) {
 							p = p + z * H[i][k+2];
@@ -7019,7 +7022,7 @@ bool idMatX::HessenbergToRealSchur( idMatX &H, idVecX &realEigenValues, idVecX &
 					}
 
 					// overflow control
-					t = Max( idMath::Fabs( H[i][n-1] ), idMath::Fabs( H[i][n] ) );
+					t = max( idMath::Fabs( H[i][n-1] ), idMath::Fabs( H[i][n] ) );
 					if ( ( eps * t ) * t > 1 ) {
 						for ( j = i; j <= n; j++ ) {
 							H[j][n-1] = H[j][n-1] / t;
@@ -7041,10 +7044,13 @@ bool idMatX::HessenbergToRealSchur( idMatX &H, idVecX &realEigenValues, idVecX &
 	}
 
 	// back transformation to get eigenvectors of original matrix
-	for ( j = numRows - 1; j >= low; j-- ) {
-		for ( i = low; i <= high; i++ ) {
+	for ( j = numRows - 1; j >= low; j-- ) 
+	{
+		for ( i = low; i <= high; i++ ) 
+		{
 			z = 0.0f;
-			for ( k = low; k <= Min( j, high ); k++ ) {
+			for ( k = low; k <= min( j, high ); k++ ) 
+			{
 				z = z + (*this)[i][k] * H[k][j];
 			}
 			(*this)[i][j] = z;
@@ -7087,15 +7093,15 @@ idMatX::Eigen_SortIncreasing
 */
 void idMatX::Eigen_SortIncreasing( idVecX &eigenValues ) {
 	int i, j, k;
-	float min;
+	float nmin;
 
 	for ( i = 0, j; i <= numRows - 2; i++ ) {
 		j = i;
-		min = eigenValues[j];
+		nmin = eigenValues[j];
 		for ( k = i + 1; k < numRows; k++ ) {
-			if ( eigenValues[k] < min ) {
+			if ( eigenValues[k] < nmin ) {
 				j = k;
-				min = eigenValues[j];
+				nmin = eigenValues[j];
 			}
 		}
 		if ( j != i ) {
@@ -7110,20 +7116,25 @@ void idMatX::Eigen_SortIncreasing( idVecX &eigenValues ) {
 idMatX::Eigen_SortDecreasing
 ============
 */
-void idMatX::Eigen_SortDecreasing( idVecX &eigenValues ) {
-	int i, j, k;
+void idMatX::Eigen_SortDecreasing( idVecX &eigenValues ) 
+{
+	int i = 0, j = 0, k = 0;
 	float max;
 
-	for ( i = 0, j; i <= numRows - 2; i++ ) {
+	for ( i = 0, j = 0; i <= numRows - 2; i++ ) {
 		j = i;
 		max = eigenValues[j];
-		for ( k = i + 1; k < numRows; k++ ) {
-			if ( eigenValues[k] > max ) {
+		for ( k = i + 1; k < numRows; k++ ) 
+		{
+			if ( eigenValues[k] > max ) 
+			{
 				j = k;
 				max = eigenValues[j];
 			}
 		}
-		if ( j != i ) {
+
+		if ( j != i ) 
+		{
 			eigenValues.SwapElements( i, j );
 			SwapColumns( i, j );
 		}

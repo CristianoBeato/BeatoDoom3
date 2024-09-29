@@ -1011,21 +1011,22 @@ ID_INLINE idVec3 &operator*=( idVec3 &vec, const idMat4 &mat ) {
 }
 
 ID_INLINE bool idMat4::Compare( const idMat4 &a ) const {
-	dword i;
+	uint32_t i;
 	const float *ptr1, *ptr2;
 
 	ptr1 = reinterpret_cast<const float *>(mat);
 	ptr2 = reinterpret_cast<const float *>(a.mat);
-	for ( i = 0; i < 4*4; i++ ) {
-		if ( ptr1[i] != ptr2[i] ) {
+	for ( i = 0; i < 4*4; i++ ) 
+	{
+		if ( ptr1[i] != ptr2[i] ) 
 			return false;
-		}
+		
 	}
 	return true;
 }
 
 ID_INLINE bool idMat4::Compare( const idMat4 &a, const float epsilon ) const {
-	dword i;
+	uint32_t i;
 	const float *ptr1, *ptr2;
 
 	ptr1 = reinterpret_cast<const float *>(mat);
@@ -1336,7 +1337,7 @@ ID_INLINE idVec5 &operator*=( idVec5 &vec, const idMat5 &mat ) {
 }
 
 ID_INLINE bool idMat5::Compare( const idMat5 &a ) const {
-	dword i;
+	uint32_t i;
 	const float *ptr1, *ptr2;
 
 	ptr1 = reinterpret_cast<const float *>(mat);
@@ -1350,7 +1351,7 @@ ID_INLINE bool idMat5::Compare( const idMat5 &a ) const {
 }
 
 ID_INLINE bool idMat5::Compare( const idMat5 &a, const float epsilon ) const {
-	dword i;
+	uint32_t i;
 	const float *ptr1, *ptr2;
 
 	ptr1 = reinterpret_cast<const float *>(mat);
@@ -1653,7 +1654,7 @@ ID_INLINE idVec6 &operator*=( idVec6 &vec, const idMat6 &mat ) {
 }
 
 ID_INLINE bool idMat6::Compare( const idMat6 &a ) const {
-	dword i;
+	uint32_t i;
 	const float *ptr1, *ptr2;
 
 	ptr1 = reinterpret_cast<const float *>(mat);
@@ -1667,7 +1668,7 @@ ID_INLINE bool idMat6::Compare( const idMat6 &a ) const {
 }
 
 ID_INLINE bool idMat6::Compare( const idMat6 &a, const float epsilon ) const {
-	dword i;
+	uint32_t i;
 	const float *ptr1, *ptr2;
 
 	ptr1 = reinterpret_cast<const float *>(mat);
@@ -2275,12 +2276,13 @@ ID_INLINE void idMatX::SetTempSize( int rows, int columns ) {
 	MATX_CLEAREND();
 }
 
-ID_INLINE void idMatX::SetData( int rows, int columns, float *data ) {
+ID_INLINE void idMatX::SetData( int rows, int columns, float *data ) 
+{
 	assert( mat < idMatX::tempPtr || mat > idMatX::tempPtr + MATX_MAX_TEMP );
 	if ( mat != NULL && alloced != -1 ) {
 		Mem_Free16( mat );
 	}
-	assert( ( ( (int) data ) & 15 ) == 0 ); // data must be 16 byte aligned
+	assert( ( ( (intptr_t) data ) & 15 ) == 0 ); // data must be 16 byte aligned
 	mat = data;
 	alloced = -1;
 	numRows = rows;
@@ -2288,7 +2290,8 @@ ID_INLINE void idMatX::SetData( int rows, int columns, float *data ) {
 	MATX_CLEAREND();
 }
 
-ID_INLINE void idMatX::Zero( void ) {
+ID_INLINE void idMatX::Zero( void ) 
+{
 #ifdef MATX_SIMD
 	SIMDProcessor->Zero16( mat, numRows * numColumns );
 #else
@@ -2296,7 +2299,8 @@ ID_INLINE void idMatX::Zero( void ) {
 #endif
 }
 
-ID_INLINE void idMatX::Zero( int rows, int columns ) {
+ID_INLINE void idMatX::Zero( int rows, int columns ) 
+{
 	SetSize( rows, columns );
 #ifdef MATX_SIMD
 	SIMDProcessor->Zero16( mat, numRows * numColumns );
@@ -2305,7 +2309,8 @@ ID_INLINE void idMatX::Zero( int rows, int columns ) {
 #endif
 }
 
-ID_INLINE void idMatX::Identity( void ) {
+ID_INLINE void idMatX::Identity( void ) 
+{
 	assert( numRows == numColumns );
 #ifdef MATX_SIMD
 	SIMDProcessor->Zero16( mat, numRows * numColumns );

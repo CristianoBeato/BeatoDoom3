@@ -57,8 +57,8 @@ public:
 
 	void			Normalize( void );
 
-	void			SetColor( dword color );
-	dword			GetColor( void ) const;
+	void			SetColor( uint32_t color );
+	uint32_t		GetColor( void ) const;
 };
 
 ID_INLINE float idDrawVert::operator[]( const int index ) const {
@@ -70,7 +70,8 @@ ID_INLINE float	&idDrawVert::operator[]( const int index ) {
 	return ((float *)(&xyz))[index];
 }
 
-ID_INLINE void idDrawVert::Clear( void ) {
+ID_INLINE void idDrawVert::Clear( void ) 
+{
 	xyz.Zero();
 	st.Zero();
 	normal.Zero();
@@ -79,12 +80,14 @@ ID_INLINE void idDrawVert::Clear( void ) {
 	color[0] = color[1] = color[2] = color[3] = 0;
 }
 
-ID_INLINE void idDrawVert::Lerp( const idDrawVert &a, const idDrawVert &b, const float f ) {
+ID_INLINE void idDrawVert::Lerp( const idDrawVert &a, const idDrawVert &b, const float f ) 
+{
 	xyz = a.xyz + f * ( b.xyz - a.xyz );
 	st = a.st + f * ( b.st - a.st );
 }
 
-ID_INLINE void idDrawVert::LerpAll( const idDrawVert &a, const idDrawVert &b, const float f ) {
+ID_INLINE void idDrawVert::LerpAll( const idDrawVert &a, const idDrawVert &b, const float f ) 
+{
 	xyz = a.xyz + f * ( b.xyz - a.xyz );
 	st = a.st + f * ( b.st - a.st );
 	normal = a.normal + f * ( b.normal - a.normal );
@@ -96,12 +99,14 @@ ID_INLINE void idDrawVert::LerpAll( const idDrawVert &a, const idDrawVert &b, co
 	color[3] = (byte)( a.color[3] + f * ( b.color[3] - a.color[3] ) );
 }
 
-ID_INLINE void idDrawVert::SetColor( dword color ) {
-	*reinterpret_cast<dword *>(this->color) = color;
+ID_INLINE void idDrawVert::SetColor( uint32_t color ) 
+{
+	*reinterpret_cast<uint32_t*>(this->color) = color;
 }
 
-ID_INLINE dword idDrawVert::GetColor( void ) const {
-	return *reinterpret_cast<const dword *>(this->color);
+ID_INLINE uint32_t idDrawVert::GetColor( void ) const 
+{
+	return *reinterpret_cast<const uint32_t *>(this->color);
 }
 
 #endif /* !__DRAWVERT_H__ */

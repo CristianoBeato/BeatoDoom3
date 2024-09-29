@@ -51,9 +51,11 @@ public:
 	~idGuiScript();
 
 	bool Parse(idParser *src);
-	void Execute(idWindow *win) {
-		if (handler) {
-			handler(win, &parms);
+	void Execute(idWindow *win) 
+	{
+		if (handler) 
+		{
+			handler(win, &parms );
 		}
 	}
 	void FixupParms(idWindow *win);

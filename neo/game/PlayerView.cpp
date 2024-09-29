@@ -670,22 +670,29 @@ void idPlayerView::InfluenceVision( idUserInterface *hud, const renderView_t *vi
 
 	float distance = 0.0f;
 	float pct = 1.0f;
-	if ( player->GetInfluenceEntity() ) {
+	if ( player->GetInfluenceEntity() ) 
+	{
 		distance = ( player->GetInfluenceEntity()->GetPhysics()->GetOrigin() - player->GetPhysics()->GetOrigin() ).Length();
-		if ( player->GetInfluenceRadius() != 0.0f && distance < player->GetInfluenceRadius() ) {
+		if ( player->GetInfluenceRadius() != 0.0f && distance < player->GetInfluenceRadius() ) 
+		{
 			pct = distance / player->GetInfluenceRadius();
-			pct = 1.0f - idMath::ClampFloat( 0.0f, 1.0f, pct );
+			pct = 1.0f - clamp( pct, 0.0f, 1.0f );
 		}
 	}
-	if ( player->GetInfluenceMaterial() ) {
+	if ( player->GetInfluenceMaterial() ) 
+	{
 		SingleView( hud, view );
 		renderSystem->CaptureRenderToImage( "_currentRender" );
 		renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, pct );
 		renderSystem->DrawStretchPic( 0.0f, 0.0f, 640.0f, 480.0f, 0.0f, 0.0f, 1.0f, 1.0f, player->GetInfluenceMaterial() );
-	} else if ( player->GetInfluenceEntity() == NULL ) {
+	} 
+	else if ( player->GetInfluenceEntity() == nullptr ) 
+	{
 		SingleView( hud, view );
 		return;
-	} else {
+	} 
+	else 
+	{
 		int offset =  25 + sinf( gameLocal.time );
 		DoubleVision( hud, view, pct * offset );
 	}
@@ -696,25 +703,30 @@ void idPlayerView::InfluenceVision( idUserInterface *hud, const renderView_t *vi
 idPlayerView::RenderPlayerView
 ===================
 */
-void idPlayerView::RenderPlayerView( idUserInterface *hud ) {
+void idPlayerView::RenderPlayerView( idUserInterface *hud ) 
+{
 	const renderView_t *view = player->GetRenderView();
 
-	if ( g_skipViewEffects.GetBool() ) {
+	if ( g_skipViewEffects.GetBool() ) 
+	{
 		SingleView( hud, view );
-	} else {
-		if ( player->GetInfluenceMaterial() || player->GetInfluenceEntity() ) {
+	} 
+	else 
+	{
+		if ( player->GetInfluenceMaterial() || player->GetInfluenceEntity() )
 			InfluenceVision( hud, view );
-		} else if ( gameLocal.time < dvFinishTime ) {
+		else if ( gameLocal.time < dvFinishTime )
 			DoubleVision( hud, view, dvFinishTime - gameLocal.time );
-		} else if ( player->PowerUpActive( BERSERK ) ) {
+		else if ( player->PowerUpActive( BERSERK ) ) 
 			BerserkVision( hud, view );
-		} else {
+		else 
 			SingleView( hud, view );
-		}
+		
 		ScreenFade();
 	}
 
-	if ( net_clientLagOMeter.GetBool() && lagoMaterial && gameLocal.isClient ) {
+	if ( net_clientLagOMeter.GetBool() && lagoMaterial && gameLocal.isClient ) 
+	{
 		renderSystem->SetColor4( 1.0f, 1.0f, 1.0f, 1.0f );
 		renderSystem->DrawStretchPic( 10.0f, 380.0f, 64.0f, 64.0f, 0.0f, 0.0f, 1.0f, 1.0f, lagoMaterial );
 	}	
