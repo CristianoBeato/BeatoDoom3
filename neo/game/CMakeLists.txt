@@ -219,5 +219,5 @@ target_precompile_headers( ${GAME_LIBRARY_NAME}
 		)
 
 if(NOT BUILD_MONOLITH)
-	target_link_libraries( ${GAME_LIBRARY_NAME} idlib ${SDL_LIBRARIES} )
+	target_link_libraries( ${GAME_LIBRARY_NAME} idlib )
 endif(NOT BUILD_MONOLITH)

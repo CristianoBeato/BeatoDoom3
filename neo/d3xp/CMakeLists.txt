@@ -3,7 +3,7 @@
 ##	Game: Game Logic Lib		##
 ##################################
 
-add_definitions( -D__DOOM__ -DGAME_DLL )
+add_definitions( -D__DOOM__ -DGAME_DLL -D_D3XP )
 
 ##
 ## Basic Game Logic
