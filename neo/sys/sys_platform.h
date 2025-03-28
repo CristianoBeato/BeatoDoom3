@@ -27,24 +27,26 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #define _SYS_PLATFORM_H_
 
 // c/c++ standarts
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
 #include <time.h>
 #include <ctype.h>
-#include <typeinfo>
 #include <errno.h>
 #include <math.h>
+
+// STD C++ 17
+#include <cstdio>
+#include <cstdlib>
+#include <cstdarg>
+#include <cstring>
+#include <typeinfo>
 #include <algorithm>
 
-// SDL2 common
-#include <SDL2/SDL_stdinc.h>	
-#include <SDL2/SDL_assert.h>
-#include <SDL2/SDL_endian.h>
-#include <SDL2/SDL_cpuinfo.h>
-#include <SDL2/SDL_loadso.h>
-#include <SDL2/SDL_cpuinfo.h>
+// SDL3 common
+#include <SDL3/SDL_stdinc.h>	
+#include <SDL3/SDL_assert.h>
+#include <SDL3/SDL_endian.h>
+#include <SDL3/SDL_cpuinfo.h>
+#include <SDL3/SDL_loadso.h>
+#include <SDL3/SDL_cpuinfo.h>
 
 /*
 #define _ARCH_x86_32_
