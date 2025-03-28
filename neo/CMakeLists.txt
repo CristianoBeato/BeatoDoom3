@@ -41,7 +41,7 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
 #	add_compile_definitions( ID_DEBUG_UNINITIALIZED_MEMORY )
 	
 	add_compile_options(-pipe)
-	add_compile_options(-Wall)
+	#add_compile_options(-Wall)
 	add_compile_options(-fPIC)
 	add_compile_options(-Wunknown-pragmas)
 
@@ -64,15 +64,14 @@ endif()
 ###########################
 find_package( ZLIB REQUIRED )
 find_package( OpenAL REQUIRED )
-find_package( SDL2 REQUIRED )
+find_package( SDL3 REQUIRED )
 find_package( JPEG REQUIRED )
-#find_package( OpenGL REQUIRED )
 #find_package( OGG REQUIRED )
 #find_package( VORBIS REQUIRED )
 
 include_directories(
 				${CMAKE_SOURCE_DIR}
-				${SDL2_INCLUDE_DIR}
+				${SDL3_INCLUDE_DIR}
 					)
 			
 ###########################
@@ -184,17 +183,17 @@ source_group("Async" FILES ${FRAMEWORK_ASYNC_SOURCES} )
 ## CollisionModel
 ## Colision detection utils
 SET( FRAMEWORK_COLISION_SOURCES
-	${CMAKE_SOURCE_DIR}/cm/CollisionModel_contacts.cpp
-	${CMAKE_SOURCE_DIR}/cm/CollisionModel_contents.cpp
-	${CMAKE_SOURCE_DIR}/cm/CollisionModel_debug.cpp
-	${CMAKE_SOURCE_DIR}/cm/CollisionModel_files.cpp
-	${CMAKE_SOURCE_DIR}/cm/CollisionModel_load.cpp
-	${CMAKE_SOURCE_DIR}/cm/CollisionModel_rotate.cpp
-	${CMAKE_SOURCE_DIR}/cm/CollisionModel_trace.cpp
-	${CMAKE_SOURCE_DIR}/cm/CollisionModel_translate.cpp
+	${CMAKE_SOURCE_DIR}/framework/cm/CollisionModel_contacts.cpp
+	${CMAKE_SOURCE_DIR}/framework/cm/CollisionModel_contents.cpp
+	${CMAKE_SOURCE_DIR}/framework/cm/CollisionModel_debug.cpp
+	${CMAKE_SOURCE_DIR}/framework/cm/CollisionModel_files.cpp
+	${CMAKE_SOURCE_DIR}/framework/cm/CollisionModel_load.cpp
+	${CMAKE_SOURCE_DIR}/framework/cm/CollisionModel_rotate.cpp
+	${CMAKE_SOURCE_DIR}/framework/cm/CollisionModel_trace.cpp
+	${CMAKE_SOURCE_DIR}/framework/cm/CollisionModel_translate.cpp
 	
-	${CMAKE_SOURCE_DIR}/cm/CollisionModel.h
-	${CMAKE_SOURCE_DIR}/cm/CollisionModel_local.h
+	${CMAKE_SOURCE_DIR}/framework/cm/CollisionModel.h
+	${CMAKE_SOURCE_DIR}/framework/cm/CollisionModel_local.h
 	) 
 
 source_group("CollisionModel" FILES ${FRAMEWORK_COLISION_SOURCES} )
@@ -203,47 +202,47 @@ source_group("CollisionModel" FILES ${FRAMEWORK_COLISION_SOURCES} )
 ## Ui
 ## Game Ui structures
 SET( FRAMEWORK_UI_SOURCES
-	${CMAKE_SOURCE_DIR}/ui/BindWindow.cpp
-	${CMAKE_SOURCE_DIR}/ui/BindWindow.h
-	${CMAKE_SOURCE_DIR}/ui/ChoiceWindow.cpp
-	${CMAKE_SOURCE_DIR}/ui/ChoiceWindow.h
-	${CMAKE_SOURCE_DIR}/ui/DeviceContext.cpp
-	${CMAKE_SOURCE_DIR}/ui/DeviceContext.h
-	${CMAKE_SOURCE_DIR}/ui/EditWindow.cpp
-	${CMAKE_SOURCE_DIR}/ui/EditWindow.h
-	${CMAKE_SOURCE_DIR}/ui/FieldWindow.cpp
-	${CMAKE_SOURCE_DIR}/ui/FieldWindow.h
-	${CMAKE_SOURCE_DIR}/ui/GameBearShootWindow.cpp
-	${CMAKE_SOURCE_DIR}/ui/GameBearShootWindow.h
-	${CMAKE_SOURCE_DIR}/ui/GameBustOutWindow.cpp
-	${CMAKE_SOURCE_DIR}/ui/GameBustOutWindow.h
-	${CMAKE_SOURCE_DIR}/ui/GameSSDWindow.cpp
-	${CMAKE_SOURCE_DIR}/ui/GameSSDWindow.h
-	${CMAKE_SOURCE_DIR}/ui/GuiScript.cpp
-	${CMAKE_SOURCE_DIR}/ui/GuiScript.h
-	${CMAKE_SOURCE_DIR}/ui/ListGUI.cpp
-	${CMAKE_SOURCE_DIR}/ui/ListGUI.h
-	${CMAKE_SOURCE_DIR}/ui/ListGUILocal.h
-	${CMAKE_SOURCE_DIR}/ui/ListWindow.cpp
-	${CMAKE_SOURCE_DIR}/ui/ListWindow.h
-	${CMAKE_SOURCE_DIR}/ui/MarkerWindow.cpp
-	${CMAKE_SOURCE_DIR}/ui/MarkerWindow.h
-	${CMAKE_SOURCE_DIR}/ui/RegExp.cpp
-	${CMAKE_SOURCE_DIR}/ui/RegExp.h
-	${CMAKE_SOURCE_DIR}/ui/RenderWindow.cpp
-	${CMAKE_SOURCE_DIR}/ui/RenderWindow.h
-	${CMAKE_SOURCE_DIR}/ui/Rectangle.h
-	${CMAKE_SOURCE_DIR}/ui/SimpleWindow.cpp
-	${CMAKE_SOURCE_DIR}/ui/SimpleWindow.h
-	${CMAKE_SOURCE_DIR}/ui/SliderWindow.cpp
-	${CMAKE_SOURCE_DIR}/ui/SliderWindow.h
-	${CMAKE_SOURCE_DIR}/ui/UserInterface.cpp
-	${CMAKE_SOURCE_DIR}/ui/UserInterface.h
-	${CMAKE_SOURCE_DIR}/ui/UserInterfaceLocal.h
-	${CMAKE_SOURCE_DIR}/ui/Window.cpp
-	${CMAKE_SOURCE_DIR}/ui/Window.h
-	${CMAKE_SOURCE_DIR}/ui/Winvar.cpp
-	${CMAKE_SOURCE_DIR}/ui/Winvar.h
+	${CMAKE_SOURCE_DIR}/framework/ui/BindWindow.cpp
+	${CMAKE_SOURCE_DIR}/framework/ui/BindWindow.h
+	${CMAKE_SOURCE_DIR}/framework/ui/ChoiceWindow.cpp
+	${CMAKE_SOURCE_DIR}/framework/ui/ChoiceWindow.h
+	${CMAKE_SOURCE_DIR}/framework/ui/DeviceContext.cpp
+	${CMAKE_SOURCE_DIR}/framework/ui/DeviceContext.h
+	${CMAKE_SOURCE_DIR}/framework/ui/EditWindow.cpp
+	${CMAKE_SOURCE_DIR}/framework/ui/EditWindow.h
+	${CMAKE_SOURCE_DIR}/framework/ui/FieldWindow.cpp
+	${CMAKE_SOURCE_DIR}/framework/ui/FieldWindow.h
+	${CMAKE_SOURCE_DIR}/framework/ui/GameBearShootWindow.cpp
+	${CMAKE_SOURCE_DIR}/framework/ui/GameBearShootWindow.h
+	${CMAKE_SOURCE_DIR}/framework/ui/GameBustOutWindow.cpp
+	${CMAKE_SOURCE_DIR}/framework/ui/GameBustOutWindow.h
+	${CMAKE_SOURCE_DIR}/framework/ui/GameSSDWindow.cpp
+	${CMAKE_SOURCE_DIR}/framework/ui/GameSSDWindow.h
+	${CMAKE_SOURCE_DIR}/framework/ui/GuiScript.cpp
+	${CMAKE_SOURCE_DIR}/framework/ui/GuiScript.h
+	${CMAKE_SOURCE_DIR}/framework/ui/ListGUI.cpp
+	${CMAKE_SOURCE_DIR}/framework/ui/ListGUI.h
+	${CMAKE_SOURCE_DIR}/framework/ui/ListGUILocal.h
+	${CMAKE_SOURCE_DIR}/framework/ui/ListWindow.cpp
+	${CMAKE_SOURCE_DIR}/framework/ui/ListWindow.h
+	${CMAKE_SOURCE_DIR}/framework/ui/MarkerWindow.cpp
+	${CMAKE_SOURCE_DIR}/framework/ui/MarkerWindow.h
+	${CMAKE_SOURCE_DIR}/framework/ui/RegExp.cpp
+	${CMAKE_SOURCE_DIR}/framework/ui/RegExp.h
+	${CMAKE_SOURCE_DIR}/framework/ui/RenderWindow.cpp
+	${CMAKE_SOURCE_DIR}/framework/ui/RenderWindow.h
+	${CMAKE_SOURCE_DIR}/framework/ui/Rectangle.h
+	${CMAKE_SOURCE_DIR}/framework/ui/SimpleWindow.cpp
+	${CMAKE_SOURCE_DIR}/framework/ui/SimpleWindow.h
+	${CMAKE_SOURCE_DIR}/framework/ui/SliderWindow.cpp
+	${CMAKE_SOURCE_DIR}/framework/ui/SliderWindow.h
+	${CMAKE_SOURCE_DIR}/framework/ui/UserInterface.cpp
+	${CMAKE_SOURCE_DIR}/framework/ui/UserInterface.h
+	${CMAKE_SOURCE_DIR}/framework/ui/UserInterfaceLocal.h
+	${CMAKE_SOURCE_DIR}/framework/ui/Window.cpp
+	${CMAKE_SOURCE_DIR}/framework/ui/Window.h
+	${CMAKE_SOURCE_DIR}/framework/ui/Winvar.cpp
+	${CMAKE_SOURCE_DIR}/framework/ui/Winvar.h
 	) 
 
 source_group("Ui" FILES ${FRAMEWORK_UI_SOURCES} )

@@ -1,6 +1,7 @@
  - Flexible CMAKE crossplatform build ( ON THE WAY )
  - SDL2 cross platform suport 
  - Modern SIMD instrinsics suport
+ - Better SIMD suport using Agner Fog Vector Lib Class library
  - x64 suport
  - Modern OpenGL 4.5 Rendering
 	- Suport for OpenGL Direct State Acess
