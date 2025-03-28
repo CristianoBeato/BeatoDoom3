@@ -28,7 +28,7 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 
 #include <atomic>
 
-extern const uint32_t k_MAX_TIMEOUT;
+extern const int32_t k_MAX_TIMEOUT;
 
 class crMutex
 {
@@ -47,7 +47,7 @@ private:
 	// Mutex pointer acess, for condition lock
 	friend class crCondition;
 	friend class crEvent;
-	struct SDL_mutex*	m_mtxhnd;
+	struct SDL_Mutex*	m_mtxhnd;
 
 	// prevent object copy
 	crMutex( const crMutex & s ) {}
@@ -91,7 +91,7 @@ public:
 private:
 	friend class crEvent;
 
-	struct SDL_cond*	m_cndhnd;
+	struct SDL_Condition*	m_cndhnd;
 
 	// prevent object copy
 	crCondition( const crCondition & s ) {}
@@ -107,7 +107,7 @@ public:
 	void	Trigger( void );
 
 private:
-	struct SDL_semaphore*	m_sem;
+	struct SDL_Semaphore*	m_sem;
 };
 
 //

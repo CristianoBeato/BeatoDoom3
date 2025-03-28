@@ -29,7 +29,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "../precompiled.h"
 #pragma hdrstop
 
-#include <SDL2/SDL_thread.h>
+#include <SDL3/SDL_thread.h>
 
 #include "Simd_Generic.h"
 
@@ -4116,7 +4116,7 @@ void idSIMD::Test_f( const idCmdArgs &args )
 {
 
 // BEATO Begin:
-	SDL_SetThreadPriority( SDL_THREAD_PRIORITY_TIME_CRITICAL ); // May need require you to be an administrator account
+	SDL_SetCurrentThreadPriority( SDL_THREAD_PRIORITY_TIME_CRITICAL ); // May need require you to be an administrator account
 // BEATO End
 
 	p_simd = processor;
@@ -4238,6 +4238,6 @@ void idSIMD::Test_f( const idCmdArgs &args )
 	p_generic = NULL;
 
 // BEATO Begin:
-	SDL_SetThreadPriority( SDL_THREAD_PRIORITY_NORMAL ); // May need require you to be an administrator account
+	SDL_SetCurrentThreadPriority( SDL_THREAD_PRIORITY_NORMAL ); // May need require you to be an administrator account
 // BEATO End
 }

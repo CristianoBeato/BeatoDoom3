@@ -2677,7 +2677,7 @@ void idCommonLocal::LoadGameDLL( void )
 	common->DPrintf( "Loading game DLL: '%s'\n", dllPath );
 
 //BEATO Begin
-	gameDLL = SDL_LoadObject( dllPath ); //	gameDLL = sys->DLL_Load( dllPath );
+	gameDLL = reinterpret_cast<void*>( SDL_LoadObject( dllPath ) ); //	gameDLL = sys->DLL_Load( dllPath );
 	if ( !gameDLL ) 
 	{
 		common->FatalError( "couldn't load game dynamic library" );
@@ -2685,12 +2685,12 @@ void idCommonLocal::LoadGameDLL( void )
 	}
 
 	//GetGameAPI = (GetGameAPI_t) Sys_DLL_GetProcAddress( gameDLL, "GetGameAPI" );
-	GetGameAPI = (GetGameAPI_t)SDL_LoadFunction( gameDLL, "GetGameAPI" );
+	GetGameAPI = (GetGameAPI_t)SDL_LoadFunction( static_cast<SDL_SharedObject*>( gameDLL ), "GetGameAPI" );
 
 	if ( !GetGameAPI )
 	{
 		
-		SDL_UnloadObject( gameDLL ); //Sys_DLL_Unload( gameDLL );
+		SDL_UnloadObject( static_cast<SDL_SharedObject*>( gameDLL ) ); //Sys_DLL_Unload( gameDLL );
 		gameDLL = nullptr;
 		common->FatalError( "couldn't find game DLL API" );
 		return;
@@ -2715,7 +2715,7 @@ void idCommonLocal::LoadGameDLL( void )
 
 	if ( gameExport.version != GAME_API_VERSION )
 	{
-		SDL_UnloadObject( gameDLL ); //Sys_DLL_Unload( gameDLL );
+		SDL_UnloadObject( static_cast<SDL_SharedObject*>( gameDLL ) ); //Sys_DLL_Unload( gameDLL );
 		gameDLL = nullptr;
 		common->FatalError( "wrong game DLL API version" );
 		return;
@@ -2749,7 +2749,7 @@ void idCommonLocal::UnloadGameDLL( void ) {
 
 	if ( gameDLL )
 	{
-		SDL_UnloadObject( gameDLL );//Sys_DLL_Unload( gameDLL );
+		SDL_UnloadObject( static_cast<SDL_SharedObject*>( gameDLL ) );//Sys_DLL_Unload( gameDLL );
 		gameDLL = NULL;
 	}
 	game = NULL;

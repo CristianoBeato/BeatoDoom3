@@ -26,7 +26,7 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #include "idlib/precompiled.h"
 #include "Thread.h"
 
-#include <SDL2/SDL_thread.h>
+#include <SDL3/SDL_thread.h>
 
 /*
 ================================================================================================
@@ -85,16 +85,24 @@ bool crSysThread::StartThread( const char *name, bool worker, int priority, uint
 	m_priority = priority;
 	m_isWorker = worker;
 
-	// Creathe thread 
-	m_threadHandle = SDL_CreateThreadWithStackSize( ThreadProc, name, stackSize, this );
+	//m_threadHandle = SDL_CreateThreadWithStackSize( ThreadProc, name, stackSize, this );
+	// Creathe thread
+	SDL_PropertiesID thrprop = SDL_CreateProperties();
+	SDL_SetStringProperty( thrprop, SDL_PROP_THREAD_CREATE_NAME_STRING, name );
+	SDL_SetNumberProperty( thrprop, SDL_PROP_THREAD_CREATE_STACKSIZE_NUMBER, stackSize );
+	SDL_SetPointerProperty( thrprop, SDL_PROP_THREAD_CREATE_USERDATA_POINTER, reinterpret_cast<void*>( this ) );
+	SDL_SetPointerProperty( thrprop, SDL_PROP_THREAD_CREATE_ENTRY_FUNCTION_POINTER, (void*)&ThreadProc );
+	m_threadHandle = SDL_CreateThreadWithProperties( thrprop );
 	if ( !m_threadHandle )
 	{
 		throw idException( "Failed to create Thread: %s", SDL_GetError() );
 	}
 
+	SDL_DestroyProperties( thrprop );
+
 	//
 	if (worker)
-		m_signalWorkerDone->Wait( SDL_MUTEX_MAXWAIT );
+		m_signalWorkerDone->Wait( 0xFFFFFF );
 	
 	m_isRunning = true;
 	return true;
@@ -136,7 +144,7 @@ crSysThread::WaitForThread
 void crSysThread::WaitForThread(void)
 {
 	if ( m_isWorker ) 
-		m_signalWorkerDone->Wait( SDL_MUTEX_MAXWAIT );
+		m_signalWorkerDone->Wait( 0xFFFFFF );
 	else if ( m_isRunning ) 
 		m_threadHandle = nullptr; //Sys_DestroyThread( threadHandle ); // not needed for SDL2, thread clear it own handler
 }
@@ -201,7 +209,7 @@ int crSysThread::ThreadProc( void* threadPtr )
 				{
 					thread->m_signalWorkerDone->Raise();
 					thread->m_signalMutex->Unlock();
-					thread->m_signalMoreWorkToDo->Wait( SDL_MUTEX_MAXWAIT );
+					thread->m_signalMoreWorkToDo->Wait( 0xFFFFFF );
 					continue;
 				}
 

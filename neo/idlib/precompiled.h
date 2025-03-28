@@ -106,11 +106,11 @@ const int MAX_EXPRESSION_REGISTERS = 4096;
 #include "../framework/async/NetworkSystem.h"
 
 // user interfaces
-#include "../ui/ListGUI.h"
-#include "../ui/UserInterface.h"
+#include "../framework/ui/ListGUI.h"
+#include "../framework/ui/UserInterface.h"
 
 // collision detection system
-#include "../cm/CollisionModel.h"
+#include "../framework/cm/CollisionModel.h"
 
 // AAS files and manager
 #include "../tools/compilers/aas/AASFile.h"

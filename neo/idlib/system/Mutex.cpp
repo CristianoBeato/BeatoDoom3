@@ -26,9 +26,9 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #include "idlib/precompiled.h"
 #include "Mutex.h"
 
-#include <SDL2/SDL_mutex.h>
+#include <SDL3/SDL_mutex.h>
 
-const uint32_t k_MAX_TIMEOUT = SDL_MUTEX_MAXWAIT;
+const int32_t k_MAX_TIMEOUT = -1;
 
 crMutex::crMutex( void ) : m_mtxhnd( nullptr )
 {
@@ -46,24 +46,24 @@ crMutex::~crMutex( void )
 
 void crMutex::Lock( void ) const
 {
-	SDL_LockMutex( m_mtxhnd );
+	SDL_LockMutex( const_cast<SDL_Mutex*>( m_mtxhnd ) );
 }
 
 void crMutex::Unlock( void ) const
 {	
-	SDL_UnlockMutex( m_mtxhnd );
+	SDL_UnlockMutex( const_cast<SDL_Mutex*>( m_mtxhnd ) );
 }
 
 crCondition::crCondition( void ) : m_cndhnd( nullptr )
 {
-	m_cndhnd = SDL_CreateCond();
+	m_cndhnd = SDL_CreateCondition();
 }
 
 crCondition::~crCondition( void )
 {
 	if (m_cndhnd != nullptr)
 	{
-		SDL_DestroyCond( m_cndhnd );
+		SDL_DestroyCondition( m_cndhnd );
 		m_cndhnd = nullptr;
 	}
 }
@@ -71,13 +71,13 @@ crCondition::~crCondition( void )
 // Unlock one thread
 void crCondition::Signal( void ) const
 {
-	SDL_CondSignal( m_cndhnd );
+	SDL_SignalCondition( const_cast<SDL_Condition*>( m_cndhnd ) );
 }
 
 // Unlock all thread waiting for the signal
 void crCondition::SignalAll( void ) const
 {
-	SDL_CondBroadcast( m_cndhnd );
+	SDL_BroadcastCondition( const_cast<SDL_Condition*>( m_cndhnd ) );
 }
 
 // Lock the current thread execution
@@ -88,9 +88,9 @@ void crCondition::Wait( const crMutex * lock, const uint32_t timeout ) const
 	// Must be locked before
 	lock->Lock();
 	if (timeout > 0)
-		SDL_CondWaitTimeout( m_cndhnd, lock->m_mtxhnd, timeout );
+		SDL_WaitConditionTimeout( const_cast<SDL_Condition*>( m_cndhnd ), lock->m_mtxhnd, timeout );
 	else
-		SDL_CondWait( m_cndhnd, lock->m_mtxhnd );
+		SDL_WaitCondition( const_cast<SDL_Condition*>( m_cndhnd ), lock->m_mtxhnd );
 }
 
 crSemaphore::crSemaphore( void ) : m_sem(nullptr)
@@ -111,15 +111,15 @@ void crSemaphore::Wait( const uint32_t timeout ) const
 {
 	assert( m_sem );
 	if (timeout > 0)
-		SDL_SemWaitTimeout( m_sem, timeout );
+		SDL_WaitSemaphoreTimeout( const_cast<SDL_Semaphore*>( m_sem ), timeout );
 	else
-		SDL_SemWait( m_sem );
+		SDL_WaitSemaphore( const_cast<SDL_Semaphore*>( m_sem ) );
 }
 
 void crSemaphore::Trigger( void )
 {
 	assert( m_sem );
-	SDL_SemPost( m_sem );
+	SDL_SignalSemaphore( const_cast<SDL_Semaphore*>( m_sem ) );
 }
 
 crEvent::crEvent( const bool manualReset ) :
@@ -186,17 +186,17 @@ bool crEvent::Wait( unsigned int timeout )
 	else // we'll have to wait for a signal
 	{
 		m_waiting.fetch_add( 1 );
-		if( timeout == SDL_MUTEX_MAXWAIT )
-			status = SDL_CondWait( m_cndhnd, m_mtxhnd );
+		if( timeout == 0xFFFFFF )
+			SDL_WaitCondition( m_cndhnd, m_mtxhnd );
 		else
-			status = SDL_CondWaitTimeout( m_cndhnd, m_mtxhnd, timeout );
+			SDL_WaitConditionTimeout( m_cndhnd, m_mtxhnd, timeout ); // todo: check return status
 
 		m_waiting.fetch_sub( 1 );
 	}
 
 	Unlock();
 
-	assert( status == 0 || ( timeout != SDL_MUTEX_MAXWAIT && status == SDL_MUTEX_TIMEDOUT ) );
+	assert( status == 0 || ( timeout != 0xFFFFFF && status == -1 ) );
 
 	return ( status == 0 );
 }
