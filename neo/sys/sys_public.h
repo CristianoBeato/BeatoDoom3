@@ -189,24 +189,6 @@ double			Sys_ClockTicksPerSecond( void );
 cpuid_t			Sys_GetProcessorId( void );
 const char *	Sys_GetProcessorString( void );
 
-// returns true if the FPU stack is empty
-bool			Sys_FPU_StackIsEmpty( void );
-
-// empties the FPU stack
-void			Sys_FPU_ClearStack( void );
-
-// returns the FPU state as a string
-const char *	Sys_FPU_GetState( void );
-
-// enables the given FPU exceptions
-void			Sys_FPU_EnableExceptions( int exceptions );
-
-// sets the FPU precision
-void			Sys_FPU_SetPrecision( int precision );
-
-// sets the FPU rounding mode
-void			Sys_FPU_SetRounding( int rounding );
-
 // sets Flush-To-Zero mode (only available when CPUID_FTZ is set)
 void			Sys_FPU_SetFTZ( bool enable );
 
