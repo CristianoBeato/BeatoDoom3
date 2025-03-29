@@ -30,7 +30,7 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "Model_local.h"
-#include "renderer_common.h"
+#include "renderer/renderer_common.h"
 
 
 /*
