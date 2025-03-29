@@ -17,7 +17,7 @@
 //	useful.
 
 //#include "stdafx.h"
-#include "../renderer_common.h"
+#include "precompiled.h"
 #pragma hdrstop
 
 #include "proptree.h"
