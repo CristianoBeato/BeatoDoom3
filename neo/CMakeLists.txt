@@ -71,8 +71,11 @@ find_package( JPEG REQUIRED )
 
 include_directories(
 				${CMAKE_SOURCE_DIR}
+				${CMAKE_SOURCE_DIR}/idlib
+				${CMAKE_SOURCE_DIR}/contrib/VectorClassLib/include
 				${SDL3_INCLUDE_DIR}
-					)
+				${ZLIB_INCLUDE_DIRS}
+				)
 			
 ###########################
 ##		 Engine 		 ##

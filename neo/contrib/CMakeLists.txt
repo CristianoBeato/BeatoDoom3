@@ -16,6 +16,34 @@ SET( MINIZIP_SOURCES
 
 source_group("MiniZip" FILES ${MINIZIP_SOURCES} )
 
+set( VECTOR_CLASS_SOURCES
+	${CMAKE_CURRENT_SOURCE_DIR}/VectorClassLib/include/instrset_detect.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/VectorClassLib/include/instrset.h
+	${CMAKE_CURRENT_SOURCE_DIR}/VectorClassLib/include/vectorclass.h
+	${CMAKE_CURRENT_SOURCE_DIR}/VectorClassLib/include/vector_convert.h
+	${CMAKE_CURRENT_SOURCE_DIR}/VectorClassLib/include/vectorf128.h
+	${CMAKE_CURRENT_SOURCE_DIR}/VectorClassLib/include/vectorf256e.h
+	${CMAKE_CURRENT_SOURCE_DIR}/VectorClassLib/include/vectorf256.h
+	${CMAKE_CURRENT_SOURCE_DIR}/VectorClassLib/include/vectorf512e.h
+	${CMAKE_CURRENT_SOURCE_DIR}/VectorClassLib/include/vectorf512.h
+	${CMAKE_CURRENT_SOURCE_DIR}/VectorClassLib/include/vectorfp16e.h
+	${CMAKE_CURRENT_SOURCE_DIR}/VectorClassLib/include/vectorfp16.h
+	${CMAKE_CURRENT_SOURCE_DIR}/VectorClassLib/include/vectori128.h
+	${CMAKE_CURRENT_SOURCE_DIR}/VectorClassLib/include/vectori256e.h
+	${CMAKE_CURRENT_SOURCE_DIR}/VectorClassLib/include/vectori256.h
+	${CMAKE_CURRENT_SOURCE_DIR}/VectorClassLib/include/vectori512e.h
+	${CMAKE_CURRENT_SOURCE_DIR}/VectorClassLib/include/vectori512.h
+	${CMAKE_CURRENT_SOURCE_DIR}/VectorClassLib/include/vectori512se.h
+	${CMAKE_CURRENT_SOURCE_DIR}/VectorClassLib/include/vectori512s.h
+	${CMAKE_CURRENT_SOURCE_DIR}/VectorClassLib/include/vectormath_common.h
+	${CMAKE_CURRENT_SOURCE_DIR}/VectorClassLib/include/vectormath_exp.h
+	${CMAKE_CURRENT_SOURCE_DIR}/VectorClassLib/include/vectormath_hyp.h
+	${CMAKE_CURRENT_SOURCE_DIR}/VectorClassLib/include/vectormath_lib.h
+	${CMAKE_CURRENT_SOURCE_DIR}/VectorClassLib/include/vectormath_trig.h
+	)
+
+	source_group("VectorClass" FILES ${VECTOR_CLASS_SOURCES} )
+
 ###
 ### GLui for tool gui
 ###
@@ -89,7 +117,8 @@ source_group("GLui" FILES ${GLUI_SOURCES} )
 ##
 SET( LIBS_SOURCES_ALL 
 	${MINIZIP_SOURCES}
-	${GLUI_SOURCESm}
+	#${GLUI_SOURCES}
+	${VECTOR_CLASS_SOURCES}
 	)
 
 add_library( contrib STATIC ${LIBS_SOURCES_ALL} )
