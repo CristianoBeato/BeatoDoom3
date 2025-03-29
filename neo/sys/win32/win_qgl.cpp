@@ -35,12 +35,12 @@ If you have questions concerning this license or the applicable additional terms
 ** QGL_Init() - loads libraries, assigns function pointers, etc.
 ** QGL_Shutdown() - unloads libraries, NULLs function pointers
 */
-#include "../../idlib/precompiled.h"
+#include "precompiled.h"
 #pragma hdrstop
 
 #include <float.h>
 #include "win_local.h"
-#include "renderer/tr_local.h"
+#include "renderer/renderer_common.h"
 
 
 int   ( WINAPI * qwglChoosePixelFormat )(HDC, CONST PIXELFORMATDESCRIPTOR *);

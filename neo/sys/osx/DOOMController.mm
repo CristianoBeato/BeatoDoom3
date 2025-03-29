@@ -27,7 +27,7 @@ If you have questions concerning this license or the applicable additional terms
 */
 
 // -*- mode: objc -*-
-#import "../../idlib/precompiled.h"
+#import "renderer_common.h"
 #import "DOOMController.h"
 
 #import <unistd.h>

@@ -2,7 +2,7 @@
 //
 
 //#include "stdafx.h"
-#include "../../../idlib/precompiled.h"
+#include "../renderer_common.h"
 #pragma hdrstop
 
 

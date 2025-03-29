@@ -27,10 +27,10 @@ If you have questions concerning this license or the applicable additional terms
 */
 
 
-#include "../idlib/precompiled.h"
+#include "precompiled.h"
 #pragma hdrstop
 
-#include "tr_local.h"
+#include "renderer_common.h"
 
 #ifdef BUILD_FREETYPE
 #include "../ft2/fterrors.h"

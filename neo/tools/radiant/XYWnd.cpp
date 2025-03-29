@@ -26,7 +26,7 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "../../idlib/precompiled.h"
+#include "precompiled.h"
 #pragma hdrstop
 
 #include "qe3.h"
@@ -34,7 +34,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "XYWnd.h"
 #include "DialogInfo.h"
 #include "splines.h"
-#include "../../renderer/tr_local.h"
+#include "../../renderer/renderer_common.h"
 #include "../../renderer/model_local.h"	// for idRenderModelLiquid
 
 #ifdef _DEBUG
@@ -2734,7 +2734,7 @@ bool CXYWnd::XY_MouseMoved(int x, int y, int buttons) {
 
 /*
  =======================================================================================================================
-    DRAWING £
+    DRAWING ï¿½
     XY_DrawGrid
  =======================================================================================================================
  */
@@ -3306,7 +3306,7 @@ bool FilterBrush(brush_t *pb) {
 
 /*
  =======================================================================================================================
-    PATH LINES £
+    PATH LINES ï¿½
     DrawPathLines Draws connections between entities. Needs to consider all entities, not just ones on screen, because
     the lines can be visible when neither end is. Called for both camera view and xy view.
  =======================================================================================================================

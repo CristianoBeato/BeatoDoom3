@@ -26,11 +26,11 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "../../../idlib/precompiled.h"
+#include "../renderer_common.h"
 #pragma hdrstop
 
 #include "dmap.h"
-#include "../../../renderer/tr_local.h"
+#include "../../../renderer/renderer_common.h"
 
 /*
 

@@ -26,13 +26,13 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "../idlib/precompiled.h"
+#include "precompiled.h"
 #pragma hdrstop
 
 #include <jpeglib.h>
 #include <jerror.h>
 
-#include "tr_local.h"
+#include "renderer_common.h"
 
 #define CIN_system	1
 #define CIN_loop	2

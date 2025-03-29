@@ -40,13 +40,13 @@ If you have questions concerning this license or the applicable additional terms
 ** Note that the GLW_xxx functions are Windows specific GL-subsystem
 ** related functions that are relevant ONLY to win_glimp.c
 */
-#include "../../idlib/precompiled.h"
+#include "precompiled.h"
 #pragma hdrstop
 
 #include "win_local.h"
 #include "rc/AFEditor_resource.h"
 #include "rc/doom_resource.h"
-#include "../../renderer/tr_local.h"
+#include "../../renderer/renderer_common.h"
 
 static void		GLW_InitExtensions( void );
 

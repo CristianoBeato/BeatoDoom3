@@ -91,13 +91,13 @@ const int MAX_EXPRESSION_OPS = 4096;
 const int MAX_EXPRESSION_REGISTERS = 4096;
 
 // renderer
-#include "../renderer/qgl.h"
+#include "../renderer/backend/qgl.h"
 #include "../renderer/Cinematic.h"
 #include "../renderer/Material.h"
-#include "../renderer/Model.h"
-#include "../renderer/ModelManager.h"
+#include "../renderer/models/Model.h"
+#include "../renderer/models/ModelManager.h"
 #include "../renderer/RenderSystem.h"
-#include "../renderer/RenderWorld.h"
+#include "../renderer/renderworld/RenderWorld.h"
 
 // sound engine
 #include "../sound/sound.h"

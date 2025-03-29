@@ -44,7 +44,7 @@ If you have questions concerning this license or the applicable additional terms
 #include <ifaddrs.h>
 #endif
 
-#include "../../idlib/precompiled.h"
+#include "renderer_common.h"
 
 idPort clientPort, serverPort;
 

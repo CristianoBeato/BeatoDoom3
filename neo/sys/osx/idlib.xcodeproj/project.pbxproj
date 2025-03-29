@@ -356,7 +356,7 @@
 		81C857BF0912AD0D0095BC33 /* Vector.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = Vector.h; sourceTree = "<group>"; };
 		81C857C00912AD0D0095BC33 /* Parser.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = Parser.cpp; path = ../../idlib/Parser.cpp; sourceTree = SOURCE_ROOT; };
 		81C857C10912AD0D0095BC33 /* Parser.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = Parser.h; path = ../../idlib/Parser.h; sourceTree = SOURCE_ROOT; };
-		81C857C20912AD0D0095BC33 /* precompiled.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = precompiled.h; path = ../../idlib/precompiled.h; sourceTree = SOURCE_ROOT; };
+		81C857C20912AD0D0095BC33 /* precompiled.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = precompiled.h; path = renderer_common.h; sourceTree = SOURCE_ROOT; };
 		81C857C30912AD0D0095BC33 /* Str.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = Str.cpp; path = ../../idlib/Str.cpp; sourceTree = SOURCE_ROOT; };
 		81C857C40912AD0D0095BC33 /* Str.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = Str.h; path = ../../idlib/Str.h; sourceTree = SOURCE_ROOT; };
 		81C857C50912AD0D0095BC33 /* Timer.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; name = Timer.cpp; path = ../../idlib/Timer.cpp; sourceTree = SOURCE_ROOT; };

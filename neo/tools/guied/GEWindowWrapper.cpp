@@ -26,11 +26,11 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "../../idlib/precompiled.h"
+#include "precompiled.h"
 #pragma hdrstop
 
 #include "../../sys/win32/rc/guied_resource.h"
-#include "../../renderer/tr_local.h"
+#include "../../renderer/renderer_common.h"
 #include "../../ui/EditWindow.h"
 #include "../../ui/ListWindow.h"
 #include "../../ui/BindWindow.h"

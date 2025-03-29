@@ -26,7 +26,7 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "../../idlib/precompiled.h"
+#include "renderer_common.h"
 #include <Carbon/Carbon.h>
 #include "PickMonitor.h"
 
@@ -390,7 +390,7 @@ OSErr TearDownPickMonitorPane(ControlRef inPane)
 #pragma mark -
 
 //------------------------------------------------------------------------------------
-// ¥ PickMonitorHandler
+// ï¿½ PickMonitorHandler
 //------------------------------------------------------------------------------------
 // Our command handler for the PickMonitor dialog.
 

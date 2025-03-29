@@ -26,7 +26,7 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "../../../idlib/precompiled.h"
+#include "../renderer_common.h"
 #pragma hdrstop
 
 #ifdef WIN32
@@ -36,7 +36,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "../../../sys/win32/win_local.h"
 #endif
 
-#include "../../../renderer/tr_local.h"
+#include "../../../renderer/renderer_common.h"
 
 /*
 

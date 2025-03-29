@@ -87,17 +87,17 @@ source_group("Async" FILES ${FRAMEWORK_ASYNC_SOURCES} )
 ## CollisionModel
 ## Colision detection utils
 SET( FRAMEWORK_COLISION_SOURCES
-	${CMAKE_SOURCE_DIR}/cm/CollisionModel_contacts.cpp
-	${CMAKE_SOURCE_DIR}/cm/CollisionModel_contents.cpp
-	${CMAKE_SOURCE_DIR}/cm/CollisionModel_debug.cpp
-	${CMAKE_SOURCE_DIR}/cm/CollisionModel_files.cpp
-	${CMAKE_SOURCE_DIR}/cm/CollisionModel_load.cpp
-	${CMAKE_SOURCE_DIR}/cm/CollisionModel_rotate.cpp
-	${CMAKE_SOURCE_DIR}/cm/CollisionModel_trace.cpp
-	${CMAKE_SOURCE_DIR}/cm/CollisionModel_translate.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/cm/CollisionModel_contacts.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/cm/CollisionModel_contents.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/cm/CollisionModel_debug.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/cm/CollisionModel_files.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/cm/CollisionModel_load.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/cm/CollisionModel_rotate.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/cm/CollisionModel_trace.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/cm/CollisionModel_translate.cpp
 	
-	${CMAKE_SOURCE_DIR}/cm/CollisionModel.h
-	${CMAKE_SOURCE_DIR}/cm/CollisionModel_local.h
+	${CMAKE_CURRENT_SOURCE_DIR}/cm/CollisionModel.h
+	${CMAKE_CURRENT_SOURCE_DIR}/cm/CollisionModel_local.h
 	) 
 
 source_group("CollisionModel" FILES ${FRAMEWORK_COLISION_SOURCES} )
@@ -106,48 +106,48 @@ source_group("CollisionModel" FILES ${FRAMEWORK_COLISION_SOURCES} )
 ## Ui
 ## Game Ui structures
 SET( FRAMEWORK_UI_SOURCES
-	${CMAKE_SOURCE_DIR}/ui/BindWindow.cpp
-	${CMAKE_SOURCE_DIR}/ui/ChoiceWindow.cpp
-	${CMAKE_SOURCE_DIR}/ui/DeviceContext.cpp
-	${CMAKE_SOURCE_DIR}/ui/EditWindow.cpp
-	${CMAKE_SOURCE_DIR}/ui/FieldWindow.cpp
-	${CMAKE_SOURCE_DIR}/ui/GameBearShootWindow.cpp
-	${CMAKE_SOURCE_DIR}/ui/GameBustOutWindow.cpp
-	${CMAKE_SOURCE_DIR}/ui/GameSSDWindow.cpp
-	${CMAKE_SOURCE_DIR}/ui/GuiScript.cpp
-	${CMAKE_SOURCE_DIR}/ui/ListGUI.cpp
-	${CMAKE_SOURCE_DIR}/ui/ListWindow.cpp
-	${CMAKE_SOURCE_DIR}/ui/MarkerWindow.cpp
-	${CMAKE_SOURCE_DIR}/ui/RegExp.cpp
-	${CMAKE_SOURCE_DIR}/ui/RenderWindow.cpp
-	${CMAKE_SOURCE_DIR}/ui/SimpleWindow.cpp
-	${CMAKE_SOURCE_DIR}/ui/SliderWindow.cpp
-	${CMAKE_SOURCE_DIR}/ui/UserInterface.cpp
-	${CMAKE_SOURCE_DIR}/ui/Window.cpp
-	${CMAKE_SOURCE_DIR}/ui/Winvar.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/BindWindow.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/ChoiceWindow.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/DeviceContext.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/EditWindow.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/FieldWindow.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/GameBearShootWindow.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/GameBustOutWindow.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/GameSSDWindow.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/GuiScript.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/ListGUI.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/ListWindow.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/MarkerWindow.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/RegExp.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/RenderWindow.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/SimpleWindow.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/SliderWindow.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/UserInterface.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/Window.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/Winvar.cpp
 	
-	${CMAKE_SOURCE_DIR}/ui/BindWindow.h
-	${CMAKE_SOURCE_DIR}/ui/ChoiceWindow.h
-	${CMAKE_SOURCE_DIR}/ui/DeviceContext.h
-	${CMAKE_SOURCE_DIR}/ui/EditWindow.h
-	${CMAKE_SOURCE_DIR}/ui/FieldWindow.h
-	${CMAKE_SOURCE_DIR}/ui/GameBearShootWindow.h
-	${CMAKE_SOURCE_DIR}/ui/GameBustOutWindow.h
-	${CMAKE_SOURCE_DIR}/ui/GameSSDWindow.h
-	${CMAKE_SOURCE_DIR}/ui/GuiScript.h
-	${CMAKE_SOURCE_DIR}/ui/ListGUI.h
-	${CMAKE_SOURCE_DIR}/ui/ListGUILocal.h
-	${CMAKE_SOURCE_DIR}/ui/ListWindow.h
-	${CMAKE_SOURCE_DIR}/ui/MarkerWindow.h
-	${CMAKE_SOURCE_DIR}/ui/Rectangle.h
-	${CMAKE_SOURCE_DIR}/ui/RegExp.h
-	${CMAKE_SOURCE_DIR}/ui/RenderWindow.h
-	${CMAKE_SOURCE_DIR}/ui/SimpleWindow.h
-	${CMAKE_SOURCE_DIR}/ui/SliderWindow.h
-	${CMAKE_SOURCE_DIR}/ui/UserInterface.h
-	${CMAKE_SOURCE_DIR}/ui/UserInterfaceLocal.h
-	${CMAKE_SOURCE_DIR}/ui/Window.h
-	${CMAKE_SOURCE_DIR}/ui/Winvar.h
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/BindWindow.h
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/ChoiceWindow.h
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/DeviceContext.h
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/EditWindow.h
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/FieldWindow.h
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/GameBearShootWindow.h
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/GameBustOutWindow.h
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/GameSSDWindow.h
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/GuiScript.h
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/ListGUI.h
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/ListGUILocal.h
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/ListWindow.h
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/MarkerWindow.h
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/Rectangle.h
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/RegExp.h
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/RenderWindow.h
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/SimpleWindow.h
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/SliderWindow.h
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/UserInterface.h
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/UserInterfaceLocal.h
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/Window.h
+	${CMAKE_CURRENT_SOURCE_DIR}/ui/Winvar.h
 	) 
 
 source_group("Ui" FILES ${FRAMEWORK_UI_SOURCES} )

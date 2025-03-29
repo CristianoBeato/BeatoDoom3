@@ -26,10 +26,10 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "../idlib/precompiled.h"
+#include "precompiled.h"
 #pragma hdrstop
 
-#include "tr_local.h"
+#include "renderer_common.h"
 
 typedef enum {
 	FPROG_BUMP_AND_LIGHT,

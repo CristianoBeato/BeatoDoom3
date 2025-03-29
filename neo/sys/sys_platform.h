@@ -36,6 +36,7 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #include <cstdio>
 #include <cstdlib>
 #include <cstdarg>
+#include <cstddef>
 #include <cstring>
 #include <typeinfo>
 #include <algorithm>

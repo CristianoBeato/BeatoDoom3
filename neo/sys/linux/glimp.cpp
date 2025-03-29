@@ -25,8 +25,8 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
-#include "../../idlib/precompiled.h"
-#include "../../renderer/tr_local.h"
+#include "renderer_common.h"
+#include "../../renderer/renderer_common.h"
 #include "local.h"
 
 #include <sys/types.h>

@@ -25,10 +25,10 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
-#include "../../idlib/precompiled.h"
+#include "precompiled.h"
 #pragma hdrstop
 
-#include "../../renderer/tr_local.h"
+#include "../../renderer/renderer_common.h"
 
 void glAccum(GLenum op, GLfloat value){};
 void glAlphaFunc(GLenum func, GLclampf ref){};

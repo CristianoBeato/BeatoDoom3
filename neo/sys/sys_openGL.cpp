@@ -31,7 +31,7 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #include <SDL2/SDL_mouse.h>
 
 #include "renderer/qgl.h"
-#include "renderer/tr_local.h"
+#include "renderer/renderer_common.h"
 #include "sys_main.h"
 
 static struct btRenderContext_s

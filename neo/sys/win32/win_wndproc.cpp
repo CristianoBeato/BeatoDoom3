@@ -26,11 +26,11 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "../../idlib/precompiled.h"
+#include "precompiled.h"
 #pragma hdrstop
 
 #include "win_local.h"
-#include "../../renderer/tr_local.h"
+#include "../../renderer/renderer_common.h"
 
 LONG WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
 

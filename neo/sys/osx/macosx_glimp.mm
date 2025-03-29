@@ -27,9 +27,9 @@ If you have questions concerning this license or the applicable additional terms
 */
 
 // -*- mode: objc -*-
-#import "../../idlib/precompiled.h"
+#import "renderer_common.h"
 
-#import "../../renderer/tr_local.h"
+#import "../../renderer/renderer_common.h"
 
 #import "macosx_glimp.h"
 
@@ -671,7 +671,7 @@ void GLimp_SetGamma(unsigned short red[256],
 /*****************************************************************************/
 
 #pragma mark -
-#pragma mark ¥ ATI_fragment_shader
+#pragma mark ï¿½ ATI_fragment_shader
 
 static GLuint sGeneratingProgram = 0;
 static int sCurrentPass;

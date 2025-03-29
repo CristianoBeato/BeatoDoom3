@@ -595,6 +595,6 @@ target_precompile_headers( beatoDOOM3
 		"$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_SOURCE_DIR}/sys/sys_local.h>"
 		"$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_SOURCE_DIR}/sys/sys_public.h>"
 		"$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_SOURCE_DIR}/framework/Common.h>"
-		"$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_SOURCE_DIR}/renderer/tr_local.h>"
+		"$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_SOURCE_DIR}/renderer/renderer_common.h>"
 		"$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_SOURCE_DIR}/sound/sound.h>"
 		)

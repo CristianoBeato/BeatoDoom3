@@ -74,7 +74,7 @@ SET( RENDERER_FRONTEND_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/tr_turboshadow.cpp
 	
 	${CMAKE_CURRENT_SOURCE_DIR}/Interaction.h
-	${CMAKE_CURRENT_SOURCE_DIR}/tr_local.h
+	${CMAKE_CURRENT_SOURCE_DIR}/renderer_common.h
 	)
 	
 source_group("Frontend" FILES ${RENDERER_FRONTEND_SOURCES} )
@@ -167,4 +167,4 @@ SET( RENDERER_SOURCES_ALL
 	
 add_library( renderer STATIC ${RENDERER_SOURCES_ALL} )
 add_dependencies( renderer idlib )
-target_precompile_headers( renderer PUBLIC ${CMAKE_SOURCE_DIR}/idlib/precompiled.h PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/tr_local.h>" )
+target_precompile_headers( renderer PUBLIC ${CMAKE_SOURCE_DIR}/idlib/precompiled.h PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/renderer_common.h>" )
