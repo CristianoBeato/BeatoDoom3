@@ -29,7 +29,7 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __TR_LOCAL_H__
 #define __TR_LOCAL_H__
 
-#include "Image.h"
+#include "images/Image.h"
 #include "MegaTexture.h"
 
 class idRenderWorldLocal;
@@ -93,8 +93,8 @@ SURFACES
 ==============================================================================
 */
 
-#include "ModelDecal.h"
-#include "ModelOverlay.h"
+#include "models/ModelDecal.h"
+#include "models/ModelOverlay.h"
 #include "Interaction.h"
 
 
@@ -1603,8 +1603,8 @@ idScreenRect R_CalcIntersectionScissor( const idRenderLightLocal * lightDef,
 
 //=============================================
 
-#include "RenderWorld_local.h"
-#include "GuiModel.h"
+#include "renderworld/RenderWorld_local.h"
+#include "models/GuiModel.h"
 #include "VertexCache.h"
 
 #endif /* !__TR_LOCAL_H__ */

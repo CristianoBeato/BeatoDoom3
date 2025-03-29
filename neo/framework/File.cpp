@@ -29,7 +29,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
-#include <minizip/unzip.h>
+#include "contrib/minizip/unzip.h"
 
 #define	MAX_PRINT_MSG		4096
 

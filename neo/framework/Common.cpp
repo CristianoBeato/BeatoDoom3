@@ -29,7 +29,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "idlib/precompiled.h"
 #pragma hdrstop
 
-#include "renderer/Image.h"
+#include "renderer/images/Image.h"
 
 #define	MAX_PRINT_MSG_SIZE	4096
 #define MAX_WARNING_LIST	256

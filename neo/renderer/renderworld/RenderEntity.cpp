@@ -29,28 +29,28 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
-#include "renderer_common.h"
+#include "renderer/renderer_common.h"
 
 idRenderEntityLocal::idRenderEntityLocal() {
 	memset( &parms, 0, sizeof( parms ) );
 	memset( modelMatrix, 0, sizeof( modelMatrix ) );
 
-	world					= NULL;
+	world					= nullptr;
 	index					= 0;
 	lastModifiedFrameNum	= 0;
 	archived				= false;
-	dynamicModel			= NULL;
+	dynamicModel			= nullptr;
 	dynamicModelFrameCount	= 0;
-	cachedDynamicModel		= NULL;
+	cachedDynamicModel		= nullptr;
 	referenceBounds			= bounds_zero;
 	viewCount				= 0;
-	viewEntity				= NULL;
+	viewEntity				= nullptr;
 	visibleCount			= 0;
-	decals					= NULL;
-	overlay					= NULL;
-	entityRefs				= NULL;
-	firstInteraction		= NULL;
-	lastInteraction			= NULL;
+	decals					= nullptr;
+	overlay					= nullptr;
+	entityRefs				= nullptr;
+	firstInteraction		= nullptr;
+	lastInteraction			= nullptr;
 	needsPortalSky			= false;
 }
 

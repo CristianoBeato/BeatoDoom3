@@ -3320,7 +3320,7 @@ idPlayer::GiveEmail
 */
 void idPlayer::GiveEmail( const char *emailName ) {
 
-	if ( emailName == NULL || *emailName == NULL ) {
+	if ( emailName == nullptr || *emailName == (char)0 ) {
 		return;
 	}
 

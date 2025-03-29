@@ -5894,10 +5894,14 @@ void idPlayer::UpdateViewAngles( void ) {
 
 		mountedObject->GetAngleRestrictions( yaw_min, yaw_max, varc );
 
-		if ( yaw_min < yaw_max ) {
+		if ( yaw_min < yaw_max ) 
+		{
 			viewAngles.yaw = idMath::ClampFloat( yaw_min, yaw_max, viewAngles.yaw );
-		} else {
-			if ( viewAngles.yaw < 0 ) {
+		} 
+		else 
+		{
+			if ( viewAngles.yaw < 0 ) 
+			{
 				viewAngles.yaw = idMath::ClampFloat( -180.f, yaw_max, viewAngles.yaw );
 			} else {
 				viewAngles.yaw = idMath::ClampFloat( yaw_min, 180.f, viewAngles.yaw );
@@ -6137,9 +6141,11 @@ void idPlayer::UpdatePowerupHud() {
 	if(hudPowerup != -1) {
 		if(PowerUpActive(hudPowerup)) {
 			int remaining = inventory.powerupEndTime[ hudPowerup ] - gameLocal.time;
-			int filledbar = idMath::ClampInt( 0, hudPowerupDuration, remaining );
-			
-			if ( hud ) {
+			//int filledbar = idMath::ClampInt( 0, hudPowerupDuration, remaining );
+			int filledbar = std::clamp( hudPowerupDuration - remaining, 0, hudPowerupDuration, remaining );
+
+			if ( hud ) 
+			{
 				hud->SetStateInt( "player_powerup", 100 * filledbar / hudPowerupDuration );
 				hud->SetStateInt( "player_poweruptime", remaining / 1000 );
 			}

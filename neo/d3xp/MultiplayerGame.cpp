@@ -468,21 +468,32 @@ void idMultiplayerGame::UpdateScoreboard( idUserInterface *scoreBoard, idPlayer 
 			// ranked player
 			iline++;
 			scoreBoard->SetStateString( va( "player%i", iline ), rankedPlayers[ i ]->GetUserInfo()->GetString( "ui_name" ) );
-			if ( IsGametypeTeamBased() ) { /* CTF */
-				value = idMath::ClampInt( MP_PLAYER_MINFRAGS, MP_PLAYER_MAXFRAGS, playerState[ rankedPlayers[ i ]->entityNumber ].fragCount );
-				scoreBoard->SetStateInt( va( "player%i_tdm_score", iline ), value );
-				value = idMath::ClampInt( MP_PLAYER_MINFRAGS, MP_PLAYER_MAXFRAGS, playerState[ rankedPlayers[ i ]->entityNumber ].teamFragCount );
-				scoreBoard->SetStateString( va( "player%i_tdm_tscore", iline ), va( "/ %i", value ) );
+			if ( IsGametypeTeamBased() ) 
+			{ /* CTF */
+				//value = idMath::ClampInt( MP_PLAYER_MINFRAGS, MP_PLAYER_MAXFRAGS, playerState[ rankedPlayers[ i ]->entityNumber ].fragCount );
+				//scoreBoard->SetStateInt( va( "player%i_tdm_score", iline ), value );
+				scoreBoard->SetStateInt( va( "player%i_tdm_score", iline ), std::clamp( playerState[ rankedPlayers[ i ]->entityNumber ].fragCount, MP_PLAYER_MINFRAGS, MP_PLAYER_MAXFRAGS ) );
+				
+				//value = idMath::ClampInt( MP_PLAYER_MINFRAGS, MP_PLAYER_MAXFRAGS, playerState[ rankedPlayers[ i ]->entityNumber ].teamFragCount );
+				//scoreBoard->SetStateString( va( "player%i_tdm_tscore", iline ), va( "/ %i", value ) );
+				scoreBoard->SetStateString( va( "player%i_tdm_tscore", iline ), va( "/ %i", std::clamp( playerState[ rankedPlayers[ i ]->entityNumber ].teamFragCount, MP_PLAYER_MINFRAGS, MP_PLAYER_MAXFRAGS ) ) );
 				scoreBoard->SetStateString( va( "player%i_score", iline ), "" );
-			} else {
-				value = idMath::ClampInt( MP_PLAYER_MINFRAGS, MP_PLAYER_MAXFRAGS, playerState[ rankedPlayers[ i ]->entityNumber ].fragCount );
-				scoreBoard->SetStateInt( va( "player%i_score", iline ), value );
+			
+				
+			
+			} 
+			else
+			{
+				//value = idMath::ClampInt( MP_PLAYER_MINFRAGS, MP_PLAYER_MAXFRAGS, playerState[ rankedPlayers[ i ]->entityNumber ].fragCount );
+				//scoreBoard->SetStateInt( va( "player%i_score", iline ), value );
+				scoreBoard->SetStateInt( va( "player%i_score", iline ), std::clamp( playerState[ rankedPlayers[ i ]->entityNumber ].fragCount, MP_PLAYER_MINFRAGS, MP_PLAYER_MAXFRAGS ) );
 				scoreBoard->SetStateString( va( "player%i_tdm_tscore", iline ), "" );
 				scoreBoard->SetStateString( va( "player%i_tdm_score", iline ), "" );
 			}
 
-			value = idMath::ClampInt( 0, MP_PLAYER_MAXWINS, playerState[ rankedPlayers[ i ]->entityNumber ].wins );
-			scoreBoard->SetStateInt( va( "player%i_wins", iline ), value );
+			//value = idMath::ClampInt( 0, MP_PLAYER_MAXWINS, playerState[ rankedPlayers[ i ]->entityNumber ].wins );
+			//scoreBoard->SetStateInt( va( "player%i_wins", iline ), value );
+			scoreBoard->SetStateInt( va( "player%i_wins", iline ), std::clamp( 0, MP_PLAYER_MAXWINS, playerState[ rankedPlayers[ i ]->entityNumber ].wins ) );
 			scoreBoard->SetStateInt( va( "player%i_ping", iline ), playerState[ rankedPlayers[ i ]->entityNumber ].ping );
 			// set the color band
 			scoreBoard->SetStateInt( va( "rank%i", iline ), 1 );
@@ -2705,7 +2716,7 @@ void idMultiplayerGame::WriteToSnapshot( idBitMsgDelta &msg ) const {
 		msg.WriteBits( value, ASYNC_PLAYER_PING_BITS );
 #else
 	msg.WriteBits( std::clamp( playerState[i].fragCount, MP_PLAYER_MINFRAGS, MP_PLAYER_MAXFRAGS ), ASYNC_PLAYER_FRAG_BITS );
-	msg.WriteBits( std::clamp( playerState[i].teamFragCount, ), ASYNC_PLAYER_FRAG_BITS );
+	msg.WriteBits( std::clamp( playerState[i].teamFragCount, MP_PLAYER_MINFRAGS, MP_PLAYER_MAXFRAGS ), ASYNC_PLAYER_FRAG_BITS );
 	msg.WriteBits( std::clamp( playerState[i].wins, 0, MP_PLAYER_MAXWINS ), ASYNC_PLAYER_WINS_BITS );
 	msg.WriteBits( std::clamp( playerState[i].ping, 0, MP_PLAYER_MAXPING ), ASYNC_PLAYER_PING_BITS );
 #endif
