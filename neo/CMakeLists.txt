@@ -275,10 +275,14 @@ source_group("" FILES ${RENDERER_SOURCES} )
 ## Backend
 ## 
 SET( RENDERER_BAKCEND_SOURCES
-	${CMAKE_SOURCE_DIR}/renderer/draw_arb.cpp
-	${CMAKE_SOURCE_DIR}/renderer/draw_arb2.cpp
-	${CMAKE_SOURCE_DIR}/renderer/draw_common.cpp
-	${CMAKE_SOURCE_DIR}/renderer/tr_backend.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/qgl.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/qgl.h
+	${CMAKE_SOURCE_DIR}/renderer/backend/qvk.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/qvk.h
+	${CMAKE_SOURCE_DIR}/renderer/backend/draw_arb.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/draw_arb2.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/draw_common.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/tr_backend.cpp
 	)
 
 source_group("Backend" FILES ${RENDERER_BAKCEND_SOURCES} )
@@ -306,7 +310,7 @@ SET( RENDERER_FRONTEND_SOURCES
 	${CMAKE_SOURCE_DIR}/renderer/tr_trace.cpp
 	${CMAKE_SOURCE_DIR}/renderer/tr_trisurf.cpp
 	${CMAKE_SOURCE_DIR}/renderer/tr_turboshadow.cpp
-	${CMAKE_SOURCE_DIR}/renderer/tr_local.h
+	${CMAKE_SOURCE_DIR}/renderer/renderer_common.h
 	)
 	
 source_group("Frontend" FILES ${RENDERER_FRONTEND_SOURCES} )
@@ -315,12 +319,12 @@ source_group("Frontend" FILES ${RENDERER_FRONTEND_SOURCES} )
 ## Imagens
 ## 
 SET( RENDERER_IMAGENS_SOURCES
-	${CMAKE_SOURCE_DIR}/renderer/Image_files.cpp
-	${CMAKE_SOURCE_DIR}/renderer/Image_init.cpp
-	${CMAKE_SOURCE_DIR}/renderer/Image_load.cpp
-	${CMAKE_SOURCE_DIR}/renderer/Image_process.cpp
-	${CMAKE_SOURCE_DIR}/renderer/Image_program.cpp
-	${CMAKE_SOURCE_DIR}/renderer/Image.h
+	${CMAKE_SOURCE_DIR}/renderer/images/Image_files.cpp
+	${CMAKE_SOURCE_DIR}/renderer/images/Image_init.cpp
+	${CMAKE_SOURCE_DIR}/renderer/images/Image_load.cpp
+	${CMAKE_SOURCE_DIR}/renderer/images/Image_process.cpp
+	${CMAKE_SOURCE_DIR}/renderer/images/Image_program.cpp
+	${CMAKE_SOURCE_DIR}/renderer/images/Image.h
 	)
 	
 source_group("Imagens" FILES ${RENDERER_IMAGENS_SOURCES} )
@@ -329,58 +333,45 @@ source_group("Imagens" FILES ${RENDERER_IMAGENS_SOURCES} )
 ## Models
 ## 
 SET( RENDERER_MODELS_SOURCES
-	${CMAKE_SOURCE_DIR}/renderer/GuiModel.cpp
-	${CMAKE_SOURCE_DIR}/renderer/GuiModel.h
-	${CMAKE_SOURCE_DIR}/renderer/Model.cpp
-	${CMAKE_SOURCE_DIR}/renderer/Model.h
-	${CMAKE_SOURCE_DIR}/renderer/Model_ase.cpp
-	${CMAKE_SOURCE_DIR}/renderer/Model_ase.h
-	${CMAKE_SOURCE_DIR}/renderer/Model_beam.cpp
-	${CMAKE_SOURCE_DIR}/renderer/Model_liquid.cpp
-	${CMAKE_SOURCE_DIR}/renderer/Model_lwo.cpp
-	${CMAKE_SOURCE_DIR}/renderer/Model_lwo.h
-	${CMAKE_SOURCE_DIR}/renderer/Model_ma.cpp
-	${CMAKE_SOURCE_DIR}/renderer/Model_ma.h
-	${CMAKE_SOURCE_DIR}/renderer/Model_md3.cpp
-	${CMAKE_SOURCE_DIR}/renderer/Model_md3.h
-	${CMAKE_SOURCE_DIR}/renderer/Model_md5.cpp
-	${CMAKE_SOURCE_DIR}/renderer/Model_prt.cpp
-	${CMAKE_SOURCE_DIR}/renderer/Model_sprite.cpp
-	${CMAKE_SOURCE_DIR}/renderer/ModelDecal.cpp
-	${CMAKE_SOURCE_DIR}/renderer/ModelDecal.h
-	${CMAKE_SOURCE_DIR}/renderer/ModelManager.cpp
-	${CMAKE_SOURCE_DIR}/renderer/ModelManager.h
-	${CMAKE_SOURCE_DIR}/renderer/ModelOverlay.cpp
-	${CMAKE_SOURCE_DIR}/renderer/ModelOverlay.h
-	${CMAKE_SOURCE_DIR}/renderer/Model_local.h
+	${CMAKE_SOURCE_DIR}/renderer/models/GuiModel.cpp
+	${CMAKE_SOURCE_DIR}/renderer/models/GuiModel.h
+	${CMAKE_SOURCE_DIR}/renderer/models/Model.cpp
+	${CMAKE_SOURCE_DIR}/renderer/models/Model.h
+	${CMAKE_SOURCE_DIR}/renderer/models/Model_ase.cpp
+	${CMAKE_SOURCE_DIR}/renderer/models/Model_ase.h
+	${CMAKE_SOURCE_DIR}/renderer/models/Model_beam.cpp
+	${CMAKE_SOURCE_DIR}/renderer/models/Model_liquid.cpp
+	${CMAKE_SOURCE_DIR}/renderer/models/Model_lwo.cpp
+	${CMAKE_SOURCE_DIR}/renderer/models/Model_lwo.h
+	${CMAKE_SOURCE_DIR}/renderer/models/Model_ma.cpp
+	${CMAKE_SOURCE_DIR}/renderer/models/Model_ma.h
+	${CMAKE_SOURCE_DIR}/renderer/models/Model_md3.cpp
+	${CMAKE_SOURCE_DIR}/renderer/models/Model_md3.h
+	${CMAKE_SOURCE_DIR}/renderer/models/Model_md5.cpp
+	${CMAKE_SOURCE_DIR}/renderer/models/Model_prt.cpp
+	${CMAKE_SOURCE_DIR}/renderer/models/Model_sprite.cpp
+	${CMAKE_SOURCE_DIR}/renderer/models/ModelDecal.cpp
+	${CMAKE_SOURCE_DIR}/renderer/models/ModelDecal.h
+	${CMAKE_SOURCE_DIR}/renderer/models/ModelManager.cpp
+	${CMAKE_SOURCE_DIR}/renderer/models/ModelManager.h
+	${CMAKE_SOURCE_DIR}/renderer/models/ModelOverlay.cpp
+	${CMAKE_SOURCE_DIR}/renderer/models/ModelOverlay.h
+	${CMAKE_SOURCE_DIR}/renderer/models/Model_local.h
 	)
 	
 source_group("Models" FILES ${RENDERER_MODELS_SOURCES} )
 
 ##
-## OpenGL
-## 
-SET( RENDERER_OPENGL_SOURCES
-	${CMAKE_SOURCE_DIR}/renderer/qgl.cpp
-	${CMAKE_SOURCE_DIR}/renderer/qgl.h
-	${CMAKE_SOURCE_DIR}/renderer/qvk.cpp
-	${CMAKE_SOURCE_DIR}/renderer/qvk.h
-	)
-	
-source_group("OpenGL" FILES ${RENDERER_OPENGL_SOURCES} )
-
-##
 ## Render World
 ## 
 SET( RENDERER_RENDERWORL_SOURCES
-	${CMAKE_CURRENT_SOURCE_DIR}/renderer/RenderEntity.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/renderer/ModelOverlay.h
-	${CMAKE_CURRENT_SOURCE_DIR}/renderer/RenderWorld.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/renderer/RenderWorld.h
-	${CMAKE_CURRENT_SOURCE_DIR}/renderer/RenderWorld_demo.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/renderer/RenderWorld_load.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/renderer/RenderWorld_local.h
-	${CMAKE_CURRENT_SOURCE_DIR}/renderer/RenderWorld_portals.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/renderer/renderworld/RenderEntity.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/renderer/renderworld/RenderWorld.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/renderer/renderworld/RenderWorld.h
+	${CMAKE_CURRENT_SOURCE_DIR}/renderer/renderworld/RenderWorld_demo.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/renderer/renderworld/RenderWorld_load.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/renderer/renderworld/RenderWorld_local.h
+	${CMAKE_CURRENT_SOURCE_DIR}/renderer/renderworld/RenderWorld_portals.cpp
 
 	)
 	
