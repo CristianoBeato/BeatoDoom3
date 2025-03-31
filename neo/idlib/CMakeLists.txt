@@ -176,6 +176,8 @@ set( IDLIB_SYSTEM_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/system/Atomic.h
 	${CMAKE_CURRENT_SOURCE_DIR}/system/Mutex.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/system/Mutex.h
+	${CMAKE_CURRENT_SOURCE_DIR}/system/paths.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/system/paths.h
 	${CMAKE_CURRENT_SOURCE_DIR}/system/Thread.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/system/Thread.h
 	${CMAKE_CURRENT_SOURCE_DIR}/system/intrinsics.h

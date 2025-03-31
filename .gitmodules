@@ -1,0 +1,3 @@
+[submodule "neo/contrib/SDL3wrap"]
+	path = neo/contrib/SDL3wrap
+	url = git@github.com:CristianoBeato/SDL3-.git

@@ -494,7 +494,6 @@ SET( ENGINE_SOURCES
 	${CMAKE_SOURCE_DIR}/sys/sys_main.cpp
 	${CMAKE_SOURCE_DIR}/sys/sys_main.h
 	${CMAKE_SOURCE_DIR}/sys/sys_openGL.cpp
-	${CMAKE_SOURCE_DIR}/sys/sys_paths.cpp
 	${CMAKE_SOURCE_DIR}/sys/sys_platform.h
 	${CMAKE_SOURCE_DIR}/sys/sys_process.cpp
 	${CMAKE_SOURCE_DIR}/sys/sys_public.h

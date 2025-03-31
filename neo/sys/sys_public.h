@@ -295,20 +295,10 @@ extern void				Sys_videoSetWindowFocus( void );
 
 extern void				Sys_ShowConsole( int visLevel, bool quitOnClose );
 
-
-extern void				Sys_Mkdir( const char *path );
 extern ID_TIME_T		Sys_FileTimeStamp( FILE *fp );
 
 // NOTE: do we need to guarantee the same output on all platforms?
 extern const char*		Sys_TimeStampToStr( ID_TIME_T timeStamp );
-extern const char*		Sys_DefaultCDPath( void );
-extern const char*		Sys_DefaultBasePath( void );
-extern const char*		Sys_DefaultSavePath( void );
-extern const char*		Sys_EXEPath( void );
-
-// use fs_debug to verbose Sys_ListFiles
-// returns -1 if directory was not found (the list is cleared)
-extern int				Sys_ListFiles( const char *directory, const char *extension, idList<class idStr> &list );
 
 // know early if we are performing a fatal error shutdown so the error message doesn't get lost
 void					Sys_SetFatalError( const char *error );
@@ -415,12 +405,8 @@ public:
 	virtual double			ClockTicksPerSecond( void ) = 0;
 	virtual cpuid_t			GetProcessorId( void ) = 0;
 	virtual const char *	GetProcessorString( void ) = 0;
-	virtual const char *	FPU_GetState( void ) = 0;
-	virtual bool			FPU_StackIsEmpty( void ) = 0;
 	virtual void			FPU_SetFTZ( bool enable ) = 0;
 	virtual void			FPU_SetDAZ( bool enable ) = 0;
-
-	virtual void			FPU_EnableExceptions( int exceptions ) = 0;
 
 	virtual bool			LockMemory( void *ptr, int bytes ) = 0;
 	virtual bool			UnlockMemory( void *ptr, int bytes ) = 0;

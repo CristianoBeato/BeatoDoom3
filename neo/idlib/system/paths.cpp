@@ -3,7 +3,7 @@
 
 Beato idTech 4 Source Code
 Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company.
-Copyright (C) 2016-2022 Cristiano B. Santos <cristianobeato_dm@hotmail.com>.
+Copyright (C) 2016-2025 Cristiano B. Santos <cristianobeato_dm@hotmail.com>.
 
 This file is part of the Beato idTech 4  GPL Source Code (?Beato idTech 4  Source Code?).
 
@@ -23,21 +23,24 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 ===========================================================================
 */
 
-#include "idlib/precompiled.h"
+#include "precompiled.h"
 #pragma hdrstop
 
-#include <SDL_filesystem.h>
+#include "sys_paths.h"
+#include <SDL3/SDL_filesystem.h>
 
-// Requires c++ 17
-#include <filesystem>
-namespace fs = std::filesystem;
+idCVar sys_basepath("sys_basepath", "", CVAR_SYSTEM | CVAR_INIT, "engine base data path");
+idCVar sys_savepath("sys_savepath", "", CVAR_SYSTEM | CVAR_INIT, "user base save path");
+idCVar sys_currentWorkDir("sys_currentWorkDir", "", CVAR_SYSTEM | CVAR_INIT, "current engine run location");
 
-
-#include "sys_platform.h"
-#include "sys_main.h"
-
-static idStr savePath = idStr();
-static idStr basePath = idStr();
+// SDL_GetBasePath
+// SDL_GetPrefPath
+// SDL_CreateDirectory
+// SDL_RemovePath
+// SDL_RenamePath
+// SDL_CopyFile
+// SDL_GetPathInfo
+// SDL_GlobDirectory
 
 /*
 ==============
@@ -46,15 +49,12 @@ Sys_Cwd
 */
 const char *Sys_Cwd( void )
 {
-	static char cwd[MAX_OSPATH];
-#if 1
-	fs::path cwdPath = fs::current_path();
-	strcpy( cwd, cwdPath.u8string().c_str() );
-#else
-	_getcwd( cwd, sizeof( cwd ) - 1 );
-	cwd[MAX_OSPATH - 1] = 0;
-#endif
-	return cwd;
+	if( sys_currentWorkDir.Empty() )
+	{
+		sys_currentWorkDir.SetString(Win_GetCurrentUser());
+	}
+
+	return sys_currentWorkDir.GetString();
 }
 
 /*
@@ -70,25 +70,6 @@ void Sys_Mkdir( const char *path )
 		common->Error( " can't create dir %s\n", path );
 #else
 	_mkdir( path );
-#endif
-}
-
-
-/*
-=================
-Sys_FileTimeStamp
-=================
-*/
-ID_TIME_T Sys_FileTimeStamp( FILE *fp )
-{
-#if _WIN32 || _WIN64
-	struct _stat st;
-	_fstat( _fileno( fp ), &st );
-	return (long)st.st_mtime;
-#else
-	struct stat st;
-	fstat( fileno( fp ), &st );
-	return st.st_mtime;
 #endif
 }
 
@@ -109,6 +90,7 @@ Sys_DefaultBasePath
 */
 const char *Sys_DefaultBasePath( void )
 {
+	static idStr basePath = idStr();
 	if (basePath.IsEmpty())
 	{
 		char* save_path = SDL_GetBasePath();
@@ -133,9 +115,10 @@ Sys_DefaultSavePath
 */
 const char *Sys_DefaultSavePath( void )
 {
+	static idStr savePath = idStr();
 	//Beato: uses getenv() on linux, because sdl set in "/home/user name/.local/share/SAVE_PATH/"
 #if defined(__linux__)
-	sprintf( savePath, "%s/.%s", getenv( "HOME" ), SAVE_PATH );
+	sprintf( savePath, "%s/.%s", getenv( "HOME" ), "btech4" );
 #else
 	if (savePath.IsEmpty())
 	{
@@ -161,9 +144,27 @@ Sys_EXEPath
 */
 const char *Sys_EXEPath( void )
 {
-	static char exe[MAX_OSPATH];
-	GetModuleFileName( NULL, exe, sizeof( exe ) - 1 );
-	return exe;
+	static char	buf[ MAX_OSPATH ];
+#ifdef __linux__
+	idStr		linkpath;
+	int			len;
+
+	buf[ 0 ] = '\0';
+	sprintf( linkpath, "/proc/%d/exe", getpid() );
+	len = readlink( linkpath.c_str(), buf, sizeof( buf ) );
+	if ( len == -1 ) 
+	{
+		Sys_Printf("couldn't stat exe path link %s\n", linkpath.c_str());
+		buf[ len ] = '\0';
+	}
+#elif(WIN32)
+	GetModuleFileName( NULL, buf, sizeof( buf ) - 1 );
+#endif
+	return buf;
+}
+
+bool Sys_PathExist( const char* path )
+{
 }
 
 /*
@@ -171,82 +172,29 @@ const char *Sys_EXEPath( void )
 Sys_ListFiles
 ==============
 */
-int Sys_ListFiles( const char *directory, const char *extension, idStrList &list )
+int Sys_ListFiles( const char *directory, const char *extension, idList<class idStr> &list )
 {
-	idStr		search;
+	return list.Size();
+}
 
-	if (!extension)
-		extension = "";
 
-#if 1
-	fs::path path = directory;
-	for (const fs::directory_entry & entry : fs::directory_iterator( path ))
+/*
+===========
+Sys_GetDriveFreeSpace
+return in MegaBytes
+===========
+*/
+uint64_t Sys_GetDriveFreeSpace( const char *directory )
+{
+	static const uint32_t k_MEGABYTE = 1048576; 
+
+	std::error_code err;
+	const std::filesystem::space_info si = std::filesystem::space( fs::path( directory ), err );
+	if (err.value() != 0)
 	{
-		// passing a slash as extension will find directories
-		if (extension[0] == '/' && extension[1] == 0)
-		{
-			if (entry.is_directory())
-			{
-				fs::path subDirPath = entry.path();
-				idStr subDir = idStr( subDirPath.string().c_str() );
-				list.Append( subDir );
-			}
-		}
-		else
-		{
-			if ( entry.is_regular_file() )
-			{
-				fs::path filePath = entry.path();
-				fs::path fileExt = filePath.extension();
-				if (!fileExt.empty() && fileExt.string().compare( extension ))
-				{
-					idStr file = idStr( filePath.string().c_str() );
-					list.Append( file );
-				}
-				
-			}
-		}
-	}
-#else
-	struct _finddata_t findinfo;
-	int			findhandle;
-	int			flag;
-
-	
-
-	// passing a slash as extension will find directories
-	if (extension[0] == '/' && extension[1] == 0)
-	{
-		extension = "";
-		flag = 0;
-	}
-	else
-	{
-		flag = _A_SUBDIR;
+		common->Error( " Sys_GetDriveFreeSpace Fail: %s\n", err );
+		return 0;
 	}
 
-	sprintf( search, "%s\\*%s", directory, extension );
-
-	// search
-	list.Clear();
-
-	findhandle = _findfirst( search, &findinfo );
-	if (findhandle == -1)
-	{
-		return -1;
-	}
-
-	do
-	{
-		if (flag ^ (findinfo.attrib & _A_SUBDIR))
-		{
-			list.Append( findinfo.name );
-		}
-	}
-	while (_findnext( findhandle, &findinfo ) != -1);
-
-	_findclose( findhandle );
-#endif
-	return list.Num();
-
+	return si.free / k_MEGABYTE;
 }
