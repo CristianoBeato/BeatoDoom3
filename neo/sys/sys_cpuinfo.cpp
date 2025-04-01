@@ -26,7 +26,7 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #include "idlib/precompiled.h"
 #pragma hdrstop
 
-#include <SDL2/SDL_cpuinfo.h>
+#include <SDL3/SDL_cpuinfo.h>
 
 #if ID_USE_INSTRINSEC
 
@@ -78,165 +78,6 @@ inline unsigned int __get_cpuid( unsigned int level, unsigned int* eax, unsigned
 
 #include "sys_platform.h"
 #include "sys_main.h"
-
-#if _WIN32
-/*
-================
-LogicalProcPerPhysicalProc
-================
-*/
-#define NUM_LOGICAL_BITS   0x00FF0000     // EBX[23:16] Bit 16-23 in ebx contains the number of logical
-// processors per physical processor when execute cpuid with 
-// eax set to 1
-
-static int LogicalProcPerPhysicalProc( void )
-{
-	unsigned int regs[4];
-	__get_cpuid( 1, &regs[_REG_EAX], &regs[_REG_EBX], &regs[_REG_ECX], &regs[_REG_EDX] );
-	return (unsigned char)((regs[_REG_EBX] & NUM_LOGICAL_BITS) >> 16);
-}
-
-#define INITIAL_APIC_ID_BITS  0xFF000000  // EBX[31:24] Bits 24-31 (8 bits) return the 8-bit unique 
-// initial APIC ID for the processor this code is running on.
-// Default value = 0xff if HT is not supported
-static unsigned char GetAPIC_ID( void )
-{
-	unsigned int regs[4];
-	__get_cpuid( 1, &regs[_REG_EAX], &regs[_REG_EBX], &regs[_REG_ECX], &regs[_REG_EDX] );
-	return (unsigned char)((regs[_REG_EBX] & INITIAL_APIC_ID_BITS) >> 24);
-}
-
-/*
-================
-CPUCount
-
-	logicalNum is the number of logical CPU per physical CPU
-	physicalNum is the total number of physical processor
-	returns one of the HT_* flags
-================
-*/
-#define HT_NOT_CAPABLE				0
-#define HT_ENABLED					1
-#define HT_DISABLED					2
-#define HT_SUPPORTED_NOT_ENABLED	3
-#define HT_CANNOT_DETECT			4
-
-int CPUCount( int &logicalNum, int &physicalNum )
-{
-	int statusFlag;
-	SYSTEM_INFO info;
-
-	physicalNum = 1;
-	logicalNum = 1;
-	statusFlag = HT_NOT_CAPABLE;
-
-	info.dwNumberOfProcessors = 0;
-	GetSystemInfo( &info );
-
-	// Number of physical processors in a non-Intel system
-	// or in a 32-bit Intel system with Hyper-Threading technology disabled
-	physicalNum = info.dwNumberOfProcessors;
-
-	unsigned char HT_Enabled = 0;
-
-	logicalNum = LogicalProcPerPhysicalProc();
-
-	if (logicalNum >= 1)
-	{	// > 1 doesn't mean HT is enabled in the BIOS
-		HANDLE hCurrentProcessHandle;
-		DWORD  dwProcessAffinity;
-		DWORD  dwSystemAffinity;
-		DWORD  dwAffinityMask;
-
-		// Calculate the appropriate  shifts and mask based on the 
-		// number of logical processors.
-
-		unsigned char i = 1, PHY_ID_MASK = 0xFF, PHY_ID_SHIFT = 0;
-
-		while (i < logicalNum)
-		{
-			i *= 2;
-			PHY_ID_MASK <<= 1;
-			PHY_ID_SHIFT++;
-		}
-
-		hCurrentProcessHandle = GetCurrentProcess();
-		GetProcessAffinityMask( hCurrentProcessHandle, &dwProcessAffinity, &dwSystemAffinity );
-
-		// Check if available process affinity mask is equal to the
-		// available system affinity mask
-		if (dwProcessAffinity != dwSystemAffinity)
-		{
-			statusFlag = HT_CANNOT_DETECT;
-			physicalNum = -1;
-			return statusFlag;
-		}
-
-		dwAffinityMask = 1;
-		while (dwAffinityMask != 0 && dwAffinityMask <= dwProcessAffinity)
-		{
-			// Check if this CPU is available
-			if (dwAffinityMask & dwProcessAffinity)
-			{
-				if (SetProcessAffinityMask( hCurrentProcessHandle, dwAffinityMask ))
-				{
-					unsigned char APIC_ID, LOG_ID, PHY_ID;
-
-					Sleep( 0 ); // Give OS time to switch CPU
-
-					APIC_ID = GetAPIC_ID();
-					LOG_ID = APIC_ID & ~PHY_ID_MASK;
-					PHY_ID = APIC_ID >> PHY_ID_SHIFT;
-
-					if (LOG_ID != 0)
-					{
-						HT_Enabled = 1;
-					}
-				}
-			}
-			dwAffinityMask = dwAffinityMask << 1;
-		}
-
-		// Reset the processor affinity
-		SetProcessAffinityMask( hCurrentProcessHandle, dwProcessAffinity );
-
-		if (logicalNum == 1)
-		{  // Normal P4 : HT is disabled in hardware
-			statusFlag = HT_DISABLED;
-		}
-		else
-		{
-			if (HT_Enabled)
-			{
-				// Total physical processors in a Hyper-Threading enabled system.
-				physicalNum /= logicalNum;
-				statusFlag = HT_ENABLED;
-			}
-			else
-			{
-				statusFlag = HT_SUPPORTED_NOT_ENABLED;
-			}
-		}
-	}
-	return statusFlag;
-}
-#endif //_WIN32
-
-/*
-================
-HasHTT
-================
-*/
-static bool HTTEnable( void )
-{
-#if _WIN32
-	int logicalNum, physicalNum, HTStatusFlag;
-	HTStatusFlag = CPUCount( logicalNum, physicalNum );
-	if (HTStatusFlag == HT_ENABLED)
-		return true;
-#endif //_WIN32
-	return false;
-}
 
 /*
 ================
@@ -333,8 +174,8 @@ void Sys_getCPUInfo( void )
 			flags |= CPUID_CMOV;
 
 		// check for Hyper-Threading Technology
-		if ( (cpui[_REG_EDX] & BIT_HTT) && HTTEnable() )
-			flags |= CPUID_HTT;
+//		if ( (cpui[_REG_EDX] & BIT_HTT) && HTTEnable() )
+//			flags |= CPUID_HTT;
 	}
 
 	// load bitset with flags for function 0x80000001

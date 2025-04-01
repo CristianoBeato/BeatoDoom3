@@ -26,8 +26,16 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #include "precompiled.h"
 #pragma hdrstop
 
-#include "sys_paths.h"
+#include "paths.h"
 #include <SDL3/SDL_filesystem.h>
+
+#include <filesystem>
+namespace fs = std::filesystem;
+
+#ifdef __linux__
+#include <unistd.h>
+#include <fcntl.h>
+#endif // __linux__
 
 idCVar sys_basepath("sys_basepath", "", CVAR_SYSTEM | CVAR_INIT, "engine base data path");
 idCVar sys_savepath("sys_savepath", "", CVAR_SYSTEM | CVAR_INIT, "user base save path");
@@ -49,11 +57,23 @@ Sys_Cwd
 */
 const char *Sys_Cwd( void )
 {
-	if( sys_currentWorkDir.Empty() )
+	if( strcmp( sys_currentWorkDir.GetString(), "" ) == 0 )
 	{
-		sys_currentWorkDir.SetString(Win_GetCurrentUser());
+		// get current work dir and store on a cvar
+		const char* cwd = SDL_GetCurrentDirectory();
+		if (cwd)
+		{
+			sys_currentWorkDir.SetString( cwd );
+			SDL_free( (void*)cwd );
+		}
+		else
+		{
+			common->Error( "Sys_Cwd: %s\n", SDL_GetError() );
+			return "./";
+		}
 	}
 
+	// return current work dir
 	return sys_currentWorkDir.GetString();
 }
 
@@ -64,13 +84,13 @@ Sys_Mkdir
 */
 void Sys_Mkdir( const char *path )
 {
-#if 1
-	fs::path pathToCreate = path;
-	if (!fs::create_directory( pathToCreate ))
-		common->Error( " can't create dir %s\n", path );
-#else
-	_mkdir( path );
-#endif
+	// check if path already exist
+	if ( Sys_PathExist( path ) )
+		return;
+	
+	// create the directory
+	if ( !SDL_CreateDirectory( path ) )
+		common->Error( "Sys_Mkdir: %s\n", SDL_GetError() );
 }
 
 /*
@@ -80,7 +100,7 @@ Sys_DefaultCDPath
 */
 const char *Sys_DefaultCDPath( void )
 {
-	return "";
+	return ""; // ingonore
 }
 
 /*
@@ -90,22 +110,23 @@ Sys_DefaultBasePath
 */
 const char *Sys_DefaultBasePath( void )
 {
-	static idStr basePath = idStr();
-	if (basePath.IsEmpty())
+	if ( strcmp( sys_basepath.GetString(), "" ) == 0 )
 	{
-		char* save_path = SDL_GetBasePath();
-		if (save_path)
+		const char* base_path = SDL_GetBasePath();
+		if (base_path)
 		{
-			basePath = SDL_strdup( save_path );
-			SDL_free( save_path );
+			sys_basepath.SetString( base_path );
+			SDL_free( (void*)base_path );
 		}
 		else
-			basePath = Sys_Cwd();
+		{
+			common->Error( "Sys_DefaultBasePath: %s\n", SDL_GetError() );
+			return "./";
+		}
 
-		basePath.BackSlashesToSlashes();
 	}
 
-	return basePath.c_str();
+	return sys_basepath.GetString();
 }
 
 /*
@@ -115,26 +136,22 @@ Sys_DefaultSavePath
 */
 const char *Sys_DefaultSavePath( void )
 {
-	static idStr savePath = idStr();
-	//Beato: uses getenv() on linux, because sdl set in "/home/user name/.local/share/SAVE_PATH/"
-#if defined(__linux__)
-	sprintf( savePath, "%s/.%s", getenv( "HOME" ), "btech4" );
-#else
-	if (savePath.IsEmpty())
+	if ( strcmp( sys_savepath.GetString(), "" ) == 0 )
 	{
-		char* save_path = SDL_GetPrefPath( "BeatoSoftware", "BeatoD3" );
+		const char* save_path = SDL_GetPrefPath( "Beato", "idTech4" );
 		if (save_path)
 		{
-			savePath = SDL_strdup( save_path );
-			SDL_free( save_path );
+			sys_savepath.SetString( save_path );
+			SDL_free( (void*)save_path );
 		}
-		else // if can't get a valid save path, save in game folder 
-			savePath = Sys_DefaultBasePath();
-
-		savePath.BackSlashesToSlashes();
+		else
+		{
+			common->Error( "Sys_DefaultSavePath: %s\n", SDL_GetError() );
+			return "./";
+		}
 	}
-#endif
-	return savePath.c_str();
+	
+	return sys_savepath.GetString();
 }
 
 /*
@@ -165,6 +182,11 @@ const char *Sys_EXEPath( void )
 
 bool Sys_PathExist( const char* path )
 {
+	SDL_PathInfo info;
+	if ( SDL_GetPathInfo( path, &info ) )
+		return info.type == SDL_PATHTYPE_DIRECTORY || info.type == SDL_PATHTYPE_FILE;
+
+	return false;
 }
 
 /*
@@ -174,6 +196,15 @@ Sys_ListFiles
 */
 int Sys_ListFiles( const char *directory, const char *extension, idList<class idStr> &list )
 {
+	int count = 0;
+	char ** dirs = SDL_GlobDirectory( directory, extension, SDL_GLOB_CASEINSENSITIVE, &count );
+	for ( int i = 0; i < count; i++)
+	{
+		list.Append( dirs[i] );
+	}
+	
+	SDL_free( dirs );
+
 	return list.Size();
 }
 

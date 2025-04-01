@@ -31,8 +31,8 @@ If you have questions concerning this license or the applicable additional terms
 
 
 // BEATO Begin
-#include <SDL2/SDL_clipboard.h>
-#include <SDL2/SDL_timer.h>
+#include <SDL3/SDL_clipboard.h>
+#include <SDL3/SDL_timer.h>
 // BEATO End
 
 #include "sys_main.h"
@@ -76,16 +76,6 @@ cpuid_t idSysLocal::GetProcessorId( void )
 const char *idSysLocal::GetProcessorString( void ) 
 {
 	return Sys_GetProcessorString();
-}
-
-const char *idSysLocal::FPU_GetState( void ) 
-{
-	return Sys_FPU_GetState();
-}
-
-bool idSysLocal::FPU_StackIsEmpty( void ) 
-{
-	return Sys_FPU_StackIsEmpty();
 }
 
 void idSysLocal::FPU_SetFTZ( bool enable ) 
@@ -141,10 +131,6 @@ sysEvent_t idSysLocal::GenerateMouseMoveEvent( int deltax, int deltay )
 	ev.evPtrLength = 0;
 	ev.evPtr = NULL;
 	return ev;
-}
-
-void idSysLocal::FPU_EnableExceptions( int exceptions ) {
-	Sys_FPU_EnableExceptions( exceptions );
 }
 
 /*
@@ -226,7 +212,7 @@ Sys_Milliseconds
 */
 uint64_t Sys_Milliseconds( void )
 {
-	return SDL_GetTicks64();
+	return SDL_GetTicks();
 }
 
 /*
@@ -236,6 +222,9 @@ Sys_Microseconds
 */
 uint64_t Sys_Microseconds( void ) 
 {
+#if 1
+	return SDL_GetTicksNS() / 1000;
+#else
 	static uint64_t ticksPerMicrosecondTimes1024 = 0;
 
 	Sys_GetClockTicks();
@@ -246,6 +235,7 @@ uint64_t Sys_Microseconds( void )
 	}
 
 	return ( ( SDL_GetPerformanceCounter() << 10 ) ) / ticksPerMicrosecondTimes1024;
+#endif
 }
 
 
@@ -328,8 +318,6 @@ void Sys_DoPreferences( void )
 { 
 }
 
-
-
 /*
 ================
 Sys_GetClockTicks
@@ -379,7 +367,7 @@ Sys_GetClipboardData
 char *Sys_GetClipboardData( void )
 {
 	char *data = nullptr;
-	if (SDL_HasClipboardText() == SDL_FALSE)
+	if ( !SDL_HasClipboardText() )
 		return (char*)"0/";
 
 	SDL_ClipBoart clipBoard = SDL_ClipBoart(); //Reads system clipboard

@@ -73,6 +73,7 @@ include_directories(
 				${CMAKE_SOURCE_DIR}
 				${CMAKE_SOURCE_DIR}/idlib
 				${CMAKE_SOURCE_DIR}/contrib/VectorClassLib/include
+				${CMAKE_SOURCE_DIR}/contrib/SDL3wrap
 				${SDL3_INCLUDE_DIR}
 				${ZLIB_INCLUDE_DIRS}
 				)

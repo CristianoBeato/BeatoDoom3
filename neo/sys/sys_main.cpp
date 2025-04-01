@@ -29,7 +29,7 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 //
 // Only include here, to don't leak to typeInfo executable the main entry point 
 //#define SDL_MAIN_HANDLED
-#include <SDL2/SDL.h>
+#include <SDL3/SDL.h>
 
 #include "sys_main.h"
 #include "sys_local.h"
@@ -53,7 +53,7 @@ MainInit
 void		MainInit( int argc, const char **argv )
 {
 	//init SDL
-	SDL_assert( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO) == 0 );
+	SDL_assert( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMEPAD | SDL_INIT_AUDIO) );
 
 	// BEATO Move here, to prevent: "munmap_chunk(): invalid pointer"
 	Sys_videoStartUp();
@@ -185,9 +185,6 @@ void		MainLoop( void )
 #if 0 //def _DEBUG
 	Sys_MemFrame();
 #endif
-
-	// set exceptions, even if some crappy syscall changes them!
-	Sys_FPU_EnableExceptions( TEST_FPU_EXCEPTIONS );
 
 #ifdef ID_ALLOW_TOOLS
 	Sys_toolsFrame();

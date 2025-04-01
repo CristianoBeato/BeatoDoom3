@@ -4,58 +4,16 @@
 #include "idlib/precompiled.h"
 #pragma hdrstop
 
-#include <SDL2/SDL_stdinc.h>
-#include <SDL2/SDL_video.h>
+#include <SDL3/SDL_video.h>
+#include "SDL3/SDL_window.hpp"
 
 #include "sys/sys_public.h"
 #include "sys_public.h"
 
-class crWindow
-{
-public:
-	crWindow( const char* name, const uint32_t width, const uint32_t height ) : m_window( nullptr )
-	{
-#if CR_USE_VULKAN 
-		uint32_t windowFlags = SDL_WINDOW_HIDDEN | SDL_WINDOW_MOUSE_CAPTURE | SDL_WINDOW_VULKAN;
-#else
-		uint32_t windowFlags = SDL_WINDOW_HIDDEN | SDL_WINDOW_MOUSE_CAPTURE | SDL_WINDOW_OPENGL;
-#endif // OpenGL
-
-		m_window = SDL_CreateWindow( GAME_NAME, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, windowFlags );
-		if( !m_window  )
-		{
-			Sys_Error( SDL_GetError() );
-			delete this;
-		}
-	}
-	
-	inline ~crWindow( void )
-	{
-		if( m_window != nullptr )
-		{
-			SDL_DestroyWindow( m_window );
-			m_window = nullptr;
-		}
-	}
-
-	inline uint32_t GetID( void ) const { return SDL_GetWindowID( m_window ); }
-	inline uint32_t Flags( void ) const { return SDL_GetWindowFlags( m_window ); }
-	inline void 	Show( void ) { SDL_ShowWindow( m_window ); }
-	inline void 	Hide( void ){ SDL_HideWindow( m_window ); }
-	inline void 	Raise( void ) { SDL_RaiseWindow( m_window ); }
-	inline void		Fullscreen( uint32_t flags ) { SDL_SetWindowFullscreen( m_window, flags ); }
-	inline void		GetGamma( uint16_t* red, uint16_t *green, uint16_t *blue ) { SDL_GetWindowGammaRamp( m_window, red, green, blue ); }
-	inline void		SetGamma( uint16_t* red, uint16_t *green, uint16_t *blue ) { SDL_SetWindowGammaRamp( m_window, red, green, blue ); }
-    
-	inline operator SDL_Window*( void ) const { return m_window; }
-private:
-	SDL_Window* m_window;
-};
-
 static struct videoInfo_t
 {
     uint32_t            windowID;
-    crWindow*			windowHandle;
+    SDLWindow			windowHandle;
     idList<vidmode_t>	vidModes;
 	uint16_t			storedGammaRamp[3][256];
 }video;
@@ -72,30 +30,33 @@ static void ListVideoModes( void )
 	int displayCount = 0;
 	SDL_Rect displayBounds{};
 	vidmode_t vidMode;
-	displayCount = SDL_GetNumVideoDisplays();
-	for ( int display = 0; display < displayCount; display++)
+
+	// get the number of displays
+	SDL_DisplayID* displayModes = SDL_GetDisplays( &displayCount );
+	for ( int i = 0; i < displayCount; i++)
 	{
-		const char* displayName = SDL_GetDisplayName( display );
-		if ( SDL_GetDisplayBounds( display, &displayBounds ) != 0 )
+		SDL_DisplayID display = displayModes[i];
+		
+		// get the display bounds
+		if ( !SDL_GetDisplayBounds( display, &displayBounds ) )
 			continue;
 		
-		modeCount = SDL_GetNumDisplayModes( display );
-		for ( int mode = 0; mode < modeCount; mode++)
+		// get the display name
+		const char* displayName = SDL_GetDisplayName( display );
+
+		SDL_DisplayMode** modes = SDL_GetFullscreenDisplayModes( display, &modeCount );
+		for ( int  j = 0; j < modeCount; j++)
 		{
-			SDL_DisplayMode SDLmode;
-			if( SDL_GetDisplayMode( display, mode, &SDLmode ) != 0 )
+			SDL_DisplayMode* mode = modes[j];
+			if ( !mode )
 				continue;
 
 			vidMode.display = display;
-			vidMode.width = SDLmode.w;
-			vidMode.height = SDLmode.h;
-			vidMode.refreshRate = SDLmode.refresh_rate;
-
-			SDL_snprintf( vidMode.description, 256, "Mode  %i: display %i - %ix%i", count, vidMode.display, vidMode.width, vidMode.height );
-
+			vidMode.width = mode->w;
+			vidMode.height = mode->h;
+			vidMode.refreshRate = mode->refresh_rate;
+			SDL_snprintf( vidMode.description, 256, "Display %i: %s - %ix%i", count++, displayName, vidMode.width, vidMode.height );
 			video.vidModes.Append( vidMode );
-
-			count++;
 		}
 	}
 }
@@ -108,11 +69,7 @@ DestroyWindow
 static void DestroyWindow( void )
 {
 	// restore gamma
-    if ( video.windowHandle != nullptr )
-	{
-		delete video.windowHandle;	
-		video.windowHandle = nullptr;
-	}
+    video.windowHandle.Destroy();
 }
 
 /*
@@ -122,17 +79,15 @@ CreateWindow
 */
 static void CreateWindow( void )
 {
-	if ( video.windowHandle != nullptr )
-		DestroyWindow();
+	DestroyWindow();
 
-	video.windowHandle = new crWindow( GAME_NAME, 640, 480 ); 
-	if ( !video.windowHandle )
+	if ( !video.windowHandle.Create( GAME_NAME, 640, 480, SDL_WINDOW_HIDDEN ) )
 		Sys_Error( "SDL_CreateWindow, SDL error: %s\n", SDL_GetError() );
 
-	video.windowID = video.windowHandle->GetID();
+	video.windowID = video.windowHandle.GetID();
 
 	// Store defalt window gamma
-	video.windowHandle->GetGamma( video.storedGammaRamp[0], video.storedGammaRamp[1], video.storedGammaRamp[2] );
+//	video.windowHandle->GetGamma( video.storedGammaRamp[0], video.storedGammaRamp[1], video.storedGammaRamp[2] );
 }
 
 /*
@@ -164,7 +119,7 @@ Sys_videoWindowHandler
 */
 void *Sys_videoWindowHandler(void)
 {
-    return static_cast<void*>( *video.windowHandle );
+    return static_cast<void*>( video.windowHandle.GetHandle() );
 }
 
 /*
@@ -192,14 +147,15 @@ void Sys_videoFullScreen( const int mode )
 		flags = SDL_WINDOW_FULLSCREEN; 
 		break;
 	case 2:
-		flags = SDL_WINDOW_FULLSCREEN_DESKTOP;
+		flags = SDL_WINDOW_BORDERLESS;
 		break;
 	default:
 		flags = 0;
 		break;
 	}
 
-	video.windowHandle->Fullscreen( flags );
+	//video.windowHandle.
+	//video.windowHandle->Fullscreen( flags );
 }
 
 /*
@@ -209,8 +165,8 @@ Sys_videoWindowHandler
 */
 void Sys_videoWindowSize( const int display, const uint32_t width, const uint32_t height )
 {
-    SDL_SetWindowPosition( *video.windowHandle, SDL_WINDOWPOS_CENTERED_DISPLAY( display ), SDL_WINDOWPOS_CENTERED_DISPLAY( display ) );
-	SDL_SetWindowSize( *video.windowHandle, width, height );
+	video.windowHandle.SetSize( width, height );
+	video.windowHandle.SetPosition( SDL_WINDOWPOS_CENTERED_DISPLAY( display ), SDL_WINDOWPOS_CENTERED_DISPLAY( display ) );
 }
 
 /*
@@ -236,9 +192,9 @@ Sys_ShowWindow
 void Sys_videoShowWindow( bool show )
 {
     if ( show )
-		video.windowHandle->Show();
+		video.windowHandle.Show();
 	else
-		video.windowHandle->Hide();
+		video.windowHandle.Hide();
 }
 
 /*
@@ -248,7 +204,8 @@ Sys_IsWindowVisible
 */
 bool Sys_videoIsWindowVisible( void )
 {
-    return ( video.windowHandle->Flags()  & SDL_WINDOW_SHOWN );
+	// check if window is visible
+    return ( video.windowHandle.GetFlags()  & SDL_WINDOW_HIDDEN ) == 0;
 }
 
 /*
@@ -258,7 +215,7 @@ Sys_videoSetWindowFocus
 */
 void Sys_videoSetWindowFocus( void )
 {
-	const bool hasFocus = video.windowHandle->Flags() & SDL_WINDOW_INPUT_FOCUS;
+	const bool hasFocus = video.windowHandle.GetFlags() & SDL_WINDOW_INPUT_FOCUS;
 	if( !hasFocus ) 
-		video.windowHandle->Raise();
+		video.windowHandle.Raise();
 }

@@ -29,11 +29,11 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 //
 //
 //
-#include <SDL2/SDL_events.h>
-#include <SDL2/SDL_mouse.h>
-#include <SDL2/SDL_keyboard.h>
-#include <SDL2/SDL_keycode.h>
-#include <SDL2/SDL_gamecontroller.h>
+#include <SDL3/SDL_events.h>
+#include <SDL3/SDL_mouse.h>
+#include <SDL3/SDL_keyboard.h>
+#include <SDL3/SDL_keycode.h>
+#include <SDL3/SDL_gamecontroller.h>
 
 #include "sdl2_scancode_mappings.h"
 

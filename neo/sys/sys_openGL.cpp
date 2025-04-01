@@ -27,10 +27,10 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #include "idlib/precompiled.h"
 #pragma hdrstop
 
-#include <SDL2/SDL_video.h>
-#include <SDL2/SDL_mouse.h>
+#include <SDL3/SDL_video.h>
+#include <SDL3/SDL_mouse.h>
 
-#include "renderer/qgl.h"
+#include "renderer/backend/qgl.h"
 #include "renderer/renderer_common.h"
 #include "sys_main.h"
 
@@ -176,7 +176,7 @@ void Sys_ShutDownOpenGLContext( void )
 	common->Printf( "Shutting down OpenGL subsystem\n" );	
 	if (renderContext.renderContext != nullptr)
 	{
-		SDL_GL_DeleteContext( renderContext.renderContext );
+		SDL_GL_DestroyContext( renderContext.renderContext );	
 		renderContext.renderContext = nullptr;
 	}
 }
