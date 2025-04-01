@@ -46,12 +46,8 @@ public:
 	virtual double			ClockTicksPerSecond( void );
 	virtual cpuid_t			GetProcessorId( void );
 	virtual const char *	GetProcessorString( void );
-	virtual const char *	FPU_GetState( void );
-	virtual bool			FPU_StackIsEmpty( void );
 	virtual void			FPU_SetFTZ( bool enable );
 	virtual void			FPU_SetDAZ( bool enable );
-
-	virtual void			FPU_EnableExceptions( int exceptions );
 
 	virtual void			GetCallStack( address_t *callStack, const int callStackSize );
 	virtual const char *	GetCallStackStr( const address_t *callStack, const int callStackSize );
