@@ -35,8 +35,8 @@ typedef struct
 	cpuid_t							cpuid;
 	uint32_t						numThreads;					// System Thread Count
 	sysMemoryStats_t				exeLaunchMemoryStats;
-	class btInputEvent*		input;		// Event Input Manager
-	class btConsoleLog*		console;	// Console/Dedicate mode log window
+	class btInputEvent*				input;		// Event Input Manager
+	class btConsoleLog*				console;	// Console/Dedicate mode log window
 } sysVars_t;
 
 static sysVars_t sysVars;
