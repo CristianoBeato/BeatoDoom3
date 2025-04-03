@@ -37,14 +37,16 @@ If you have questions concerning this license or the applicable additional terms
 idRenderWorldLocal::FreeWorld
 ================
 */
-void idRenderWorldLocal::FreeWorld() {
+void idRenderWorldLocal::FreeWorld() 
+{
 	int i;
 
 	// this will free all the lightDefs and entityDefs
 	FreeDefs();
 
 	// free all the portals and check light/model references
-	for ( i = 0 ; i < numPortalAreas ; i++ ) {
+	for ( i = 0 ; i < numPortalAreas ; i++ ) 
+	{
 		portalArea_t	*area;
 		portal_t		*portal, *nextPortal;
 

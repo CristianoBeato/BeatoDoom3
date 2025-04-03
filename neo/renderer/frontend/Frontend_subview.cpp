@@ -95,7 +95,7 @@ static void R_PlaneForSurface( const srfTriangles_t *tri, idPlane &plane ) {
 
 /*
 =========================
-R_PreciseCullSurface
+crFrontend::PreciseCullSurface
 
 Check the surface for visibility on a per-triangle basis
 for cases when it is going to be VERY expensive to draw (subviews)
@@ -106,7 +106,8 @@ Normalized Device Coordinates, so it can be used to crop the scissor rect.
 OPTIMIZE: we could also take exact portal passing into consideration
 =========================
 */
-bool R_PreciseCullSurface( const drawSurf_t *drawSurf, idBounds &ndcBounds ) {
+bool crFrontend::PreciseCullSurface( const drawSurf_t *drawSurf, idBounds &ndcBounds ) 
+{
 	const srfTriangles_t *tri;
 	int numTriangles;
 	idPlane clip, eye;
@@ -124,9 +125,10 @@ bool R_PreciseCullSurface( const drawSurf_t *drawSurf, idBounds &ndcBounds ) {
 	// get an exact bounds of the triangles for scissor cropping
 	ndcBounds.Clear();
 
-	for ( i = 0; i < tri->numVerts; i++ ) {
-		int j;
-		unsigned int pointFlags;
+	for ( i = 0; i < tri->numVerts; i++ ) 
+	{
+		int j = 0;
+		unsigned int pointFlags = 0;
 
 		R_TransformModelToClip( tri->verts[i].xyz, drawSurf->space->modelViewMatrix,
 			tr.viewDef->projectionMatrix, eye, clip );
@@ -445,22 +447,21 @@ void R_XrayRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect scissor
 
 /*
 ==================
-R_GenerateSurfaceSubview
+crFrontend::GenerateSurfaceSubview
 ==================
 */
-bool	R_GenerateSurfaceSubview( drawSurf_t *drawSurf ) {
+bool crFrontend::GenerateSurfaceSubview( drawSurf_t *drawSurf ) 
+{
 	idBounds		ndcBounds;
-	viewDef_t		*parms;
-	const idMaterial		*shader;
+	viewDef_t		*parms = nullptr;
+	const idMaterial		*shader = nullptr;
 
 	// for testing the performance hit
-	if ( r_skipSubviews.GetBool() ) {
+	if ( r_skipSubviews.GetBool() ) 
 		return false;
-	}
 
-	if ( R_PreciseCullSurface( drawSurf, ndcBounds ) ) {
+	if ( R_PreciseCullSurface( drawSurf, ndcBounds ) )
 		return false;
-	}
 
 	shader = drawSurf->material;
 
@@ -536,7 +537,7 @@ bool	R_GenerateSurfaceSubview( drawSurf_t *drawSurf ) {
 
 /*
 ================
-R_GenerateSubViews
+crFrontendGenerateSubViews
 
 If we need to render another view to complete the current view,
 generate it first.
@@ -546,32 +547,31 @@ view have been generated, because it may create a subview which
 would change tr.viewCount.
 ================
 */
-bool R_GenerateSubViews( void ) {
-	drawSurf_t		*drawSurf;
-	int				i;
-	bool			subviews;
-	const idMaterial		*shader;
+bool crFrontend::GenerateSubViews( void ) 
+{
+	bool				subviews = false;
+	int					i = 0;
+	drawSurf_t*			drawSurf = nullptr;
+	const idMaterial*	shader = nullptr; 
 
 	// for testing the performance hit
-	if ( r_skipSubviews.GetBool() ) {
+	if ( r_skipSubviews.GetBool() ) 
 		return false;
-	}
 
 	subviews = false;
 
 	// scan the surfaces until we either find a subview, or determine
 	// there are no more subview surfaces.
-	for ( i = 0 ; i < tr.viewDef->numDrawSurfs ; i++ ) {
+	for ( i = 0 ; i < tr.viewDef->numDrawSurfs ; i++ ) 
+	{
 		drawSurf = tr.viewDef->drawSurfs[i];
 		shader = drawSurf->material;
 
-		if ( !shader || !shader->HasSubview() ) {
+		if ( !shader || !shader->HasSubview() ) 
 			continue;
-		}
 
-		if ( R_GenerateSurfaceSubview( drawSurf ) ) {
+		if ( GenerateSurfaceSubview( drawSurf ) ) 
 			subviews = true;
-		}
 	}
 
 	return subviews;

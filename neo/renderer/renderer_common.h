@@ -50,7 +50,8 @@ const float FOG_ENTER = (FOG_ENTER_SIZE+1.0f)/(FOG_ENTER_SIZE*2);
 
 // idScreenRect gets carried around with each drawSurf, so it makes sense
 // to keep it compact, instead of just using the idBounds class
-class idScreenRect {
+class idScreenRect 
+{
 public:
 	short		x1, y1, x2, y2;							// inclusive pixel bounds inside viewport
     float       zmin, zmax;								// for depth bounds test
@@ -63,9 +64,6 @@ public:
 	bool		Equals( const idScreenRect &rect ) const;
 	bool		IsEmpty() const;
 };
-
-idScreenRect R_ScreenRectFromViewFrustumBounds( const idBounds &bounds );
-void R_ShowColoredScreenRect( const idScreenRect &rect, int colorIndex );
 
 typedef enum {
 	DC_BAD,
@@ -687,7 +685,9 @@ static const int	MAX_RENDER_CROPS = 8;
 ** but may read fields that aren't dynamically modified
 ** by the frontend.
 */
-class idRenderSystemLocal : public idRenderSystem {
+class crFrontend;
+class idRenderSystemLocal : public idRenderSystem 
+{
 public:
 	// external functions
 	virtual void			Init( void );
@@ -779,9 +779,7 @@ public:
 	float					testVideoStartTime;
 
 	idImage *				ambientCubeImage;	// hack for testing dependent ambient lighting
-
-	viewDef_t *				viewDef;
-
+ 
 	performanceCounters_t	pc;					// performance counters
 
 	drawSurfsCommand_t		lockSurfacesCmd;	// use this when r_lockSurfaces = 1
@@ -800,6 +798,11 @@ public:
 	class idGuiModel *		demoGuiModel;
 
 	unsigned short			gammaTable[256];	// brightness / gamma modify this
+
+// BEATO Begin: 
+	crFrontend*				frontEnd; // frontend interface
+// BEATO End
+
 };
 
 extern backEndState_t		backEnd;
@@ -1046,45 +1049,6 @@ void R_ScreenShot_f( const idCmdArgs &args );
 void R_StencilShot( void );
 
 /*
-====================================================================
-
-MAIN
-
-====================================================================
-*/
-
-void R_RenderView( viewDef_t *parms );
-
-// performs radius cull first, then corner cull
-bool R_CullLocalBox( const idBounds &bounds, const float modelMatrix[16], int numPlanes, const idPlane *planes );
-bool R_RadiusCullLocalBox( const idBounds &bounds, const float modelMatrix[16], int numPlanes, const idPlane *planes );
-bool R_CornerCullLocalBox( const idBounds &bounds, const float modelMatrix[16], int numPlanes, const idPlane *planes );
-
-void R_AxisToModelMatrix( const idMat3 &axis, const idVec3 &origin, float modelMatrix[16] );
-
-// note that many of these assume a normalized matrix, and will not work with scaled axis
-void R_GlobalPointToLocal( const float modelMatrix[16], const idVec3 &in, idVec3 &out );
-void R_GlobalVectorToLocal( const float modelMatrix[16], const idVec3 &in, idVec3 &out );
-void R_GlobalPlaneToLocal( const float modelMatrix[16], const idPlane &in, idPlane &out );
-void R_PointTimesMatrix( const float modelMatrix[16], const idVec4 &in, idVec4 &out );
-void R_LocalPointToGlobal( const float modelMatrix[16], const idVec3 &in, idVec3 &out );
-void R_LocalVectorToGlobal( const float modelMatrix[16], const idVec3 &in, idVec3 &out );
-void R_LocalPlaneToGlobal( const float modelMatrix[16], const idPlane &in, idPlane &out );
-void R_TransformEyeZToWin( float src_z, const float *projectionMatrix, float &dst_z );
-
-void R_GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idVec3 &ndc );
-
-void R_TransformModelToClip( const idVec3 &src, const float *modelMatrix, const float *projectionMatrix, idPlane &eye, idPlane &dst );
-
-void R_TransformClipToDevice( const idPlane &clip, const viewDef_t *view, idVec3 &normalized );
-
-void R_TransposeGLMatrix( const float in[16], float out[16] );
-
-void R_SetViewMatrix( viewDef_t *viewDef );
-
-void myGlMultMatrix( const float *a, const float *b, float *out );
-
-/*
 ============================================================
 
 LIGHT
@@ -1098,19 +1062,8 @@ void R_ListRenderEntityDefs_f( const idCmdArgs &args );
 bool R_IssueEntityDefCallback( idRenderEntityLocal *def );
 idRenderModel *R_EntityDefDynamicModel( idRenderEntityLocal *def );
 
-viewEntity_t *R_SetEntityDefViewEntity( idRenderEntityLocal *def );
 viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *def );
 
-void R_AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const renderEntity_t *renderEntity,
-					const idMaterial *shader, const idScreenRect &scissor );
-
-void R_LinkLightSurf( const drawSurf_t **link, const srfTriangles_t *tri, const viewEntity_t *space, 
-				   const idRenderLightLocal *light, const idMaterial *shader, const idScreenRect &scissor, bool viewInsideShadow );
-
-bool R_CreateAmbientCache( srfTriangles_t *tri, bool needsLighting );
-bool R_CreateLightingCache( const idRenderEntityLocal *ent, const idRenderLightLocal *light, srfTriangles_t *tri );
-void R_CreatePrivateShadowCache( srfTriangles_t *tri );
-void R_CreateVertexProgramShadowCache( srfTriangles_t *tri );
 
 /*
 ============================================================
@@ -1126,10 +1079,6 @@ void R_ModulateLights_f( const idCmdArgs &args );
 
 void R_SetLightProject( idPlane lightProject[4], const idVec3 origin, const idVec3 targetPoint,
 	   const idVec3 rightVector, const idVec3 upVector, const idVec3 start, const idVec3 stop );
-
-void R_AddLightSurfaces( void );
-void R_AddModelSurfaces( void );
-void R_RemoveUnecessaryViewLights( void );
 
 void R_FreeDerivedData( void );
 void R_ReCreateWorldReferences( void );
@@ -1472,8 +1421,6 @@ SUBVIEW
 ============================================================
 */
 
-bool	R_PreciseCullSurface( const drawSurf_t *drawSurf, idBounds &ndcBounds );
-bool	R_GenerateSubViews( void );
 
 /*
 ============================================================
@@ -1603,6 +1550,7 @@ idScreenRect R_CalcIntersectionScissor( const idRenderLightLocal * lightDef,
 
 //=============================================
 
+#include "frontend/Frontend.h"
 #include "renderworld/RenderWorld_local.h"
 #include "models/GuiModel.h"
 #include "VertexCache.h"

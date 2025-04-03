@@ -29,13 +29,23 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
-#include "renderer_common.h"
-#ifdef __ppc__
-#include <vecLib/vecLib.h>
-#endif
-#if defined(MACOS_X) && defined(__i386__)
-#include <xmmintrin.h>
-#endif
+#include "Frontend.h"
+
+#include "renderer/renderer_common.h"
+
+// BEATO Begin:
+// TODO: move to a comman header 
+#include <xmmintrin.h> // SSE
+#include <immintrin.h> // AVX (caso queira expandir depois)
+// BEATO End
+
+crFrontend::crFrontend( void )
+{
+}
+
+crFrontend::~crFrontend( void )
+{
+}
 
 //====================================================================
 
@@ -148,17 +158,19 @@ bool idScreenRect::IsEmpty() const {
 R_ScreenRectFromViewFrustumBounds
 ======================
 */
-idScreenRect R_ScreenRectFromViewFrustumBounds( const idBounds &bounds ) {
+idScreenRect crFrontend::ScreenRectFromViewFrustumBounds( const idBounds &bounds ) 
+{
 	idScreenRect screenRect;
 
-	screenRect.x1 = idMath::FtoiFast( 0.5f * ( 1.0f - bounds[1].y ) * ( tr.viewDef->viewport.x2 - tr.viewDef->viewport.x1 ) );
-	screenRect.x2 = idMath::FtoiFast( 0.5f * ( 1.0f - bounds[0].y ) * ( tr.viewDef->viewport.x2 - tr.viewDef->viewport.x1 ) );
-	screenRect.y1 = idMath::FtoiFast( 0.5f * ( 1.0f + bounds[0].z ) * ( tr.viewDef->viewport.y2 - tr.viewDef->viewport.y1 ) );
-	screenRect.y2 = idMath::FtoiFast( 0.5f * ( 1.0f + bounds[1].z ) * ( tr.viewDef->viewport.y2 - tr.viewDef->viewport.y1 ) );
+	screenRect.x1 = idMath::FtoiFast( 0.5f * ( 1.0f - bounds[1].y ) * ( viewDef->viewport.x2 - viewDef->viewport.x1 ) );
+	screenRect.x2 = idMath::FtoiFast( 0.5f * ( 1.0f - bounds[0].y ) * ( viewDef->viewport.x2 - viewDef->viewport.x1 ) );
+	screenRect.y1 = idMath::FtoiFast( 0.5f * ( 1.0f + bounds[0].z ) * ( viewDef->viewport.y2 - viewDef->viewport.y1 ) );
+	screenRect.y2 = idMath::FtoiFast( 0.5f * ( 1.0f + bounds[1].z ) * ( viewDef->viewport.y2 - viewDef->viewport.y1 ) );
 
-	if ( r_useDepthBoundsTest.GetInteger() ) {
-		R_TransformEyeZToWin( -bounds[0].x, tr.viewDef->projectionMatrix, screenRect.zmin );
-		R_TransformEyeZToWin( -bounds[1].x, tr.viewDef->projectionMatrix, screenRect.zmax );
+	if ( r_useDepthBoundsTest.GetInteger() ) 
+	{
+		crFrontend::TransformEyeZToWin( -bounds[0].x, viewDef->projectionMatrix, screenRect.zmin );
+		crFrontend::TransformEyeZToWin( -bounds[1].x, viewDef->projectionMatrix, screenRect.zmax );
 	}
 
 	return screenRect;
@@ -166,13 +178,16 @@ idScreenRect R_ScreenRectFromViewFrustumBounds( const idBounds &bounds ) {
 
 /*
 ======================
-R_ShowColoredScreenRect
+ShowColoredScreenRect
 ======================
 */
-void R_ShowColoredScreenRect( const idScreenRect &rect, int colorIndex ) {
-	if ( !rect.IsEmpty() ) {
+void crFrontend::ShowColoredScreenRect( const idScreenRect &rect, int colorIndex ) 
+{
+
+	if ( !rect.IsEmpty() ) 
+	{
 		static idVec4 colors[] = { colorRed, colorGreen, colorBlue, colorYellow, colorMagenta, colorCyan, colorWhite, colorPurple };
-		tr.viewDef->renderWorld->DebugScreenRect( colors[colorIndex & 7], rect, tr.viewDef );
+		viewDef->renderWorld->DebugScreenRect( colors[colorIndex & 7], rect, viewDef );
 	}
 }
 
@@ -414,7 +429,8 @@ void *R_FrameAlloc( int bytes ) {
 R_ClearedFrameAlloc
 ==================
 */
-void *R_ClearedFrameAlloc( int bytes ) {
+void *R_ClearedFrameAlloc( int bytes ) 
+{
 	void	*r;
 
 	r = R_FrameAlloc( bytes );
@@ -435,14 +451,27 @@ use either static or frame memory can set function pointers
 to both alloc and free.
 ==================
 */
-void R_FrameFree( void *data ) {
+void R_FrameFree( void *data ) 
+{
 }
 
 
 
 //==========================================================================
 
-void R_AxisToModelMatrix( const idMat3 &axis, const idVec3 &origin, float modelMatrix[16] ) {
+void crFrontend::AxisToModelMatrix( const idMat3 &axis, const idVec3 &origin, float modelMatrix[16] ) 
+{
+#if ID_USE_INSTRINSEC
+	__m128 row1 = _mm_set_ps(0.0f, axis[0][2], axis[0][1], axis[0][0]);
+	__m128 row2 = _mm_set_ps(0.0f, axis[1][2], axis[1][1], axis[1][0]);
+	__m128 row3 = _mm_set_ps(0.0f, axis[2][2], axis[2][1], axis[2][0]);
+	__m128 row4 = _mm_set_ps(1.0f, origin[2], origin[1], origin[0]);
+
+	_mm_storeu_ps(&modelMatrix[0], row1);
+	_mm_storeu_ps(&modelMatrix[4], row2);
+	_mm_storeu_ps(&modelMatrix[8], row3);
+	_mm_storeu_ps(&modelMatrix[12], row4);
+#else
 	modelMatrix[0] = axis[0][0];
 	modelMatrix[4] = axis[1][0];
 	modelMatrix[8] = axis[2][0];
@@ -462,64 +491,87 @@ void R_AxisToModelMatrix( const idMat3 &axis, const idVec3 &origin, float modelM
 	modelMatrix[7] = 0;
 	modelMatrix[11] = 0;
 	modelMatrix[15] = 1;
+#endif
 }
 
 
 // FIXME: these assume no skewing or scaling transforms
+void crFrontend::LocalPointToGlobal( const float modelMatrix[16], const idVec3 &in, idVec3 &out ) 
+{
+#if ID_USE_INSTRINSEC
+	__m128 matCol1 = _mm_loadu_ps(&modelMatrix[0]);
+	__m128 matCol2 = _mm_loadu_ps(&modelMatrix[4]);
+	__m128 matCol3 = _mm_loadu_ps(&modelMatrix[8]);
+	__m128 matCol4 = _mm_loadu_ps(&modelMatrix[12]);
 
-void R_LocalPointToGlobal( const float modelMatrix[16], const idVec3 &in, idVec3 &out ) {
-#if defined(MACOS_X) && defined(__i386__)
-	__m128 m0, m1, m2, m3;
-	__m128 in0, in1, in2;
-	float i0,i1,i2;
-	i0 = in[0];
-	i1 = in[1];
-	i2 = in[2];
-	
-	m0 = _mm_loadu_ps(&modelMatrix[0]);
-	m1 = _mm_loadu_ps(&modelMatrix[4]);
-	m2 = _mm_loadu_ps(&modelMatrix[8]);
-	m3 = _mm_loadu_ps(&modelMatrix[12]);
-	
-	in0 = _mm_load1_ps(&i0);
-	in1 = _mm_load1_ps(&i1);
-	in2 = _mm_load1_ps(&i2);
-	
-	m0 = _mm_mul_ps(m0, in0);
-	m1 = _mm_mul_ps(m1, in1);
-	m2 = _mm_mul_ps(m2, in2);
+	__m128 inVec = _mm_set_ps(1.0f, in[2], in[1], in[0]);
 
-	m0 = _mm_add_ps(m0, m1);
-	m0 = _mm_add_ps(m0, m2);
-	m0 = _mm_add_ps(m0, m3);
-	
-	_mm_store_ss(&out[0], m0);
-	m1 = (__m128) _mm_shuffle_epi32((__m128i)m0, 0x55);
-	_mm_store_ss(&out[1], m1);
-	m2 = _mm_movehl_ps(m2, m0);
-	_mm_store_ss(&out[2], m2);
-#else	
-	out[0] = in[0] * modelMatrix[0] + in[1] * modelMatrix[4]
-		+ in[2] * modelMatrix[8] + modelMatrix[12];
-	out[1] = in[0] * modelMatrix[1] + in[1] * modelMatrix[5]
-		+ in[2] * modelMatrix[9] + modelMatrix[13];
-	out[2] = in[0] * modelMatrix[2] + in[1] * modelMatrix[6]
-		+ in[2] * modelMatrix[10] + modelMatrix[14];
+#if 1
+	__m128 res = _mm_add_ps( _mm_add_ps(_mm_mul_ps(matCol1, _mm_set1_ps(in[0])), _mm_mul_ps(matCol2, _mm_set1_ps(in[1]))),
+		_mm_add_ps(_mm_mul_ps(matCol3, _mm_set1_ps(in[2])), matCol4) );
+#else
+	__m128 res = _mm_fmadd_ps( _mm_set1_ps(in[0]), matCol1, _mm_fmadd_ps(_mm_set1_ps(in[1]), matCol2, _mm_fmadd_ps(_mm_set1_ps(in[2]), matCol3, matCol4)));
+#endif 
+
+	out[0] = res[0];
+	out[1] = res[1];
+	out[2] = res[2];
+#else
+	out[0] = in[0] * modelMatrix[0] + in[1] * modelMatrix[4] + in[2] * modelMatrix[8] + modelMatrix[12];
+	out[1] = in[0] * modelMatrix[1] + in[1] * modelMatrix[5] + in[2] * modelMatrix[9] + modelMatrix[13];
+	out[2] = in[0] * modelMatrix[2] + in[1] * modelMatrix[6] + in[2] * modelMatrix[10] + modelMatrix[14];
 #endif
 }
 
-void R_PointTimesMatrix( const float modelMatrix[16], const idVec4 &in, idVec4 &out ) {
-	out[0] = in[0] * modelMatrix[0] + in[1] * modelMatrix[4]
-		+ in[2] * modelMatrix[8] + modelMatrix[12];
-	out[1] = in[0] * modelMatrix[1] + in[1] * modelMatrix[5]
-		+ in[2] * modelMatrix[9] + modelMatrix[13];
-	out[2] = in[0] * modelMatrix[2] + in[1] * modelMatrix[6]
-		+ in[2] * modelMatrix[10] + modelMatrix[14];
-	out[3] = in[0] * modelMatrix[3] + in[1] * modelMatrix[7]
-		+ in[2] * modelMatrix[11] + modelMatrix[15];
+void crFrontend::PointTimesMatrix( const float modelMatrix[16], const idVec4 &in, idVec4 &out ) 
+{
+#if ID_USE_INSTRINSEC
+	__m128 matCol1 = _mm_loadu_ps( &modelMatrix[0] );
+	__m128 matCol2 = _mm_loadu_ps( &modelMatrix[4] );
+	__m128 matCol3 = _mm_loadu_ps( &modelMatrix[8] );
+	__m128 matCol4 = _mm_loadu_ps( &modelMatrix[12] );
+
+	__m128 inVec = _mm_set_ps(in[3], in[2], in[1], in[0]);
+
+
+	// todo: option to FMA 
+	__m128 res = _mm_fmadd_ps(_mm_set1_ps(in[0]), matCol1, _mm_fmadd_ps(_mm_set1_ps(in[1]), matCol2, _mm_fmadd_ps(_mm_set1_ps(in[2]), matCol3, _mm_mul_ps(_mm_set1_ps(in[3]), matCol4))));
+
+	_mm_storeu_ps(&out[0], res);
+#else
+	out[0] = in[0] * modelMatrix[0] + in[1] * modelMatrix[4] + in[2] * modelMatrix[8] + modelMatrix[12];
+	out[1] = in[0] * modelMatrix[1] + in[1] * modelMatrix[5] + in[2] * modelMatrix[9] + modelMatrix[13];
+	out[2] = in[0] * modelMatrix[2] + in[1] * modelMatrix[6] + in[2] * modelMatrix[10] + modelMatrix[14];
+	out[3] = in[0] * modelMatrix[3] + in[1] * modelMatrix[7] + in[2] * modelMatrix[11] + modelMatrix[15];
+#endif
 }
 
-void R_GlobalPointToLocal( const float modelMatrix[16], const idVec3 &in, idVec3 &out ) {
+void crFrontend::GlobalPointToLocal( const float modelMatrix[16], const idVec3 &in, idVec3 &out ) 
+{
+#if ID_USE_INSTRINSEC
+	__m128 matCol1 = _mm_loadu_ps(&modelMatrix[0]);
+	__m128 matCol2 = _mm_loadu_ps(&modelMatrix[4]);
+	__m128 matCol3 = _mm_loadu_ps(&modelMatrix[8]);
+	__m128 matCol4 = _mm_loadu_ps(&modelMatrix[12]);
+
+	__m128 inVec = _mm_set_ps(1.0f, in[2], in[1], in[0]);
+	__m128 temp = _mm_sub_ps(inVec, matCol4);
+
+	__m128 resX = _mm_mul_ps(temp, matCol1);
+	__m128 resY = _mm_mul_ps(temp, matCol2);
+	__m128 resZ = _mm_mul_ps(temp, matCol3);
+
+	resX = _mm_hadd_ps(resX, resX);
+	resX = _mm_hadd_ps(resX, resX);
+	resY = _mm_hadd_ps(resY, resY);
+	resY = _mm_hadd_ps(resY, resY);
+	resZ = _mm_hadd_ps(resZ, resZ);
+	resZ = _mm_hadd_ps(resZ, resZ);
+
+	out[0] = _mm_cvtss_f32(resX);
+	out[1] = _mm_cvtss_f32(resY);
+	out[2] = _mm_cvtss_f32(resZ);
+#else
 	idVec3	temp;
 
 	VectorSubtract( in, &modelMatrix[12], temp );
@@ -527,41 +579,60 @@ void R_GlobalPointToLocal( const float modelMatrix[16], const idVec3 &in, idVec3
 	out[0] = DotProduct( temp, &modelMatrix[0] );
 	out[1] = DotProduct( temp, &modelMatrix[4] );
 	out[2] = DotProduct( temp, &modelMatrix[8] );
+#endif
 }
 
-void R_LocalVectorToGlobal( const float modelMatrix[16], const idVec3 &in, idVec3 &out ) {
-	out[0] = in[0] * modelMatrix[0] + in[1] * modelMatrix[4]
-		+ in[2] * modelMatrix[8];
-	out[1] = in[0] * modelMatrix[1] + in[1] * modelMatrix[5]
-		+ in[2] * modelMatrix[9];
-	out[2] = in[0] * modelMatrix[2] + in[1] * modelMatrix[6]
-		+ in[2] * modelMatrix[10];
+void crFrontend::LocalVectorToGlobal( const float modelMatrix[16], const idVec3 &in, idVec3 &out ) 
+{
+#if ID_USE_INSTRINSEC
+	__m128 matCol1 = _mm_loadu_ps(&modelMatrix[0]);
+	__m128 matCol2 = _mm_loadu_ps(&modelMatrix[4]);
+	__m128 matCol3 = _mm_loadu_ps(&modelMatrix[8]);
+
+#if 1
+	__m128 res = _mm_add_ps( _mm_add_ps( _mm_mul_ps( _mm_set1_ps( in[0] ), matCol1 ) , _mm_mul_ps( _mm_set1_ps( in[1] ), matCol2 ) ), _mm_mul_ps( _mm_set1_ps( in[2] ), matCol3 ) );
+#else
+	__m128 res = _mm_fmadd_ps(_mm_set1_ps(in[0]), matCol1, _mm_fmadd_ps(_mm_set1_ps(in[1]), matCol2,  _mm_mul_ps(_mm_set1_ps(in[2]), matCol3)));
+#endif
+
+	out[0] = res[0];
+	out[1] = res[1];
+	out[2] = res[2];
+#else
+	out[0] = in[0] * modelMatrix[0] + in[1] * modelMatrix[4] + in[2] * modelMatrix[8];
+	out[1] = in[0] * modelMatrix[1] + in[1] * modelMatrix[5] + in[2] * modelMatrix[9];
+	out[2] = in[0] * modelMatrix[2] + in[1] * modelMatrix[6] + in[2] * modelMatrix[10];
+#endif
 }
 
-void R_GlobalVectorToLocal( const float modelMatrix[16], const idVec3 &in, idVec3 &out ) {
+void crFrontend::GlobalVectorToLocal( const float modelMatrix[16], const idVec3 &in, idVec3 &out ) 
+{
 	out[0] = DotProduct( in, &modelMatrix[0] );
 	out[1] = DotProduct( in, &modelMatrix[4] );
 	out[2] = DotProduct( in, &modelMatrix[8] );
 }
 
-void R_GlobalPlaneToLocal( const float modelMatrix[16], const idPlane &in, idPlane &out ) {
+void crFrontend::GlobalPlaneToLocal( const float modelMatrix[16], const idPlane &in, idPlane &out ) 
+{
 	out[0] = DotProduct( in, &modelMatrix[0] );
 	out[1] = DotProduct( in, &modelMatrix[4] );
 	out[2] = DotProduct( in, &modelMatrix[8] );
 	out[3] = in[3] + modelMatrix[12] * in[0] + modelMatrix[13] * in[1] + modelMatrix[14] * in[2];
 }
 
-void R_LocalPlaneToGlobal( const float modelMatrix[16], const idPlane &in, idPlane &out ) {
+void crFrontend::LocalPlaneToGlobal( const float modelMatrix[16], const idPlane &in, idPlane &out ) 
+{
 	float	offset;
 
-	R_LocalVectorToGlobal( modelMatrix, in.Normal(), out.Normal() );
+	LocalVectorToGlobal( modelMatrix, in.Normal(), out.Normal() );
 
 	offset = modelMatrix[12] * out[0] + modelMatrix[13] * out[1] + modelMatrix[14] * out[2];
 	out[3] = in[3] - offset;
 }
 
 // transform Z in eye coordinates to window coordinates
-void R_TransformEyeZToWin( float src_z, const float *projectionMatrix, float &dst_z ) {
+void crFrontend::TransformEyeZToWin( float src_z, const float *projectionMatrix, float &dst_z ) 
+{
 	float clip_z, clip_w;
 
 	// projection
@@ -578,27 +649,27 @@ void R_TransformEyeZToWin( float src_z, const float *projectionMatrix, float &ds
 
 /*
 =================
-R_RadiusCullLocalBox
+crFrontend::RadiusCullLocalBox
 
 A fast, conservative center-to-corner culling test
 Returns true if the box is outside the given global frustum, (positive sides are out)
 =================
 */
-bool R_RadiusCullLocalBox( const idBounds &bounds, const float modelMatrix[16], int numPlanes, const idPlane *planes ) {
+bool crFrontend::RadiusCullLocalBox( const idBounds &bounds, const float modelMatrix[16], int numPlanes, const idPlane *planes ) 
+{
 	int			i;
 	float		d;
 	idVec3		worldOrigin;
 	float		worldRadius;
 	const idPlane	*frust;
 
-	if ( r_useCulling.GetInteger() == 0 ) {
+	if ( r_useCulling.GetInteger() == 0 )
 		return false;
-	}
 
 	// transform the surface bounds into world space
 	idVec3	localOrigin = ( bounds[0] + bounds[1] ) * 0.5;
 
-	R_LocalPointToGlobal( modelMatrix, localOrigin, worldOrigin );
+	LocalPointToGlobal( modelMatrix, localOrigin, worldOrigin );
 
 	worldRadius = (bounds[0] - localOrigin).Length();	// FIXME: won't be correct for scaled objects
 
@@ -615,14 +686,15 @@ bool R_RadiusCullLocalBox( const idBounds &bounds, const float modelMatrix[16], 
 
 /*
 =================
-R_CornerCullLocalBox
+crFrontend::CornerCullLocalBox
 
 Tests all corners against the frustum.
 Can still generate a few false positives when the box is outside a corner.
 Returns true if the box is outside the given global frustum, (positive sides are out)
 =================
 */
-bool R_CornerCullLocalBox( const idBounds &bounds, const float modelMatrix[16], int numPlanes, const idPlane *planes ) {
+bool crFrontend::CornerCullLocalBox( const idBounds &bounds, const float modelMatrix[16], int numPlanes, const idPlane *planes ) 
+{
 	int			i, j;
 	idVec3		transformed[8];
 	float		dists[8];
@@ -630,29 +702,33 @@ bool R_CornerCullLocalBox( const idBounds &bounds, const float modelMatrix[16], 
 	const idPlane *frust;
 
 	// we can disable box culling for experimental timing purposes
-	if ( r_useCulling.GetInteger() < 2 ) {
+	if ( r_useCulling.GetInteger() < 2 ) 
 		return false;
-	}
+	
 
 	// transform into world space
-	for ( i = 0 ; i < 8 ; i++ ) {
+	for ( i = 0 ; i < 8 ; i++ ) 
+	{
 		v[0] = bounds[i&1][0];
 		v[1] = bounds[(i>>1)&1][1];
 		v[2] = bounds[(i>>2)&1][2];
 
-		R_LocalPointToGlobal( modelMatrix, v, transformed[i] );
+		LocalPointToGlobal( modelMatrix, v, transformed[i] );
 	}
 
 	// check against frustum planes
-	for ( i = 0 ; i < numPlanes ; i++ ) {
+	for ( i = 0 ; i < numPlanes ; i++ ) 
+	{
 		frust = planes + i;
-		for ( j = 0 ; j < 8 ; j++ ) {
+		for ( j = 0 ; j < 8 ; j++ ) 
+		{
 			dists[j] = frust->Distance( transformed[j] );
-			if ( dists[j] < 0 ) {
+			if ( dists[j] < 0 ) 
 				break;
-			}
 		}
-		if ( j == 8 ) {
+		
+		if ( j == 8 ) 
+		{
 			// all points were behind one of the planes
 			tr.pc.c_box_cull_out++;
 			return true;
@@ -666,28 +742,31 @@ bool R_CornerCullLocalBox( const idBounds &bounds, const float modelMatrix[16], 
 
 /*
 =================
-R_CullLocalBox
+crFrontend::CullLocalBox
 
 Performs quick test before expensive test
 Returns true if the box is outside the given global frustum, (positive sides are out)
 =================
 */
-bool R_CullLocalBox( const idBounds &bounds, const float modelMatrix[16], int numPlanes, const idPlane *planes ) {
-	if ( R_RadiusCullLocalBox( bounds, modelMatrix, numPlanes, planes ) ) {
+bool crFrontend::CullLocalBox( const idBounds &bounds, const float modelMatrix[16], int numPlanes, const idPlane *planes ) 
+{
+	if ( RadiusCullLocalBox( bounds, modelMatrix, numPlanes, planes ) ) 
 		return true;
-	}
-	return R_CornerCullLocalBox( bounds, modelMatrix, numPlanes, planes );
+	
+	return CornerCullLocalBox( bounds, modelMatrix, numPlanes, planes );
 }
 
 /*
 ==========================
-R_TransformModelToClip
+crFrontend::TransformModelToClip
 ==========================
 */
-void R_TransformModelToClip( const idVec3 &src, const float *modelMatrix, const float *projectionMatrix, idPlane &eye, idPlane &dst ) {
+void crFrontend::TransformModelToClip( const idVec3 &src, const float *modelMatrix, const float *projectionMatrix, idPlane &eye, idPlane &dst ) 
+{
 	int i;
 
-	for ( i = 0 ; i < 4 ; i++ ) {
+	for ( i = 0 ; i < 4 ; i++ ) 
+	{
 		eye[i] = 
 			src[0] * modelMatrix[ i + 0 * 4 ] +
 			src[1] * modelMatrix[ i + 1 * 4 ] +
@@ -711,15 +790,17 @@ R_GlobalToNormalizedDeviceCoordinates
 -1 to 1 range in x, y, and z
 ==========================
 */
-void R_GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idVec3 &ndc ) {
-	int		i;
+void crCondition::GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idVec3 &ndc ) 
+{
+	int		i = 0;
 	idPlane	view;
 	idPlane	clip;
 
 	// _D3XP added work on primaryView when no viewDef
-	if ( !tr.viewDef ) {
-
-		for ( i = 0 ; i < 4 ; i ++ ) {
+	if ( !viewDef ) 
+	{
+		for ( i = 0 ; i < 4 ; i ++ ) 
+		{
 			view[i] = 
 				global[0] * tr.primaryView->worldSpace.modelViewMatrix[ i + 0 * 4 ] +
 				global[1] * tr.primaryView->worldSpace.modelViewMatrix[ i + 1 * 4 ] +
@@ -727,7 +808,8 @@ void R_GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idVec3 &ndc ) 
 					tr.primaryView->worldSpace.modelViewMatrix[ i + 3 * 4 ];
 		}
 
-		for ( i = 0 ; i < 4 ; i ++ ) {
+		for ( i = 0 ; i < 4 ; i ++ ) 
+		{
 			clip[i] = 
 				view[0] * tr.primaryView->projectionMatrix[ i + 0 * 4 ] +
 				view[1] * tr.primaryView->projectionMatrix[ i + 1 * 4 ] +
@@ -735,23 +817,26 @@ void R_GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idVec3 &ndc ) 
 				view[3] * tr.primaryView->projectionMatrix[ i + 3 * 4 ];
 		}
 
-	} else {
+	} 
+	else 
+	{
 
-		for ( i = 0 ; i < 4 ; i ++ ) {
+		for ( i = 0 ; i < 4 ; i ++ ) 
+		{
 			view[i] = 
-				global[0] * tr.viewDef->worldSpace.modelViewMatrix[ i + 0 * 4 ] +
-				global[1] * tr.viewDef->worldSpace.modelViewMatrix[ i + 1 * 4 ] +
-				global[2] * tr.viewDef->worldSpace.modelViewMatrix[ i + 2 * 4 ] +
-				tr.viewDef->worldSpace.modelViewMatrix[ i + 3 * 4 ];
+				global[0] * viewDef->worldSpace.modelViewMatrix[ i + 0 * 4 ] +
+				global[1] * viewDef->worldSpace.modelViewMatrix[ i + 1 * 4 ] +
+				global[2] * viewDef->worldSpace.modelViewMatrix[ i + 2 * 4 ] +
+				viewDef->worldSpace.modelViewMatrix[ i + 3 * 4 ];
 		}
 
 
 		for ( i = 0 ; i < 4 ; i ++ ) {
 			clip[i] = 
-				view[0] * tr.viewDef->projectionMatrix[ i + 0 * 4 ] +
-				view[1] * tr.viewDef->projectionMatrix[ i + 1 * 4 ] +
-				view[2] * tr.viewDef->projectionMatrix[ i + 2 * 4 ] +
-				view[3] * tr.viewDef->projectionMatrix[ i + 3 * 4 ];
+				view[0] * viewDef->projectionMatrix[ i + 0 * 4 ] +
+				view[1] * viewDef->projectionMatrix[ i + 1 * 4 ] +
+				view[2] * viewDef->projectionMatrix[ i + 2 * 4 ] +
+				view[3] * viewDef->projectionMatrix[ i + 3 * 4 ];
 		}
 
 	}
@@ -763,25 +848,54 @@ void R_GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idVec3 &ndc ) 
 
 /*
 ==========================
-R_TransformClipToDevice
+crFrontend::TransformClipToDevice
 
 Clip to normalized device coordinates
 ==========================
 */
-void R_TransformClipToDevice( const idPlane &clip, const viewDef_t *view, idVec3 &normalized ) {
+void crFrontend::TransformClipToDevice( const idPlane &clip, const viewDef_t *view, idVec3 &normalized ) 
+{
 	normalized[0] = clip[0] / clip[3];
 	normalized[1] = clip[1] / clip[3];
 	normalized[2] = clip[2] / clip[3];
 }
 
-
 /*
 ==========================
-myGlMultMatrix
+crFrontend::myGlMultMatrix
 ==========================
 */
-void myGlMultMatrix( const float a[16], const float b[16], float out[16] ) {
-#if 0
+void crFrontend::myGlMultMatrix( const float a[16], const float b[16], float out[16] ) 
+{
+#if ID_USE_INSTRINSEC
+	// load the matrix B rows 
+	__m128 row1 = _mm_loadu_ps(&b[0]); 
+	__m128 row2 = _mm_loadu_ps(&b[4]); 
+	__m128 row3 = _mm_loadu_ps(&b[8]); 
+	__m128 row4 = _mm_loadu_ps(&b[12]);
+
+	for (int i = 0; i < 4; i++) 
+	{
+		// load the row of A
+		__m128 a_row = _mm_loadu_ps(&a[i * 4]);
+	
+		// multiply the row of A with the columns of B
+		__m128 col1 = _mm_set1_ps(a_row[0]);
+		__m128 col2 = _mm_set1_ps(a_row[1]);
+		__m128 col3 = _mm_set1_ps(a_row[2]);
+		__m128 col4 = _mm_set1_ps(a_row[3]);
+	
+		// multiply and add the results
+		__m128 res = _mm_add_ps(
+			_mm_add_ps(_mm_mul_ps(col1, row1), _mm_mul_ps(col2, row2)),
+			_mm_add_ps(_mm_mul_ps(col3, row3), _mm_mul_ps(col4, row4))
+		);
+	
+		// store the result
+		_mm_storeu_ps(&out[i * 4], res);
+	}
+#elif 1
+	if 0
 	int		i, j;
 
 	for ( i = 0 ; i < 4 ; i++ ) {
@@ -793,19 +907,23 @@ void myGlMultMatrix( const float a[16], const float b[16], float out[16] ) {
 				+ a [ i * 4 + 3 ] * b [ 3 * 4 + j ];
 		}
 	}
+
 #else
 	out[0*4+0] = a[0*4+0]*b[0*4+0] + a[0*4+1]*b[1*4+0] + a[0*4+2]*b[2*4+0] + a[0*4+3]*b[3*4+0];
 	out[0*4+1] = a[0*4+0]*b[0*4+1] + a[0*4+1]*b[1*4+1] + a[0*4+2]*b[2*4+1] + a[0*4+3]*b[3*4+1];
 	out[0*4+2] = a[0*4+0]*b[0*4+2] + a[0*4+1]*b[1*4+2] + a[0*4+2]*b[2*4+2] + a[0*4+3]*b[3*4+2];
 	out[0*4+3] = a[0*4+0]*b[0*4+3] + a[0*4+1]*b[1*4+3] + a[0*4+2]*b[2*4+3] + a[0*4+3]*b[3*4+3];
+
 	out[1*4+0] = a[1*4+0]*b[0*4+0] + a[1*4+1]*b[1*4+0] + a[1*4+2]*b[2*4+0] + a[1*4+3]*b[3*4+0];
 	out[1*4+1] = a[1*4+0]*b[0*4+1] + a[1*4+1]*b[1*4+1] + a[1*4+2]*b[2*4+1] + a[1*4+3]*b[3*4+1];
 	out[1*4+2] = a[1*4+0]*b[0*4+2] + a[1*4+1]*b[1*4+2] + a[1*4+2]*b[2*4+2] + a[1*4+3]*b[3*4+2];
 	out[1*4+3] = a[1*4+0]*b[0*4+3] + a[1*4+1]*b[1*4+3] + a[1*4+2]*b[2*4+3] + a[1*4+3]*b[3*4+3];
+	
 	out[2*4+0] = a[2*4+0]*b[0*4+0] + a[2*4+1]*b[1*4+0] + a[2*4+2]*b[2*4+0] + a[2*4+3]*b[3*4+0];
 	out[2*4+1] = a[2*4+0]*b[0*4+1] + a[2*4+1]*b[1*4+1] + a[2*4+2]*b[2*4+1] + a[2*4+3]*b[3*4+1];
 	out[2*4+2] = a[2*4+0]*b[0*4+2] + a[2*4+1]*b[1*4+2] + a[2*4+2]*b[2*4+2] + a[2*4+3]*b[3*4+2];
 	out[2*4+3] = a[2*4+0]*b[0*4+3] + a[2*4+1]*b[1*4+3] + a[2*4+2]*b[2*4+3] + a[2*4+3]*b[3*4+3];
+	
 	out[3*4+0] = a[3*4+0]*b[0*4+0] + a[3*4+1]*b[1*4+0] + a[3*4+2]*b[2*4+0] + a[3*4+3]*b[3*4+0];
 	out[3*4+1] = a[3*4+0]*b[0*4+1] + a[3*4+1]*b[1*4+1] + a[3*4+2]*b[2*4+1] + a[3*4+3]*b[3*4+1];
 	out[3*4+2] = a[3*4+0]*b[0*4+2] + a[3*4+1]*b[1*4+2] + a[3*4+2]*b[2*4+2] + a[3*4+3]*b[3*4+2];
@@ -818,7 +936,26 @@ void myGlMultMatrix( const float a[16], const float b[16], float out[16] ) {
 R_TransposeGLMatrix
 ================
 */
-void R_TransposeGLMatrix( const float in[16], float out[16] ) {
+void crFrontend::TransposeGLMatrix( const float in[16], float out[16] ) 
+{
+#if ID_USE_INSTRINSEC
+
+	// load matrix rows into SSE registers
+	__m128 row1 = _mm_loadu_ps(&in[0]); 
+	__m128 row2 = _mm_loadu_ps(&in[4]); 
+	__m128 row3 = _mm_loadu_ps(&in[8]); 
+	__m128 row4 = _mm_loadu_ps(&in[12]);
+	
+	// perform the transpose
+	_MM_TRANSPOSE4_PS(row1, row2, row3, row4);
+	
+	// store the transposed matrix back to memory
+	_mm_storeu_ps(&out[0], row1);
+	_mm_storeu_ps(&out[4], row2);
+	_mm_storeu_ps(&out[8], row3);
+	_mm_storeu_ps(&out[12], row4);
+
+#else
 	int		i, j;
 
 	for ( i = 0 ; i < 4 ; i++ ) {
@@ -826,20 +963,25 @@ void R_TransposeGLMatrix( const float in[16], float out[16] ) {
 			out[i*4+j] = in[j*4+i];
 		}
 	}
+#endif
 }
+
+
 
 /*
 =================
-R_SetViewMatrix
+crFrontend::SetViewMatrix
 
 Sets up the world to view matrix for a given viewParm
 =================
 */
-void R_SetViewMatrix( viewDef_t *viewDef ) {
+void crFrontend::SetViewMatrix( viewDef_t *viewDef ) 
+{
 	idVec3	origin;
 	viewEntity_t *world;
-	float	viewerMatrix[16];
-	static float	s_flipMatrix[16] = {
+	alignas( 16 ) float	viewerMatrix[16];
+	alignas( 16 ) float	s_flipMatrix[16] = 
+	{
 		// convert from our coordinate system (looking down X)
 		// to OpenGL's coordinate system (looking down -Z)
 		0, 0, -1, 0,
@@ -860,6 +1002,7 @@ void R_SetViewMatrix( viewDef_t *viewDef ) {
 	// transform by the camera placement
 	origin = viewDef->renderView.vieworg;
 
+	// BEATO TODO: use SIMD for this
 	viewerMatrix[0] = viewDef->renderView.viewaxis[0][0];
 	viewerMatrix[4] = viewDef->renderView.viewaxis[0][1];
 	viewerMatrix[8] = viewDef->renderView.viewaxis[0][2];
@@ -892,7 +1035,8 @@ R_SetupProjection
 This uses the "infinite far z" trick
 ===============
 */
-void R_SetupProjection( void ) {
+void crFrontend::SetupProjection( void ) 
+{
 	float	xmin, xmax, ymin, ymax;
 	float	width, height;
 	float	zNear;
@@ -902,10 +1046,13 @@ void R_SetupProjection( void ) {
 	// random jittering is usefull when multiple
 	// frames are going to be blended together
 	// for motion blurred anti-aliasing
-	if ( r_jitter.GetBool() ) {
+	if ( r_jitter.GetBool() ) 
+	{
 		jitterx = random.RandomFloat();
 		jittery = random.RandomFloat();
-	} else {
+	} 
+	else 
+	{
 		jitterx = jittery = 0;
 	}
 
@@ -913,82 +1060,83 @@ void R_SetupProjection( void ) {
 	// set up projection matrix
 	//
 	zNear	= r_znear.GetFloat();
-	if ( tr.viewDef->renderView.cramZNear ) {
+	if ( viewDef->renderView.cramZNear )
 		zNear *= 0.25;
-	}
 
-	ymax = zNear * tan( tr.viewDef->renderView.fov_y * idMath::PI / 360.0f );
+	ymax = zNear * tan( viewDef->renderView.fov_y * idMath::PI / 360.0f );
 	ymin = -ymax;
 
-	xmax = zNear * tan( tr.viewDef->renderView.fov_x * idMath::PI / 360.0f );
+	xmax = zNear * tan( viewDef->renderView.fov_x * idMath::PI / 360.0f );
 	xmin = -xmax;
 
 	width = xmax - xmin;
 	height = ymax - ymin;
 
-	jitterx = jitterx * width / ( tr.viewDef->viewport.x2 - tr.viewDef->viewport.x1 + 1 );
+	jitterx = jitterx * width / ( viewDef->viewport.x2 - viewDef->viewport.x1 + 1 );
 	xmin += jitterx;
 	xmax += jitterx;
-	jittery = jittery * height / ( tr.viewDef->viewport.y2 - tr.viewDef->viewport.y1 + 1 );
+	jittery = jittery * height / ( viewDef->viewport.y2 - viewDef->viewport.y1 + 1 );
 	ymin += jittery;
 	ymax += jittery;
 
-	tr.viewDef->projectionMatrix[0] = 2 * zNear / width;
-	tr.viewDef->projectionMatrix[4] = 0;
-	tr.viewDef->projectionMatrix[8] = ( xmax + xmin ) / width;	// normally 0
-	tr.viewDef->projectionMatrix[12] = 0;
+	viewDef->projectionMatrix[0] = 2 * zNear / width;
+	viewDef->projectionMatrix[4] = 0;
+	viewDef->projectionMatrix[8] = ( xmax + xmin ) / width;	// normally 0
+	viewDef->projectionMatrix[12] = 0;
 
-	tr.viewDef->projectionMatrix[1] = 0;
-	tr.viewDef->projectionMatrix[5] = 2 * zNear / height;
-	tr.viewDef->projectionMatrix[9] = ( ymax + ymin ) / height;	// normally 0
-	tr.viewDef->projectionMatrix[13] = 0;
+	viewDef->projectionMatrix[1] = 0;
+	viewDef->projectionMatrix[5] = 2 * zNear / height;
+	viewDef->projectionMatrix[9] = ( ymax + ymin ) / height;	// normally 0
+	viewDef->projectionMatrix[13] = 0;
 
 	// this is the far-plane-at-infinity formulation, and
 	// crunches the Z range slightly so w=0 vertexes do not
 	// rasterize right at the wraparound point
-	tr.viewDef->projectionMatrix[2] = 0;
-	tr.viewDef->projectionMatrix[6] = 0;
-	tr.viewDef->projectionMatrix[10] = -0.999f;
-	tr.viewDef->projectionMatrix[14] = -2.0f * zNear;
+	viewDef->projectionMatrix[2] = 0;
+	viewDef->projectionMatrix[6] = 0;
+	viewDef->projectionMatrix[10] = -0.999f;
+	viewDef->projectionMatrix[14] = -2.0f * zNear;
 
-	tr.viewDef->projectionMatrix[3] = 0;
-	tr.viewDef->projectionMatrix[7] = 0;
-	tr.viewDef->projectionMatrix[11] = -1;
-	tr.viewDef->projectionMatrix[15] = 0;
+	viewDef->projectionMatrix[3] = 0;
+	viewDef->projectionMatrix[7] = 0;
+	viewDef->projectionMatrix[11] = -1;
+	viewDef->projectionMatrix[15] = 0;
 }
 
 /*
 =================
-R_SetupViewFrustum
+crFrontend::SetupViewFrustum
 
 Setup that culling frustum planes for the current view
 FIXME: derive from modelview matrix times projection matrix
 =================
 */
-static void R_SetupViewFrustum( void ) {
-	int		i;
-	float	xs, xc;
-	float	ang;
+void crFrontend::SetupViewFrustum( void ) 
+{
+	int		i = 0;
+	float	xs = 0.0f, xc = 0.0f;
+	float	ang = 0.0f;
 
-	ang = DEG2RAD( tr.viewDef->renderView.fov_x ) * 0.5f;
+	ang = DEG2RAD( viewDef->renderView.fov_x ) * 0.5f;
 	idMath::SinCos( ang, xs, xc );
 
-	tr.viewDef->frustum[0] = xs * tr.viewDef->renderView.viewaxis[0] + xc * tr.viewDef->renderView.viewaxis[1];
-	tr.viewDef->frustum[1] = xs * tr.viewDef->renderView.viewaxis[0] - xc * tr.viewDef->renderView.viewaxis[1];
+	viewDef->frustum[0] = xs * viewDef->renderView.viewaxis[0] + xc * viewDef->renderView.viewaxis[1];
+	viewDef->frustum[1] = xs * viewDef->renderView.viewaxis[0] - xc * viewDef->renderView.viewaxis[1];
 
-	ang = DEG2RAD( tr.viewDef->renderView.fov_y ) * 0.5f;
+	ang = DEG2RAD( viewDef->renderView.fov_y ) * 0.5f;
 	idMath::SinCos( ang, xs, xc );
 
-	tr.viewDef->frustum[2] = xs * tr.viewDef->renderView.viewaxis[0] + xc * tr.viewDef->renderView.viewaxis[2];
-	tr.viewDef->frustum[3] = xs * tr.viewDef->renderView.viewaxis[0] - xc * tr.viewDef->renderView.viewaxis[2];
+	viewDef->frustum[2] = xs * viewDef->renderView.viewaxis[0] + xc * viewDef->renderView.viewaxis[2];
+	viewDef->frustum[3] = xs * viewDef->renderView.viewaxis[0] - xc * viewDef->renderView.viewaxis[2];
 
 	// plane four is the front clipping plane
-	tr.viewDef->frustum[4] = /* vec3_origin - */ tr.viewDef->renderView.viewaxis[0];
+	viewDef->frustum[4] = /* vec3_origin - */ viewDef->renderView.viewaxis[0];
 
-	for ( i = 0; i < 5; i++ ) {
+	for ( i = 0; i < 5; i++ ) 
+	{
 		// flip direction so positive side faces out (FIXME: globally unify this)
-		tr.viewDef->frustum[i] = -tr.viewDef->frustum[i].Normal();
-		tr.viewDef->frustum[i][3] = -( tr.viewDef->renderView.vieworg * tr.viewDef->frustum[i].Normal() );
+		viewDef->frustum[i] = - viewDef->frustum[i].Normal();
+		viewDef->frustum[i][3] = -( viewDef->renderView.vieworg * viewDef->frustum[i].Normal() );
 	}
 
 	// eventually, plane five will be the rear clipping plane for fog
@@ -996,16 +1144,15 @@ static void R_SetupViewFrustum( void ) {
 	float dNear, dFar, dLeft, dUp;
 
 	dNear = r_znear.GetFloat();
-	if ( tr.viewDef->renderView.cramZNear ) {
+	if ( viewDef->renderView.cramZNear ) 
 		dNear *= 0.25f;
-	}
 
 	dFar = MAX_WORLD_SIZE;
-	dLeft = dFar * tan( DEG2RAD( tr.viewDef->renderView.fov_x * 0.5f ) );
-	dUp = dFar * tan( DEG2RAD( tr.viewDef->renderView.fov_y * 0.5f ) );
-	tr.viewDef->viewFrustum.SetOrigin( tr.viewDef->renderView.vieworg );
-	tr.viewDef->viewFrustum.SetAxis( tr.viewDef->renderView.viewaxis );
-	tr.viewDef->viewFrustum.SetSize( dNear, dFar, dLeft, dUp );
+	dLeft = dFar * tan( DEG2RAD( viewDef->renderView.fov_x * 0.5f ) );
+	dUp = dFar * tan( DEG2RAD( viewDef->renderView.fov_y * 0.5f ) );
+	viewDef->viewFrustum.SetOrigin( viewDef->renderView.vieworg );
+	viewDef->viewFrustum.SetAxis( viewDef->renderView.viewaxis );
+	viewDef->viewFrustum.SetSize( dNear, dFar, dLeft, dUp );
 }
 
 /*
@@ -1013,21 +1160,27 @@ static void R_SetupViewFrustum( void ) {
 R_ConstrainViewFrustum
 ===================
 */
-static void R_ConstrainViewFrustum( void ) {
+void crFrontend::ConstrainViewFrustum( void ) 
+{
 	idBounds bounds;
 
 	// constrain the view frustum to the total bounds of all visible lights and visible entities
 	bounds.Clear();
-	for ( viewLight_t *vLight = tr.viewDef->viewLights; vLight; vLight = vLight->next ) {
+	for ( viewLight_t *vLight = viewDef->viewLights; vLight; vLight = vLight->next )
+	{
 		bounds.AddBounds( vLight->lightDef->frustumTris->bounds );
 	}
-	for ( viewEntity_t *vEntity = tr.viewDef->viewEntitys; vEntity; vEntity = vEntity->next ) {
+	
+	for ( viewEntity_t *vEntity = viewDef->viewEntitys; vEntity; vEntity = vEntity->next ) 
+	{
 		bounds.AddBounds( vEntity->entityDef->referenceBounds );
 	}
-	tr.viewDef->viewFrustum.ConstrainToBounds( bounds );
 
-	if ( r_useFrustumFarDistance.GetFloat() > 0.0f ) {
-		tr.viewDef->viewFrustum.MoveFarDistance( r_useFrustumFarDistance.GetFloat() );
+	viewDef->viewFrustum.ConstrainToBounds( bounds );
+
+	if ( r_useFrustumFarDistance.GetFloat() > 0.0f ) 
+	{
+		viewDef->viewFrustum.MoveFarDistance( r_useFrustumFarDistance.GetFloat() );
 	}
 }
 
@@ -1046,31 +1199,32 @@ R_QsortSurfaces
 
 =======================
 */
-static int R_QsortSurfaces( const void *a, const void *b ) {
+static int QsortSurfaces( const void *a, const void *b ) 
+{
 	const drawSurf_t	*ea, *eb;
 
 	ea = *(drawSurf_t **)a;
 	eb = *(drawSurf_t **)b;
 
-	if ( ea->sort < eb->sort ) {
+	if ( ea->sort < eb->sort ) 
 		return -1;
-	}
-	if ( ea->sort > eb->sort ) {
+	
+	if ( ea->sort > eb->sort ) 
 		return 1;
-	}
+
 	return 0;
 }
 
 
 /*
 =================
-R_SortDrawSurfs
+crFrontend::SortDrawSurfs
 =================
 */
-static void R_SortDrawSurfs( void ) {
+void crFrontend::SortDrawSurfs( void )
+{
 	// sort the drawsurfs by sort type, then orientation, then shader
-	qsort( tr.viewDef->drawSurfs, tr.viewDef->numDrawSurfs, sizeof( tr.viewDef->drawSurfs[0] ),
-		R_QsortSurfaces );
+	qsort( viewDef->drawSurfs, viewDef->numDrawSurfs, sizeof( viewDef->drawSurfs[0] ), QsortSurfaces );
 }
 
 
@@ -1084,7 +1238,7 @@ static void R_SortDrawSurfs( void ) {
 
 /*
 ================
-R_RenderView
+crFrontend::RenderView
 
 A view may be either the actual camera view,
 a mirror / remote location, or a 3D view on a gui surface.
@@ -1092,72 +1246,73 @@ a mirror / remote location, or a 3D view on a gui surface.
 Parms will typically be allocated with R_FrameAlloc
 ================
 */
-void R_RenderView( viewDef_t *parms ) {
+void crFrontend::RenderView( viewDef_t *parms ) 
+{
 	viewDef_t		*oldView;
 
-	if ( parms->renderView.width <= 0 || parms->renderView.height <= 0 ) {
+	if ( parms->renderView.width <= 0 || parms->renderView.height <= 0 )
 		return;
-	}
 
 	tr.viewCount++;
 
 	// save view in case we are a subview
-	oldView = tr.viewDef;
+	oldView = viewDef;
 
-	tr.viewDef = parms;
+	viewDef = parms;
 
 	tr.sortOffset = 0;
 
 	// set the matrix for world space to eye space
-	R_SetViewMatrix( tr.viewDef );
+	SetViewMatrix( viewDef );
 
 	// the four sides of the view frustum are needed
 	// for culling and portal visibility
-	R_SetupViewFrustum();
+	SetupViewFrustum();
 
 	// we need to set the projection matrix before doing
 	// portal-to-screen scissor box calculations
-	R_SetupProjection();
+	SetupProjection();
 
 	// identify all the visible portalAreas, and the entityDefs and
 	// lightDefs that are in them and pass culling.
 	static_cast<idRenderWorldLocal *>(parms->renderWorld)->FindViewLightsAndEntities();
 
 	// constrain the view frustum to the view lights and entities
-	R_ConstrainViewFrustum();
+	ConstrainViewFrustum();
 
 	// make sure that interactions exist for all light / entity combinations
 	// that are visible
 	// add any pre-generated light shadows, and calculate the light shader values
-	R_AddLightSurfaces();
+	AddLightSurfaces();
 
 	// adds ambient surfaces and create any necessary interaction surfaces to add to the light
 	// lists
-	R_AddModelSurfaces();
+	AddModelSurfaces();
 
 	// any viewLight that didn't have visible surfaces can have it's shadows removed
-	R_RemoveUnecessaryViewLights();
+	RemoveUnecessaryViewLights();
 
 	// sort all the ambient surfaces for translucency ordering
-	R_SortDrawSurfs();
+	SortDrawSurfs();
 
 	// generate any subviews (mirrors, cameras, etc) before adding this view
-	if ( R_GenerateSubViews() ) {
+	if ( GenerateSubViews() ) 
+	{
 		// if we are debugging subviews, allow the skipping of the
 		// main view draw
-		if ( r_subviewOnly.GetBool() ) {
+		if ( r_subviewOnly.GetBool() ) 
 			return;
-		}
 	}
 
 	// write everything needed to the demo file
-	if ( session->writeDemo ) {
-		static_cast<idRenderWorldLocal *>(parms->renderWorld)->WriteVisibleDefs( tr.viewDef );
+	if ( session->writeDemo ) 
+	{
+		static_cast<idRenderWorldLocal *>(parms->renderWorld)->WriteVisibleDefs( viewDef );
 	}
 
 	// add the rendering commands for this viewDef
-	R_AddDrawViewCmd( parms );
+	AddDrawViewCmd( parms );
 
 	// restore view in case we are a subview
-	tr.viewDef = oldView;
+	viewDef = oldView;
 }

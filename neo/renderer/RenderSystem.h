@@ -156,7 +156,8 @@ const int SCREEN_HEIGHT			= 480;
 class idRenderWorld;
 
 
-class idRenderSystem {
+class idRenderSystem 
+{
 public:
 
 	virtual					~idRenderSystem() {}

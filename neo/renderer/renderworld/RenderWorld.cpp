@@ -202,42 +202,41 @@ visible entities
 */
 int c_callbackUpdate;
 
-void idRenderWorldLocal::UpdateEntityDef( qhandle_t entityHandle, const renderEntity_t *re ) {
-	if ( r_skipUpdates.GetBool() ) {
+void idRenderWorldLocal::UpdateEntityDef( qhandle_t entityHandle, const renderEntity_t *re ) 
+{
+	if ( r_skipUpdates.GetBool() ) 
 		return;
-	}
+
 
 	tr.pc.c_entityUpdates++;
 
-	if ( !re->hModel && !re->callback ) {
+	if ( !re->hModel && !re->callback ) 
 		common->Error( "idRenderWorld::UpdateEntityDef: NULL hModel" );
-	}
 
 	// create new slots if needed
-	if ( entityHandle < 0 || entityHandle > LUDICROUS_INDEX ) {
+	if ( entityHandle < 0 || entityHandle > LUDICROUS_INDEX ) 
 		common->Error( "idRenderWorld::UpdateEntityDef: index = %i", entityHandle );
-	}
-	while ( entityHandle >= entityDefs.Num() ) {
-		entityDefs.Append( NULL );
-	}
+
+	while ( entityHandle >= entityDefs.Num() ) 
+		entityDefs.Append( nullptr );
 
 	idRenderEntityLocal	*def = entityDefs[entityHandle];
-	if ( def ) {
-
-		if ( !re->forceUpdate ) {
+	if ( def ) 
+	{
+		if ( !re->forceUpdate ) 
+		{
 
 			// check for exact match (OPTIMIZE: check through pointers more)
-			if ( !re->joints && !re->callbackData && !def->dynamicModel && !memcmp( re, &def->parms, sizeof( *re ) ) ) {
+			if ( !re->joints && !re->callbackData && !def->dynamicModel && !memcmp( re, &def->parms, sizeof( *re ) ) ) 
 				return;
-			}
 
 			// if the only thing that changed was shaderparms, we can just leave things as they are
 			// after updating parms
 
 			// if we have a callback function and the bounds, origin, axis and model match,
 			// then we can leave the references as they are
-			if ( re->callback ) {
-
+			if ( re->callback ) 
+			{
 				bool axisMatch = ( re->axis == def->parms.axis );
 				bool originMatch = ( re->origin == def->parms.origin );
 				bool boundsMatch = ( re->bounds == def->referenceBounds );
@@ -254,12 +253,14 @@ void idRenderWorldLocal::UpdateEntityDef( qhandle_t entityHandle, const renderEn
 		}
 
 		// save any decals if the model is the same, allowing marks to move with entities
-		if ( def->parms.hModel == re->hModel ) {
+		if ( def->parms.hModel == re->hModel ) 
 			R_FreeEntityDefDerivedData( def, true, true );
-		} else {
+		else 
 			R_FreeEntityDefDerivedData( def, false, false );
-		}
-	} else {
+		
+	} 
+	else 
+	{
 		// creating a new one
 		def = new idRenderEntityLocal;
 		entityDefs[entityHandle] = def;
@@ -270,16 +271,18 @@ void idRenderWorldLocal::UpdateEntityDef( qhandle_t entityHandle, const renderEn
 
 	def->parms = *re;
 
-	R_AxisToModelMatrix( def->parms.axis, def->parms.origin, def->modelMatrix );
+	crFrontend::AxisToModelMatrix( def->parms.axis, def->parms.origin, def->modelMatrix );
 
 	def->lastModifiedFrameNum = tr.frameCount;
-	if ( session->writeDemo && def->archived ) {
+	if ( session->writeDemo && def->archived ) 
+	{
 		WriteFreeEntity( entityHandle );
 		def->archived = false;
 	}
 
 	// optionally immediately issue any callbacks
-	if ( !r_useEntityCallbacks.GetBool() && def->parms.callback ) {
+	if ( !r_useEntityCallbacks.GetBool() && def->parms.callback ) 
+	{
 		R_IssueEntityDefCallback( def );
 	}
 
@@ -672,25 +675,24 @@ Rendering a scene may require multiple views to be rendered
 to handle mirrors,
 ====================
 */
-void idRenderWorldLocal::RenderScene( const renderView_t *renderView ) {
+void idRenderWorldLocal::RenderScene( const renderView_t *renderView ) 
+{
 #ifndef	ID_DEDICATED
 	renderView_t	copy;
 
-	if ( !glConfig.isInitialized ) {
+	if ( !glConfig.isInitialized ) 
 		return;
-	}
 
 	copy = *renderView;
 
 	// skip front end rendering work, which will result
 	// in only gui drawing
-	if ( r_skipFrontEnd.GetBool() ) {
+	if ( r_skipFrontEnd.GetBool() ) 
 		return;
-	}
+	
 
-	if ( renderView->fov_x <= 0 || renderView->fov_y <= 0 ) {
+	if ( renderView->fov_x <= 0 || renderView->fov_y <= 0 ) 
 		common->Error( "idRenderWorld::RenderScene: bad FOVs: %f, %f", renderView->fov_x, renderView->fov_y );
-	}
 
 	// close any gui drawing
 	tr.guiModel->EmitFullScreen();
@@ -703,9 +705,9 @@ void idRenderWorldLocal::RenderScene( const renderView_t *renderView ) {
 	viewDef_t		*parms = (viewDef_t *)R_ClearedFrameAlloc( sizeof( *parms ) );
 	parms->renderView = *renderView;
 
-	if ( tr.takingScreenshot ) {
+	if ( tr.takingScreenshot ) 
 		parms->renderView.forceUpdate = true;
-	}
+	
 
 	// set up viewport, adjusted for resolution and OpenGL style 0 at the bottom
 	tr.RenderViewToViewport( &parms->renderView, &parms->viewport );
@@ -732,13 +734,14 @@ void idRenderWorldLocal::RenderScene( const renderView_t *renderView ) {
 	// or environment cube sides
 	idVec3	cross;
 	cross = parms->renderView.viewaxis[1].Cross( parms->renderView.viewaxis[2] );
-	if ( cross * parms->renderView.viewaxis[0] > 0 ) {
+	if ( cross * parms->renderView.viewaxis[0] > 0 ) 
 		parms->isMirror = false;
-	} else {
+	else
 		parms->isMirror = true;
-	}
+	
 
-	if ( r_lockSurfaces.GetBool() ) {
+	if ( r_lockSurfaces.GetBool() ) 
+	{
 		R_LockSurfaceScene( parms );
 		return;
 	}
@@ -752,11 +755,12 @@ void idRenderWorldLocal::RenderScene( const renderView_t *renderView ) {
 	// for mirrors / portals / shadows / environment maps
 	// this will also cause any necessary entities and lights to be
 	// updated to the demo file
-	R_RenderView( parms );
+	tr.frontEnd->RenderView( parms ); //R_RenderView( parms );
 
 	// now write delete commands for any modified-but-not-visible entities, and
 	// add the renderView command to the demo
-	if ( session->writeDemo ) {
+	if ( session->writeDemo ) 
+	{
 		WriteRenderView( renderView );
 	}
 
@@ -968,7 +972,8 @@ this doesn't do any occlusion testing, simply ignoring non-gui surfaces.
 start / end are in global world coordinates.
 ================
 */
-guiPoint_t	idRenderWorldLocal::GuiTrace( qhandle_t entityHandle, const idVec3 start, const idVec3 end ) const {
+guiPoint_t	idRenderWorldLocal::GuiTrace( qhandle_t entityHandle, const idVec3 start, const idVec3 end ) const 
+{
 	localTrace_t	local;
 	idVec3			localStart, localEnd, bestPoint;
 	int				j;
@@ -997,8 +1002,8 @@ guiPoint_t	idRenderWorldLocal::GuiTrace( qhandle_t entityHandle, const idVec3 st
 	}
 
 	// transform the points into local space
-	R_GlobalPointToLocal( def->modelMatrix, start, localStart );
-	R_GlobalPointToLocal( def->modelMatrix, end, localEnd );
+	crFrontend::GlobalPointToLocal( def->modelMatrix, start, localStart );
+	crFrontend::GlobalPointToLocal( def->modelMatrix, end, localEnd );
 
 
 	float best = 99999.0;
@@ -1079,9 +1084,9 @@ bool idRenderWorldLocal::ModelTrace( modelTrace_t &trace, qhandle_t entityHandle
 	}
 
 	// transform the points into local space
-	R_AxisToModelMatrix( refEnt->axis, refEnt->origin, modelMatrix );
-	R_GlobalPointToLocal( modelMatrix, start, localStart );
-	R_GlobalPointToLocal( modelMatrix, end, localEnd );
+	crFrontend::AxisToModelMatrix( refEnt->axis, refEnt->origin, modelMatrix );
+	crFrontend::GlobalPointToLocal( modelMatrix, start, localStart );
+	crFrontend::GlobalPointToLocal( modelMatrix, end, localEnd );
 
 	// if we have explicit collision surfaces, only collide against them
 	// (FIXME, should probably have a parm to control this)
@@ -1123,7 +1128,7 @@ bool idRenderWorldLocal::ModelTrace( modelTrace_t &trace, qhandle_t entityHandle
 
 		if ( localTrace.fraction < trace.fraction ) {
 			trace.fraction = localTrace.fraction;
-			R_LocalPointToGlobal( modelMatrix, localTrace.point, trace.point );
+			crFrontend::LocalPointToGlobal( modelMatrix, localTrace.point, trace.point );
 			trace.normal = localTrace.normal * refEnt->axis;
 			trace.material = shader;
 			trace.entity = &def->parms;
@@ -1271,15 +1276,15 @@ bool idRenderWorldLocal::Trace( modelTrace_t &trace, const idVec3 &start, const 
 				numSurfaces++;
 
 				// transform the points into local space
-				R_AxisToModelMatrix( def->parms.axis, def->parms.origin, modelMatrix );
-				R_GlobalPointToLocal( modelMatrix, start, localStart );
-				R_GlobalPointToLocal( modelMatrix, end, localEnd );
+				crFrontend::AxisToModelMatrix( def->parms.axis, def->parms.origin, modelMatrix );
+				crFrontend::GlobalPointToLocal( modelMatrix, start, localStart );
+				crFrontend::GlobalPointToLocal( modelMatrix, end, localEnd );
 
 				localTrace = R_LocalTrace( localStart, localEnd, radius, surf->geometry );
 
 				if ( localTrace.fraction < trace.fraction ) {
 					trace.fraction = localTrace.fraction;
-					R_LocalPointToGlobal( modelMatrix, localTrace.point, trace.point );
+					crFrontend::LocalPointToGlobal( modelMatrix, localTrace.point, trace.point );
 					trace.normal = localTrace.normal * def->parms.axis;
 					trace.material = shader;
 					trace.entity = &def->parms;
@@ -1442,10 +1447,10 @@ and light interactions is deferred from idRenderWorldLocal::CreateLightDefIntera
 use it as an oportunity to size the interactionTable
 ===================
 */
-void idRenderWorldLocal::GenerateAllInteractions() {
-	if ( !glConfig.isInitialized ) {
+void idRenderWorldLocal::GenerateAllInteractions() 
+{
+	if ( !glConfig.isInitialized ) 
 		return;
-	}
 
 	int start = Sys_Milliseconds();
 
@@ -1458,9 +1463,11 @@ void idRenderWorldLocal::GenerateAllInteractions() {
 	// try and do any view specific optimizations
 	tr.viewDef = NULL;
 
-	for ( int i = 0 ; i < this->lightDefs.Num() ; i++ ) {
+	for ( int i = 0 ; i < this->lightDefs.Num() ; i++ ) 
+	{
 		idRenderLightLocal	*ldef = this->lightDefs[i];
-		if ( !ldef ) {
+		if ( !ldef )
+		{
 			continue;
 		}
 		this->CreateLightDefInteractions( ldef );
@@ -1473,7 +1480,8 @@ void idRenderWorldLocal::GenerateAllInteractions() {
 
 
 	// build the interaction table
-	if ( r_useInteractionTable.GetBool() ) {
+	if ( r_useInteractionTable.GetBool() ) 
+	{
 		interactionTableWidth = entityDefs.Num() + 100;
 		interactionTableHeight = lightDefs.Num() + 100;
 		int	size =  interactionTableWidth * interactionTableHeight * sizeof( *interactionTable );
@@ -2090,18 +2098,19 @@ void idRenderWorldLocal::RegenerateWorld() {
 R_GlobalShaderOverride
 ===============
 */
-bool R_GlobalShaderOverride( const idMaterial **shader ) {
-
-	if ( !(*shader)->IsDrawn() ) {
+bool R_GlobalShaderOverride( const idMaterial **shader ) 
+{
+	if ( !(*shader)->IsDrawn() )
 		return false;
-	}
 
-	if ( tr.primaryRenderView.globalMaterial ) {
+	if ( tr.primaryRenderView.globalMaterial ) 
+	{
 		*shader = tr.primaryRenderView.globalMaterial;
 		return true;
 	}
 
-	if ( r_materialOverride.GetString()[0] != '\0' ) {
+	if ( r_materialOverride.GetString()[0] != '\0' ) 
+	{
 		*shader = declManager->FindMaterial( r_materialOverride.GetString() );
 		return true;
 	}
