@@ -1,3 +1,7 @@
 [submodule "neo/contrib/SDL3wrap"]
 	path = neo/contrib/SDL3wrap
 	url = git@github.com:CristianoBeato/SDL3-.git
+
+[submodule "neo/contrib/VectorClassLib"]
+	path = neo/contrib/VectorClassLib
+	url = git@github.com:vectorclass/version2.git
