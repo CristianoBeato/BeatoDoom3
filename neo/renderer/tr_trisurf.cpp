@@ -154,7 +154,8 @@ static idDynamicAlloc<int, 1<<16, 1<<10>				triDupVertAllocator;
 R_InitTriSurfData
 ===============
 */
-void R_InitTriSurfData( void ) {
+void R_InitTriSurfData( void ) 
+{
 	silEdges = (silEdge_t *)R_StaticAlloc( MAX_SIL_EDGES * sizeof( silEdges[0] ) );
 
 	// initialize allocators for triangle surfaces
@@ -185,7 +186,8 @@ void R_InitTriSurfData( void ) {
 R_ShutdownTriSurfData
 ===============
 */
-void R_ShutdownTriSurfData( void ) {
+void R_ShutdownTriSurfData( void ) 
+{
 	R_StaticFree( silEdges );
 	silEdgeHash.Free();
 	srfTrianglesAllocator.Shutdown();
@@ -463,20 +465,21 @@ void R_CheckStaticTriSurfMemory( const srfTriangles_t *tri ) {
 R_FreeDeferredTriSurfs
 ==================
 */
-void R_FreeDeferredTriSurfs( frameData_t *frame ) {
+void R_FreeDeferredTriSurfs( frameData_t *frame ) 
+{
 	srfTriangles_t	*tri, *next;
 
-	if ( !frame ) {
+	if ( !frame ) 
 		return;
-	}
 
-	for ( tri = frame->firstDeferredFreeTriSurf; tri; tri = next ) {
+	for ( tri = frame->firstDeferredFreeTriSurf; tri; tri = next ) 
+	{
 		next = tri->nextDeferredFree;
 		R_ReallyFreeStaticTriSurf( tri );
 	}
 
-	frame->firstDeferredFreeTriSurf = NULL;
-	frame->lastDeferredFreeTriSurf = NULL;
+	frame->firstDeferredFreeTriSurf = nullptr;
+	frame->lastDeferredFreeTriSurf = nullptr;
 }
 
 /*
@@ -486,7 +489,8 @@ R_FreeStaticTriSurf
 This will defer the free until the current frame has run through the back end.
 ==============
 */
-void R_FreeStaticTriSurf( srfTriangles_t *tri ) {
+void R_FreeStaticTriSurf( srfTriangles_t *tri ) 
+{
 	frameData_t		*frame;
 
 	if ( !tri ) {

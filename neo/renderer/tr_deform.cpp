@@ -1225,15 +1225,20 @@ static void R_ParticleDeform( drawSurf_t *surf, bool useArea ) {
 R_DeformDrawSurf
 =================
 */
-void R_DeformDrawSurf( drawSurf_t *drawSurf ) {
-	if ( !drawSurf->material ) {
+void R_DeformDrawSurf( drawSurf_t *drawSurf ) 
+{
+	if ( !drawSurf->material ) 
+	{
 		return;
 	}
 
-	if ( r_skipDeforms.GetBool() ) {
+	if ( r_skipDeforms.GetBool() ) 
+	{
 		return;
 	}
-	switch ( drawSurf->material->Deform() ) {
+	
+	switch ( drawSurf->material->Deform() ) 
+	{
 	case DFRM_NONE:
 		return;
 	case DFRM_SPRITE:

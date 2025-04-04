@@ -33,7 +33,6 @@ If you have questions concerning this license or the applicable additional terms
 idRenderSystemLocal	tr;
 idRenderSystem	*renderSystem = &tr;
 
-
 /*
 =====================
 R_PerformanceCounters
@@ -42,8 +41,10 @@ This prints both front and back end counters, so it should
 only be called when the back end thread is idle.
 =====================
 */
-static void R_PerformanceCounters( void ) {
-	if ( r_showPrimitives.GetInteger() != 0 ) {
+static void R_PerformanceCounters( void ) 
+{
+	if ( r_showPrimitives.GetInteger() != 0 ) 
+	{
 		
 		float megaBytes = globalImages->SumOfUsedImages() / ( 1024*1024.0 );
 
@@ -71,7 +72,8 @@ static void R_PerformanceCounters( void ) {
 		}
 	}
 
-	if ( r_showDynamic.GetBool() ) {
+	if ( r_showDynamic.GetBool() ) 
+	{
 		common->Printf( "callback:%i md5:%i dfrmVerts:%i dfrmTris:%i tangTris:%i guis:%i\n",
 			tr.pc.c_entityDefCallbacks,
 			tr.pc.c_generateMd5,
@@ -82,34 +84,45 @@ static void R_PerformanceCounters( void ) {
 			); 
 	}
 
-	if ( r_showCull.GetBool() ) {
+	if ( r_showCull.GetBool() ) 
+	{
 		common->Printf( "%i sin %i sclip  %i sout %i bin %i bout\n",
 			tr.pc.c_sphere_cull_in, tr.pc.c_sphere_cull_clip, tr.pc.c_sphere_cull_out, 
 			tr.pc.c_box_cull_in, tr.pc.c_box_cull_out );
 	}
 	
-	if ( r_showAlloc.GetBool() ) {
+	if ( r_showAlloc.GetBool() ) 
+	{
 		common->Printf( "alloc:%i free:%i\n", tr.pc.c_alloc, tr.pc.c_free );
 	}
 
-	if ( r_showInteractions.GetBool() ) {
+	if ( r_showInteractions.GetBool() ) 
+	{
 		common->Printf( "createInteractions:%i createLightTris:%i createShadowVolumes:%i\n",
 			tr.pc.c_createInteractions, tr.pc.c_createLightTris, tr.pc.c_createShadowVolumes );
  	}
-	if ( r_showDefs.GetBool() ) {
+	
+	if ( r_showDefs.GetBool() ) 
+	{
 		common->Printf( "viewEntities:%i  shadowEntities:%i  viewLights:%i\n", tr.pc.c_visibleViewEntities,
 			tr.pc.c_shadowViewEntities, tr.pc.c_viewLights );
 	}
-	if ( r_showUpdates.GetBool() ) {
+	
+	if ( r_showUpdates.GetBool() ) 
+	{
 		common->Printf( "entityUpdates:%i  entityRefs:%i  lightUpdates:%i  lightRefs:%i\n", 
 			tr.pc.c_entityUpdates, tr.pc.c_entityReferences,
 			tr.pc.c_lightUpdates, tr.pc.c_lightReferences );
 	}
-	if ( r_showMemory.GetBool() ) {
-		int	m1 = frameData ? frameData->memoryHighwater : 0;
-		common->Printf( "frameData: %i (%i)\n", R_CountFrameData(), m1 );
+	
+	if ( r_showMemory.GetBool() ) 
+	{
+		int	m1 = tr.drawQueue->GetMemoryHighwater();
+		common->Printf( "frameData: %i (%i)\n", tr.drawQueue->CountFrameData(), m1 );
 	}
-	if ( r_showLightScale.GetBool() ) {
+	
+	if ( r_showLightScale.GetBool() ) 
+	{
 		common->Printf( "lightScale: %f\n", backEnd.pc.maxLightValue );
 	}
 
@@ -117,111 +130,6 @@ static void R_PerformanceCounters( void ) {
 	memset( &backEnd.pc, 0, sizeof( backEnd.pc ) );
 }
 
-
-
-/*
-====================
-R_IssueRenderCommands
-
-Called by R_EndFrame each frame
-====================
-*/
-static void R_IssueRenderCommands( void ) {
-	if ( frameData->cmdHead->commandId == RC_NOP
-		&& !frameData->cmdHead->next ) {
-		// nothing to issue
-		return;
-	}
-
-	// r_skipBackEnd allows the entire time of the back end
-	// to be removed from performance measurements, although
-	// nothing will be drawn to the screen.  If the prints
-	// are going to a file, or r_skipBackEnd is later disabled,
-	// usefull data can be received.
-
-	// r_skipRender is usually more usefull, because it will still
-	// draw 2D graphics
-	if ( !r_skipBackEnd.GetBool() ) {
-		RB_ExecuteBackEndCommands( frameData->cmdHead );
-	}
-
-	R_ClearCommandChain();
-}
-
-/*
-============
-R_GetCommandBuffer
-
-Returns memory for a command buffer (stretchPicCommand_t, 
-drawSurfsCommand_t, etc) and links it to the end of the
-current command chain.
-============
-*/
-void *R_GetCommandBuffer( int bytes ) {
-	emptyCommand_t	*cmd;
-
-	cmd = (emptyCommand_t *)R_FrameAlloc( bytes );
-	cmd->next = NULL;
-	frameData->cmdTail->next = &cmd->commandId;
-	frameData->cmdTail = cmd;
-
-	return (void *)cmd;
-}
-
-
-/*
-====================
-R_ClearCommandChain
-
-Called after every buffer submission
-and by R_ToggleSmpFrame
-====================
-*/
-void R_ClearCommandChain( void ) {
-	// clear the command chain
-	frameData->cmdHead = frameData->cmdTail = (emptyCommand_t *)R_FrameAlloc( sizeof( *frameData->cmdHead ) );
-	frameData->cmdHead->commandId = RC_NOP;
-	frameData->cmdHead->next = NULL;
-}
-
-/*
-=================
-R_ViewStatistics
-=================
-*/
-static void R_ViewStatistics( viewDef_t *parms ) {
-	// report statistics about this view
-	if ( !r_showSurfaces.GetBool() ) {
-		return;
-	}
-	common->Printf( "view:%p surfs:%i\n", parms, parms->numDrawSurfs );
-}
-
-/*
-=============
-R_AddDrawViewCmd
-
-This is the main 3D rendering command.  A single scene may
-have multiple views if a mirror, portal, or dynamic texture is present.
-=============
-*/
-void	R_AddDrawViewCmd( viewDef_t *parms ) {
-	drawSurfsCommand_t	*cmd;
-
-	cmd = (drawSurfsCommand_t *)R_GetCommandBuffer( sizeof( *cmd ) );
-	cmd->commandId = RC_DRAW_VIEW;
-
-	cmd->viewDef = parms;
-
-	if ( parms->viewEntitys ) {
-		// save the command for r_lockSurfaces debugging
-		tr.lockSurfacesCmd = *cmd;
-	}
-
-	tr.pc.c_numViews++;
-
-	R_ViewStatistics( parms );
-}
 
 
 //=================================================================================
@@ -236,31 +144,30 @@ without changing the composition of the scene, including
 culling.  The only thing that is modified is the
 view position and axis, no front end work is done at all
 
-
 Add the stored off command again, so the new rendering will use EXACTLY
 the same surfaces, including all the culling, even though the transformation
 matricies have been changed.  This allow the culling tightness to be
 evaluated interactively.
 ======================
 */
-void R_LockSurfaceScene( viewDef_t *parms ) {
+void R_LockSurfaceScene( viewDef_t *parms ) 
+{
 	drawSurfsCommand_t	*cmd;
 	viewEntity_t			*vModel;
 
 	// set the matrix for world space to eye space
-	R_SetViewMatrix( parms );
+	tr.frontEnd->SetViewMatrix( parms );
 	tr.lockSurfacesCmd.viewDef->worldSpace = parms->worldSpace;
 	
 	// update the view origin and axis, and all
 	// the entity matricies
-	for( vModel = tr.lockSurfacesCmd.viewDef->viewEntitys ; vModel ; vModel = vModel->next ) {
-		myGlMultMatrix( vModel->modelMatrix, 
-			tr.lockSurfacesCmd.viewDef->worldSpace.modelViewMatrix,
-			vModel->modelViewMatrix );
+	for( vModel = tr.lockSurfacesCmd.viewDef->viewEntitys ; vModel ; vModel = vModel->next ) 
+	{
+		crFrontend::GlMultMatrix( vModel->modelMatrix, tr.lockSurfacesCmd.viewDef->worldSpace.modelViewMatrix, vModel->modelViewMatrix );
 	}
 
 	// add the stored off surface commands again
-	cmd = (drawSurfsCommand_t *)R_GetCommandBuffer( sizeof( *cmd ) );
+	cmd = (drawSurfsCommand_t *)tr.drawQueue->GetCommandBuffer( sizeof( *cmd ) );
 	*cmd = tr.lockSurfacesCmd;
 }
 
@@ -345,7 +252,8 @@ DrawStretchPic
 x/y/w/h are in the 0,0 to 640,480 range
 =============
 */
-void idRenderSystemLocal::DrawStretchPic( float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial *material ) {
+void idRenderSystemLocal::DrawStretchPic( float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial *material ) 
+{
 	guiModel->DrawStretchPic( x, y, w, h, s1, t1, s2, t2, material );
 }
 
@@ -356,7 +264,8 @@ DrawStretchTri
 x/y/w/h are in the 0,0 to 640,480 range
 =============
 */
-void idRenderSystemLocal::DrawStretchTri( idVec2 p1, idVec2 p2, idVec2 p3, idVec2 t1, idVec2 t2, idVec2 t3, const idMaterial *material ) {
+void idRenderSystemLocal::DrawStretchTri( idVec2 p1, idVec2 p2, idVec2 p3, idVec2 t1, idVec2 t2, idVec2 t3, const idMaterial *material ) 
+{
 	tr.guiModel->DrawStretchTri( p1, p2, p3, t1, t2, t3, material );
 }
 
@@ -365,8 +274,9 @@ void idRenderSystemLocal::DrawStretchTri( idVec2 p1, idVec2 p2, idVec2 p3, idVec
 GlobalToNormalizedDeviceCoordinates
 =============
 */
-void idRenderSystemLocal::GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idVec3 &ndc ) {
-	R_GlobalToNormalizedDeviceCoordinates( global, ndc );
+void idRenderSystemLocal::GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idVec3 &ndc ) 
+{
+	frontEnd->GlobalToNormalizedDeviceCoordinates( global, ndc );
 }
 
 /*
@@ -602,12 +512,12 @@ void idRenderSystemLocal::SetBackEndRenderer() {
 BeginFrame
 ====================
 */
-void idRenderSystemLocal::BeginFrame( int windowWidth, int windowHeight ) {
+void idRenderSystemLocal::BeginFrame( int windowWidth, int windowHeight ) 
+{
 	setBufferCommand_t	*cmd;
 
-	if ( !glConfig.isInitialized ) {
+	if ( !glConfig.isInitialized )
 		return;
-	}
 
 	// determine which back end we will use
 	SetBackEndRenderer();
@@ -655,13 +565,16 @@ void idRenderSystemLocal::BeginFrame( int windowWidth, int windowHeight ) {
 	//
 	// draw buffer stuff
 	//
-	cmd = (setBufferCommand_t *)R_GetCommandBuffer( sizeof( *cmd ) );
+	cmd = (setBufferCommand_t *)drawQueue->GetCommandBuffer( sizeof( *cmd ) );
 	cmd->commandId = RC_SET_BUFFER;
 	cmd->frameCount = frameCount;
 
-	if ( r_frontBuffer.GetBool() ) {
+	if ( r_frontBuffer.GetBool() ) 
+	{
 		cmd->buffer = (int)GL_FRONT;
-	} else {
+	} 
+	else 
+	{
 		cmd->buffer = (int)GL_BACK;
 	}
 }
@@ -712,15 +625,15 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 	GL_CheckErrors();
 
 	// add the swapbuffers command
-	cmd = (emptyCommand_t *)R_GetCommandBuffer( sizeof( *cmd ) );
+	cmd = (emptyCommand_t *)drawQueue->GetCommandBuffer( sizeof( *cmd ) );
 	cmd->commandId = RC_SWAP_BUFFERS;
 
 	// start the back end up again with the new command list
-	R_IssueRenderCommands();
+	drawQueue->IssueRenderCommands();
 
 	// use the other buffers next frame, because another CPU
 	// may still be rendering into the current buffers
-	R_ToggleSmpFrame();
+	drawQueue->ToggleSmpFrame();
 
 	// we can now release the vertexes used this frame
 	vertexCache.EndFrame();
@@ -911,7 +824,7 @@ void idRenderSystemLocal::CaptureRenderToImage( const char *imageName ) {
 
 	renderCrop_t *rc = &renderCrops[currentRenderCrop];
 
-	copyRenderCommand_t *cmd = (copyRenderCommand_t *)R_GetCommandBuffer( sizeof( *cmd ) );
+	copyRenderCommand_t *cmd = (copyRenderCommand_t *)drawQueue->GetCommandBuffer( sizeof( *cmd ) );
 	cmd->commandId = RC_COPY_RENDER;
 	cmd->x = rc->x;
 	cmd->y = rc->y;
@@ -937,17 +850,17 @@ void idRenderSystemLocal::CaptureRenderToFile( const char *fileName, bool fixAlp
 
 	guiModel->EmitFullScreen();
 	guiModel->Clear();
-	R_IssueRenderCommands();
+	drawQueue->IssueRenderCommands();
 
 	glReadBuffer( GL_BACK );
 
 	// include extra space for OpenGL padding to word boundaries
 	int	c = ( rc->width + 3 ) * rc->height;
-	byte *data = (byte *)R_StaticAlloc( c * 3 );
+	byte *data = (byte *)drawQueue->StaticAlloc( c * 3 );
 	
 	glReadPixels( rc->x, rc->y, rc->width, rc->height, GL_RGB, GL_UNSIGNED_BYTE, data ); 
 
-	byte *data2 = (byte *)R_StaticAlloc( c * 4 );
+	byte *data2 = (byte *)drawQueue->StaticAlloc( c * 4 );
 
 	for ( int i = 0 ; i < c ; i++ ) {
 		data2[ i * 4 ] = data[ i * 3 ];
@@ -958,8 +871,8 @@ void idRenderSystemLocal::CaptureRenderToFile( const char *fileName, bool fixAlp
 
 	R_WriteTGA( fileName, data2, rc->width, rc->height, true );
 
-	R_StaticFree( data );
-	R_StaticFree( data2 );
+	drawQueue->StaticFree( data );
+	drawQueue->StaticFree( data2 );
 }
 
 
@@ -968,7 +881,8 @@ void idRenderSystemLocal::CaptureRenderToFile( const char *fileName, bool fixAlp
 AllocRenderWorld
 ==============
 */
-idRenderWorld *idRenderSystemLocal::AllocRenderWorld() {
+idRenderWorld *idRenderSystemLocal::AllocRenderWorld() 
+{
 	idRenderWorldLocal *rw;
 	rw = new idRenderWorldLocal;
 	worlds.Append( rw );
@@ -980,7 +894,8 @@ idRenderWorld *idRenderSystemLocal::AllocRenderWorld() {
 FreeRenderWorld
 ==============
 */
-void idRenderSystemLocal::FreeRenderWorld( idRenderWorld *rw ) {
+void idRenderSystemLocal::FreeRenderWorld( idRenderWorld *rw ) 
+{
 	if ( primaryWorld == rw ) {
 		primaryWorld = NULL;
 	}

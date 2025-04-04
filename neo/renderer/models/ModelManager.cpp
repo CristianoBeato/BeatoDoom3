@@ -352,7 +352,8 @@ idRenderModel *idRenderModelManagerLocal::AllocModel() {
 idRenderModelManagerLocal::FreeModel
 =================
 */
-void idRenderModelManagerLocal::FreeModel( idRenderModel *model ) {
+void idRenderModelManagerLocal::FreeModel( idRenderModel *model ) 
+{
 	if ( !model ) {
 		return;
 	}
@@ -430,32 +431,34 @@ void idRenderModelManagerLocal::RemoveModel( idRenderModel *model ) {
 idRenderModelManagerLocal::ReloadModels
 =================
 */
-void idRenderModelManagerLocal::ReloadModels( bool forceAll ) {
-	if ( forceAll ) {
+void idRenderModelManagerLocal::ReloadModels( bool forceAll ) 
+{
+	if ( forceAll )
 		common->Printf( "Reloading all model files...\n" );
-	} else {
+	else
 		common->Printf( "Checking for changed model files...\n" );
-	}
 
-	R_FreeDerivedData();
+	tr.frontEnd->FreeDerivedData();
 
 	// skip the default model at index 0
-	for ( int i = 1 ; i < models.Num() ; i++ ) {
+	for ( int i = 1 ; i < models.Num() ; i++ ) 
+	{
 		idRenderModel	*model = models[i];
 
 		// we may want to allow world model reloading in the future, but we don't now
-		if ( !model->IsReloadable() ) {
+		if ( !model->IsReloadable() ) 
 			continue;
-		}
+		
 
-		if ( !forceAll ) {
+		if ( !forceAll ) 
+		{
 			// check timestamp
 			ID_TIME_T current;
 
-			fileSystem->ReadFile( model->Name(), NULL, &current );
-			if ( current <= model->Timestamp() ) {
+			fileSystem->ReadFile( model->Name(), nullptr, &current );
+			if ( current <= model->Timestamp() ) 
 				continue;
-			}
+			
 		}
 
 		common->DPrintf( "reloading %s.\n", model->Name() );
@@ -465,7 +468,7 @@ void idRenderModelManagerLocal::ReloadModels( bool forceAll ) {
 
 	// we must force the world to regenerate, because models may
 	// have changed size, making their references invalid
-	R_ReCreateWorldReferences();
+	tr.frontEnd->ReCreateWorldReferences();
 }
 
 /*
@@ -508,7 +511,8 @@ void idRenderModelManagerLocal::BeginLevelLoad() {
 idRenderModelManagerLocal::EndLevelLoad
 =================
 */
-void idRenderModelManagerLocal::EndLevelLoad() {
+void idRenderModelManagerLocal::EndLevelLoad() 
+{
 	common->Printf( "----- idRenderModelManagerLocal::EndLevelLoad -----\n" );
 
 	int start = Sys_Milliseconds();

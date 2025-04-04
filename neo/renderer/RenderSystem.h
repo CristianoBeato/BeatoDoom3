@@ -264,9 +264,6 @@ extern idRenderSystem *			renderSystem;
 // functions mainly intended for editor and dmap integration
 //
 
-// returns the frustum planes in world space
-void R_RenderLightFrustum( const struct renderLight_s &renderLight, idPlane lightFrustum[6] );
-
 // for use by dmap to do the carving-on-light-boundaries and for the editor for display
 void R_LightProjectionMatrix( const idVec3 &origin, const idPlane &rearPlane, idVec4 mat[4] );
 

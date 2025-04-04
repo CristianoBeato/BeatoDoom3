@@ -64,22 +64,26 @@ bool idRenderModelSprite::IsLoaded() const {
 idRenderModelSprite::InstantiateDynamicModel
 ===============
 */
-idRenderModel *	idRenderModelSprite::InstantiateDynamicModel( const struct renderEntity_s *renderEntity, const struct viewDef_s *viewDef, idRenderModel *cachedModel ) {
+idRenderModel *	idRenderModelSprite::InstantiateDynamicModel( const struct renderEntity_s *renderEntity, const crAutoPointer<struct viewDef_s> viewDef, idRenderModel *cachedModel ) 
+{
 	idRenderModelStatic *staticModel;
 	srfTriangles_t *tri;
 	modelSurface_t surf;
 
-	if ( cachedModel && !r_useCachedDynamicModels.GetBool() ) {
+	if ( cachedModel && !r_useCachedDynamicModels.GetBool() ) 
+	{
 		delete cachedModel;
-		cachedModel = NULL;
+		cachedModel = nullptr;
 	}
 
-	if ( renderEntity == NULL || viewDef == NULL ) {
+	if ( renderEntity == nullptr || !viewDef ) 
+	{
 		delete cachedModel;
-		return NULL;
+		return nullptr;
 	}
 
-	if ( cachedModel != NULL ) {
+	if ( cachedModel != nullptr ) 
+	{
 
 		assert( dynamic_cast<idRenderModelStatic *>( cachedModel ) != NULL );
 		assert( idStr::Icmp( cachedModel->Name(), sprite_SnapshotName ) == 0 );
@@ -88,7 +92,9 @@ idRenderModel *	idRenderModelSprite::InstantiateDynamicModel( const struct rende
 		surf = *staticModel->Surface( 0 );
 		tri = surf.geometry;
 
-	} else {
+	} 
+	else 
+	{
 
 		staticModel = new idRenderModelStatic;
 		staticModel->InitEmpty( sprite_SnapshotName );

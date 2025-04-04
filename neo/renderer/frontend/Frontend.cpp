@@ -33,13 +33,9 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "renderer/renderer_common.h"
 
-// BEATO Begin:
-// TODO: move to a comman header 
-#include <xmmintrin.h> // SSE
-#include <immintrin.h> // AVX (caso queira expandir depois)
-// BEATO End
-
-crFrontend::crFrontend( void )
+crFrontend::crFrontend( void ) : 
+	viewCount( 0 ),
+	viewDef()
 {
 }
 
@@ -49,113 +45,10 @@ crFrontend::~crFrontend( void )
 
 //====================================================================
 
-/*
-======================
-idScreenRect::Clear
-======================
-*/
-void idScreenRect::Clear() {
-	x1 = y1 = 32000;
-	x2 = y2 = -32000;
-	zmin = 0.0f; zmax = 1.0f;
-}
 
 /*
 ======================
-idScreenRect::AddPoint
-======================
-*/
-void idScreenRect::AddPoint( float x, float y ) {
-	int	ix = idMath::FtoiFast( x );
-	int iy = idMath::FtoiFast( y );
-
-	if ( ix < x1 ) {
-		x1 = ix;
-	}
-	if ( ix > x2 ) {
-		x2 = ix;
-	}
-	if ( iy < y1 ) {
-		y1 = iy;
-	}
-	if ( iy > y2 ) {
-		y2 = iy;
-	}
-}
-
-/*
-======================
-idScreenRect::Expand
-======================
-*/
-void idScreenRect::Expand() {
-	x1--;
-	y1--;
-	x2++;
-	y2++;
-}
-
-/*
-======================
-idScreenRect::Intersect
-======================
-*/
-void idScreenRect::Intersect( const idScreenRect &rect ) {
-	if ( rect.x1 > x1 ) {
-		x1 = rect.x1;
-	}
-	if ( rect.x2 < x2 ) {
-		x2 = rect.x2;
-	}
-	if ( rect.y1 > y1 ) {
-		y1 = rect.y1;
-	}
-	if ( rect.y2 < y2 ) {
-		y2 = rect.y2;
-	}
-}
-
-/*
-======================
-idScreenRect::Union
-======================
-*/
-void idScreenRect::Union( const idScreenRect &rect ) {
-	if ( rect.x1 < x1 ) {
-		x1 = rect.x1;
-	}
-	if ( rect.x2 > x2 ) {
-		x2 = rect.x2;
-	}
-	if ( rect.y1 < y1 ) {
-		y1 = rect.y1;
-	}
-	if ( rect.y2 > y2 ) {
-		y2 = rect.y2;
-	}
-}
-
-/*
-======================
-idScreenRect::Equals
-======================
-*/
-bool idScreenRect::Equals( const idScreenRect &rect ) const {
-	return ( x1 == rect.x1 && x2 == rect.x2 && y1 == rect.y1 && y2 == rect.y2 );
-}
-
-/*
-======================
-idScreenRect::IsEmpty
-======================
-*/
-bool idScreenRect::IsEmpty() const {
-	return ( x1 > x2 || y1 > y2 );
-}
-
-/*
-======================
-R_ScreenRectFromViewFrustumBounds
+crFrontend::ScreenRectFromViewFrustumBounds
 ======================
 */
 idScreenRect crFrontend::ScreenRectFromViewFrustumBounds( const idBounds &bounds ) 
@@ -169,12 +62,13 @@ idScreenRect crFrontend::ScreenRectFromViewFrustumBounds( const idBounds &bounds
 
 	if ( r_useDepthBoundsTest.GetInteger() ) 
 	{
-		crFrontend::TransformEyeZToWin( -bounds[0].x, viewDef->projectionMatrix, screenRect.zmin );
-		crFrontend::TransformEyeZToWin( -bounds[1].x, viewDef->projectionMatrix, screenRect.zmax );
+		crTransform::TransformEyeZToWin( -bounds[0].x, viewDef->projectionMatrix, screenRect.zmin );
+		crTransform::TransformEyeZToWin( -bounds[1].x, viewDef->projectionMatrix, screenRect.zmax );
 	}
 
 	return screenRect;
 }
+
 
 /*
 ======================
@@ -183,7 +77,6 @@ ShowColoredScreenRect
 */
 void crFrontend::ShowColoredScreenRect( const idScreenRect &rect, int colorIndex ) 
 {
-
 	if ( !rect.IsEmpty() ) 
 	{
 		static idVec4 colors[] = { colorRed, colorGreen, colorBlue, colorYellow, colorMagenta, colorCyan, colorWhite, colorPurple };
@@ -191,461 +84,7 @@ void crFrontend::ShowColoredScreenRect( const idScreenRect &rect, int colorIndex
 	}
 }
 
-/*
-====================
-R_ToggleSmpFrame
-====================
-*/
-void R_ToggleSmpFrame( void ) {
-	if ( r_lockSurfaces.GetBool() ) {
-		return;
-	}
-	R_FreeDeferredTriSurfs( frameData );
-
-	// clear frame-temporary data
-	frameData_t		*frame;
-	frameMemoryBlock_t	*block;
-
-	// update the highwater mark
-	R_CountFrameData();
-
-	frame = frameData;
-
-	// reset the memory allocation to the first block
-	frame->alloc = frame->memory;
-
-	// clear all the blocks
-	for ( block = frame->memory ; block ; block = block->next ) {
-		block->used = 0;
-	}
-
-	R_ClearCommandChain();
-}
-
-
-//=====================================================
-
-#define	MEMORY_BLOCK_SIZE	0x100000
-
-/*
-=====================
-R_ShutdownFrameData
-=====================
-*/
-void R_ShutdownFrameData( void ) {
-	frameData_t *frame;
-	frameMemoryBlock_t *block;
-
-	// free any current data
-	frame = frameData;
-	if ( !frame ) {
-		return;
-	}
-
-	R_FreeDeferredTriSurfs( frame );
-
-	frameMemoryBlock_t *nextBlock;
-	for ( block = frame->memory ; block ; block = nextBlock ) {
-		nextBlock = block->next;
-		Mem_Free( block );
-	}
-	Mem_Free( frame );
-	frameData = NULL;
-}
-
-/*
-=====================
-R_InitFrameData
-=====================
-*/
-void R_InitFrameData( void ) {
-	int size;
-	frameData_t *frame;
-	frameMemoryBlock_t *block;
-
-	R_ShutdownFrameData();
-
-	frameData = (frameData_t *)Mem_ClearedAlloc( sizeof( *frameData ));
-	frame = frameData;
-	size = MEMORY_BLOCK_SIZE;
-	block = (frameMemoryBlock_t *)Mem_Alloc( size + sizeof( *block ) );
-	if ( !block ) {
-		common->FatalError( "R_InitFrameData: Mem_Alloc() failed" );
-	}
-	block->size = size;
-	block->used = 0;
-	block->next = NULL;
-	frame->memory = block;
-	frame->memoryHighwater = 0;
-
-	R_ToggleSmpFrame();
-}
-
-/*
-================
-R_CountFrameData
-================
-*/
-int R_CountFrameData( void ) {
-	frameData_t		*frame;
-	frameMemoryBlock_t	*block;
-	int				count;
-
-	count = 0;
-	frame = frameData;
-	for ( block = frame->memory ; block ; block=block->next ) {
-		count += block->used;
-		if ( block == frame->alloc ) {
-			break;
-		}
-	}
-
-	// note if this is a new highwater mark
-	if ( count > frame->memoryHighwater ) {
-		frame->memoryHighwater = count;
-	}
-
-	return count;
-}
-
-/*
-=================
-R_StaticAlloc
-=================
-*/
-void *R_StaticAlloc( int bytes ) {
-	void	*buf;
-
-	tr.pc.c_alloc++;
-
-	tr.staticAllocCount += bytes;
-
-    buf = Mem_Alloc( bytes );
-
-	// don't exit on failure on zero length allocations since the old code didn't
-	if ( !buf && ( bytes != 0 ) ) {
-		common->FatalError( "R_StaticAlloc failed on %i bytes", bytes );
-	}
-	return buf;
-}
-
-/*
-=================
-R_ClearedStaticAlloc
-=================
-*/
-void *R_ClearedStaticAlloc( int bytes ) {
-	void	*buf;
-
-	buf = R_StaticAlloc( bytes );
-	SIMDProcessor->Memset( buf, 0, bytes );
-	return buf;
-}
-
-/*
-=================
-R_StaticFree
-=================
-*/
-void R_StaticFree( void *data ) {
-	tr.pc.c_free++;
-    Mem_Free( data );
-}
-
-/*
-================
-R_FrameAlloc
-
-This data will be automatically freed when the
-current frame's back end completes.
-
-This should only be called by the front end.  The
-back end shouldn't need to allocate memory.
-
-If we passed smpFrame in, the back end could
-alloc memory, because it will always be a
-different frameData than the front end is using.
-
-All temporary data, like dynamic tesselations
-and local spaces are allocated here.
-
-The memory will not move, but it may not be
-contiguous with previous allocations even
-from this frame.
-
-The memory is NOT zero filled.
-Should part of this be inlined in a macro?
-================
-*/
-void *R_FrameAlloc( int bytes ) {
-	frameData_t		*frame;
-	frameMemoryBlock_t	*block;
-	void			*buf;
-    
-	bytes = (bytes+16)&~15;
-	// see if it can be satisfied in the current block
-	frame = frameData;
-	block = frame->alloc;
-
-	if ( block->size - block->used >= bytes ) {
-		buf = block->base + block->used;
-		block->used += bytes;
-		return buf;
-	}
-
-	// advance to the next memory block if available
-	block = block->next;
-	// create a new block if we are at the end of
-	// the chain
-	if ( !block ) {
-		int		size;
-
-		size = MEMORY_BLOCK_SIZE;
-		block = (frameMemoryBlock_t *)Mem_Alloc( size + sizeof( *block ) );
-		if ( !block ) {
-			common->FatalError( "R_FrameAlloc: Mem_Alloc() failed" );
-		}
-		block->size = size;
-		block->used = 0;
-		block->next = NULL;
-		frame->alloc->next = block;
-	}
-
-	// we could fix this if we needed to...
-	if ( bytes > block->size ) {
-		common->FatalError( "R_FrameAlloc of %i exceeded MEMORY_BLOCK_SIZE",
-			bytes );
-	}
-
-	frame->alloc = block;
-
-	block->used = bytes;
-
-	return block->base;
-}
-
-/*
-==================
-R_ClearedFrameAlloc
-==================
-*/
-void *R_ClearedFrameAlloc( int bytes ) 
-{
-	void	*r;
-
-	r = R_FrameAlloc( bytes );
-	SIMDProcessor->Memset( r, 0, bytes );
-	return r;
-}
-
-
-/*
-==================
-R_FrameFree
-
-This does nothing at all, as the frame data is reused every frame
-and can only be stack allocated.
-
-The only reason for it's existance is so functions that can
-use either static or frame memory can set function pointers
-to both alloc and free.
-==================
-*/
-void R_FrameFree( void *data ) 
-{
-}
-
-
-
 //==========================================================================
-
-void crFrontend::AxisToModelMatrix( const idMat3 &axis, const idVec3 &origin, float modelMatrix[16] ) 
-{
-#if ID_USE_INSTRINSEC
-	__m128 row1 = _mm_set_ps(0.0f, axis[0][2], axis[0][1], axis[0][0]);
-	__m128 row2 = _mm_set_ps(0.0f, axis[1][2], axis[1][1], axis[1][0]);
-	__m128 row3 = _mm_set_ps(0.0f, axis[2][2], axis[2][1], axis[2][0]);
-	__m128 row4 = _mm_set_ps(1.0f, origin[2], origin[1], origin[0]);
-
-	_mm_storeu_ps(&modelMatrix[0], row1);
-	_mm_storeu_ps(&modelMatrix[4], row2);
-	_mm_storeu_ps(&modelMatrix[8], row3);
-	_mm_storeu_ps(&modelMatrix[12], row4);
-#else
-	modelMatrix[0] = axis[0][0];
-	modelMatrix[4] = axis[1][0];
-	modelMatrix[8] = axis[2][0];
-	modelMatrix[12] = origin[0];
-
-	modelMatrix[1] = axis[0][1];
-	modelMatrix[5] = axis[1][1];
-	modelMatrix[9] = axis[2][1];
-	modelMatrix[13] = origin[1];
-
-	modelMatrix[2] = axis[0][2];
-	modelMatrix[6] = axis[1][2];
-	modelMatrix[10] = axis[2][2];
-	modelMatrix[14] = origin[2];
-
-	modelMatrix[3] = 0;
-	modelMatrix[7] = 0;
-	modelMatrix[11] = 0;
-	modelMatrix[15] = 1;
-#endif
-}
-
-
-// FIXME: these assume no skewing or scaling transforms
-void crFrontend::LocalPointToGlobal( const float modelMatrix[16], const idVec3 &in, idVec3 &out ) 
-{
-#if ID_USE_INSTRINSEC
-	__m128 matCol1 = _mm_loadu_ps(&modelMatrix[0]);
-	__m128 matCol2 = _mm_loadu_ps(&modelMatrix[4]);
-	__m128 matCol3 = _mm_loadu_ps(&modelMatrix[8]);
-	__m128 matCol4 = _mm_loadu_ps(&modelMatrix[12]);
-
-	__m128 inVec = _mm_set_ps(1.0f, in[2], in[1], in[0]);
-
-#if 1
-	__m128 res = _mm_add_ps( _mm_add_ps(_mm_mul_ps(matCol1, _mm_set1_ps(in[0])), _mm_mul_ps(matCol2, _mm_set1_ps(in[1]))),
-		_mm_add_ps(_mm_mul_ps(matCol3, _mm_set1_ps(in[2])), matCol4) );
-#else
-	__m128 res = _mm_fmadd_ps( _mm_set1_ps(in[0]), matCol1, _mm_fmadd_ps(_mm_set1_ps(in[1]), matCol2, _mm_fmadd_ps(_mm_set1_ps(in[2]), matCol3, matCol4)));
-#endif 
-
-	out[0] = res[0];
-	out[1] = res[1];
-	out[2] = res[2];
-#else
-	out[0] = in[0] * modelMatrix[0] + in[1] * modelMatrix[4] + in[2] * modelMatrix[8] + modelMatrix[12];
-	out[1] = in[0] * modelMatrix[1] + in[1] * modelMatrix[5] + in[2] * modelMatrix[9] + modelMatrix[13];
-	out[2] = in[0] * modelMatrix[2] + in[1] * modelMatrix[6] + in[2] * modelMatrix[10] + modelMatrix[14];
-#endif
-}
-
-void crFrontend::PointTimesMatrix( const float modelMatrix[16], const idVec4 &in, idVec4 &out ) 
-{
-#if ID_USE_INSTRINSEC
-	__m128 matCol1 = _mm_loadu_ps( &modelMatrix[0] );
-	__m128 matCol2 = _mm_loadu_ps( &modelMatrix[4] );
-	__m128 matCol3 = _mm_loadu_ps( &modelMatrix[8] );
-	__m128 matCol4 = _mm_loadu_ps( &modelMatrix[12] );
-
-	__m128 inVec = _mm_set_ps(in[3], in[2], in[1], in[0]);
-
-
-	// todo: option to FMA 
-	__m128 res = _mm_fmadd_ps(_mm_set1_ps(in[0]), matCol1, _mm_fmadd_ps(_mm_set1_ps(in[1]), matCol2, _mm_fmadd_ps(_mm_set1_ps(in[2]), matCol3, _mm_mul_ps(_mm_set1_ps(in[3]), matCol4))));
-
-	_mm_storeu_ps(&out[0], res);
-#else
-	out[0] = in[0] * modelMatrix[0] + in[1] * modelMatrix[4] + in[2] * modelMatrix[8] + modelMatrix[12];
-	out[1] = in[0] * modelMatrix[1] + in[1] * modelMatrix[5] + in[2] * modelMatrix[9] + modelMatrix[13];
-	out[2] = in[0] * modelMatrix[2] + in[1] * modelMatrix[6] + in[2] * modelMatrix[10] + modelMatrix[14];
-	out[3] = in[0] * modelMatrix[3] + in[1] * modelMatrix[7] + in[2] * modelMatrix[11] + modelMatrix[15];
-#endif
-}
-
-void crFrontend::GlobalPointToLocal( const float modelMatrix[16], const idVec3 &in, idVec3 &out ) 
-{
-#if ID_USE_INSTRINSEC
-	__m128 matCol1 = _mm_loadu_ps(&modelMatrix[0]);
-	__m128 matCol2 = _mm_loadu_ps(&modelMatrix[4]);
-	__m128 matCol3 = _mm_loadu_ps(&modelMatrix[8]);
-	__m128 matCol4 = _mm_loadu_ps(&modelMatrix[12]);
-
-	__m128 inVec = _mm_set_ps(1.0f, in[2], in[1], in[0]);
-	__m128 temp = _mm_sub_ps(inVec, matCol4);
-
-	__m128 resX = _mm_mul_ps(temp, matCol1);
-	__m128 resY = _mm_mul_ps(temp, matCol2);
-	__m128 resZ = _mm_mul_ps(temp, matCol3);
-
-	resX = _mm_hadd_ps(resX, resX);
-	resX = _mm_hadd_ps(resX, resX);
-	resY = _mm_hadd_ps(resY, resY);
-	resY = _mm_hadd_ps(resY, resY);
-	resZ = _mm_hadd_ps(resZ, resZ);
-	resZ = _mm_hadd_ps(resZ, resZ);
-
-	out[0] = _mm_cvtss_f32(resX);
-	out[1] = _mm_cvtss_f32(resY);
-	out[2] = _mm_cvtss_f32(resZ);
-#else
-	idVec3	temp;
-
-	VectorSubtract( in, &modelMatrix[12], temp );
-
-	out[0] = DotProduct( temp, &modelMatrix[0] );
-	out[1] = DotProduct( temp, &modelMatrix[4] );
-	out[2] = DotProduct( temp, &modelMatrix[8] );
-#endif
-}
-
-void crFrontend::LocalVectorToGlobal( const float modelMatrix[16], const idVec3 &in, idVec3 &out ) 
-{
-#if ID_USE_INSTRINSEC
-	__m128 matCol1 = _mm_loadu_ps(&modelMatrix[0]);
-	__m128 matCol2 = _mm_loadu_ps(&modelMatrix[4]);
-	__m128 matCol3 = _mm_loadu_ps(&modelMatrix[8]);
-
-#if 1
-	__m128 res = _mm_add_ps( _mm_add_ps( _mm_mul_ps( _mm_set1_ps( in[0] ), matCol1 ) , _mm_mul_ps( _mm_set1_ps( in[1] ), matCol2 ) ), _mm_mul_ps( _mm_set1_ps( in[2] ), matCol3 ) );
-#else
-	__m128 res = _mm_fmadd_ps(_mm_set1_ps(in[0]), matCol1, _mm_fmadd_ps(_mm_set1_ps(in[1]), matCol2,  _mm_mul_ps(_mm_set1_ps(in[2]), matCol3)));
-#endif
-
-	out[0] = res[0];
-	out[1] = res[1];
-	out[2] = res[2];
-#else
-	out[0] = in[0] * modelMatrix[0] + in[1] * modelMatrix[4] + in[2] * modelMatrix[8];
-	out[1] = in[0] * modelMatrix[1] + in[1] * modelMatrix[5] + in[2] * modelMatrix[9];
-	out[2] = in[0] * modelMatrix[2] + in[1] * modelMatrix[6] + in[2] * modelMatrix[10];
-#endif
-}
-
-void crFrontend::GlobalVectorToLocal( const float modelMatrix[16], const idVec3 &in, idVec3 &out ) 
-{
-	out[0] = DotProduct( in, &modelMatrix[0] );
-	out[1] = DotProduct( in, &modelMatrix[4] );
-	out[2] = DotProduct( in, &modelMatrix[8] );
-}
-
-void crFrontend::GlobalPlaneToLocal( const float modelMatrix[16], const idPlane &in, idPlane &out ) 
-{
-	out[0] = DotProduct( in, &modelMatrix[0] );
-	out[1] = DotProduct( in, &modelMatrix[4] );
-	out[2] = DotProduct( in, &modelMatrix[8] );
-	out[3] = in[3] + modelMatrix[12] * in[0] + modelMatrix[13] * in[1] + modelMatrix[14] * in[2];
-}
-
-void crFrontend::LocalPlaneToGlobal( const float modelMatrix[16], const idPlane &in, idPlane &out ) 
-{
-	float	offset;
-
-	LocalVectorToGlobal( modelMatrix, in.Normal(), out.Normal() );
-
-	offset = modelMatrix[12] * out[0] + modelMatrix[13] * out[1] + modelMatrix[14] * out[2];
-	out[3] = in[3] - offset;
-}
-
-// transform Z in eye coordinates to window coordinates
-void crFrontend::TransformEyeZToWin( float src_z, const float *projectionMatrix, float &dst_z ) 
-{
-	float clip_z, clip_w;
-
-	// projection
-	clip_z = src_z * projectionMatrix[ 2 + 2 * 4 ] + projectionMatrix[ 2 + 3 * 4 ];
-	clip_w = src_z * projectionMatrix[ 3 + 2 * 4 ] + projectionMatrix[ 3 + 3 * 4 ];
-
-	if ( clip_w <= 0.0f ) {
-		dst_z = 0.0f;					// clamp to near plane
-	} else {
-		dst_z = clip_z / clip_w;
-		dst_z = dst_z * 0.5f + 0.5f;	// convert to window coords
-	}
-}
 
 /*
 =================
@@ -669,7 +108,7 @@ bool crFrontend::RadiusCullLocalBox( const idBounds &bounds, const float modelMa
 	// transform the surface bounds into world space
 	idVec3	localOrigin = ( bounds[0] + bounds[1] ) * 0.5;
 
-	LocalPointToGlobal( modelMatrix, localOrigin, worldOrigin );
+	crTransform::LocalPointToGlobal( modelMatrix, localOrigin, worldOrigin );
 
 	worldRadius = (bounds[0] - localOrigin).Length();	// FIXME: won't be correct for scaled objects
 
@@ -713,7 +152,7 @@ bool crFrontend::CornerCullLocalBox( const idBounds &bounds, const float modelMa
 		v[1] = bounds[(i>>1)&1][1];
 		v[2] = bounds[(i>>2)&1][2];
 
-		LocalPointToGlobal( modelMatrix, v, transformed[i] );
+		crTransform::LocalPointToGlobal( modelMatrix, v, transformed[i] );
 	}
 
 	// check against frustum planes
@@ -758,39 +197,12 @@ bool crFrontend::CullLocalBox( const idBounds &bounds, const float modelMatrix[1
 
 /*
 ==========================
-crFrontend::TransformModelToClip
-==========================
-*/
-void crFrontend::TransformModelToClip( const idVec3 &src, const float *modelMatrix, const float *projectionMatrix, idPlane &eye, idPlane &dst ) 
-{
-	int i;
-
-	for ( i = 0 ; i < 4 ; i++ ) 
-	{
-		eye[i] = 
-			src[0] * modelMatrix[ i + 0 * 4 ] +
-			src[1] * modelMatrix[ i + 1 * 4 ] +
-			src[2] * modelMatrix[ i + 2 * 4 ] +
-			1 * modelMatrix[ i + 3 * 4 ];
-	}
-
-	for ( i = 0 ; i < 4 ; i++ ) {
-		dst[i] = 
-			eye[0] * projectionMatrix[ i + 0 * 4 ] +
-			eye[1] * projectionMatrix[ i + 1 * 4 ] +
-			eye[2] * projectionMatrix[ i + 2 * 4 ] +
-			eye[3] * projectionMatrix[ i + 3 * 4 ];
-	}
-}
-
-/*
-==========================
 R_GlobalToNormalizedDeviceCoordinates
 
 -1 to 1 range in x, y, and z
 ==========================
 */
-void crCondition::GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idVec3 &ndc ) 
+void crFrontend::GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idVec3 &ndc ) 
 {
 	int		i = 0;
 	idPlane	view;
@@ -816,11 +228,9 @@ void crCondition::GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idV
 				view[2] * tr.primaryView->projectionMatrix[ i + 2 * 4 ] +
 				view[3] * tr.primaryView->projectionMatrix[ i + 3 * 4 ];
 		}
-
 	} 
 	else 
 	{
-
 		for ( i = 0 ; i < 4 ; i ++ ) 
 		{
 			view[i] = 
@@ -830,7 +240,6 @@ void crCondition::GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idV
 				viewDef->worldSpace.modelViewMatrix[ i + 3 * 4 ];
 		}
 
-
 		for ( i = 0 ; i < 4 ; i ++ ) {
 			clip[i] = 
 				view[0] * viewDef->projectionMatrix[ i + 0 * 4 ] +
@@ -838,7 +247,6 @@ void crCondition::GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idV
 				view[2] * viewDef->projectionMatrix[ i + 2 * 4 ] +
 				view[3] * viewDef->projectionMatrix[ i + 3 * 4 ];
 		}
-
 	}
 
 	ndc[0] = clip[0] / clip[3];
@@ -847,135 +255,13 @@ void crCondition::GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idV
 }
 
 /*
-==========================
-crFrontend::TransformClipToDevice
-
-Clip to normalized device coordinates
-==========================
-*/
-void crFrontend::TransformClipToDevice( const idPlane &clip, const viewDef_t *view, idVec3 &normalized ) 
-{
-	normalized[0] = clip[0] / clip[3];
-	normalized[1] = clip[1] / clip[3];
-	normalized[2] = clip[2] / clip[3];
-}
-
-/*
-==========================
-crFrontend::myGlMultMatrix
-==========================
-*/
-void crFrontend::myGlMultMatrix( const float a[16], const float b[16], float out[16] ) 
-{
-#if ID_USE_INSTRINSEC
-	// load the matrix B rows 
-	__m128 row1 = _mm_loadu_ps(&b[0]); 
-	__m128 row2 = _mm_loadu_ps(&b[4]); 
-	__m128 row3 = _mm_loadu_ps(&b[8]); 
-	__m128 row4 = _mm_loadu_ps(&b[12]);
-
-	for (int i = 0; i < 4; i++) 
-	{
-		// load the row of A
-		__m128 a_row = _mm_loadu_ps(&a[i * 4]);
-	
-		// multiply the row of A with the columns of B
-		__m128 col1 = _mm_set1_ps(a_row[0]);
-		__m128 col2 = _mm_set1_ps(a_row[1]);
-		__m128 col3 = _mm_set1_ps(a_row[2]);
-		__m128 col4 = _mm_set1_ps(a_row[3]);
-	
-		// multiply and add the results
-		__m128 res = _mm_add_ps(
-			_mm_add_ps(_mm_mul_ps(col1, row1), _mm_mul_ps(col2, row2)),
-			_mm_add_ps(_mm_mul_ps(col3, row3), _mm_mul_ps(col4, row4))
-		);
-	
-		// store the result
-		_mm_storeu_ps(&out[i * 4], res);
-	}
-#elif 1
-	if 0
-	int		i, j;
-
-	for ( i = 0 ; i < 4 ; i++ ) {
-		for ( j = 0 ; j < 4 ; j++ ) {
-			out[ i * 4 + j ] =
-				a [ i * 4 + 0 ] * b [ 0 * 4 + j ]
-				+ a [ i * 4 + 1 ] * b [ 1 * 4 + j ]
-				+ a [ i * 4 + 2 ] * b [ 2 * 4 + j ]
-				+ a [ i * 4 + 3 ] * b [ 3 * 4 + j ];
-		}
-	}
-
-#else
-	out[0*4+0] = a[0*4+0]*b[0*4+0] + a[0*4+1]*b[1*4+0] + a[0*4+2]*b[2*4+0] + a[0*4+3]*b[3*4+0];
-	out[0*4+1] = a[0*4+0]*b[0*4+1] + a[0*4+1]*b[1*4+1] + a[0*4+2]*b[2*4+1] + a[0*4+3]*b[3*4+1];
-	out[0*4+2] = a[0*4+0]*b[0*4+2] + a[0*4+1]*b[1*4+2] + a[0*4+2]*b[2*4+2] + a[0*4+3]*b[3*4+2];
-	out[0*4+3] = a[0*4+0]*b[0*4+3] + a[0*4+1]*b[1*4+3] + a[0*4+2]*b[2*4+3] + a[0*4+3]*b[3*4+3];
-
-	out[1*4+0] = a[1*4+0]*b[0*4+0] + a[1*4+1]*b[1*4+0] + a[1*4+2]*b[2*4+0] + a[1*4+3]*b[3*4+0];
-	out[1*4+1] = a[1*4+0]*b[0*4+1] + a[1*4+1]*b[1*4+1] + a[1*4+2]*b[2*4+1] + a[1*4+3]*b[3*4+1];
-	out[1*4+2] = a[1*4+0]*b[0*4+2] + a[1*4+1]*b[1*4+2] + a[1*4+2]*b[2*4+2] + a[1*4+3]*b[3*4+2];
-	out[1*4+3] = a[1*4+0]*b[0*4+3] + a[1*4+1]*b[1*4+3] + a[1*4+2]*b[2*4+3] + a[1*4+3]*b[3*4+3];
-	
-	out[2*4+0] = a[2*4+0]*b[0*4+0] + a[2*4+1]*b[1*4+0] + a[2*4+2]*b[2*4+0] + a[2*4+3]*b[3*4+0];
-	out[2*4+1] = a[2*4+0]*b[0*4+1] + a[2*4+1]*b[1*4+1] + a[2*4+2]*b[2*4+1] + a[2*4+3]*b[3*4+1];
-	out[2*4+2] = a[2*4+0]*b[0*4+2] + a[2*4+1]*b[1*4+2] + a[2*4+2]*b[2*4+2] + a[2*4+3]*b[3*4+2];
-	out[2*4+3] = a[2*4+0]*b[0*4+3] + a[2*4+1]*b[1*4+3] + a[2*4+2]*b[2*4+3] + a[2*4+3]*b[3*4+3];
-	
-	out[3*4+0] = a[3*4+0]*b[0*4+0] + a[3*4+1]*b[1*4+0] + a[3*4+2]*b[2*4+0] + a[3*4+3]*b[3*4+0];
-	out[3*4+1] = a[3*4+0]*b[0*4+1] + a[3*4+1]*b[1*4+1] + a[3*4+2]*b[2*4+1] + a[3*4+3]*b[3*4+1];
-	out[3*4+2] = a[3*4+0]*b[0*4+2] + a[3*4+1]*b[1*4+2] + a[3*4+2]*b[2*4+2] + a[3*4+3]*b[3*4+2];
-	out[3*4+3] = a[3*4+0]*b[0*4+3] + a[3*4+1]*b[1*4+3] + a[3*4+2]*b[2*4+3] + a[3*4+3]*b[3*4+3];
-#endif
-}
-
-/*
-================
-R_TransposeGLMatrix
-================
-*/
-void crFrontend::TransposeGLMatrix( const float in[16], float out[16] ) 
-{
-#if ID_USE_INSTRINSEC
-
-	// load matrix rows into SSE registers
-	__m128 row1 = _mm_loadu_ps(&in[0]); 
-	__m128 row2 = _mm_loadu_ps(&in[4]); 
-	__m128 row3 = _mm_loadu_ps(&in[8]); 
-	__m128 row4 = _mm_loadu_ps(&in[12]);
-	
-	// perform the transpose
-	_MM_TRANSPOSE4_PS(row1, row2, row3, row4);
-	
-	// store the transposed matrix back to memory
-	_mm_storeu_ps(&out[0], row1);
-	_mm_storeu_ps(&out[4], row2);
-	_mm_storeu_ps(&out[8], row3);
-	_mm_storeu_ps(&out[12], row4);
-
-#else
-	int		i, j;
-
-	for ( i = 0 ; i < 4 ; i++ ) {
-		for ( j = 0 ; j < 4 ; j++ ) {
-			out[i*4+j] = in[j*4+i];
-		}
-	}
-#endif
-}
-
-
-
-/*
 =================
 crFrontend::SetViewMatrix
 
 Sets up the world to view matrix for a given viewParm
 =================
 */
-void crFrontend::SetViewMatrix( viewDef_t *viewDef ) 
+void crFrontend::SetViewMatrix( crAutoPointer<viewDef_t> viewDef ) 
 {
 	idVec3	origin;
 	viewEntity_t *world;
@@ -992,7 +278,7 @@ void crFrontend::SetViewMatrix( viewDef_t *viewDef )
 
 	world = &viewDef->worldSpace;
 
-	memset( world, 0, sizeof(*world) );
+	memset( world, 0x00, sizeof(*world) );
 
 	// the model matrix is an identity
 	world->modelMatrix[0*4+0] = 1;
@@ -1025,7 +311,7 @@ void crFrontend::SetViewMatrix( viewDef_t *viewDef )
 
 	// convert from our coordinate system (looking down X)
 	// to OpenGL's coordinate system (looking down -Z)
-	myGlMultMatrix( viewerMatrix, s_flipMatrix, world->modelViewMatrix );
+	crTransform::GlMultMatrix( viewerMatrix, s_flipMatrix, world->modelViewMatrix );
 }
 
 /*
@@ -1246,14 +532,14 @@ a mirror / remote location, or a 3D view on a gui surface.
 Parms will typically be allocated with R_FrameAlloc
 ================
 */
-void crFrontend::RenderView( viewDef_t *parms ) 
+void crFrontend::RenderView( crAutoPointer<viewDef_t> parms ) 
 {
-	viewDef_t		*oldView;
+	crAutoPointer<viewDef_t> oldView;
 
 	if ( parms->renderView.width <= 0 || parms->renderView.height <= 0 )
 		return;
 
-	tr.viewCount++;
+	viewCount++;
 
 	// save view in case we are a subview
 	oldView = viewDef;
@@ -1311,7 +597,7 @@ void crFrontend::RenderView( viewDef_t *parms )
 	}
 
 	// add the rendering commands for this viewDef
-	AddDrawViewCmd( parms );
+	tr.drawQueue->AddDrawViewCmd( parms );
 
 	// restore view in case we are a subview
 	viewDef = oldView;

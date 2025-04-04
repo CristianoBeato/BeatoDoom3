@@ -286,7 +286,8 @@ WriteVisibleDefs
 
 ================
 */
-void	idRenderWorldLocal::WriteVisibleDefs( const viewDef_t *viewDef ) {
+void	idRenderWorldLocal::WriteVisibleDefs( const crAutoPointer<viewDef_t> viewDef ) 
+{
 	// only the main renderWorld writes stuff to demos, not the wipes or
 	// menu renders
 	if ( this != session->rw ) {

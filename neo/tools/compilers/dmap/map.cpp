@@ -460,7 +460,7 @@ static void CreateMapLight( const idMapEntity *mapEnt ) {
 	// we can use the same renderLight generation
 	gameEdit->ParseSpawnArgsToRenderLight( &mapEnt->epairs, &light->def.parms );
 
-	R_DeriveLightData( &light->def );
+	crFrontend::DeriveLightData( &light->def );
 
 	// get the name for naming the shadow surfaces
 	const char	*name;
@@ -475,7 +475,7 @@ static void CreateMapLight( const idMapEntity *mapEnt ) {
 #if 0
 	// use the renderer code to get the bounding planes for the light
 	// based on all the parameters
-	R_RenderLightFrustum( light->parms, light->frustum );
+	crFrontend::RenderLightFrustum( light->parms, light->frustum );
 	light->lightShader = light->parms.shader;
 #endif
 

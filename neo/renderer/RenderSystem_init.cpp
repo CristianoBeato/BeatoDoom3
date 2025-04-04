@@ -360,7 +360,7 @@ void R_InitOpenGL( void )
 	tr.SetBackEndRenderer();
 
 	// allocate the frame data, which may be more if smp is enabled
-	R_InitFrameData();
+	tr.drawQueue->InitFrameData();
 
 	// Reset our gamma
 	R_SetColorMappings();
@@ -592,7 +592,7 @@ void R_ReportImageDuplication_f( const idCmdArgs &args ) {
 		byte	*data1;
 		int		w1, h1;
 
-		R_LoadImageProgram( image1->imgName, &data1, &w1, &h1, NULL );
+		R_LoadImageProgram( image1->imgName, &data1, &w1, &h1, nullptr );
 
 		for ( j = 0 ; j < i ; j++ ) {
 			idImage	*image2 = globalImages->images[j];
@@ -627,16 +627,16 @@ void R_ReportImageDuplication_f( const idCmdArgs &args ) {
 			R_LoadImageProgram( image2->imgName, &data2, &w2, &h2, NULL );
 
 			if ( w2 != w1 || h2 != h1 ) {
-				R_StaticFree( data2 );
+				tr.drawQueue->StaticFree( data2 );
 				continue;
 			}
 
 			if ( memcmp( data1, data2, w1*h1*4 ) ) {
-				R_StaticFree( data2 );
+				tr.drawQueue->StaticFree( data2 );
 				continue;
 			}
 
-			R_StaticFree( data2 );
+			tr.drawQueue->StaticFree( data2 );
 
 			common->Printf( "%s == %s\n", image1->imgName.c_str(), image2->imgName.c_str() );
 			session->UpdateScreen( true );
@@ -644,7 +644,7 @@ void R_ReportImageDuplication_f( const idCmdArgs &args ) {
 			break;
 		}
 
-		R_StaticFree( data1 );
+		tr.drawQueue->StaticFree( data1 );
 	}
 	common->Printf( "%i / %i collisions\n", count, globalImages->images.Num() );
 }
@@ -748,7 +748,7 @@ If ref isn't specified, the full session UpdateScreen will be done.
 */
 void R_ReadTiledPixels( int width, int height, byte *buffer, renderView_t *ref = NULL ) {
 	// include extra space for OpenGL padding to word boundaries
-	byte	*temp = (byte *)R_StaticAlloc( (glConfig.vidWidth+3) * glConfig.vidHeight * 3 );
+	byte	*temp = (byte *)tr.drawQueue->StaticAlloc( (glConfig.vidWidth+3) * glConfig.vidHeight * 3 );
 
 	int	oldWidth = glConfig.vidWidth;
 	int oldHeight = glConfig.vidHeight;
@@ -800,7 +800,7 @@ void R_ReadTiledPixels( int width, int height, byte *buffer, renderView_t *ref =
 	tr.tiledViewport[0] = 0;
 	tr.tiledViewport[1] = 0;
 
-	R_StaticFree( temp );
+	tr.drawQueue->StaticFree( temp );
 
 	glConfig.vidWidth = oldWidth;
 	glConfig.vidHeight = oldHeight;
@@ -826,32 +826,38 @@ void idRenderSystemLocal::TakeScreenshot( int width, int height, const char *fil
 
 	int	pix = width * height;
 
-	buffer = (byte *)R_StaticAlloc(pix*3 + 18);
+	buffer = (byte *)drawQueue->StaticAlloc(pix*3 + 18);
 	memset (buffer, 0, 18);
 
-	if ( blends <= 1 ) {
+	if ( blends <= 1 ) 
+	{
 		R_ReadTiledPixels( width, height, buffer + 18, ref );
-	} else {
-		unsigned short *shortBuffer = (unsigned short *)R_StaticAlloc(pix*2*3);
+	} 
+	else 
+	{
+		unsigned short *shortBuffer = (unsigned short *)drawQueue->StaticAlloc(pix*2*3);
 		memset (shortBuffer, 0, pix*2*3);
 
 		// enable anti-aliasing jitter
 		r_jitter.SetBool( true );
 
-		for ( i = 0 ; i < blends ; i++ ) {
+		for ( i = 0 ; i < blends ; i++ ) 
+		{
 			R_ReadTiledPixels( width, height, buffer + 18, ref );
 
-			for ( j = 0 ; j < pix*3 ; j++ ) {
+			for ( j = 0 ; j < pix*3 ; j++ ) 
+			{
 				shortBuffer[j] += buffer[18+j];
 			}
 		}
 
 		// divide back to bytes
-		for ( i = 0 ; i < pix*3 ; i++ ) {
+		for ( i = 0 ; i < pix*3 ; i++ ) 
+		{
 			buffer[18+i] = shortBuffer[i] / blends;
 		}
 
-		R_StaticFree( shortBuffer );
+		drawQueue->StaticFree( shortBuffer );
 		r_jitter.SetBool( false );
 	}
 
@@ -872,13 +878,12 @@ void idRenderSystemLocal::TakeScreenshot( int width, int height, const char *fil
 	}
 
 	// _D3XP adds viewnote screenie save to cdpath
-	if ( strstr( fileName, "viewnote" ) ) {
+	if ( strstr( fileName, "viewnote" ) ) 
 		fileSystem->WriteFile( fileName, buffer, c, "fs_cdpath" );
-	} else {
+	else 
 		fileSystem->WriteFile( fileName, buffer, c );
-	}
 
-	R_StaticFree( buffer );
+	drawQueue->StaticFree( buffer );
 
 	takingScreenshot = false;
 
@@ -1479,11 +1484,11 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 	renderModelManager->FreeModelVertexCaches();
 
 	// free any current world interaction surfaces and vertex caches
-	R_FreeDerivedData();
+	tr.frontEnd->FreeDerivedData();
 
 	// make sure the defered frees are actually freed
-	R_ToggleSmpFrame();
-	R_ToggleSmpFrame();
+	tr.drawQueue->ToggleSmpFrame();
+	tr.drawQueue->ToggleSmpFrame();
 
 	// free the vertex caches so they will be regenerated again
 	vertexCache.PurgeAll();
@@ -1635,7 +1640,8 @@ void R_InitCvars( void ) {
 R_InitCommands
 =================
 */
-void R_InitCommands( void ) {
+void R_InitCommands( void ) 
+{
 	cmdSystem->AddCommand( "MakeMegaTexture", idMegaTexture::MakeMegaTexture_f, CMD_FL_RENDERER|CMD_FL_CHEAT, "processes giant images" );
 	cmdSystem->AddCommand( "sizeUp", R_SizeUp_f, CMD_FL_RENDERER, "makes the rendered view larger" );
 	cmdSystem->AddCommand( "sizeDown", R_SizeDown_f, CMD_FL_RENDERER, "makes the rendered view smaller" );
@@ -1667,11 +1673,10 @@ void R_InitCommands( void ) {
 idRenderSystemLocal::Clear
 ===============
 */
-void idRenderSystemLocal::Clear( void ) {
+void idRenderSystemLocal::Clear( void ) 
+{
 	registered = false;
 	frameCount = 0;
-	viewCount = 0;
-	staticAllocCount = 0;
 	frameShaderTime = 0.0f;
 	viewportOffset[0] = 0;
 	viewportOffset[1] = 0;
@@ -1683,24 +1688,23 @@ void idRenderSystemLocal::Clear( void ) {
 	ambientLightVector.Zero();
 	sortOffset = 0;
 	worlds.Clear();
-	primaryWorld = NULL;
+	primaryWorld = nullptr;
 	memset( &primaryRenderView, 0, sizeof( primaryRenderView ) );
-	primaryView = NULL;
-	defaultMaterial = NULL;
-	testImage = NULL;
-	ambientCubeImage = NULL;
-	viewDef = NULL;
+	primaryView = nullptr;
+	defaultMaterial = nullptr;
+	testImage = nullptr;
+	ambientCubeImage = nullptr;
 	memset( &pc, 0, sizeof( pc ) );
 	memset( &lockSurfacesCmd, 0, sizeof( lockSurfacesCmd ) );
 	memset( &identitySpace, 0, sizeof( identitySpace ) );
-	logFile = NULL;
+	logFile = nullptr;
 	stencilIncr = 0;
 	stencilDecr = 0;
 	memset( renderCrops, 0, sizeof( renderCrops ) );
 	currentRenderCrop = 0;
 	guiRecursionLevel = 0;
-	guiModel = NULL;
-	demoGuiModel = NULL;
+	guiModel = nullptr;
+	demoGuiModel = nullptr;
 	memset( gammaTable, 0, sizeof( gammaTable ) );
 	takingScreenshot = false;
 }
@@ -1710,7 +1714,8 @@ void idRenderSystemLocal::Clear( void ) {
 idRenderSystemLocal::Init
 ===============
 */
-void idRenderSystemLocal::Init( void ) {	
+void idRenderSystemLocal::Init( void ) 
+{	
 
 	common->Printf( "------- Initializing renderSystem --------\n" );
 
@@ -1718,6 +1723,14 @@ void idRenderSystemLocal::Init( void ) {
 	viewCount = 1;		// so cleared structures never match viewCount
 	// we used to memset tr, but now that it is a class, we can't, so
 	// there may be other state we need to reset
+
+// BEATO Begin:
+	// draw comand queue and frame allocator 
+	drawQueue = new crDraw();
+
+	// Create the front end pipe 
+	frontEnd = new crFrontend();
+// BEATO End
 
 	ambientLightVector[0] = 0.5f;
 	ambientLightVector[1] = 0.5f - 0.385f;
@@ -1773,10 +1786,9 @@ void idRenderSystemLocal::Shutdown( void )
 
 	R_DoneFreeType( );
 
-	if ( glConfig.isInitialized ) {
+	if ( glConfig.isInitialized ) 
 		globalImages->PurgeAllImages();
-	}
-
+	
 	renderModelManager->Shutdown();
 
 	idCinematic::ShutdownCinematic( );
@@ -1784,14 +1796,15 @@ void idRenderSystemLocal::Shutdown( void )
 	globalImages->Shutdown();
 
 	// close the r_logFile
-	if ( logFile ) {
+	if ( logFile )
+	{
 		fprintf( logFile, "*** CLOSING LOG ***\n" );
 		fclose( logFile );
 		logFile = 0;
 	}
 
 	// free frame memory
-	R_ShutdownFrameData();
+	drawQueue->ShutdownFrameData();
 
 	// free the vertex cache, which should have nothing allocated now
 	vertexCache.Shutdown();
@@ -1806,6 +1819,9 @@ void idRenderSystemLocal::Shutdown( void )
 	Clear();
 
 	ShutdownAPI();
+
+	SAFE_DELETE( frontEnd );
+	SAFE_DELETE( drawQueue );
 }
 
 /*
@@ -1863,7 +1879,7 @@ idRenderSystemLocal::ShutdownOpenGL
 void idRenderSystemLocal::ShutdownAPI( void ) 
 {
 	// free the context and close the window
-	R_ShutdownFrameData();
+	drawQueue->ShutdownFrameData();
 	
 #if CR_USE_VULKAN
 	Sys_ShutDownVulkanDevice();
@@ -1892,7 +1908,8 @@ bool idRenderSystemLocal::IsAPIRunning( void ) const
 idRenderSystemLocal::IsFullScreen
 ========================
 */
-bool idRenderSystemLocal::IsFullScreen( void ) const {
+bool idRenderSystemLocal::IsFullScreen( void ) const 
+{
 	return glConfig.isFullscreen;
 }
 
@@ -1901,7 +1918,8 @@ bool idRenderSystemLocal::IsFullScreen( void ) const {
 idRenderSystemLocal::GetScreenWidth
 ========================
 */
-int idRenderSystemLocal::GetScreenWidth( void ) const {
+int idRenderSystemLocal::GetScreenWidth( void ) const 
+{
 	return glConfig.vidWidth;
 }
 
@@ -1910,7 +1928,8 @@ int idRenderSystemLocal::GetScreenWidth( void ) const {
 idRenderSystemLocal::GetScreenHeight
 ========================
 */
-int idRenderSystemLocal::GetScreenHeight( void ) const {
+int idRenderSystemLocal::GetScreenHeight( void ) const 
+{
 	return glConfig.vidHeight;
 }
 

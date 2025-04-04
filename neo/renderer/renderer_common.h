@@ -33,39 +33,24 @@ If you have questions concerning this license or the applicable additional terms
 #include "MegaTexture.h"
 
 class idRenderWorldLocal;
+#include "frontend/Transform.h"
+#include "ScreenRect.h"
 
 // everything that is needed by the backend needs
 // to be double buffered to allow it to run in
 // parallel on a dual cpu machine
-const int SMP_FRAMES = 1;
+const uint32_t	SMP_FRAMES = 1;
 
-const int FALLOFF_TEXTURE_SIZE =	64;
+const uint32_t	FALLOFF_TEXTURE_SIZE =	64;
 
-const float	DEFAULT_FOG_DISTANCE = 500.0f;
+const float		DEFAULT_FOG_DISTANCE = 500.0f;
 
-const int FOG_ENTER_SIZE = 64;
-const float FOG_ENTER = (FOG_ENTER_SIZE+1.0f)/(FOG_ENTER_SIZE*2);
+const uint32_t	FOG_ENTER_SIZE = 64;
+const float 	FOG_ENTER = (FOG_ENTER_SIZE+1.0f)/(FOG_ENTER_SIZE*2);
 // picky to get the bilerp correct at terminator
 
-
-// idScreenRect gets carried around with each drawSurf, so it makes sense
-// to keep it compact, instead of just using the idBounds class
-class idScreenRect 
+typedef enum 
 {
-public:
-	short		x1, y1, x2, y2;							// inclusive pixel bounds inside viewport
-    float       zmin, zmax;								// for depth bounds test
-
-	void		Clear();								// clear to backwards values
-	void		AddPoint( float x, float y );			// adds a point
-	void		Expand();								// expand by one pixel each way to fix roundoffs
-	void		Intersect( const idScreenRect &rect );
-	void		Union( const idScreenRect &rect );
-	bool		Equals( const idScreenRect &rect ) const;
-	bool		IsEmpty() const;
-};
-
-typedef enum {
 	DC_BAD,
 	DC_RENDERVIEW,
 	DC_UPDATE_ENTITYDEF,
@@ -95,7 +80,6 @@ SURFACES
 #include "models/ModelOverlay.h"
 #include "Interaction.h"
 
-
 // drawSurf_t structures command the back end to render surfaces
 // a given srfTriangles_t may be used with multiple viewEntity_t,
 // as when viewed in a subview or multiple viewport render, or
@@ -104,7 +88,7 @@ SURFACES
 // unique srfTriangles_t
 
 // drawSurf_t are always allocated and freed every frame, they are never cached
-static const int	DSF_VIEW_INSIDE_SHADOW	= 1;
+static const uint32_t DSF_VIEW_INSIDE_SHADOW	= 1;
 
 typedef struct drawSurf_s {
 	const srfTriangles_t	*geo;
@@ -467,37 +451,6 @@ TR_CMDS
 =============================================================
 */
 
-typedef enum {
-	RC_NOP,
-	RC_DRAW_VIEW,
-	RC_SET_BUFFER,
-	RC_COPY_RENDER,
-	RC_SWAP_BUFFERS		// can't just assume swap at end of list because
-						// of forced list submission before syncs
-} renderCommand_t;
-
-typedef struct {
-	renderCommand_t		commandId, *next;
-} emptyCommand_t;
-
-typedef struct {
-	renderCommand_t		commandId, *next;
-	GLenum	buffer;
-	int		frameCount;
-} setBufferCommand_t;
-
-typedef struct {
-	renderCommand_t		commandId, *next;
-	viewDef_t	*viewDef;
-} drawSurfsCommand_t;
-
-typedef struct {
-	renderCommand_t		commandId, *next;
-	int		x, y, imageWidth, imageHeight;
-	idImage	*image;
-	int		cubeFace;					// when copying to a cubeMap
-} copyRenderCommand_t;
-
 
 //=======================================================================
 
@@ -505,53 +458,13 @@ typedef struct {
 // in a given view, but it will automatically grow if needed
 const int	INITIAL_DRAWSURFS =			0x4000;
 
-// a request for frame memory will never fail
-// (until malloc fails), but it may force the
-// allocation of a new memory block that will
-// be discontinuous with the existing memory
-typedef struct frameMemoryBlock_s {
-	struct frameMemoryBlock_s *next;
-	int		size;
-	int		used;
-	int		poop;			// so that base is 16 byte aligned
-	byte	base[4];	// dynamically allocated as [size]
-} frameMemoryBlock_t;
-
-// all of the information needed by the back end must be
-// contained in a frameData_t.  This entire structure is
-// duplicated so the front and back end can run in parallel
-// on an SMP machine (OBSOLETE: this capability has been removed)
-typedef struct {
-	// one or more blocks of memory for all frame
-	// temporary allocations
-	frameMemoryBlock_t	*memory;
-
-	// alloc will point somewhere into the memory chain
-	frameMemoryBlock_t	*alloc;
-
-	srfTriangles_t *	firstDeferredFreeTriSurf;
-	srfTriangles_t *	lastDeferredFreeTriSurf;
-
-	int					memoryHighwater;	// max used on any frame
-
-	// the currently building command list 
-	// commands can be inserted at the front if needed, as for required
-	// dynamically generated textures
-	emptyCommand_t	*cmdHead, *cmdTail;		// may be of other command type based on commandId
-} frameData_t;
-
-extern	frameData_t	*frameData;
-
 //=======================================================================
 
 void R_LockSurfaceScene( viewDef_t *parms );
-void R_ClearCommandChain( void );
-void R_AddDrawViewCmd( viewDef_t *parms );
 
 void R_ReloadGuis_f( const idCmdArgs &args );
 void R_ListGuis_f( const idCmdArgs &args );
 
-void *R_GetCommandBuffer( int bytes );
 
 // this allows a global override of all materials
 bool R_GlobalShaderOverride( const idMaterial **shader );
@@ -589,7 +502,8 @@ typedef struct {
 } performanceCounters_t;
 
 
-typedef struct {
+typedef struct 
+{
 	int		current2DMap;
 	int		current3DMap;
 	int		currentCubeMap;
@@ -598,7 +512,8 @@ typedef struct {
 } tmu_t;
 
 const int MAX_MULTITEXTURE_UNITS =	8;
-typedef struct {
+typedef struct 
+{
 	tmu_t		tmu[MAX_MULTITEXTURE_UNITS];
 	int			currenttmu;
 
@@ -607,8 +522,8 @@ typedef struct {
 	bool		forceGlState;		// the next GL_State will ignore glStateBits and set everything
 } glstate_t;
 
-
-typedef struct {
+typedef struct 
+{
 	int		c_surfaces;
 	int		c_shaders;
 	int		c_vertexes;
@@ -674,18 +589,22 @@ typedef enum
 	BE_BAD
 } backEndName_t;
 
-typedef struct {
+typedef struct 
+{
 	int		x, y, width, height;	// these are in physical, OpenGL Y-at-bottom pixels
 } renderCrop_t;
 static const int	MAX_RENDER_CROPS = 8;
 
+// BEATO Begin:
+#include "Draw.h"
+#include "frontend/Frontend.h"
+// BEATO End
 /*
 ** Most renderer globals are defined here.
 ** backend functions should never modify any of these fields,
 ** but may read fields that aren't dynamically modified
 ** by the frontend.
 */
-class crFrontend;
 class idRenderSystemLocal : public idRenderSystem 
 {
 public:
@@ -745,10 +664,6 @@ public:
 	bool					takingScreenshot;
 
 	int						frameCount;		// incremented every frame
-	int						viewCount;		// incremented every view (twice a scene if subviewed)
-											// and every R_MarkFragments call
-
-	int						staticAllocCount;	// running total of bytes allocated
 
 	float					frameShaderTime;	// shader time for all non-world 2D rendering
 
@@ -800,6 +715,7 @@ public:
 	unsigned short			gammaTable[256];	// brightness / gamma modify this
 
 // BEATO Begin: 
+	crDraw*					drawQueue; // draw queue interface
 	crFrontend*				frontEnd; // frontend interface
 // BEATO End
 
@@ -808,7 +724,6 @@ public:
 extern backEndState_t		backEnd;
 extern idRenderSystemLocal	tr;
 extern glconfig_t			glConfig;		// outside of TR since it shouldn't be cleared during ref re-init
-
 
 //
 // cvars
@@ -1059,11 +974,7 @@ LIGHT
 void R_ListRenderLightDefs_f( const idCmdArgs &args );
 void R_ListRenderEntityDefs_f( const idCmdArgs &args );
 
-bool R_IssueEntityDefCallback( idRenderEntityLocal *def );
 idRenderModel *R_EntityDefDynamicModel( idRenderEntityLocal *def );
-
-viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *def );
-
 
 /*
 ============================================================
@@ -1076,28 +987,6 @@ LIGHTRUN
 void R_RegenerateWorld_f( const idCmdArgs &args );
 
 void R_ModulateLights_f( const idCmdArgs &args );
-
-void R_SetLightProject( idPlane lightProject[4], const idVec3 origin, const idVec3 targetPoint,
-	   const idVec3 rightVector, const idVec3 upVector, const idVec3 start, const idVec3 stop );
-
-void R_FreeDerivedData( void );
-void R_ReCreateWorldReferences( void );
-
-void R_CreateEntityRefs( idRenderEntityLocal *def );
-void R_CreateLightRefs( idRenderLightLocal *light );
-
-void R_DeriveLightData( idRenderLightLocal *light );
-void R_FreeLightDefDerivedData( idRenderLightLocal *light );
-void R_CheckForEntityDefsUsingModel( idRenderModel *model );
-
-void R_ClearEntityDefDynamicModel( idRenderEntityLocal *def );
-void R_FreeEntityDefDerivedData( idRenderEntityLocal *def, bool keepDecals, bool keepCachedDynamicModel );
-void R_FreeEntityDefCachedDynamicModel( idRenderEntityLocal *def );
-void R_FreeEntityDefDecals( idRenderEntityLocal *def );
-void R_FreeEntityDefOverlay( idRenderEntityLocal *def );
-void R_FreeEntityDefFadedDecals( idRenderEntityLocal *def, int time );
-
-void R_CreateLightDefFogPortals( idRenderLightLocal *ldef );
 
 /*
 ============================================================
@@ -1421,28 +1310,6 @@ SUBVIEW
 ============================================================
 */
 
-
-/*
-============================================================
-
-SCENE GENERATION
-
-============================================================
-*/
-
-void R_InitFrameData( void );
-void R_ShutdownFrameData( void );
-int R_CountFrameData( void );
-void R_ToggleSmpFrame( void );
-void *R_FrameAlloc( int bytes );
-void *R_ClearedFrameAlloc( int bytes );
-void R_FrameFree( void *data );
-
-void *R_StaticAlloc( int bytes );		// just malloc with error checking
-void *R_ClearedStaticAlloc( int bytes );	// with memset
-void R_StaticFree( void *data );
-
-
 /*
 =============================================================
 
@@ -1526,7 +1393,8 @@ TR_TRACE
 =============================================================
 */
 
-typedef struct {
+typedef struct 
+{
 	float		fraction;
 	// only valid if fraction < 1.0
 	idVec3		point;
@@ -1550,7 +1418,6 @@ idScreenRect R_CalcIntersectionScissor( const idRenderLightLocal * lightDef,
 
 //=============================================
 
-#include "frontend/Frontend.h"
 #include "renderworld/RenderWorld_local.h"
 #include "models/GuiModel.h"
 #include "VertexCache.h"

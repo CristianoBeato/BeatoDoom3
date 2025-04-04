@@ -32,22 +32,38 @@ public:
     ~crFrontend( void );
 
     // Frontend_light.cpp
-    viewEntity_t*   SetEntityDefViewEntity( idRenderEntityLocal *def );
+    viewEntity_t*               SetEntityDefViewEntity( idRenderEntityLocal *def );
+    bool                        IssueEntityDefCallback( idRenderEntityLocal *def );
+
+    // Frontend_lightrun.cpp
+    void                        CreateLightRefs( idRenderLightLocal *light );
+    void                        CreateEntityRefs( idRenderEntityLocal *def );
+    void                        ReCreateWorldReferences( void );
+    void                        FreeDerivedData( void );
     
     // Frontend.cpp
-    void            RenderView( viewDef_t *parms );
-    idScreenRect    ScreenRectFromViewFrustumBounds( const idBounds &bounds );
-    void            ShowColoredScreenRect( const idScreenRect &rect, int colorIndex );
+    void                        RenderView( crAutoPointer<viewDef_t> parms );
+    idScreenRect                ScreenRectFromViewFrustumBounds( const idBounds &bounds );
+    void                        ShowColoredScreenRect( const idScreenRect &rect, int colorIndex );
+    void                        SetViewMatrix( crAutoPointer<viewDef_t> viewDef );
+    void                        GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idVec3 &ndc );
 
-    
+    crAutoPointer<viewDef_t>    GetViewDef( void ) const { return viewDef; }
+    void                        SetViewDef( crAutoPointer<viewDef_t> viewDef ) { this->viewDef = viewDef; }
+    int                         GetViewCount( void ) const { return viewCount; }
+
 private:
-	viewDef_t *				viewDef;
+    int						viewCount;		// incremented every view (twice a scene if subviewed)
+                                            // and every R_MarkFragments call
+    crAutoPointer<viewDef_t>    viewDef; // current view definition 
 
     // Frontend_light.cpp
+    idScreenRect    CalcEntityScissorRectangle( viewEntity_t *vEntity );
     void            AddLightSurfaces( void );
     void            CreatePrivateShadowCache( srfTriangles_t *tri );
     void            LinkLightSurf( const drawSurf_t **link, const srfTriangles_t *tri, const viewEntity_t *space, const idRenderLightLocal *light,
         const idMaterial *shader, const idScreenRect &scissor, bool viewInsideShadow );
+    idRenderModel*  EntityDefDynamicModel( idRenderEntityLocal *def ); 
     void            AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const renderEntity_t *renderEntity, const idMaterial *shader,
         const idScreenRect &scissor );
     bool            CreateAmbientCache( srfTriangles_t *tri, bool needsLighting );
@@ -56,17 +72,27 @@ private:
     void            AddAmbientDrawsurfs( viewEntity_t *vEntity );
     void            AddModelSurfaces( void );
     void            RemoveUnecessaryViewLights( void );
+    viewLight_t*    SetLightDefViewLight( idRenderLightLocal *def );
+    idScreenRect    CalcLightScissorRectangle( viewLight_t *vLight ); 
 
+
+    // Frontend_lightrun.cpp
+    void            FreeEntityDefCachedDynamicModel( idRenderEntityLocal *def );
+    void            FreeEntityDefFadedDecals( idRenderEntityLocal *def, int time );
+    
     // Frontend_subview.cpp
     bool            PreciseCullSurface( const drawSurf_t *drawSurf, idBounds &ndcBounds );
     bool            GenerateSubViews( void );
-    
+    bool            GenerateSurfaceSubview( drawSurf_t *drawSurf );
+    viewDef_t*      MirrorViewBySurface( drawSurf_t *drawSurf );
+    void            RemoteRender( drawSurf_t *surf, textureStage_t *stage );
+    void            MirrorRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect scissor );
+    void            XrayRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect scissor );
+    viewDef_t*      XrayViewBySurface( drawSurf_t *drawSurf );
 
     // Frontend.cpp
-    void            SetViewMatrix( viewDef_t *viewDef );
     void            SetupProjection( void );
     void            SetupViewFrustum( void );
-    void            GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idVec3 &ndc );
     void            ConstrainViewFrustum( void );
     void            SortDrawSurfs( void ); 
     
@@ -74,20 +100,22 @@ public:
     static bool     CullLocalBox( const idBounds &bounds, const float modelMatrix[16], int numPlanes, const idPlane *planes );
     static bool     RadiusCullLocalBox( const idBounds &bounds, const float modelMatrix[16], int numPlanes, const idPlane *planes );
     static bool     CornerCullLocalBox( const idBounds &bounds, const float modelMatrix[16], int numPlanes, const idPlane *planes );
-    static void     AxisToModelMatrix( const idMat3 &axis, const idVec3 &origin, float modelMatrix[16] );
-    static void     LocalPointToGlobal( const float modelMatrix[16], const idVec3 &in, idVec3 &out );
-    static void     GlobalPointToLocal( const float modelMatrix[16], const idVec3 &in, idVec3 &out );
-    static void     PointTimesMatrix( const float modelMatrix[16], const idVec4 &in, idVec4 &out );
-    static void     LocalVectorToGlobal( const float modelMatrix[16], const idVec3 &in, idVec3 &out );
-    static void     GlobalVectorToLocal( const float modelMatrix[16], const idVec3 &in, idVec3 &out );
-    static void     GlobalPlaneToLocal( const float modelMatrix[16], const idPlane &in, idPlane &out );
-    static void     LocalPointToGlobal( const float modelMatrix[16], const idVec3 &in, idVec3 &out );
-    static void     LocalPlaneToGlobal( const float modelMatrix[16], const idPlane &in, idPlane &out );
-    static void     TransformEyeZToWin( float src_z, const float *projectionMatrix, float &dst_z );
-    static void     TransformModelToClip( const idVec3 &src, const float *modelMatrix, const float *projectionMatrix, idPlane &eye, idPlane &dst );
-    static void     TransformClipToDevice( const idPlane &clip, const viewDef_t *view, idVec3 &normalized );
-    static void     TransposeGLMatrix( const float in[16], float out[16] );
-    static void     myGlMultMatrix( const float *a, const float *b, float *out );
+    
+    // Fontend_lightrun.cpp
+    static void     CheckForEntityDefsUsingModel( idRenderModel *model );
+    static void     FreeEntityDefDerivedData( idRenderEntityLocal *def, bool keepDecals, bool keepCachedDynamicModel );
+    static void     ClearEntityDefDynamicModel( idRenderEntityLocal *def );
+    static void     SetLightProject( idPlane lightProject[4], const idVec3 origin, const idVec3 targetPoint, const idVec3 rightVector, const idVec3 upVector, const idVec3 start, const idVec3 stop );
+    static void     FreeLightDefDerivedData( idRenderLightLocal *light );
+    static void     DeriveLightData( idRenderLightLocal *light );
+    static void     CreateLightDefFogPortals( idRenderLightLocal *ldef );
+    static void     FreeEntityDefDecals( idRenderEntityLocal *def );
+    static void     FreeEntityDefOverlay( idRenderEntityLocal *def );
+    
+
+    // returns the frustum planes in world space
+    static void     RenderLightFrustum( const struct renderLight_s &renderLight, idPlane lightFrustum[6] );
+
 };
 
 #endif //!__FRONTEND_H__

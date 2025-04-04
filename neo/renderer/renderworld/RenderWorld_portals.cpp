@@ -720,7 +720,8 @@ AddAreaLightRefs
 This is the only point where lights get added to the viewLights list
 ===================
 */
-void idRenderWorldLocal::AddAreaLightRefs( int areaNum, const portalStack_t *ps ) {
+void idRenderWorldLocal::AddAreaLightRefs( int areaNum, const portalStack_t *ps ) 
+{
 	areaReference_t		*lref;
 	portalArea_t		*area;
 	idRenderLightLocal			*light;
@@ -740,16 +741,16 @@ void idRenderWorldLocal::AddAreaLightRefs( int areaNum, const portalStack_t *ps 
 		// a light that doesn't cast shadows will still light even if it is behind a door
 		if ( r_useLightCulling.GetInteger() >= 3 &&
 				!light->parms.noShadows && light->lightShader->LightCastsShadows()
-					&& light->areaNum != -1 && !tr.viewDef->connectedAreas[ light->areaNum ] ) {
+					&& light->areaNum != -1 && !viewDef->connectedAreas[ light->areaNum ] ) {
 			continue;
 		}
 
 		// cull frustum
-		if ( CullLightByPortals( light, ps ) ) {
+		if ( CullLightByPortals( light, ps ) ) 
 			// we are culled out through this portal chain, but it might
 			// still be visible through others
 			continue;
-		}
+		
 
 		vLight = R_SetLightDefViewLight( light );
 
@@ -807,15 +808,18 @@ BuildConnectedAreas
 This is only valid for a given view, not all views in a frame
 ===================
 */
-void idRenderWorldLocal::BuildConnectedAreas( void ) {
+void idRenderWorldLocal::BuildConnectedAreas( void ) 
+{
 	int		i;
 
-	tr.viewDef->connectedAreas = (bool *)R_FrameAlloc( numPortalAreas
+	tr.viewDef->connectedAreas = (bool *)tr.drawQueue->FrameAlloc( numPortalAreas
 		* sizeof( tr.viewDef->connectedAreas[0] ) );
 
 	// if we are outside the world, we can see all areas
-	if ( tr.viewDef->areaNum == -1 ) {
-		for ( i = 0 ; i < numPortalAreas ; i++ ) {
+	if ( tr.viewDef->areaNum == -1 ) 
+	{
+		for ( i = 0 ; i < numPortalAreas ; i++ ) 
+		{
 			tr.viewDef->connectedAreas[i] = true;
 		}
 		return;

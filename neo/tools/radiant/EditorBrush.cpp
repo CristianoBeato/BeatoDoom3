@@ -3611,7 +3611,7 @@ void DrawProjectedLight(brush_t *b, bool bSelected, bool texture) {
 
 	spawnArgs = ent->epairs;
 	gameEdit->ParseSpawnArgsToRenderLight( &spawnArgs, &parms );
-	R_RenderLightFrustum( parms, planes );
+	crFrontend::RenderLightFrustum( parms, planes );
 
 	tri = R_PolytopeSurface(6, planes, NULL);
 

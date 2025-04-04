@@ -254,7 +254,8 @@ R_LightProjectionMatrix
 
 ====================
 */
-void R_LightProjectionMatrix( const idVec3 &origin, const idPlane &rearPlane, idVec4 mat[4] ) {
+void R_LightProjectionMatrix( const idVec3 &origin, const idPlane &rearPlane, idVec4 mat[4] ) 
+{
 	idVec4		lv;
 	float		lg;
 
@@ -304,7 +305,7 @@ static void R_ProjectPointsToFarPlane( const idRenderEntityLocal *ent, const idR
 	int			i;
 	idVec4		*in;
 
-	R_GlobalPointToLocal( ent->modelMatrix, light->globalLightOrigin, lv );
+	crTransform::GlobalPointToLocal( ent->modelMatrix, light->globalLightOrigin, lv );
 	R_LightProjectionMatrix( lv, lightPlaneLocal, mat );
 
 #if 1
@@ -379,25 +380,34 @@ static int R_ChopWinding( clipTri_t clipTris[2], int inNum, const idPlane &plane
 	counts[0] = counts[1] = counts[2] = 0;
 
 	// determine sides for each point
-	for ( i = 0 ; i < in->numVerts ; i++ ) {
+	for ( i = 0 ; i < in->numVerts ; i++ ) 
+	{
 		dot = plane.Distance( in->verts[i] );
 		dists[i] = dot;
-		if ( dot < -LIGHT_CLIP_EPSILON ) {
+		if ( dot < -LIGHT_CLIP_EPSILON ) 
+		{
 			sides[i] = SIDE_BACK;
-		} else if ( dot > LIGHT_CLIP_EPSILON ) {
+		} 
+		else if ( dot > LIGHT_CLIP_EPSILON ) 
+		{
 			sides[i] = SIDE_FRONT;
-		} else {
+		} 
+		else 
+		{
 			sides[i] = SIDE_ON;
 		}
 		counts[sides[i]]++;
 	}
 
 	// if none in front, it is completely clipped away
-	if ( !counts[SIDE_FRONT] ) {
+	if ( !counts[SIDE_FRONT] ) 
+	{
 		in->numVerts = 0;
 		return inNum;
 	}
-	if ( !counts[SIDE_BACK] ) {
+	
+	if ( !counts[SIDE_BACK] ) 
+	{
 		return inNum;		// inout stays the same
 	}
 
@@ -408,14 +418,18 @@ static int R_ChopWinding( clipTri_t clipTris[2], int inNum, const idPlane &plane
 	in->edgeFlags[in->numVerts] = in->edgeFlags[0];
 
 	out->numVerts = 0;
-	for ( i = 0 ; i < in->numVerts ; i++ ) {
+	for ( i = 0 ; i < in->numVerts ; i++ ) 
+	{
 		p1 = &in->verts[i];
 
-		if ( sides[i] != SIDE_BACK ) {
+		if ( sides[i] != SIDE_BACK ) 
+		{
 			out->verts[out->numVerts] = *p1;
 			if ( sides[i] == SIDE_ON && sides[i+1] == SIDE_BACK ) {
 				out->edgeFlags[out->numVerts] = 1;
-			} else {
+			} 
+			else 
+			{
 				out->edgeFlags[out->numVerts] = in->edgeFlags[i];
 			}
 			out->numVerts++;
@@ -434,9 +448,12 @@ static int R_ChopWinding( clipTri_t clipTris[2], int inNum, const idPlane &plane
 			out->verts[out->numVerts] = mid;
 
 			// set the edge flag
-			if ( sides[i+1] != SIDE_FRONT ) {
+			if ( sides[i+1] != SIDE_FRONT ) 
+			{
 				out->edgeFlags[out->numVerts] = 1;
-			} else {
+			} 
+			else 
+			{
 				out->edgeFlags[out->numVerts] = in->edgeFlags[i];
 			}
 
@@ -1029,10 +1046,12 @@ R_MakeShadowFrustums
 Called at definition derivation time
 ===================
 */
-void R_MakeShadowFrustums( idRenderLightLocal *light ) {
-	int		i, j;
+static void R_MakeShadowFrustums( idRenderLightLocal *light ) 
+{
+	int		i = 0, j = 0;
 
-	if ( light->parms.pointLight ) {
+	if ( light->parms.pointLight ) 
+	{
 #if 0
 		idVec3	adjustedRadius;
 
@@ -1174,7 +1193,8 @@ void R_MakeShadowFrustums( idRenderLightLocal *light ) {
 	// it is important to clip against even the near clip plane, because
 	// many projected lights that are faking area lights will have their
 	// origin behind solid surfaces.
-	for ( i = 0 ; i < 6 ; i++ ) {
+	for ( i = 0 ; i < 6 ; i++ ) 
+	{
 		idPlane &plane = frust->planes[i];
 
 		plane.SetNormal( -light->frustum[i].Normal() );
@@ -1255,12 +1275,14 @@ srfTriangles_t *R_CreateShadowVolume( const idRenderEntityLocal *ent,
 
 	int numFaces = tri->numIndexes / 3;
 	int allFront = 1;
-	for ( i = 0; i < numFaces && allFront; i++ ) {
+	for ( i = 0; i < numFaces && allFront; i++ ) 
+	{
 		allFront &= cullInfo.facing[i];
 	}
-	if ( allFront ) {
+	if ( allFront ) 
+	{
 		// if no faces are the right direction, don't make a shadow at all
-		return NULL;
+		return nullptr;
 	}
 
 	// clear the shadow volume
@@ -1277,12 +1299,13 @@ srfTriangles_t *R_CreateShadowVolume( const idRenderEntityLocal *ent,
 	faceCastsShadow = (byte *)_alloca16( tri->numIndexes / 3 + 1 );	// + 1 for fake dangling edge face
 	remap = (int *)_alloca16( tri->numVerts * sizeof( remap[0] ) );
 
-	R_GlobalPointToLocal( ent->modelMatrix, light->globalLightOrigin, lightOrigin );
+	crTransform::GlobalPointToLocal( ent->modelMatrix, light->globalLightOrigin, lightOrigin );
 
 	// run through all the shadow frustums, which is one for a projected light,
 	// and usually six for a point light, but point lights with centers outside
 	// the box may have less
-	for ( int frustumNum = 0 ; frustumNum < light->numShadowFrustums ; frustumNum++ ) {
+	for ( int frustumNum = 0 ; frustumNum < light->numShadowFrustums ; frustumNum++ ) 
+	{
 		const shadowFrustum_t	*frust = &light->shadowFrustums[frustumNum];
 		ALIGN16( idPlane frustum[6] );
 
@@ -1293,12 +1316,14 @@ srfTriangles_t *R_CreateShadowVolume( const idRenderEntityLocal *ent,
 		// the cull test is redundant for a single shadow frustum projected light, because
 		// the surface has already been checked against the main light frustums
 
-		for ( j = 0 ; j < frust->numPlanes ; j++ ) {
-			R_GlobalPlaneToLocal( ent->modelMatrix, frust->planes[j], frustum[j] );
+		for ( j = 0 ; j < frust->numPlanes ; j++ ) 
+		{
+			crTransform::GlobalPlaneToLocal( ent->modelMatrix, frust->planes[j], frustum[j] );
 
 			// try to cull the entire surface against this frustum
 			float d = tri->bounds.PlaneDistance( frustum[j] );
-			if ( d < -LIGHT_CLIP_EPSILON ) {
+			if ( d < -LIGHT_CLIP_EPSILON ) 
+			{
 				break;
 			}
 		}
@@ -1326,8 +1351,9 @@ srfTriangles_t *R_CreateShadowVolume( const idRenderEntityLocal *ent,
 
 	// if no faces have been defined for the shadow volume,
 	// there won't be anything at all
-	if ( numShadowIndexes == 0 ) {
-		return NULL;
+	if ( numShadowIndexes == 0 ) 
+	{
+		return nullptr;
 	}
 
 	// this should have been prevented by the overflowed flag, so if it ever happens,
@@ -1359,7 +1385,8 @@ srfTriangles_t *R_CreateShadowVolume( const idRenderEntityLocal *ent,
 
 		// copy the sil indexes first
 		newTri->numShadowIndexesNoCaps = 0;
-		for ( i = 0 ; i < indexFrustumNumber ; i++ ) {
+		for ( i = 0 ; i < indexFrustumNumber ; i++ ) 
+		{
 			int	c = indexRef[i].end - indexRef[i].silStart;
 			SIMDProcessor->Memcpy( newTri->indexes+newTri->numShadowIndexesNoCaps, 
 									shadowIndexes+indexRef[i].silStart, c * sizeof( newTri->indexes[0] ) );
@@ -1382,12 +1409,15 @@ srfTriangles_t *R_CreateShadowVolume( const idRenderEntityLocal *ent,
 			newTri->numIndexes += c;
 		}
 
-	} else {
+	} 
+	else 
+	{
 		newTri->shadowCapPlaneBits = 63;	// we don't have optimized index lists
 		SIMDProcessor->Memcpy( newTri->indexes, shadowIndexes, newTri->numIndexes * sizeof( newTri->indexes[0] ) );
 	}
 
-	if ( optimize == SG_OFFLINE ) {
+	if ( optimize == SG_OFFLINE ) 
+	{
 		CleanupOptimizedShadowTris( newTri );
 	}
 

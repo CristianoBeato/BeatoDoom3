@@ -84,7 +84,7 @@ bool crFrontend::CreateLightingCache( const idRenderEntityLocal *ent, const idRe
 	if ( tr.backEndRendererHasVertexPrograms )
 		return true;
 
-	GlobalPointToLocal( ent->modelMatrix, light->globalLightOrigin, localLightOrigin );
+	crTransform::GlobalPointToLocal( ent->modelMatrix, light->globalLightOrigin, localLightOrigin );
 
 	int	size = tri->ambientSurface->numVerts * sizeof( lightingCache_t );
 	lightingCache_t *cache = (lightingCache_t *)_alloca16( size );
@@ -232,7 +232,7 @@ void R_WobbleskyTexGen( drawSurf_t *surf, const idVec3 &viewOrg ) {
 
 	// very ad-hoc "wobble" transform
 	float	transform[16];
-	float	a = tr.viewDef->floatTime * wobbleSpeed;
+	float	a = viewDef->floatTime * wobbleSpeed;
 	float	s = sin( a ) * sin( wobbleDegrees );
 	float	c = cos( a ) * sin( wobbleDegrees );
 	float	z = cos( wobbleDegrees );
@@ -255,8 +255,8 @@ void R_WobbleskyTexGen( drawSurf_t *surf, const idVec3 &viewOrg ) {
 	axis[0].Cross( axis[1], axis[2] );
 
 	// add the rotate
-	s = sin( rotateSpeed * tr.viewDef->floatTime );
-	c = cos( rotateSpeed * tr.viewDef->floatTime );
+	s = sin( rotateSpeed * viewDef->floatTime );
+	c = cos( rotateSpeed * viewDef->floatTime );
 
 	transform[0] = axis[0][0] * c + axis[1][0] * s;
 	transform[4] = axis[0][1] * c + axis[1][1] * s;
@@ -382,13 +382,13 @@ viewEntity_t *crFrontend::SetEntityDefViewEntity( idRenderEntityLocal *def )
 {
 	viewEntity_t		*vModel;
 
-	if ( def->viewCount == tr.viewCount ) 
+	if ( def->viewCount == viewCount ) 
 		return def->viewEntity;
 	
-	def->viewCount = tr.viewCount;
+	def->viewCount = viewCount;
 
 	// set the model and modelview matricies
-	vModel = (viewEntity_t *)R_ClearedFrameAlloc( sizeof( *vModel ) );
+	vModel = (viewEntity_t *)tr.drawQueue->ClearedFrameAlloc( sizeof( *vModel ) );
 	vModel->entityDef = def;
 
 	// the scissorRect will be expanded as the model bounds is accepted into visible portal chains
@@ -398,15 +398,15 @@ viewEntity_t *crFrontend::SetEntityDefViewEntity( idRenderEntityLocal *def )
 	vModel->modelDepthHack = def->parms.modelDepthHack;
 	vModel->weaponDepthHack = def->parms.weaponDepthHack;
 
-	crFrontend::AxisToModelMatrix( def->parms.axis, def->parms.origin, vModel->modelMatrix );
+	crTransform::AxisToModelMatrix( def->parms.axis, def->parms.origin, vModel->modelMatrix );
 
 	// we may not have a viewDef if we are just creating shadows at entity creation time
-	if ( tr.viewDef ) 
+	if ( viewDef ) 
 	{
-		myGlMultMatrix( vModel->modelMatrix, tr.viewDef->worldSpace.modelViewMatrix, vModel->modelViewMatrix );
+		crTransform::GlMultMatrix( vModel->modelMatrix, viewDef->worldSpace.modelViewMatrix, vModel->modelViewMatrix );
 
-		vModel->next = tr.viewDef->viewEntitys;
-		tr.viewDef->viewEntitys = vModel;
+		vModel->next = viewDef->viewEntitys;
+		viewDef->viewEntitys = vModel;
 	}
 
 	def->viewEntity = vModel;
@@ -446,9 +446,11 @@ Assumes positive sides face outward
 */
 static bool R_PointInFrustum( idVec3 &p, idPlane *planes, int numPlanes ) 
 {
-	for ( int i = 0 ; i < numPlanes ; i++ ) {
+	for ( int i = 0 ; i < numPlanes ; i++ ) 
+	{
 		float d = planes[i].Distance( p );
-		if ( d > 0 ) {
+		if ( d > 0 ) 
+		{
 			return false;
 		}
 	}
@@ -463,38 +465,44 @@ If the lightDef isn't already on the viewLight list, create
 a viewLight and add it to the list with an empty scissor rect.
 =============
 */
-viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *light ) {
+viewLight_t* crFrontend::SetLightDefViewLight( idRenderLightLocal *light ) 
+{
 	viewLight_t *vLight;
 
-	if ( light->viewCount == tr.viewCount ) {
+	if ( light->viewCount == viewCount )
 		return light->viewLight;
-	}
-	light->viewCount = tr.viewCount;
+	
+	light->viewCount = viewCount;
 
 	// add to the view light chain
-	vLight = (viewLight_t *)R_ClearedFrameAlloc( sizeof( *vLight ) );
+	vLight = (viewLight_t *)tr.drawQueue->ClearedFrameAlloc( sizeof( *vLight ) );
 	vLight->lightDef = light;
 
 	// the scissorRect will be expanded as the light bounds is accepted into visible portal chains
 	vLight->scissorRect.Clear();
 
 	// calculate the shadow cap optimization states
-	vLight->viewInsideLight = R_TestPointInViewLight( tr.viewDef->renderView.vieworg, light );
-	if ( !vLight->viewInsideLight ) {
+	vLight->viewInsideLight = R_TestPointInViewLight( viewDef->renderView.vieworg, light );
+	if ( !vLight->viewInsideLight ) 
+	{
 		vLight->viewSeesShadowPlaneBits = 0;
-		for ( int i = 0 ; i < light->numShadowFrustums ; i++ ) {
-			float d = light->shadowFrustums[i].planes[5].Distance( tr.viewDef->renderView.vieworg );
-			if ( d < INSIDE_LIGHT_FRUSTUM_SLOP ) {
+		for ( int i = 0 ; i < light->numShadowFrustums ; i++ ) 
+		{
+			float d = light->shadowFrustums[i].planes[5].Distance( viewDef->renderView.vieworg );
+			if ( d < INSIDE_LIGHT_FRUSTUM_SLOP )
+			{
 				vLight->viewSeesShadowPlaneBits|= 1 << i;
 			}
 		}
-	} else {
+	} 
+	else 
+	{
 		// this should not be referenced in this case
 		vLight->viewSeesShadowPlaneBits = 63;
 	}
 
 	// see if the light center is in view, which will allow us to cull invisible shadows
-	vLight->viewSeesGlobalLightOrigin = R_PointInFrustum( light->globalLightOrigin, tr.viewDef->frustum, 4 );
+	vLight->viewSeesGlobalLightOrigin = R_PointInFrustum( light->globalLightOrigin, viewDef->frustum, 4 );
 
 	// copy data used by backend
 	vLight->globalLightOrigin = light->globalLightOrigin;
@@ -506,11 +514,11 @@ viewLight_t *R_SetLightDefViewLight( idRenderLightLocal *light ) {
 	vLight->frustumTris = light->frustumTris;
 	vLight->falloffImage = light->falloffImage;
 	vLight->lightShader = light->lightShader;
-	vLight->shaderRegisters = NULL;		// allocated and evaluated in R_AddLightSurfaces
+	vLight->shaderRegisters = nullptr;		// allocated and evaluated in R_AddLightSurfaces
 
 	// link the view light
-	vLight->next = tr.viewDef->viewLights;
-	tr.viewDef->viewLights = vLight;
+	vLight->next = viewDef->viewLights;
+	viewDef->viewLights = vLight;
 
 	light->viewLight = vLight;
 
@@ -568,7 +576,9 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef )
 			// most things
 
 			// if the entity isn't viewed
-			if ( tr.viewDef && edef->viewCount != tr.viewCount ) 
+			auto viewDef = tr.frontEnd->GetViewDef();
+			auto viewCount = tr.frontEnd->GetViewCount();
+			if ( viewDef && edef->viewCount != viewCount ) 
 			{
 				// if the light doesn't cast shadows, skip
 				if ( !ldef->lightShader->LightCastsShadows() )
@@ -577,7 +587,7 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef )
 				// if we are suppressing its shadow in this view, skip
 				if ( !r_skipSuppress.GetBool() ) 
 				{
-					if ( edef->parms.suppressShadowInViewID && edef->parms.suppressShadowInViewID == tr.viewDef->renderView.viewID ) 
+					if ( edef->parms.suppressShadowInViewID && edef->parms.suppressShadowInViewID == viewDef->renderView.viewID ) 
 						continue;
 					
 					if ( edef->parms.suppressShadowInLightID && edef->parms.suppressShadowInLightID == ldef->parms.lightId ) 
@@ -643,13 +653,13 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef )
 			float	modelMatrix[16];
 			float	*m;
 
-			if ( edef->viewCount == tr.viewCount ) 
+			if ( edef->viewCount == viewCount ) 
 			{
 				m = edef->viewEntity->modelMatrix;
 			} 
 			else 
 			{
-				crFrontend::AxisToModelMatrix( edef->parms.axis, edef->parms.origin, modelMatrix );
+				crTransform::AxisToModelMatrix( edef->parms.axis, edef->parms.origin, modelMatrix );
 				m = modelMatrix;
 			}
 
@@ -680,10 +690,10 @@ void crFrontend::LinkLightSurf( const drawSurf_t **link, const srfTriangles_t *t
 	drawSurf_t		*drawSurf;
 
 	if ( !space ) 
-		space = &tr.viewDef->worldSpace;
+		space = &viewDef->worldSpace;
 	
 
-	drawSurf = (drawSurf_t *)R_FrameAlloc( sizeof( *drawSurf ) );
+	drawSurf = (drawSurf_t *)tr.drawQueue->FrameAlloc( sizeof( *drawSurf ) );
 
 	drawSurf->geo = tri;
 	drawSurf->space = space;
@@ -712,9 +722,9 @@ void crFrontend::LinkLightSurf( const drawSurf_t **link, const srfTriangles_t *t
 		else 
 		{
 			// FIXME: share with the ambient surface?
-			float *regs = (float *)R_FrameAlloc( shader->GetNumRegisters() * sizeof( float ) );
+			float *regs = (float *)tr.drawQueue->FrameAlloc( shader->GetNumRegisters() * sizeof( float ) );
 			drawSurf->shaderRegisters = regs;
-			shader->EvaluateRegisters( regs, space->entityDef->parms.shaderParms, tr.viewDef, space->entityDef->parms.referenceSound );
+			shader->EvaluateRegisters( regs, space->entityDef->parms.shaderParms, viewDef, space->entityDef->parms.referenceSound );
 		}
 
 // BEATO Begin: done via shader 
@@ -722,7 +732,7 @@ void crFrontend::LinkLightSurf( const drawSurf_t **link, const srfTriangles_t *t
 		// calculate the specular coordinates if we aren't using vertex programs
 		if ( !tr.backEndRendererHasVertexPrograms && !r_skipSpecular.GetBool() && tr.backEndRenderer != BE_ARB ) 
 		{
-			R_SpecularTexGen( drawSurf, light->globalLightOrigin, tr.viewDef->renderView.vieworg );
+			R_SpecularTexGen( drawSurf, light->globalLightOrigin, viewDef->renderView.vieworg );
 			// if we failed to allocate space for the specular calculations, drop the surface
 			if ( !drawSurf->dynamicTexCoords ) 
 				return;
@@ -743,14 +753,16 @@ R_ClippedLightScissorRectangle
 */
 idScreenRect R_ClippedLightScissorRectangle( viewLight_t *vLight ) 
 {
-	int i, j;
+	int i = 0, j = 0;
 	const idRenderLightLocal *light = vLight->lightDef;
 	idScreenRect r;
 	idFixedWinding w;
+	auto viewDef = tr.frontEnd->GetViewDef();
 
 	r.Clear();
 
-	for ( i = 0 ; i < 6 ; i++ ) {
+	for ( i = 0 ; i < 6 ; i++ ) 
+	{
 		const idWinding *ow = light->frustumWindings[i];
 
 		// projected lights may have one of the frustums degenerated
@@ -762,7 +774,7 @@ idScreenRect R_ClippedLightScissorRectangle( viewLight_t *vLight )
 		// so the planes that have the view origin on the negative
 		// side will be the "back" faces of the light, which must have
 		// some fragment inside the portalStack to be visible
-		if ( light->frustum[i].Distance( tr.viewDef->renderView.vieworg ) >= 0 ) {
+		if ( light->frustum[i].Distance( viewDef->renderView.vieworg ) >= 0 ) {
 			continue;
 		}
 
@@ -770,36 +782,37 @@ idScreenRect R_ClippedLightScissorRectangle( viewLight_t *vLight )
 
 		// now check the winding against each of the frustum planes
 		for ( j = 0; j < 5; j++ ) {
-			if ( !w.ClipInPlace( -tr.viewDef->frustum[j] ) ) {
+			if ( !w.ClipInPlace( -viewDef->frustum[j] ) ) {
 				break;
 			}
 		}
 
 		// project these points to the screen and add to bounds
-		for ( j = 0; j < w.GetNumPoints(); j++ ) {
+		for ( j = 0; j < w.GetNumPoints(); j++ ) 
+		{
 			idPlane		eye, clip;
 			idVec3		ndc;
 
-			R_TransformModelToClip( w[j].ToVec3(), tr.viewDef->worldSpace.modelViewMatrix, tr.viewDef->projectionMatrix, eye, clip );
+			crTransform::TransformModelToClip( w[j].ToVec3(), viewDef->worldSpace.modelViewMatrix, viewDef->projectionMatrix, eye, clip );
 
 			if ( clip[3] <= 0.01f ) {
 				clip[3] = 0.01f;
 			}
 
-			R_TransformClipToDevice( clip, tr.viewDef, ndc );
+			crTransform::TransformClipToDevice( clip, ndc );
 
-			float windowX = 0.5f * ( 1.0f + ndc[0] ) * ( tr.viewDef->viewport.x2 - tr.viewDef->viewport.x1 );
-			float windowY = 0.5f * ( 1.0f + ndc[1] ) * ( tr.viewDef->viewport.y2 - tr.viewDef->viewport.y1 );
+			float windowX = 0.5f * ( 1.0f + ndc[0] ) * ( viewDef->viewport.x2 - viewDef->viewport.x1 );
+			float windowY = 0.5f * ( 1.0f + ndc[1] ) * ( viewDef->viewport.y2 - viewDef->viewport.y1 );
 
-			if ( windowX > tr.viewDef->scissor.x2 ) {
-				windowX = tr.viewDef->scissor.x2;
-			} else if ( windowX < tr.viewDef->scissor.x1 ) {
-				windowX = tr.viewDef->scissor.x1;
+			if ( windowX > viewDef->scissor.x2 ) {
+				windowX = viewDef->scissor.x2;
+			} else if ( windowX < viewDef->scissor.x1 ) {
+				windowX = viewDef->scissor.x1;
 			}
-			if ( windowY > tr.viewDef->scissor.y2 ) {
-				windowY = tr.viewDef->scissor.y2;
-			} else if ( windowY < tr.viewDef->scissor.y1 ) {
-				windowY = tr.viewDef->scissor.y1;
+			if ( windowY > viewDef->scissor.y2 ) {
+				windowY = viewDef->scissor.y2;
+			} else if ( windowY < viewDef->scissor.y1 ) {
+				windowY = viewDef->scissor.y1;
 			}
 
 			r.AddPoint( windowX, windowY );
@@ -814,7 +827,7 @@ idScreenRect R_ClippedLightScissorRectangle( viewLight_t *vLight )
 
 /*
 ==================
-R_CalcLightScissorRectangle
+crFrontend::CalcLightScissorRectangle
 
 The light screen bounds will be used to crop the scissor rect during
 stencil clears and interaction drawing
@@ -822,7 +835,8 @@ stencil clears and interaction drawing
 */
 int	c_clippedLight, c_unclippedLight;
 
-idScreenRect	R_CalcLightScissorRectangle( viewLight_t *vLight ) {
+idScreenRect crFrontend::CalcLightScissorRectangle( viewLight_t *vLight ) 
+{
 	idScreenRect	r;
 	srfTriangles_t *tri;
 	idPlane			eye, clip;
@@ -831,8 +845,8 @@ idScreenRect	R_CalcLightScissorRectangle( viewLight_t *vLight ) {
 	if ( vLight->lightDef->parms.pointLight ) {
 		idBounds bounds;
 		idRenderLightLocal *lightDef = vLight->lightDef;
-		tr.viewDef->viewFrustum.ProjectionBounds( idBox( lightDef->parms.origin, lightDef->parms.lightRadius, lightDef->parms.axis ), bounds );
-		return R_ScreenRectFromViewFrustumBounds( bounds );
+		viewDef->viewFrustum.ProjectionBounds( idBox( lightDef->parms.origin, lightDef->parms.lightRadius, lightDef->parms.axis ), bounds );
+		return ScreenRectFromViewFrustumBounds( bounds );
 	}
 
 	if ( r_useClippedLightScissors.GetInteger() == 2 ) {
@@ -842,9 +856,10 @@ idScreenRect	R_CalcLightScissorRectangle( viewLight_t *vLight ) {
 	r.Clear();
 
 	tri = vLight->lightDef->frustumTris;
-	for ( int i = 0 ; i < tri->numVerts ; i++ ) {
-		R_TransformModelToClip( tri->verts[i].xyz, tr.viewDef->worldSpace.modelViewMatrix,
-			tr.viewDef->projectionMatrix, eye, clip );
+	for ( int i = 0 ; i < tri->numVerts ; i++ ) 
+	{
+		crTransform::TransformModelToClip( tri->verts[i].xyz, viewDef->worldSpace.modelViewMatrix,
+			viewDef->projectionMatrix, eye, clip );
 
 		// if it is near clipped, clip the winding polygons to the view frustum
 		if ( clip[3] <= 1 ) {
@@ -853,26 +868,26 @@ idScreenRect	R_CalcLightScissorRectangle( viewLight_t *vLight ) {
 				return R_ClippedLightScissorRectangle( vLight );
 			} else {
 				r.x1 = r.y1 = 0;
-				r.x2 = ( tr.viewDef->viewport.x2 - tr.viewDef->viewport.x1 ) - 1;
-				r.y2 = ( tr.viewDef->viewport.y2 - tr.viewDef->viewport.y1 ) - 1;
+				r.x2 = ( viewDef->viewport.x2 - viewDef->viewport.x1 ) - 1;
+				r.y2 = ( viewDef->viewport.y2 - viewDef->viewport.y1 ) - 1;
 				return r;
 			}
 		}
 
-		R_TransformClipToDevice( clip, tr.viewDef, ndc );
+		crTransform::TransformClipToDevice( clip, ndc );
 
-		float windowX = 0.5f * ( 1.0f + ndc[0] ) * ( tr.viewDef->viewport.x2 - tr.viewDef->viewport.x1 );
-		float windowY = 0.5f * ( 1.0f + ndc[1] ) * ( tr.viewDef->viewport.y2 - tr.viewDef->viewport.y1 );
+		float windowX = 0.5f * ( 1.0f + ndc[0] ) * ( viewDef->viewport.x2 - viewDef->viewport.x1 );
+		float windowY = 0.5f * ( 1.0f + ndc[1] ) * ( viewDef->viewport.y2 - viewDef->viewport.y1 );
 
-		if ( windowX > tr.viewDef->scissor.x2 ) {
-			windowX = tr.viewDef->scissor.x2;
-		} else if ( windowX < tr.viewDef->scissor.x1 ) {
-			windowX = tr.viewDef->scissor.x1;
+		if ( windowX > viewDef->scissor.x2 ) {
+			windowX = viewDef->scissor.x2;
+		} else if ( windowX < viewDef->scissor.x1 ) {
+			windowX = viewDef->scissor.x1;
 		}
-		if ( windowY > tr.viewDef->scissor.y2 ) {
-			windowY = tr.viewDef->scissor.y2;
-		} else if ( windowY < tr.viewDef->scissor.y1 ) {
-			windowY = tr.viewDef->scissor.y1;
+		if ( windowY > viewDef->scissor.y2 ) {
+			windowY = viewDef->scissor.y2;
+		} else if ( windowY < viewDef->scissor.y1 ) {
+			windowY = viewDef->scissor.y1;
 		}
 
 		r.AddPoint( windowX, windowY );
@@ -911,7 +926,7 @@ void crFrontend::AddLightSurfaces( void )
 	viewLight_t		**ptr;
 
 	// go through each visible light, possibly removing some from the list
-	ptr = &tr.viewDef->viewLights;
+	ptr = &viewDef->viewLights;
 	while ( *ptr ) 
 	{
 		vLight = *ptr;
@@ -924,14 +939,14 @@ void crFrontend::AddLightSurfaces( void )
 		// see if we are suppressing the light in this view
 		if ( !r_skipSuppress.GetBool() ) 
 		{
-			if ( light->parms.suppressLightInViewID && light->parms.suppressLightInViewID == tr.viewDef->renderView.viewID ) 
+			if ( light->parms.suppressLightInViewID && light->parms.suppressLightInViewID == viewDef->renderView.viewID ) 
 			{
 				*ptr = vLight->next;
 				light->viewCount = -1;
 				continue;
 			}
 
-			if ( light->parms.allowLightInViewID && light->parms.allowLightInViewID != tr.viewDef->renderView.viewID ) 
+			if ( light->parms.allowLightInViewID && light->parms.allowLightInViewID != viewDef->renderView.viewID ) 
 			{
 				*ptr = vLight->next;
 				light->viewCount = -1;
@@ -940,9 +955,9 @@ void crFrontend::AddLightSurfaces( void )
 		}
 
 		// evaluate the light shader registers
-		float *lightRegs =(float *)R_FrameAlloc( lightShader->GetNumRegisters() * sizeof( float ) );
+		float *lightRegs =(float *)tr.drawQueue->FrameAlloc( lightShader->GetNumRegisters() * sizeof( float ) );
 		vLight->shaderRegisters = lightRegs;
-		lightShader->EvaluateRegisters( lightRegs, light->parms.shaderParms, tr.viewDef, light->parms.referenceSound );
+		lightShader->EvaluateRegisters( lightRegs, light->parms.shaderParms, viewDef, light->parms.referenceSound );
 
 		// if this is a purely additive light and no stage in the light shader evaluates
 		// to a positive light value, we can completely skip the light
@@ -996,7 +1011,7 @@ void crFrontend::AddLightSurfaces( void )
 		{
 			// calculate the screen area covered by the light frustum
 			// which will be used to crop the stencil cull
-			idScreenRect scissorRect = R_CalcLightScissorRectangle( vLight );
+			idScreenRect scissorRect = CalcLightScissorRectangle( vLight );
 			// intersect with the portal crossing scissor rectangle
 			vLight->scissorRect.Intersect( scissorRect );
 
@@ -1030,7 +1045,7 @@ void crFrontend::AddLightSurfaces( void )
 		// create interactions with all entities the light may touch, and add viewEntities
 		// that may cast shadows, even if they aren't directly visible.  Any real work
 		// will be deferred until we walk through the viewEntities
-		tr.viewDef->renderWorld->CreateLightDefInteractions( light );
+		viewDef->renderWorld->CreateLightDefInteractions( light );
 		tr.pc.c_viewLights++;
 
 		// fog lights will need to draw the light frustum triangles, so make sure they
@@ -1060,7 +1075,7 @@ void crFrontend::AddLightSurfaces( void )
 			// these shadows will all have valid bounds, and can be culled normally
 			if ( r_useShadowCulling.GetBool() ) 
 			{
-				if ( CullLocalBox( tri->bounds, tr.viewDef->worldSpace.modelMatrix, 5, tr.viewDef->frustum ) ) 
+				if ( CullLocalBox( tri->bounds, viewDef->worldSpace.modelMatrix, 5, viewDef->frustum ) ) 
 					continue;
 			}
 
@@ -1091,10 +1106,10 @@ void crFrontend::AddLightSurfaces( void )
 
 /*
 ==================
-R_IssueEntityDefCallback
+crFrontend::IssueEntityDefCallback
 ==================
 */
-bool R_IssueEntityDefCallback( idRenderEntityLocal *def ) 
+bool crFrontend::IssueEntityDefCallback( idRenderEntityLocal *def ) 
 {
 	bool update;
 	idBounds	oldBounds;
@@ -1104,15 +1119,16 @@ bool R_IssueEntityDefCallback( idRenderEntityLocal *def )
 
 	def->archived = false;		// will need to be written to the demo file
 	tr.pc.c_entityDefCallbacks++;
-	if ( tr.viewDef ) 
-		update = def->parms.callback( &def->parms, &tr.viewDef->renderView );
+	if ( viewDef ) 
+		update = def->parms.callback( &def->parms, &viewDef->renderView );
 	else 
 		update = def->parms.callback( &def->parms, nullptr );
 
 	if ( !def->parms.hModel )
 		common->Error( "R_IssueEntityDefCallback: dynamic entity callback didn't set model" );
 
-	if ( r_checkBounds.GetBool() ) {
+	if ( r_checkBounds.GetBool() ) 
+	{
 		if (	oldBounds[0][0] > def->referenceBounds[0][0] + CHECK_BOUNDS_EPSILON ||
 				oldBounds[0][1] > def->referenceBounds[0][1] + CHECK_BOUNDS_EPSILON ||
 				oldBounds[0][2] > def->referenceBounds[0][2] + CHECK_BOUNDS_EPSILON ||
@@ -1136,38 +1152,39 @@ Returns the cached dynamic model if present, otherwise creates
 it and any necessary overlays
 ===================
 */
-idRenderModel *R_EntityDefDynamicModel( idRenderEntityLocal *def ) 
+idRenderModel* crFrontend::EntityDefDynamicModel( idRenderEntityLocal *def ) 
 {
 	bool callbackUpdate;
 
 	// allow deferred entities to construct themselves
 	if ( def->parms.callback ) 
-		callbackUpdate = R_IssueEntityDefCallback( def );
+		callbackUpdate = IssueEntityDefCallback( def );
 	else 
 		callbackUpdate = false;
 
 	idRenderModel *model = def->parms.hModel;
 
-	if ( !model ) {
+	if ( !model ) 
 		common->Error( "R_EntityDefDynamicModel: NULL model" );
-	}
-
-	if ( model->IsDynamicModel() == DM_STATIC ) {
-		def->dynamicModel = NULL;
+	
+	if ( model->IsDynamicModel() == DM_STATIC ) 
+	{
+		def->dynamicModel = nullptr;
 		def->dynamicModelFrameCount = 0;
 		return model;
 	}
 
 	// continously animating models (particle systems, etc) will have their snapshot updated every single view
-	if ( callbackUpdate || ( model->IsDynamicModel() == DM_CONTINUOUS && def->dynamicModelFrameCount != tr.frameCount ) ) {
-		R_ClearEntityDefDynamicModel( def );
+	if ( callbackUpdate || ( model->IsDynamicModel() == DM_CONTINUOUS && def->dynamicModelFrameCount != tr.frameCount ) ) 
+	{
+		ClearEntityDefDynamicModel( def );
 	}
 
 	// if we don't have a snapshot of the dynamic model, generate it now
 	if ( !def->dynamicModel ) {
 
 		// instantiate the snapshot of the dynamic model, possibly reusing memory from the cached snapshot
-		def->cachedDynamicModel = model->InstantiateDynamicModel( &def->parms, tr.viewDef, def->cachedDynamicModel );
+		def->cachedDynamicModel = model->InstantiateDynamicModel( &def->parms, viewDef, def->cachedDynamicModel );
 
 		if ( def->cachedDynamicModel ) {
 
@@ -1196,11 +1213,12 @@ idRenderModel *R_EntityDefDynamicModel( idRenderEntityLocal *def )
 	}
 
 	// set model depth hack value
-	if ( def->dynamicModel && model->DepthHack() != 0.0f && tr.viewDef ) {
+	if ( def->dynamicModel && model->DepthHack() != 0.0f && ( viewDef ) ) 
+	{
 		idPlane eye, clip;
 		idVec3 ndc;
-		R_TransformModelToClip( def->parms.origin, tr.viewDef->worldSpace.modelViewMatrix, tr.viewDef->projectionMatrix, eye, clip );
-		R_TransformClipToDevice( clip, tr.viewDef, ndc );
+		crTransform::TransformModelToClip( def->parms.origin, viewDef->worldSpace.modelViewMatrix, viewDef->projectionMatrix, eye, clip );
+		crTransform::TransformClipToDevice( clip, ndc );
 		def->parms.modelDepthHack = model->DepthHack() * ( 1.0f - ndc.z );
 	}
 
@@ -1223,7 +1241,7 @@ void crFrontend::AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *spa
 	static float	refRegs[MAX_EXPRESSION_REGISTERS];	// don't put on stack, or VC++ will do a page touch
 	float			generatedShaderParms[MAX_ENTITY_SHADER_PARMS];
 
-	drawSurf = (drawSurf_t *)R_FrameAlloc( sizeof( *drawSurf ) );
+	drawSurf = (drawSurf_t *)tr.drawQueue->FrameAlloc( sizeof( *drawSurf ) );
 	drawSurf->geo = tri;
 	drawSurf->space = space;
 	drawSurf->material = shader;
@@ -1236,41 +1254,51 @@ void crFrontend::AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *spa
 	tr.sortOffset += 0.000001f;
 
 	// if it doesn't fit, resize the list
-	if ( tr.viewDef->numDrawSurfs == tr.viewDef->maxDrawSurfs ) {
-		drawSurf_t	**old = tr.viewDef->drawSurfs;
+	if ( viewDef->numDrawSurfs == viewDef->maxDrawSurfs ) 
+	{
+		drawSurf_t	**old = viewDef->drawSurfs;
 		int			count;
 
-		if ( tr.viewDef->maxDrawSurfs == 0 ) {
-			tr.viewDef->maxDrawSurfs = INITIAL_DRAWSURFS;
+		if ( viewDef->maxDrawSurfs == 0 ) 
+		{
+			viewDef->maxDrawSurfs = INITIAL_DRAWSURFS;
 			count = 0;
-		} else {
-			count = tr.viewDef->maxDrawSurfs * sizeof( tr.viewDef->drawSurfs[0] );
-			tr.viewDef->maxDrawSurfs *= 2;
+		} 
+		else 
+		{
+			count = viewDef->maxDrawSurfs * sizeof( viewDef->drawSurfs[0] );
+			viewDef->maxDrawSurfs *= 2;
 		}
-		tr.viewDef->drawSurfs = (drawSurf_t **)R_FrameAlloc( tr.viewDef->maxDrawSurfs * sizeof( tr.viewDef->drawSurfs[0] ) );
-		memcpy( tr.viewDef->drawSurfs, old, count );
+
+		viewDef->drawSurfs = (drawSurf_t **)tr.drawQueue->FrameAlloc( viewDef->maxDrawSurfs * sizeof( viewDef->drawSurfs[0] ) );
+		memcpy( viewDef->drawSurfs, old, count );
 	}
-	tr.viewDef->drawSurfs[tr.viewDef->numDrawSurfs] = drawSurf;
-	tr.viewDef->numDrawSurfs++;
+
+	viewDef->drawSurfs[viewDef->numDrawSurfs] = drawSurf;
+	viewDef->numDrawSurfs++;
 
 	// process the shader expressions for conditionals / color / texcoords
 	const float	*constRegs = shader->ConstantRegisters();
-	if ( constRegs ) {
+	if ( constRegs ) 
+	{
 		// shader only uses constant values
 		drawSurf->shaderRegisters = constRegs;
-	} else {
-		float *regs = (float *)R_FrameAlloc( shader->GetNumRegisters() * sizeof( float ) );
+	} 
+	else 
+	{
+		float *regs = (float *)tr.drawQueue->FrameAlloc( shader->GetNumRegisters() * sizeof( float ) );
 		drawSurf->shaderRegisters = regs;
 
 		// a reference shader will take the calculated stage color value from another shader
 		// and use that for the parm0-parm3 of the current shader, which allows a stage of
 		// a light model and light flares to pick up different flashing tables from
 		// different light shaders
-		if ( renderEntity->referenceShader ) {
+		if ( renderEntity->referenceShader ) 
+		{
 			// evaluate the reference shader to find our shader parms
 			const shaderStage_t *pStage;
 
-			renderEntity->referenceShader->EvaluateRegisters( refRegs, renderEntity->shaderParms, tr.viewDef, renderEntity->referenceSound );
+			renderEntity->referenceShader->EvaluateRegisters( refRegs, renderEntity->shaderParms, viewDef, renderEntity->referenceSound );
 			pStage = renderEntity->referenceShader->GetStage(0);
 
 			memcpy( generatedShaderParms, renderEntity->shaderParms, sizeof( generatedShaderParms ) );
@@ -1279,7 +1307,9 @@ void crFrontend::AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *spa
 			generatedShaderParms[2] = refRegs[ pStage->color.registers[2] ];
 
 			shaderParms = generatedShaderParms;
-		} else {
+		} 
+		else 
+		{
 			// evaluate with the entityDef's shader parms
 			shaderParms = renderEntity->shaderParms;
 		}
@@ -1287,19 +1317,21 @@ void crFrontend::AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *spa
 		float oldFloatTime;
 		int oldTime;
 
-		if ( space->entityDef && space->entityDef->parms.timeGroup ) {
-			oldFloatTime = tr.viewDef->floatTime;
-			oldTime = tr.viewDef->renderView.time;
+		if ( space->entityDef && space->entityDef->parms.timeGroup ) 
+		{
+			oldFloatTime = viewDef->floatTime;
+			oldTime = viewDef->renderView.time;
 
-			tr.viewDef->floatTime = game->GetTimeGroupTime( space->entityDef->parms.timeGroup ) * 0.001;
-			tr.viewDef->renderView.time = game->GetTimeGroupTime( space->entityDef->parms.timeGroup );
+			viewDef->floatTime = game->GetTimeGroupTime( space->entityDef->parms.timeGroup ) * 0.001;
+			viewDef->renderView.time = game->GetTimeGroupTime( space->entityDef->parms.timeGroup );
 		}
 
-		shader->EvaluateRegisters( regs, shaderParms, tr.viewDef, renderEntity->referenceSound );
+		shader->EvaluateRegisters( regs, shaderParms, viewDef, renderEntity->referenceSound );
 
-		if ( space->entityDef && space->entityDef->parms.timeGroup ) {
-			tr.viewDef->floatTime = oldFloatTime;
-			tr.viewDef->renderView.time = oldTime;
+		if ( space->entityDef && space->entityDef->parms.timeGroup ) 
+		{
+			viewDef->floatTime = oldFloatTime;
+			viewDef->renderView.time = oldTime;
 		}
 	}
 
@@ -1312,10 +1344,10 @@ void crFrontend::AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *spa
 	switch( shader->Texgen() ) 
 	{
 		case TG_SKYBOX_CUBE:
-			R_SkyboxTexGen( drawSurf, tr.viewDef->renderView.vieworg );
+			R_SkyboxTexGen( drawSurf, viewDef->renderView.vieworg );
 			break;
 		case TG_WOBBLESKY_CUBE:
-			R_WobbleskyTexGen( drawSurf, tr.viewDef->renderView.vieworg );
+			R_WobbleskyTexGen( drawSurf, viewDef->renderView.vieworg );
 			break;
 	}
 #endif
@@ -1348,23 +1380,23 @@ void crFrontend::AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *spa
 		float oldFloatTime;
 		int oldTime;
 
-		oldFloatTime = tr.viewDef->floatTime;
-		oldTime = tr.viewDef->renderView.time;
+		oldFloatTime = viewDef->floatTime;
+		oldTime = viewDef->renderView.time;
 
-		tr.viewDef->floatTime = game->GetTimeGroupTime( 1 ) * 0.001;
-		tr.viewDef->renderView.time = game->GetTimeGroupTime( 1 );
+		viewDef->floatTime = game->GetTimeGroupTime( 1 ) * 0.001;
+		viewDef->renderView.time = game->GetTimeGroupTime( 1 );
 
 		idBounds ndcBounds;
 
-		if ( !R_PreciseCullSurface( drawSurf, ndcBounds ) ) 
+		if ( !PreciseCullSurface( drawSurf, ndcBounds ) ) 
 		{
 			// did we ever use this to forward an entity color to a gui that didn't set color?
 //			memcpy( tr.guiShaderParms, shaderParms, sizeof( tr.guiShaderParms ) );
 			R_RenderGuiSurf( gui, drawSurf );
 		}
 
-		tr.viewDef->floatTime = oldFloatTime;
-		tr.viewDef->renderView.time = oldTime;
+		viewDef->floatTime = oldFloatTime;
+		viewDef->renderView.time = oldTime;
 	}
 
 	// we can't add subviews at this point, because that would
@@ -1454,9 +1486,9 @@ void crFrontend::AddAmbientDrawsurfs( viewEntity_t *vEntity )
 			}
 		}
 
-		if ( !CullLocalBox( tri->bounds, vEntity->modelMatrix, 5, tr.viewDef->frustum ) ) {
+		if ( !CullLocalBox( tri->bounds, vEntity->modelMatrix, 5, viewDef->frustum ) ) {
 
-			def->visibleCount = tr.viewCount;
+			def->visibleCount = viewCount;
 
 			// make sure we have an ambient cache
 			if ( !CreateAmbientCache( tri, shader->ReceivesLighting() ) ) 
@@ -1476,7 +1508,7 @@ void crFrontend::AddAmbientDrawsurfs( viewEntity_t *vEntity )
 
 			// ambientViewCount is used to allow light interactions to be rejected
 			// if the ambient surface isn't visible at all
-			tri->ambientViewCount = tr.viewCount;
+			tri->ambientViewCount = viewCount;
 		}
 	}
 
@@ -1492,14 +1524,14 @@ void crFrontend::AddAmbientDrawsurfs( viewEntity_t *vEntity )
 R_CalcEntityScissorRectangle
 ==================
 */
-idScreenRect R_CalcEntityScissorRectangle( viewEntity_t *vEntity ) 
+idScreenRect crFrontend::CalcEntityScissorRectangle( viewEntity_t *vEntity ) 
 {
 	idBounds bounds;
 	idRenderEntityLocal *def = vEntity->entityDef;
 
-	tr.viewDef->viewFrustum.ProjectionBounds( idBox( def->referenceBounds, def->parms.origin, def->parms.axis ), bounds );
+	viewDef->viewFrustum.ProjectionBounds( idBox( def->referenceBounds, def->parms.origin, def->parms.axis ), bounds );
 
-	return R_ScreenRectFromViewFrustumBounds( bounds );
+	return ScreenRectFromViewFrustumBounds( bounds );
 }
 
 /*
@@ -1520,17 +1552,17 @@ void crFrontend::AddModelSurfaces( void )
 	idRenderModel		*model;
 
 	// clear the ambient surface list
-	tr.viewDef->numDrawSurfs = 0;
-	tr.viewDef->maxDrawSurfs = 0;	// will be set to INITIAL_DRAWSURFS on R_AddDrawSurf
+	viewDef->numDrawSurfs = 0;
+	viewDef->maxDrawSurfs = 0;	// will be set to INITIAL_DRAWSURFS on R_AddDrawSurf
 
 	// go through each entity that is either visible to the view, or to
 	// any light that intersects the view (for shadows)
-	for ( vEntity = tr.viewDef->viewEntitys; vEntity; vEntity = vEntity->next ) 
+	for ( vEntity = viewDef->viewEntitys; vEntity; vEntity = vEntity->next ) 
 	{
 		if ( r_useEntityScissors.GetBool() ) 
 		{
 			// calculate the screen area covered by the entity
-			idScreenRect scissorRect = R_CalcEntityScissorRectangle( vEntity );
+			idScreenRect scissorRect = CalcEntityScissorRectangle( vEntity );
 			// intersect with the portal crossing scissor rectangle
 			vEntity->scissorRect.Intersect( scissorRect );
 
@@ -1545,28 +1577,28 @@ void crFrontend::AddModelSurfaces( void )
 
 		if ( vEntity->entityDef->parms.timeGroup ) 
 		{
-			oldFloatTime = tr.viewDef->floatTime;
-			oldTime = tr.viewDef->renderView.time;
+			oldFloatTime = viewDef->floatTime;
+			oldTime = viewDef->renderView.time;
 
-			tr.viewDef->floatTime = game->GetTimeGroupTime( vEntity->entityDef->parms.timeGroup ) * 0.001;
-			tr.viewDef->renderView.time = game->GetTimeGroupTime( vEntity->entityDef->parms.timeGroup );
+			viewDef->floatTime = game->GetTimeGroupTime( vEntity->entityDef->parms.timeGroup ) * 0.001;
+			viewDef->renderView.time = game->GetTimeGroupTime( vEntity->entityDef->parms.timeGroup );
 		}
 
-		if ( tr.viewDef->isXraySubview && vEntity->entityDef->parms.xrayIndex == 1 ) 
+		if ( viewDef->isXraySubview && vEntity->entityDef->parms.xrayIndex == 1 ) 
 		{
 			if ( vEntity->entityDef->parms.timeGroup ) 
 			{
-				tr.viewDef->floatTime = oldFloatTime;
-				tr.viewDef->renderView.time = oldTime;
+				viewDef->floatTime = oldFloatTime;
+				viewDef->renderView.time = oldTime;
 			}
 			continue;
 		} 
-		else if ( !tr.viewDef->isXraySubview && vEntity->entityDef->parms.xrayIndex == 2 ) 
+		else if ( !viewDef->isXraySubview && vEntity->entityDef->parms.xrayIndex == 2 ) 
 		{
 			if ( vEntity->entityDef->parms.timeGroup ) 
 			{
-				tr.viewDef->floatTime = oldFloatTime;
-				tr.viewDef->renderView.time = oldTime;
+				viewDef->floatTime = oldFloatTime;
+				viewDef->renderView.time = oldTime;
 			}
 			continue;
 		}
@@ -1579,8 +1611,8 @@ void crFrontend::AddModelSurfaces( void )
 			{
 				if ( vEntity->entityDef->parms.timeGroup ) 
 				{
-					tr.viewDef->floatTime = oldFloatTime;
-					tr.viewDef->renderView.time = oldTime;
+					viewDef->floatTime = oldFloatTime;
+					viewDef->renderView.time = oldTime;
 				}
 				continue;
 			}
@@ -1595,14 +1627,14 @@ void crFrontend::AddModelSurfaces( void )
 		//
 		// for all the entity / light interactions on this entity, add them to the view
 		//
-		if ( tr.viewDef->isXraySubview ) 
+		if ( viewDef->isXraySubview ) 
 		{
 			if ( vEntity->entityDef->parms.xrayIndex == 2 ) 
 			{
 				for ( inter = vEntity->entityDef->firstInteraction; inter != nullptr && !inter->IsEmpty(); inter = next ) 
 				{
 					next = inter->entityNext;
-					if ( inter->lightDef->viewCount != tr.viewCount ) 
+					if ( inter->lightDef->viewCount != viewCount ) 
 						continue;
 					
 					inter->AddActiveInteraction();
@@ -1620,7 +1652,7 @@ void crFrontend::AddModelSurfaces( void )
 				// skip any lights that aren't currently visible
 				// this is run after any lights that are turned off have already
 				// been removed from the viewLights list, and had their viewCount cleared
-				if ( inter->lightDef->viewCount != tr.viewCount ) 
+				if ( inter->lightDef->viewCount != viewCount ) 
 					continue;
 				
 				inter->AddActiveInteraction();
@@ -1629,8 +1661,8 @@ void crFrontend::AddModelSurfaces( void )
 
 		if ( vEntity->entityDef->parms.timeGroup ) 
 		{
-			tr.viewDef->floatTime = oldFloatTime;
-			tr.viewDef->renderView.time = oldTime;
+			viewDef->floatTime = oldFloatTime;
+			viewDef->renderView.time = oldTime;
 		}
 
 	}
@@ -1646,7 +1678,8 @@ void crFrontend::RemoveUnecessaryViewLights( void )
 	viewLight_t		*vLight;
 
 	// go through each visible light
-	for ( vLight = tr.viewDef->viewLights ; vLight ; vLight = vLight->next ) {
+	for ( vLight = viewDef->viewLights ; vLight ; vLight = vLight->next ) 
+	{
 		// if the light didn't have any lit surfaces visible, there is no need to
 		// draw any of the shadows.  We still keep the vLight for debugging
 		// draws
@@ -1662,7 +1695,7 @@ void crFrontend::RemoveUnecessaryViewLights( void )
 		// shrink the light scissor rect to only intersect the surfaces that will actually be drawn.
 		// This doesn't seem to actually help, perhaps because the surface scissor
 		// rects aren't actually the surface, but only the portal clippings.
-		for ( vLight = tr.viewDef->viewLights ; vLight ; vLight = vLight->next ) 
+		for ( vLight = viewDef->viewLights ; vLight ; vLight = vLight->next ) 
 		{
 			const drawSurf_t	*surf;
 			idScreenRect	surfRect;

@@ -719,7 +719,7 @@ void idRenderModelMD5::DrawJoints( const renderEntity_t *ent, const struct viewD
 idRenderModelMD5::InstantiateDynamicModel
 ====================
 */
-idRenderModel *idRenderModelMD5::InstantiateDynamicModel( const struct renderEntity_s *ent, const struct viewDef_s *view, idRenderModel *cachedModel ) {
+idRenderModel *idRenderModelMD5::InstantiateDynamicModel( const struct renderEntity_s *ent, const crAutoPointer<struct viewDef_s> view, idRenderModel *cachedModel ) {
 	int					i, surfaceNum;
 	idMD5Mesh			*mesh;
 	idRenderModelStatic	*staticModel;
@@ -757,8 +757,9 @@ idRenderModel *idRenderModelMD5::InstantiateDynamicModel( const struct renderEnt
 
 	staticModel->bounds.Clear();
 
-	if ( r_showSkel.GetInteger() ) {
-		if ( ( view != NULL ) && ( !r_skipSuppress.GetBool() || !ent->suppressSurfaceInViewID || ( ent->suppressSurfaceInViewID != view->renderView.viewID ) ) ) {
+	if ( r_showSkel.GetInteger() ) 
+	{
+		if ( ( view != nullptr ) && ( !r_skipSuppress.GetBool() || !ent->suppressSurfaceInViewID || ( ent->suppressSurfaceInViewID != view->renderView.viewID ) ) ) {
 			// only draw the skeleton
 			DrawJoints( ent, view );
 		}

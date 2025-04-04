@@ -2395,7 +2395,7 @@ set to their apropriate values.
 ===============
 */
 void idMaterial::EvaluateRegisters( float *registers, const float shaderParms[MAX_ENTITY_SHADER_PARMS],
-									const viewDef_t *view, idSoundEmitter *soundEmitter ) const {
+									const crAutoPointer<viewDef_t> view, idSoundEmitter *soundEmitter ) const {
 	int		i, b;
 	expOp_t	*op;
 
