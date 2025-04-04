@@ -2381,17 +2381,13 @@ idGameLocal::CalcFov
 Calculates the horizontal and vertical field of view based on a horizontal field of view and custom aspect ratio
 ====================
 */
-void idGameLocal::CalcFov( float base_fov, float &fov_x, float &fov_y ) const {
+void idGameLocal::CalcFov( float base_fov, float &fov_x, float &fov_y ) const 
+{
 	float	x;
 	float	y;
 	float	ratio_x;
 	float	ratio_y;
 	
-	if ( !sys->FPU_StackIsEmpty() ) {
-		Printf( sys->FPU_GetState() );
-		Error( "idGameLocal::CalcFov: FPU stack not empty" );
-	}
-
 	// first, calculate the vertical fov based on a 640x480 view
 	x = 640.0f / tan( base_fov / 360.0f * idMath::PI );
 	y = atan2( 480.0f, x );
@@ -2399,10 +2395,8 @@ void idGameLocal::CalcFov( float base_fov, float &fov_x, float &fov_y ) const {
 
 	// FIXME: somehow, this is happening occasionally
 	assert( fov_y > 0 );
-	if ( fov_y <= 0 ) {
-		Printf( sys->FPU_GetState() );
+	if ( fov_y <= 0 )
 		Error( "idGameLocal::CalcFov: bad result" );
-	}
 
 	switch( r_aspectRatio.GetInteger() ) {
 	default :
@@ -2436,10 +2430,8 @@ void idGameLocal::CalcFov( float base_fov, float &fov_x, float &fov_y ) const {
 
 	// FIXME: somehow, this is happening occasionally
 	assert( ( fov_x > 0 ) && ( fov_y > 0 ) );
-	if ( ( fov_y <= 0 ) || ( fov_x <= 0 ) ) {
-		Printf( sys->FPU_GetState() );
+	if ( ( fov_y <= 0 ) || ( fov_x <= 0 ) ) 
 		Error( "idGameLocal::CalcFov: bad result" );
-	}
 }
 
 /*
