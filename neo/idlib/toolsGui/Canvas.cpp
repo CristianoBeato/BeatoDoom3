@@ -25,7 +25,7 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #include "idlib/precompiled.h"
 #include "GuiCommon.h"
 
-btCanvas::btCanvas( const char *name ) : btBaseGui( name, nullptr )
+btCanvas::btCanvas( const char *name ) : btBaseGui( name, btCanvas::btBaseGui_t() )
 {
 	m_rectColor = { 0x45, 0x45, 0x45, 0xFF };
 	m_borderColor = { 0x2F, 0x2F, 0x2F, 0xFF };

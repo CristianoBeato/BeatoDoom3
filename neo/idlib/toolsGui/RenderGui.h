@@ -72,7 +72,7 @@ typedef struct
 }guiVertex_t;
 
 
-class btRenderGui : btObjectCounter
+class btRenderGui
 {
 public:
 	btRenderGui( void );

@@ -180,7 +180,7 @@ template<typename _t> ID_INLINE constexpr const _t& clamp( const _t& v, const _t
 // BEATO Begin:
 #include "system/intrinsics.h"
 #include "Exception.h"
-#include "Pointers.h"
+#include "SmartPointer.h"
 // BEATO End
 
 // math

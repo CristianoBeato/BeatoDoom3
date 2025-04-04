@@ -30,7 +30,7 @@ btBaseGui::btBaseGui( const char * name, const btBaseGui_t parent ) :
 	m_parent( parent )
 {
 	if (m_parent)
-		AddChild( this );
+		AddChild( crAutoPointer<btBaseGui>( this ) );
 }
 
 btBaseGui::btBaseGui( const char * name, const btBaseGui_t parent, const btRenderGui_t renderer ) :
@@ -39,7 +39,7 @@ btBaseGui::btBaseGui( const char * name, const btBaseGui_t parent, const btRende
 	m_renderer( renderer )
 {
 	if (m_parent)
-		AddChild( this );
+		AddChild( crAutoPointer<btBaseGui>( this ) );
 }
 
 
@@ -47,7 +47,7 @@ btBaseGui::~btBaseGui( void )
 {
 	RemoveAllChildren();
 	if (m_parent)
-		m_parent->RemoveChild( this );
+		m_parent->RemoveChild( crAutoPointer<btBaseGui>( this ) );
 }
 
 void btBaseGui::DoUpdate( void )
@@ -89,7 +89,7 @@ void btBaseGui::SetHidden( const bool hidden )
 
 void btBaseGui::SetPos( const int x, const int y )
 {
-	if (m_parent)
+	if ( m_parent )
 	{
 		btRect_t parent = m_parent->GetBounds();
 		m_bounds.x = clamp( x, parent.x, parent.x + (int)parent.w );
@@ -151,7 +151,7 @@ btRect_t btBaseGui::GetBounds( void ) const
 
 const btBaseGui::btRenderGui_t btBaseGui::GetRenderer( void ) const
 {
-	assert( m_renderer != nullptr );
+	assert( m_renderer );
 	return m_renderer;
 }
 
@@ -163,7 +163,7 @@ void btBaseGui::RemoveAllChildren( void )
 	}
 }
 
-void btBaseGui::AddChild( const btBaseGui_t child )
+void btBaseGui::AddChild( btBaseGui_t child )
 {
 	m_childs.Append( child );
 }
@@ -172,7 +172,7 @@ void btBaseGui::RemoveChild( btBaseGui_t parent )
 {
 	for ( int i = 0; i < m_childs.Num(); i++)
 	{
-		if(m_childs[i] == parent)
+		if(m_childs[i] == parent) 
 		{
 			m_childs.RemoveIndex( i );
 			break;

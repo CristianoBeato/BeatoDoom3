@@ -66,11 +66,11 @@ typedef struct btRect_s
 
 
 class btRenderGui;
-class btBaseGui : public btObjectCounter
+class btBaseGui
 {
 public:
-	typedef	btRefCntAutoPtr<btBaseGui>		btBaseGui_t;
-	typedef	btRefCntAutoPtr<btRenderGui>	btRenderGui_t;
+	typedef	crAutoPointer<btBaseGui>	btBaseGui_t;
+	typedef	crAutoPointer<btRenderGui>	btRenderGui_t;
 
 	btBaseGui( const char* name, const btBaseGui_t parent );
 	btBaseGui( const char* name, const btBaseGui_t parent, const btRenderGui_t renderer );
