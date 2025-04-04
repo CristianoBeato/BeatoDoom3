@@ -43,6 +43,6 @@ in vs_output
 } frag;
 
 void main(void)
-{  
-  result = texture( texture1, frag.texcoord ) *  frag.color * clamp(rpDiffuseColor, vec4(0,0,0,0), vec4(1,1,1,1));
+{
+  fragColor = texture( texture1, frag.vtexcoord ) *  frag.vcolor * clamp( rpDiffuseColor, vec4(0,0,0,0), vec4(1,1,1,1));
 }

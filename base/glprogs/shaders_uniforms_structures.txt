@@ -1,0 +1,72 @@
+
+#if VULKAN
+#extension GL_EXT_nonuniform_qualifier : enable
+#endif //VULKAN
+
+//vertex shader storage estructure:
+struct vetexTransform
+{
+  vec4 rpLocalViewOrigin; 
+  vec4 rpColorModulate;   //
+  vec4 rpColorAdd;        //
+  vec4 rpTextureMatrixS;
+  vec4 rpTextureMatrixT;
+  mat4 rpModelMatrix;
+  mat4 rpViewMatrix;
+  mat4 rpProjectionMatrix;
+};
+
+// vertex shader storage buffer 
+layout( std430, binding = 0 ) buffer vertexStorageBlock
+{
+  vetexTransform vertUnifom[];
+};
+
+// texture 0 is the cube map
+// texture 1 is the per-surface bump map
+// texture 2 is the light falloff texture
+// texture 3 is the light projection texture
+// texture 4 is the per-surface diffuse map
+// texture 5 is the per-surface specular map
+// texture 6 is the specular lookup table
+
+layout( std430, binding = 1 ) buffer TextureHandles 
+{
+    sampler2D samples[]; // Array de texturas
+};
+
+// fragment shader storage structure 
+struct fragmentTransfom
+{
+    uint32_t    sampler[8]; // we can acess the max of 8 textures from the sampler buffer 
+    vec4        rpCurrentRenderSize;
+    vec4        rpDiffuseColor;
+    vec4        rpSpecularColor;
+    vec4        shaderParm0;
+    vec4        shaderParm1;
+    vec4        shaderParm2;
+    vec4        shaderParm3;
+};
+
+// fragment shader storage buffer 
+layout( std430, binding = 2 ) buffer fragmentStorageBlock
+{
+    fragmentTransfom fragUnifom[];
+};
+
+//interaction shader pass transform
+struct lightTransform
+{
+    vec4 rpLocalLightOrigin;
+    vec4 rpLightProjectionS;
+    vec4 rpLightProjectionT;
+    vec4 rpLightProjectionQ;
+    vec4 rpLightFallOff;
+
+};
+
+// fragment shader storage buffer 
+layout( std430, binding = 3 ) buffer lightStorageBlock
+{
+    lightTransform lightUnifom[];
+};
