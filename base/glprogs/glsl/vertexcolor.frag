@@ -28,14 +28,15 @@ If you have questions concerning this license or the applicable additional terms
 #version 460 core
 
 // vertex shader output variable 
-in vs_output
+layout( location = 0 ) in vs_output
 {
   vec4 vcolor;
 } frag;
 
-out vec4 result;
+// fragment color output 
+layout( location = 0 ) out vec4 fragColor;
 
 void main(void)
 {  
-  result = frag.vcolor;
+  fragColor = frag.vcolor;
 }

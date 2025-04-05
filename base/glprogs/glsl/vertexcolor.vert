@@ -28,6 +28,10 @@ If you have questions concerning this license or the applicable additional terms
 */
 #version 460 core
 
+#if defined( OPENGL ) 
+#extension GL_ARB_separate_shader_objects : enable
+#endif
+
 // vertex 
 layout( location = 0 ) in vec3 attrb_position;
 layout( location = 1 ) in vec2 attrb_texcoord;
@@ -49,16 +53,21 @@ struct vetexTransform
 };
 
 // vertex shader storage buffer 
-layout( std430, binding = 0 ) buffer vertexStorageBlock
+layout( std430, binding = 1 ) buffer vertexStorageBlock
 {
   vetexTransform vertUnifom[];
 };
 
 // vertex shader to fragment output variables
-out vs_output
+layout( location = 0 ) out vs_output
 {
   vec4 vcolor;
 } result;
+
+out gl_PerVertex
+{
+    vec4 gl_Position;
+};
 
 void main(void)
 {

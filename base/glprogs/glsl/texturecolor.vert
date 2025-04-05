@@ -28,13 +28,15 @@ If you have questions concerning this license or the applicable additional terms
 */
 #version 460 core
 
+#extension GL_ARB_shader_draw_parameters :enable
+
 // vertex attributes 
-layout(location = 0) in vec3 attrb_position;
-layout(location = 1) in vec2 attrb_texcoord;
-layout(location = 2) in vec3 attrb_normal;
-layout(location = 3) in vec4 attrb_color;
-layout(location = 4) in vec3 attrb_binormal;
-layout(location = 5) in vec3 attrb_tangent;
+layout( location = 0 ) in vec3 attrb_position;
+layout( location = 1 ) in vec2 attrb_texcoord;
+layout( location = 2 ) in vec3 attrb_normal;
+layout( location = 3 ) in vec4 attrb_color;
+layout( location = 4 ) in vec3 attrb_binormal;
+layout( location = 5 ) in vec3 attrb_tangent;
 
 // vertex transform block 
 struct vetexTransform
@@ -50,14 +52,15 @@ struct vetexTransform
 };
 
 // vertex shader storage buffer 
-layout( std430, binding = 0 ) buffer vertexStorageBlock
+layout( std430, binding = 1 ) buffer vertexStorageBlock
 {
   vetexTransform vertUnifom[];
 };
 
 // vertex shader to fragment output variables
-out vs_output
+layout( location = 0 ) out vs_output
 {
+  uint drawID;
   vec4 vcolor;
   vec2 vtexcoord;
 } result;
@@ -71,6 +74,7 @@ void main(void)
 
   vec4 vertex_texcoord4 = vec4( attrb_texcoord, 1.0, 1.0 );
 
+  result.drawID = gl_DrawID;
   result.vtexcoord = vec2( dot( vertUnifom[gl_DrawID].rpTextureMatrixS, vertex_texcoord4 ), dot( vertUnifom[gl_DrawID].rpTextureMatrixT, vertex_texcoord4 ) );
   result.vcolor = ( attrb_color / 255.0 ) * vertUnifom[gl_DrawID].rpColorModulate + vertUnifom[gl_DrawID].rpColorAdd;
 }

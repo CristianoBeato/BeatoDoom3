@@ -28,21 +28,61 @@ If you have questions concerning this license or the applicable additional terms
 */
 #version 460 core
 
-#extension GL_ARB_bindless_texture : enable
+#if OPENGL
+# extension GL_ARB_bindless_texture : enable
+# extension GL_ARB_shader_storage_buffer_object : enable
+# extension GL_ARB_texture_storage : enable
+#endif
 
-layout( binding = 1 ) uniform sampler2D texture1;
+# extension GL_EXT_nonuniform_qualifier : enable
+
+// Uniform buffer para armazenar os identificadores de texturas
+layout(std140, binding = 0) buffer TextureArray 
+{
+    uint textureHandles[]; // Array de handles de texturas
+};
+
+layout( set = 0, binding = 0 ) uniform sampler2D samplers[];
+
+// fragment shader storage structure 
+struct fragmentTransfom
+{
+    uint        samp0[8]; // we can acess the max of 8 textures from the sampler buffer 
+    vec4        rpCurrentRenderSize;
+    vec4        rpDiffuseColor;
+    vec4        rpSpecularColor;
+    vec4        shaderParm0;
+    vec4        shaderParm1;
+    vec4        shaderParm2;
+    vec4        shaderParm3;
+};
+
+// fragment shader storage buffer 
+layout( std430, binding = 2 ) buffer fragmentStorageBlock
+{
+    fragmentTransfom fragUnifom[];
+};
 
 // fragment color output 
 layout( location = 0 ) out vec4 fragColor;
 
 // vertex shader to fragment shader variables
-in vs_output
+layout( location = 0 ) in vs_output
 {
+  uint drawID;
   vec4 vcolor;
   vec2 vtexcoord;
 } frag;
 
 void main(void)
 {
-  fragColor = texture( texture1, frag.vtexcoord ) *  frag.vcolor * clamp( rpDiffuseColor, vec4(0,0,0,0), vec4(1,1,1,1));
+  // get the texture index from the uniform buffer
+  uint texIndex = fragUnifom[frag.drawID].samp0[0]; 
+  
+  // get the texture handle from the texture array
+  uint textureHandle = textureHandles[texIndex];
+
+  // bind the texture using the handle
+  vec4 textureColor = texture( samplers[textureHandle], frag.vtexcoord );
+  fragColor = textureColor *  frag.vcolor * clamp( fragUnifom[frag.drawID].rpDiffuseColor, vec4(0,0,0,0), vec4(1,1,1,1));
 }
