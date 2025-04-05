@@ -30,10 +30,10 @@ If you have questions concerning this license or the applicable additional terms
 
 #if OPENGL
 # extension GL_ARB_bindless_texture : enable
-# extension GL_ARB_shader_storage_buffer_object : enable
-# extension GL_ARB_texture_storage : enable
 #endif
 
+# extension GL_ARB_shader_storage_buffer_object : enable
+# extension GL_ARB_texture_storage : enable
 # extension GL_EXT_nonuniform_qualifier : enable
 
 // Uniform buffer para armazenar os identificadores de texturas
