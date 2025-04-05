@@ -394,14 +394,14 @@ Sets client to godmode
 argv(0) god
 ==================
 */
-void Cmd_God_f( const idCmdArgs &args ) {
-	char		*msg;
-	idPlayer	*player;
+void Cmd_God_f( const idCmdArgs &args ) 
+{
+	const char	*msg = nullptr;
+	idPlayer	*player = nullptr;
 
 	player = gameLocal.GetLocalPlayer();
-	if ( !player || !gameLocal.CheatsOk() ) {
+	if ( !player || !gameLocal.CheatsOk() ) 
 		return;
-	}
 
 	if ( player->godmode ) {
 		player->godmode = false;
@@ -452,20 +452,20 @@ Cmd_Noclip_f
 argv(0) noclip
 ==================
 */
-void Cmd_Noclip_f( const idCmdArgs &args ) {
-	char		*msg;
-	idPlayer	*player;
+void Cmd_Noclip_f( const idCmdArgs &args ) 
+{
+	const char	*msg = nullptr;
+	idPlayer	*player = nullptr;
 
 	player = gameLocal.GetLocalPlayer();
-	if ( !player || !gameLocal.CheatsOk() ) {
+	if ( !player || !gameLocal.CheatsOk() ) 
 		return;
-	}
 
-	if ( player->noclip ) {
-		msg = "noclip OFF\n";
-	} else {
+	if ( player->noclip ) 
+		msg = "noclip OFF\n"; 
+	else 
 		msg = "noclip ON\n";
-	}
+	
 	player->noclip = !player->noclip;
 
 	gameLocal.Printf( "%s", msg );

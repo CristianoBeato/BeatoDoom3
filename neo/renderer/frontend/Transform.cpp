@@ -2,6 +2,7 @@
 ===========================================================================
 
 Beato idTech 4 Source Code
+Copyright (C) 1999-2011 id Software LLC, a ZeniMax Media company. 
 Copyright (C) 2016-2024 Cristiano B. Santos <cristianobeato_dm@hotmail.com>.
 
 This file is part of the Beato idTech 4  GPL Source Code (?Beato idTech 4  Source Code?).

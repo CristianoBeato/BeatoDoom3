@@ -41,13 +41,14 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID STREQUAL "Clang")
 #	add_compile_definitions( ID_DEBUG_UNINITIALIZED_MEMORY )
 	
 	add_compile_options(-pipe)
-	#add_compile_options(-Wall)
 	add_compile_options(-fPIC)
-	add_compile_options(-Wunknown-pragmas)
+	#add_compile_options(-Wall)
+	#add_compile_options( -Wunknown-pragmas )
+
 
 	set(CMAKE_C_FLAGS_DEBUG "-g -ggdb -D_DEBUG -O0")
 	set(CMAKE_C_FLAGS_DEBUGALL "-g -ggdb -D_DEBUG")
-	set(CMAKE_C_FLAGS_PROFILE "-g -ggdb -D_DEBUG -O1 -fno-omit-frame-pointer")
+	set(CMAKE_C_FLAGS_PROFILE "-g -ggdb -D_DEBUG -O2 -fno-omit-frame-pointer -Wunknown-pragmas")
 	set(CMAKE_C_FLAGS_RELEASE "-O2 -fno-math-errno -fno-trapping-math -fomit-frame-pointer")
 	set(CMAKE_C_FLAGS_RELWITHDEBINFO "-g -ggdb -O2 -fno-math-errno -fno-trapping-math -fno-omit-frame-pointer")
 	set(CMAKE_C_FLAGS_MINSIZEREL "-Os -fno-math-errno -fno-trapping-math -fomit-frame-pointer")

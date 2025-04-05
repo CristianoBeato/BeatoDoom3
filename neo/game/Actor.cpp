@@ -410,13 +410,14 @@ END_CLASS
 idActor::idActor
 =====================
 */
-idActor::idActor( void ) {
+idActor::idActor( void ) 
+{
 	viewAxis.Identity();
 
-	scriptThread		= NULL;		// initialized by ConstructScriptObject, which is called by idEntity::Spawn
+	scriptThread		= nullptr;		// initialized by ConstructScriptObject, which is called by idEntity::Spawn
 
 	use_combat_bbox		= false;
-	head				= NULL;
+	head				= nullptr;
 
 	team				= 0;
 	rank				= 0;
@@ -426,8 +427,8 @@ idActor::idActor( void ) {
 	pain_delay			= 0;
 	pain_threshold		= 0;
 
-	state				= NULL;
-	idealState			= NULL;
+	state				= nullptr;
+	idealState			= nullptr;
 
 	leftEyeJoint		= INVALID_JOINT;
 	rightEyeJoint		= INVALID_JOINT;
@@ -442,7 +443,7 @@ idActor::idActor( void ) {
 
 	waitState			= "";
 	
-	blink_anim			= NULL;
+	blink_anim			= 0;
 	blink_time			= 0;
 	blink_min			= 0;
 	blink_max			= 0;
@@ -493,7 +494,8 @@ idActor::~idActor( void ) {
 idActor::Spawn
 =====================
 */
-void idActor::Spawn( void ) {
+void idActor::Spawn( void ) 
+{
 	idEntity		*ent;
 	idStr			jointName;
 	float			fovDegrees;
@@ -3062,12 +3064,12 @@ void idActor::Event_AnimDone( int channel, int blendFrames ) {
 idActor::Event_HasAnim
 ================
 */
-void idActor::Event_HasAnim( int channel, const char *animname ) {
-	if ( GetAnim( channel, animname ) != NULL ) {
+void idActor::Event_HasAnim( int channel, const char *animname ) 
+{
+	if ( GetAnim( channel, animname ) != 0 ) 
 		idThread::ReturnFloat( 1.0f );
-	} else {
+	else 
 		idThread::ReturnFloat( 0.0f );
-	}
 }
 
 /*

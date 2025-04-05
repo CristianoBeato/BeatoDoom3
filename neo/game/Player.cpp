@@ -3347,16 +3347,16 @@ void idPlayer::GivePDA( const char *pdaName, idDict *item )
 		inventory.pdaSecurity.AddUnique( item->GetString( "inv_name" ) );
 	}
 
-	if ( pdaName == NULL || *pdaName == NULL ) {
+	if ( pdaName == nullptr || *pdaName == '\0' ) 
 		pdaName = "personal";
-	}
 
 	const idDeclPDA *pda = static_cast< const idDeclPDA* >( declManager->FindType( DECL_PDA, pdaName ) );
 
 	inventory.pdas.AddUnique( pdaName );
 
 	// Copy any videos over
-	for ( int i = 0; i < pda->GetNumVideos(); i++ ) {
+	for ( int i = 0; i < pda->GetNumVideos(); i++ ) 
+	{
 		const idDeclVideo *video = pda->GetVideoByIndex( i );
 		if ( video ) {
 			inventory.videos.AddUnique( video->GetName() );
@@ -5246,8 +5246,10 @@ void idPlayer::UpdatePDAInfo( bool updatePDASel ) {
 		}
 
 		const char *security = pda->GetSecurity();
-		if ( j == currentPDA || (currentPDA == 0 && security && *security ) ) {
-			if ( *security == NULL ) {
+		if ( j == currentPDA || (currentPDA == 0 && security && *security ) ) 
+		{
+			if ( *security == '\0' ) 
+			{
 				security = common->GetLanguageDict()->GetString( "#str_00066" );
 			}
 			objectiveSystem->SetStateString( "PDASecurityClearance", security );

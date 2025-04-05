@@ -35,5 +35,5 @@ btRenderGui::~btRenderGui( void )
 
 void btRenderGui::Draw( GLenum mode, const Uint32 offset, const Uint32 Count )
 {
-	glDrawElements( mode, Count, GL_UNSIGNED_SHORT, (void*)offset );
+	glDrawElements( mode, Count, GL_UNSIGNED_SHORT, reinterpret_cast<void*>( (Uint64)offset ) );
 }
