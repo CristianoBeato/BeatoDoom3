@@ -29,10 +29,11 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
-typedef struct {
-	char	*name;
-	int		keynum;
-	char	*strId;	// localized string id
+typedef struct 
+{
+	const char*	name;
+	int			keynum;
+	const char*	strId;	// localized string id
 } keyname_t;
 
 // keys that can be set without a special name

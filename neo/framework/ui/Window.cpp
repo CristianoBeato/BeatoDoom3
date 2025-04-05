@@ -2699,7 +2699,8 @@ intptr_t idWindow::ExpressionConstant(float f)
 	intptr_t	i = 0;
 
 	for ( i = WEXP_REG_NUM_PREDEFINED ; i < expressionRegisters.Num() ; i++ ) {
-		if ( !registerIsTemporary[i] && expressionRegisters[i] == f ) {
+		if ( !registerIsTemporary[i] && expressionRegisters[i] == f ) 
+		{
 			return i;
 		}
 	}

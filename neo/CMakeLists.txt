@@ -85,6 +85,7 @@ include_directories(
 add_subdirectory( ${CMAKE_SOURCE_DIR}/idlib )		# Engine utils library
 add_subdirectory( ${CMAKE_SOURCE_DIR}/TypeInfo )	#
 add_subdirectory( ${CMAKE_SOURCE_DIR}/contrib )		# Thirdy party libs
+add_subdirectory( ${CMAKE_SOURCE_DIR}/framework )	# Tools and compilers
 
 ###########################
 ##		Game logic Lib	 ##
@@ -103,154 +104,6 @@ endif( BUILD_GAME_D3XP )
 ###########################
 ##		 Engine 		 ##
 ###########################			
-
-
-##
-## Framework
-## Engine Core Structures
-SET( FRAMEWORK_SOURCES
-	${CMAKE_SOURCE_DIR}/framework/EditField.cpp
-	${CMAKE_SOURCE_DIR}/framework/BuildDefines.h
-	${CMAKE_SOURCE_DIR}/framework/BuildVersion.h
-	${CMAKE_SOURCE_DIR}/framework/CmdSystem.cpp
-	${CMAKE_SOURCE_DIR}/framework/CmdSystem.h
-	${CMAKE_SOURCE_DIR}/framework/Common.cpp
-	${CMAKE_SOURCE_DIR}/framework/Common.h
-	${CMAKE_SOURCE_DIR}/framework/Compressor.cpp
-	${CMAKE_SOURCE_DIR}/framework/Compressor.h
-	${CMAKE_SOURCE_DIR}/framework/Console.cpp
-	${CMAKE_SOURCE_DIR}/framework/Console.h
-	${CMAKE_SOURCE_DIR}/framework/CVarSystem.cpp
-	${CMAKE_SOURCE_DIR}/framework/CVarSystem.h
-	${CMAKE_SOURCE_DIR}/framework/DeclEntityDef.cpp
-	${CMAKE_SOURCE_DIR}/framework/DeclEntityDef.h
-	${CMAKE_SOURCE_DIR}/framework/DeclAF.cpp
-	${CMAKE_SOURCE_DIR}/framework/DeclAF.h
-	${CMAKE_SOURCE_DIR}/framework/DeclFX.cpp
-	${CMAKE_SOURCE_DIR}/framework/DeclFX.h
-	${CMAKE_SOURCE_DIR}/framework/DeclManager.cpp
-	${CMAKE_SOURCE_DIR}/framework/DeclManager.h
-	${CMAKE_SOURCE_DIR}/framework/DeclParticle.cpp
-	${CMAKE_SOURCE_DIR}/framework/DeclParticle.h
-	${CMAKE_SOURCE_DIR}/framework/DeclPDA.cpp
-	${CMAKE_SOURCE_DIR}/framework/DeclPDA.h
-	${CMAKE_SOURCE_DIR}/framework/DeclSkin.cpp
-	${CMAKE_SOURCE_DIR}/framework/DeclSkin.h
-	${CMAKE_SOURCE_DIR}/framework/DeclTable.cpp
-	${CMAKE_SOURCE_DIR}/framework/DeclTable.h
-	${CMAKE_SOURCE_DIR}/framework/DemoChecksum.h
-	${CMAKE_SOURCE_DIR}/framework/DemoFile.cpp
-	${CMAKE_SOURCE_DIR}/framework/DemoFile.h
-	${CMAKE_SOURCE_DIR}/framework/EditField.h
-	${CMAKE_SOURCE_DIR}/framework/EventLoop.cpp
-	${CMAKE_SOURCE_DIR}/framework/EventLoop.h
-	${CMAKE_SOURCE_DIR}/framework/File.cpp
-	${CMAKE_SOURCE_DIR}/framework/File.h
-	${CMAKE_SOURCE_DIR}/framework/FileSystem.cpp
-	${CMAKE_SOURCE_DIR}/framework/FileSystem.h
-	${CMAKE_SOURCE_DIR}/framework/KeyInput.cpp
-	${CMAKE_SOURCE_DIR}/framework/KeyInput.h
-	${CMAKE_SOURCE_DIR}/framework/Licensee.h
-	${CMAKE_SOURCE_DIR}/framework/Session.cpp
-	${CMAKE_SOURCE_DIR}/framework/Session.h
-	${CMAKE_SOURCE_DIR}/framework/Session_menu.cpp
-	${CMAKE_SOURCE_DIR}/framework/Session_local.h
-#	${CMAKE_SOURCE_DIR}/framework/Unzip.cpp
-#	${CMAKE_SOURCE_DIR}/framework/Unzip.h
-	${CMAKE_SOURCE_DIR}/framework/UsercmdGen.cpp
-	${CMAKE_SOURCE_DIR}/framework/UsercmdGen.h
-) 
-
-source_group("" FILES ${FRAMEWORK_SOURCES} )
-
-##
-## Async
-## Server Client utils 
-SET( FRAMEWORK_ASYNC_SOURCES
-	${CMAKE_SOURCE_DIR}/framework/async/AsyncClient.cpp
-	${CMAKE_SOURCE_DIR}/framework/async/AsyncNetwork.cpp
-	${CMAKE_SOURCE_DIR}/framework/async/AsyncServer.cpp
-	${CMAKE_SOURCE_DIR}/framework/async/MsgChannel.cpp
-	${CMAKE_SOURCE_DIR}/framework/async/NetworkSystem.cpp
-	${CMAKE_SOURCE_DIR}/framework/async/ServerScan.cpp
-	
-	${CMAKE_SOURCE_DIR}/framework/async/AsyncClient.h
-	${CMAKE_SOURCE_DIR}/framework/async/AsyncNetwork.h
-	${CMAKE_SOURCE_DIR}/framework/async/AsyncServer.h
-	${CMAKE_SOURCE_DIR}/framework/async/MsgChannel.h
-	${CMAKE_SOURCE_DIR}/framework/async/NetworkSystem.h
-	${CMAKE_SOURCE_DIR}/framework/async/ServerScan.h
-	) 
-
-source_group("Async" FILES ${FRAMEWORK_ASYNC_SOURCES} )
-
-##
-## CollisionModel
-## Colision detection utils
-SET( FRAMEWORK_COLISION_SOURCES
-	${CMAKE_SOURCE_DIR}/framework/cm/CollisionModel_contacts.cpp
-	${CMAKE_SOURCE_DIR}/framework/cm/CollisionModel_contents.cpp
-	${CMAKE_SOURCE_DIR}/framework/cm/CollisionModel_debug.cpp
-	${CMAKE_SOURCE_DIR}/framework/cm/CollisionModel_files.cpp
-	${CMAKE_SOURCE_DIR}/framework/cm/CollisionModel_load.cpp
-	${CMAKE_SOURCE_DIR}/framework/cm/CollisionModel_rotate.cpp
-	${CMAKE_SOURCE_DIR}/framework/cm/CollisionModel_trace.cpp
-	${CMAKE_SOURCE_DIR}/framework/cm/CollisionModel_translate.cpp
-	
-	${CMAKE_SOURCE_DIR}/framework/cm/CollisionModel.h
-	${CMAKE_SOURCE_DIR}/framework/cm/CollisionModel_local.h
-	) 
-
-source_group("CollisionModel" FILES ${FRAMEWORK_COLISION_SOURCES} )
-
-##
-## Ui
-## Game Ui structures
-SET( FRAMEWORK_UI_SOURCES
-	${CMAKE_SOURCE_DIR}/framework/ui/BindWindow.cpp
-	${CMAKE_SOURCE_DIR}/framework/ui/BindWindow.h
-	${CMAKE_SOURCE_DIR}/framework/ui/ChoiceWindow.cpp
-	${CMAKE_SOURCE_DIR}/framework/ui/ChoiceWindow.h
-	${CMAKE_SOURCE_DIR}/framework/ui/DeviceContext.cpp
-	${CMAKE_SOURCE_DIR}/framework/ui/DeviceContext.h
-	${CMAKE_SOURCE_DIR}/framework/ui/EditWindow.cpp
-	${CMAKE_SOURCE_DIR}/framework/ui/EditWindow.h
-	${CMAKE_SOURCE_DIR}/framework/ui/FieldWindow.cpp
-	${CMAKE_SOURCE_DIR}/framework/ui/FieldWindow.h
-	${CMAKE_SOURCE_DIR}/framework/ui/GameBearShootWindow.cpp
-	${CMAKE_SOURCE_DIR}/framework/ui/GameBearShootWindow.h
-	${CMAKE_SOURCE_DIR}/framework/ui/GameBustOutWindow.cpp
-	${CMAKE_SOURCE_DIR}/framework/ui/GameBustOutWindow.h
-	${CMAKE_SOURCE_DIR}/framework/ui/GameSSDWindow.cpp
-	${CMAKE_SOURCE_DIR}/framework/ui/GameSSDWindow.h
-	${CMAKE_SOURCE_DIR}/framework/ui/GuiScript.cpp
-	${CMAKE_SOURCE_DIR}/framework/ui/GuiScript.h
-	${CMAKE_SOURCE_DIR}/framework/ui/ListGUI.cpp
-	${CMAKE_SOURCE_DIR}/framework/ui/ListGUI.h
-	${CMAKE_SOURCE_DIR}/framework/ui/ListGUILocal.h
-	${CMAKE_SOURCE_DIR}/framework/ui/ListWindow.cpp
-	${CMAKE_SOURCE_DIR}/framework/ui/ListWindow.h
-	${CMAKE_SOURCE_DIR}/framework/ui/MarkerWindow.cpp
-	${CMAKE_SOURCE_DIR}/framework/ui/MarkerWindow.h
-	${CMAKE_SOURCE_DIR}/framework/ui/RegExp.cpp
-	${CMAKE_SOURCE_DIR}/framework/ui/RegExp.h
-	${CMAKE_SOURCE_DIR}/framework/ui/RenderWindow.cpp
-	${CMAKE_SOURCE_DIR}/framework/ui/RenderWindow.h
-	${CMAKE_SOURCE_DIR}/framework/ui/Rectangle.h
-	${CMAKE_SOURCE_DIR}/framework/ui/SimpleWindow.cpp
-	${CMAKE_SOURCE_DIR}/framework/ui/SimpleWindow.h
-	${CMAKE_SOURCE_DIR}/framework/ui/SliderWindow.cpp
-	${CMAKE_SOURCE_DIR}/framework/ui/SliderWindow.h
-	${CMAKE_SOURCE_DIR}/framework/ui/UserInterface.cpp
-	${CMAKE_SOURCE_DIR}/framework/ui/UserInterface.h
-	${CMAKE_SOURCE_DIR}/framework/ui/UserInterfaceLocal.h
-	${CMAKE_SOURCE_DIR}/framework/ui/Window.cpp
-	${CMAKE_SOURCE_DIR}/framework/ui/Window.h
-	${CMAKE_SOURCE_DIR}/framework/ui/Winvar.cpp
-	${CMAKE_SOURCE_DIR}/framework/ui/Winvar.h
-	) 
-
-source_group("Ui" FILES ${FRAMEWORK_UI_SOURCES} )
 
 ##
 ## Renderer
@@ -510,10 +363,6 @@ SET( ENGINE_SOURCES
 source_group("" FILES ${ENGINE_SOURCES} )
 
 set( BEATO_DOOM_SOURCES 
-	${FRAMEWORK_SOURCES}
-	${FRAMEWORK_ASYNC_SOURCES}
-	${FRAMEWORK_COLISION_SOURCES}
-	${FRAMEWORK_UI_SOURCES}
 	${RENDERER_SOURCES}
 	${RENDERER_BAKCEND_SOURCES}
 	${RENDERER_FRONTEND_SOURCES}

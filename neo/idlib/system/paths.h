@@ -31,6 +31,8 @@ extern const char*      Sys_Cwd( void );
 // create a new directory
 extern void             Sys_Mkdir( const char *path );
 
+extern const char *     Sys_DefaultCDPath( void ); // todo: remove on future version
+
 // defalt assets path 
 extern const char*      Sys_DefaultBasePath( void );
 
