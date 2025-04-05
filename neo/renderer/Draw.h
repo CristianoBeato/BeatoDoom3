@@ -116,7 +116,6 @@ public:
     void*   			StaticAlloc( size_t bytes );		// just malloc with error checking
     void*   			ClearedStaticAlloc( size_t bytes );	// with memset
     void    			StaticFree( void *data );    
-    void    			ToggleSmpFrame( void );
     void    			ClearCommandChain( void );
     void    			AddDrawViewCmd( crAutoPointer<viewDef_t> parms );
     void*   			GetCommandBuffer( size_t bytes );

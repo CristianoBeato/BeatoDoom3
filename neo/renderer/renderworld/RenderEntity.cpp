@@ -30,8 +30,10 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "renderer/renderer_common.h"
+#include "RenderEntity.h"
 
-idRenderEntityLocal::idRenderEntityLocal() {
+idRenderEntityLocal::idRenderEntityLocal( void ) 
+{
 	memset( &parms, 0, sizeof( parms ) );
 	memset( modelMatrix, 0, sizeof( modelMatrix ) );
 
@@ -54,64 +56,31 @@ idRenderEntityLocal::idRenderEntityLocal() {
 	needsPortalSky			= false;
 }
 
-void idRenderEntityLocal::FreeRenderEntity() {
+void idRenderEntityLocal::FreeRenderEntity( void ) 
+{
 }
 
-void idRenderEntityLocal::UpdateRenderEntity( const renderEntity_t *re, bool forceUpdate ) {
+void idRenderEntityLocal::UpdateRenderEntity( const renderEntity_t *re, bool forceUpdate ) 
+{
 }
 
-void idRenderEntityLocal::GetRenderEntity( renderEntity_t *re ) {
+void idRenderEntityLocal::GetRenderEntity( renderEntity_t *re ) 
+{
 }
 
-void idRenderEntityLocal::ForceUpdate() {
+void idRenderEntityLocal::ForceUpdate( void ) 
+{
 }
 
-int idRenderEntityLocal::GetIndex() {
+int idRenderEntityLocal::GetIndex( void )  const
+{
 	return index;
 }
 
-void idRenderEntityLocal::ProjectOverlay( const idPlane localTextureAxis[2], const idMaterial *material ) {
-}
-void idRenderEntityLocal::RemoveDecals() {
-}
-
-//======================================================================
-
-idRenderLightLocal::idRenderLightLocal() {
-	memset( &parms, 0, sizeof( parms ) );
-	memset( modelMatrix, 0, sizeof( modelMatrix ) );
-	memset( shadowFrustums, 0, sizeof( shadowFrustums ) );
-	memset( lightProject, 0, sizeof( lightProject ) );
-	memset( frustum, 0, sizeof( frustum ) );
-	memset( frustumWindings, 0, sizeof( frustumWindings ) );
-
-	lightHasMoved			= false;
-	world					= NULL;
-	index					= 0;
-	areaNum					= 0;
-	lastModifiedFrameNum	= 0;
-	archived				= false;
-	lightShader				= NULL;
-	falloffImage			= NULL;
-	globalLightOrigin		= vec3_zero;
-	frustumTris				= NULL;
-	numShadowFrustums		= 0;
-	viewCount				= 0;
-	viewLight				= NULL;
-	references				= NULL;
-	foggedPortals			= NULL;
-	firstInteraction		= NULL;
-	lastInteraction			= NULL;
+void idRenderEntityLocal::ProjectOverlay( const idPlane localTextureAxis[2], const idMaterial *material ) 
+{
 }
 
-void idRenderLightLocal::FreeRenderLight() {
-}
-void idRenderLightLocal::UpdateRenderLight( const renderLight_t *re, bool forceUpdate ) {
-}
-void idRenderLightLocal::GetRenderLight( renderLight_t *re ) {
-}
-void idRenderLightLocal::ForceUpdate() {
-}
-int idRenderLightLocal::GetIndex() {
-	return index;
+void idRenderEntityLocal::RemoveDecals( void ) 
+{
 }

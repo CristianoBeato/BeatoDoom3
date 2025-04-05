@@ -251,11 +251,9 @@ typedef enum {
 } cullType_t;
 
 // these don't effect per-material storage, so they can be very large
-const int MAX_SHADER_STAGES			= 256;
-
-const int MAX_TEXGEN_REGISTERS		= 4;
-
-const int MAX_ENTITY_SHADER_PARMS	= 12;
+static const int MAX_SHADER_STAGES			= 256;
+static const int MAX_TEXGEN_REGISTERS		= 4;
+static const int MAX_ENTITY_SHADER_PARMS	= 12;
 
 // material flags
 typedef enum {
@@ -336,6 +334,8 @@ typedef enum {
 	SURF_NULLNORMAL				= BIT(12)	// renderbump will draw this surface as 0x80 0x80 0x80, which
 											// won't collect light from any angle
 } surfaceFlags_t;
+
+#include "renderworld/RenderView.h"
 
 class idSoundEmitter;
 
@@ -576,7 +576,7 @@ public:
 
 						// regs should point to a float array large enough to hold GetNumRegisters() floats
 	void				EvaluateRegisters( float *regs, const float entityParms[MAX_ENTITY_SHADER_PARMS], 
-											const crAutoPointer<struct viewDef_s> view, idSoundEmitter *soundEmitter = NULL ) const;
+											const crAutoPointer<viewDef_s> view, idSoundEmitter *soundEmitter = nullptr ) const;
 
 						// if a material only uses constants (no entityParm or globalparm references), this
 						// will return a pointer to an internal table, and EvaluateRegisters will not need

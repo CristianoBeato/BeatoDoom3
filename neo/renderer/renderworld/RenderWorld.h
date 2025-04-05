@@ -41,8 +41,6 @@ If you have questions concerning this license or the applicable additional terms
 #define	PROC_FILE_ID				"mapProcFile003"
 
 // shader parms
-const int MAX_GLOBAL_SHADER_PARMS	= 12;
-
 const int SHADERPARM_RED			= 0;
 const int SHADERPARM_GREEN			= 1;
 const int SHADERPARM_BLUE			= 2;
@@ -69,89 +67,6 @@ const int SHADERPARM_SPRITE_WIDTH		= 8;
 const int SHADERPARM_SPRITE_HEIGHT		= 9;
 
 const int SHADERPARM_PARTICLE_STOPTIME = 8;	// don't spawn any more particles after this time
-
-// guis
-const int MAX_RENDERENTITY_GUI		= 3;
-
-
-typedef bool(*deferredEntityCallback_t)( renderEntity_s *, const renderView_s * );
-
-
-typedef struct renderEntity_s {
-	idRenderModel *			hModel;				// this can only be null if callback is set
-
-	int						entityNum;
-	int						bodyId;
-
-	// Entities that are expensive to generate, like skeletal models, can be
-	// deferred until their bounds are found to be in view, in the frustum
-	// of a shadowing light that is in view, or contacted by a trace / overlay test.
-	// This is also used to do visual cueing on items in the view
-	// The renderView may be NULL if the callback is being issued for a non-view related
-	// source.
-	// The callback function should clear renderEntity->callback if it doesn't
-	// want to be called again next time the entity is referenced (ie, if the
-	// callback has now made the entity valid until the next updateEntity)
-	idBounds				bounds;					// only needs to be set for deferred models and md5s
-	deferredEntityCallback_t	callback;
-
-	void *					callbackData;			// used for whatever the callback wants
-
-	// player bodies and possibly player shadows should be suppressed in views from
-	// that player's eyes, but will show up in mirrors and other subviews
-	// security cameras could suppress their model in their subviews if we add a way
-	// of specifying a view number for a remoteRenderMap view
-	int						suppressSurfaceInViewID;
-	int						suppressShadowInViewID;
-
-	// world models for the player and weapons will not cast shadows from view weapon
-	// muzzle flashes
-	int						suppressShadowInLightID;
-
-	// if non-zero, the surface and shadow (if it casts one)
-	// will only show up in the specific view, ie: player weapons
-	int						allowSurfaceInViewID;
-
-	// positioning
-	// axis rotation vectors must be unit length for many
-	// R_LocalToGlobal functions to work, so don't scale models!
-	// axis vectors are [0] = forward, [1] = left, [2] = up
-	idVec3					origin;
-	idMat3					axis;
-
-	// texturing
-	const idMaterial *		customShader;			// if non-0, all surfaces will use this
-	const idMaterial *		referenceShader;		// used so flares can reference the proper light shader
-	const idDeclSkin *		customSkin;				// 0 for no remappings
-	class idSoundEmitter *	referenceSound;			// for shader sound tables, allowing effects to vary with sounds
-	float					shaderParms[ MAX_ENTITY_SHADER_PARMS ];	// can be used in any way by shader or model generation
-
-	// networking: see WriteGUIToSnapshot / ReadGUIFromSnapshot
-	class idUserInterface * gui[ MAX_RENDERENTITY_GUI ];
-
-	struct renderView_s	*	remoteRenderView;		// any remote camera surfaces will use this
-
-	int						numJoints;
-	idJointMat *			joints;					// array of joints that will modify vertices.
-													// NULL if non-deformable model.  NOT freed by renderer
-
-	float					modelDepthHack;			// squash depth range so particle effects don't clip into walls
-
-	// options to override surface shader flags (replace with material parameters?)
-	bool					noSelfShadow;			// cast shadows onto other objects,but not self
-	bool					noShadow;				// no shadow at all
-
-	bool					noDynamicInteractions;	// don't create any light / shadow interactions after
-													// the level load is completed.  This is a performance hack
-													// for the gigantic outdoor meshes in the monorail map, so
-													// all the lights in the moving monorail don't touch the meshes
-
-	bool					weaponDepthHack;		// squash depth range so view weapons don't poke into walls
-													// this automatically implies noShadow
-	int						forceUpdate;			// force an update (NOTE: not a bool to keep this struct a multiple of 4 bytes)
-	int						timeGroup;
-	int						xrayIndex;
-} renderEntity_t;
 
 
 typedef struct renderLight_s {
@@ -201,28 +116,6 @@ typedef struct renderLight_s {
 	float					shaderParms[MAX_ENTITY_SHADER_PARMS];		// can be used in any way by shader
 	idSoundEmitter *		referenceSound;		// for shader sound tables, allowing effects to vary with sounds
 } renderLight_t;
-
-
-typedef struct renderView_s {
-	// player views will set this to a non-zero integer for model suppress / allow
-	// subviews (mirrors, cameras, etc) will always clear it to zero
-	int						viewID;
-
-	// sized from 0 to SCREEN_WIDTH / SCREEN_HEIGHT (640/480), not actual resolution
-	int						x, y, width, height;
-
-	float					fov_x, fov_y;
-	idVec3					vieworg;
-	idMat3					viewaxis;			// transformation matrix, view looks down the positive X axis
-
-	bool					cramZNear;			// for cinematics, we want to set ZNear much lower
-	bool					forceUpdate;		// for an update 
-
-	// time in milliseconds for shader effects and other time dependent rendering issues
-	int						time;
-	float					shaderParms[MAX_GLOBAL_SHADER_PARMS];		// can be used in any way by shader
-	const idMaterial		*globalMaterial;							// used to override everything draw
-} renderView_t;
 
 
 // exitPortal_t is returned by idRenderWorld::GetPortal()
