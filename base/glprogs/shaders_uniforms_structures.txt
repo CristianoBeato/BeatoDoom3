@@ -3,6 +3,23 @@
 #extension GL_EXT_nonuniform_qualifier : enable
 #endif //VULKAN
 
+// buffer 0 is texture array 
+// buffer 1 is the vertex array 
+// buffer 2 is the fragment array
+// buffer 3 is the light array
+
+// texture 0 is the cube map
+// texture 1 is the per-surface bump map
+// texture 2 is the light falloff texture
+// texture 3 is the light projection texture
+// texture 4 is the per-surface diffuse map
+// texture 5 is the per-surface specular map
+// texture 6 is the specular lookup table
+layout( std430, binding = 0 ) buffer TextureHandles 
+{
+    sampler2D sampleArray[]; // Array de texturas
+};
+
 //vertex shader storage estructure:
 struct vetexTransform
 {
@@ -17,23 +34,11 @@ struct vetexTransform
 };
 
 // vertex shader storage buffer 
-layout( std430, binding = 0 ) buffer vertexStorageBlock
+layout( std430, binding = 1 ) buffer vertexStorageBlock
 {
   vetexTransform vertUnifom[];
 };
 
-// texture 0 is the cube map
-// texture 1 is the per-surface bump map
-// texture 2 is the light falloff texture
-// texture 3 is the light projection texture
-// texture 4 is the per-surface diffuse map
-// texture 5 is the per-surface specular map
-// texture 6 is the specular lookup table
-
-layout( std430, binding = 1 ) buffer TextureHandles 
-{
-    sampler2D samples[]; // Array de texturas
-};
 
 // fragment shader storage structure 
 struct fragmentTransfom
@@ -49,7 +54,7 @@ struct fragmentTransfom
 };
 
 // fragment shader storage buffer 
-layout( std430, binding = 2 ) buffer fragmentStorageBlock
+layout( std430, binding = 3 ) buffer fragmentStorageBlock
 {
     fragmentTransfom fragUnifom[];
 };
