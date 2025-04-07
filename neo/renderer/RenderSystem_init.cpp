@@ -1537,8 +1537,9 @@ void R_VidRestart_f( const idCmdArgs &args )
 	}
 
 	// make sure the regeneration doesn't use anything no longer valid
-	tr.viewCount++;
-	tr.viewDef = nullptr;
+	int viewCount = tr.frontEnd->GetViewCount() + 1;
+	tr.frontEnd->SetViewCount( viewCount );
+	tr.frontEnd->SetViewDef( nullptr );
 
 	// regenerate all necessary interactions
 	R_RegenerateWorld_f( idCmdArgs() );
@@ -1721,7 +1722,6 @@ void idRenderSystemLocal::Init( void )
 	common->Printf( "------- Initializing renderSystem --------\n" );
 
 	// clear all our internal state
-	viewCount = 1;		// so cleared structures never match viewCount
 	// we used to memset tr, but now that it is a class, we can't, so
 	// there may be other state we need to reset
 

@@ -37,6 +37,7 @@ crFrontend::crFrontend( void ) :
 	viewCount( 0 ),
 	viewDef()
 {
+	viewCount = 1;		// so cleared structures never match viewCount
 }
 
 crFrontend::~crFrontend( void )
@@ -252,6 +253,11 @@ void crFrontend::GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idVe
 	ndc[0] = clip[0] / clip[3];
 	ndc[1] = clip[1] / clip[3];
 	ndc[2] = ( clip[2] + clip[3] ) / ( 2 * clip[3] );
+}
+
+void crFrontend::SetViewDef( crAutoPointer<viewDef_t> &viewDef)
+{
+	viewDef = viewDef;
 }
 
 /*

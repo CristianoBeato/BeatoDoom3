@@ -130,7 +130,6 @@ source_group("" FILES ${RENDERER_SOURCES} )
 ## Backend
 ## 
 SET( RENDERER_BAKCEND_SOURCES
-
 	${CMAKE_SOURCE_DIR}/renderer/backend/Buffer.cpp
 	${CMAKE_SOURCE_DIR}/renderer/backend/Buffer.h
 	${CMAKE_SOURCE_DIR}/renderer/backend/Texture.cpp
@@ -153,6 +152,7 @@ source_group("Backend" FILES ${RENDERER_BAKCEND_SOURCES} )
 SET( RENDERER_FRONTEND_SOURCES
 	${CMAKE_SOURCE_DIR}/renderer/frontend/Frontend.cpp
 	${CMAKE_SOURCE_DIR}/renderer/frontend/Frontend.h
+	${CMAKE_SOURCE_DIR}/renderer/frontend/Frontend_deform.cpp
 	${CMAKE_SOURCE_DIR}/renderer/frontend/Frontend_light.cpp
 	${CMAKE_SOURCE_DIR}/renderer/frontend/Frontend_lightrun.cpp
 	${CMAKE_SOURCE_DIR}/renderer/frontend/Frontend_subview.cpp
@@ -161,7 +161,6 @@ SET( RENDERER_FRONTEND_SOURCES
 	
 	${CMAKE_SOURCE_DIR}/renderer/Interaction.cpp
 	${CMAKE_SOURCE_DIR}/renderer/Interaction.h
-	${CMAKE_SOURCE_DIR}/renderer/tr_deform.cpp
 	${CMAKE_SOURCE_DIR}/renderer/tr_font.cpp
 	${CMAKE_SOURCE_DIR}/renderer/tr_font.cpp
 	${CMAKE_SOURCE_DIR}/renderer/tr_guisurf.cpp

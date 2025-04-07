@@ -150,35 +150,48 @@ idMaterial::~idMaterial() {
 idMaterial::FreeData
 ===============
 */
-void idMaterial::FreeData() {
+void idMaterial::FreeData( void ) 
+{
 	int i;
 
-	if ( stages ) {
+	if ( stages ) 
+	{
 		// delete any idCinematic textures
-		for ( i = 0; i < numStages; i++ ) {
-			if ( stages[i].texture.cinematic != NULL ) {
+		for ( i = 0; i < numStages; i++ ) 
+		{
+			if ( stages[i].texture.cinematic != nullptr ) 
+			{
 				delete stages[i].texture.cinematic;
-				stages[i].texture.cinematic = NULL;
+				stages[i].texture.cinematic = nullptr;
 			}
-			if ( stages[i].newStage != NULL ) {
+			
+			if ( stages[i].newStage != nullptr ) 
+			{
 				Mem_Free( stages[i].newStage );
-				stages[i].newStage = NULL;
+				stages[i].newStage = nullptr;
 			}
 		}
-		R_StaticFree( stages );
-		stages = NULL;
+
+		tr.drawQueue->StaticFree( stages );
+		stages = nullptr;
 	}
-	if ( expressionRegisters != NULL ) {
-		R_StaticFree( expressionRegisters );
-		expressionRegisters = NULL;
+
+	if ( expressionRegisters != nullptr) 
+	{
+		tr.drawQueue->StaticFree( expressionRegisters );
+		expressionRegisters = nullptr;
 	}
-	if ( constantRegisters != NULL ) {
-		R_StaticFree( constantRegisters );
-		constantRegisters = NULL;
+
+	if ( constantRegisters != nullptr ) 
+	{
+		tr.drawQueue->StaticFree( constantRegisters );
+		constantRegisters = nullptr
 	}
-	if ( ops != NULL ) {
-		R_StaticFree( ops );
-		ops = NULL;
+
+	if ( ops != nullptr ) 
+	{
+		tr.drawQueue->StaticFree( ops );
+		ops = nullptr
 	}
 }
 
@@ -187,44 +200,52 @@ void idMaterial::FreeData() {
 idMaterial::GetEditorImage
 ==============
 */
-idImage *idMaterial::GetEditorImage( void ) const {
-	if ( editorImage ) {
+idImage *idMaterial::GetEditorImage( void ) const 
+{
+	if ( editorImage ) 
 		return editorImage;
-	}
 
 	// if we don't have an editorImageName, use the first stage image
-	if ( !editorImageName.Length()) {
+	if ( !editorImageName.Length()) 
+	{
 		// _D3XP :: First check for a diffuse image, then use the first
-		if ( numStages && stages ) {
+		if ( numStages && stages ) 
+		{
 			int i;
-			for( i = 0; i < numStages; i++ ) {
-				if ( stages[i].lighting == SL_DIFFUSE ) {
+			for( i = 0; i < numStages; i++ ) 
+			{
+				if ( stages[i].lighting == SL_DIFFUSE ) 
+				{
 					editorImage = stages[i].texture.image;
 					break;
 				}
 			}
-			if ( !editorImage ) {
+
+			if ( !editorImage ) 
 				editorImage = stages[0].texture.image;
-			}
-		} else {
+		} 
+		else 
+		{
 			editorImage = globalImages->defaultImage;
 		}
-	} else {
+	} 
+	else 
+	{
 		// look for an explicit one
 		editorImage = globalImages->ImageFromFile( editorImageName, TF_DEFAULT, true, TR_REPEAT, TD_DEFAULT );
 	}
 
-	if ( !editorImage ) {
+	if ( !editorImage ) 
 		editorImage = globalImages->defaultImage;
-	}
 
 	return editorImage;
 }
 
 
 // info parms
-typedef struct {
-	char	*name;
+typedef struct 
+{
+	const char	*name;
 	int		clearSolid, surfaceFlags, contents;
 } infoParm_t;
 
@@ -317,11 +338,14 @@ idMaterial::MatchToken
 Sets defaultShader and returns false if the next token doesn't match
 ===============
 */
-bool idMaterial::MatchToken( idLexer &src, const char *match ) {
-	if ( !src.ExpectTokenString( match ) ) {
+bool idMaterial::MatchToken( idLexer &src, const char *match ) 
+{
+	if ( !src.ExpectTokenString( match ) ) 
+	{
 		SetMaterialFlag( MF_DEFAULTED );
 		return false;
 	}
+
 	return true;
 }
 
@@ -330,38 +354,39 @@ bool idMaterial::MatchToken( idLexer &src, const char *match ) {
 idMaterial::ParseSort
 =================
 */
-void idMaterial::ParseSort( idLexer &src ) {
+void idMaterial::ParseSort( idLexer &src ) 
+{
 	idToken token;
 
-	if ( !src.ReadTokenOnLine( &token ) ) {
+	if ( !src.ReadTokenOnLine( &token ) ) 
+	{
 		src.Warning( "missing sort parameter" );
 		SetMaterialFlag( MF_DEFAULTED );
 		return;
 	}
 
-	if ( !token.Icmp( "subview" ) ) {
+	if ( !token.Icmp( "subview" ) )
 		sort = SS_SUBVIEW;
-	} else if ( !token.Icmp( "opaque" ) ) {
+	else if ( !token.Icmp( "opaque" ) ) 
 		sort = SS_OPAQUE;
-	}else if ( !token.Icmp( "decal" ) ) {
+	else if ( !token.Icmp( "decal" ) ) 
 		sort = SS_DECAL;
-	} else if ( !token.Icmp( "far" ) ) {
+	else if ( !token.Icmp( "far" ) ) 
 		sort = SS_FAR;
-	} else if ( !token.Icmp( "medium" ) ) {
+	else if ( !token.Icmp( "medium" ) ) 
 		sort = SS_MEDIUM;
-	} else if ( !token.Icmp( "close" ) ) {
+	else if ( !token.Icmp( "close" ) ) 
 		sort = SS_CLOSE;
-	} else if ( !token.Icmp( "almostNearest" ) ) {
+	else if ( !token.Icmp( "almostNearest" ) ) 
 		sort = SS_ALMOST_NEAREST;
-	} else if ( !token.Icmp( "nearest" ) ) {
+	else if ( !token.Icmp( "nearest" ) ) 
 		sort = SS_NEAREST;
-	} else if ( !token.Icmp( "postProcess" ) ) {
+	else if ( !token.Icmp( "postProcess" ) ) 
 		sort = SS_POST_PROCESS;
-	} else if ( !token.Icmp( "portalSky" ) ) {
+	else if ( !token.Icmp( "portalSky" ) ) 
 		sort = SS_PORTAL_SKY;
-	} else {
+	else
 		sort = atof( token );
-	}
 }
 
 /*
@@ -377,7 +402,9 @@ void idMaterial::ParseDecalInfo( idLexer &src ) {
 	float	start[4], end[4];
 	src.Parse1DMatrix( 4, start );
 	src.Parse1DMatrix( 4, end );
-	for ( int i = 0 ; i < 4 ; i++ ) {
+	
+	for ( int i = 0 ; i < 4 ; i++ ) 
+	{
 		decalInfo.start[i] = start[i];
 		decalInfo.end[i] = end[i];
 	}
@@ -2291,18 +2318,19 @@ bool idMaterial::Parse( const char *text, const int textLength ) {
 	}
 */
 
-	if (numStages) {
-		stages = (shaderStage_t *)R_StaticAlloc( numStages * sizeof( stages[0] ) );
+	if (numStages) 
+	{
+		stages = (shaderStage_t *)tr.drawQueue->StaticAlloc( numStages * sizeof( stages[0] ) );
 		memcpy( stages, pd->parseStages, numStages * sizeof( stages[0] ) );
 	}
 
 	if ( numOps ) {
-		ops = (expOp_t *)R_StaticAlloc( numOps * sizeof( ops[0] ) );
+		ops = (expOp_t *)tr.drawQueue->StaticAlloc( numOps * sizeof( ops[0] ) );
 		memcpy( ops, pd->shaderOps, numOps * sizeof( ops[0] ) );
 	}
 
 	if ( numRegisters ) {
-		expressionRegisters = (float *)R_StaticAlloc( numRegisters * sizeof( expressionRegisters[0] ) );
+		expressionRegisters = (float *)tr.drawQueue->StaticAlloc( numRegisters * sizeof( expressionRegisters[0] ) );
 		memcpy( expressionRegisters, pd->shaderRegisters, numRegisters * sizeof( expressionRegisters[0] ) );
 	}
 
@@ -2325,7 +2353,8 @@ bool idMaterial::Parse( const char *text, const int textLength ) {
 idMaterial::Print
 ===================
 */
-char *opNames[] = {
+const char *opNames[] = 
+{
 	"OP_TYPE_ADD",
 	"OP_TYPE_SUBTRACT",
 	"OP_TYPE_MULTIPLY",
@@ -2602,13 +2631,13 @@ This is probably an optimization of dubious value.
 ==================
 */
 static int	c_constant, c_variable;
-void idMaterial::CheckForConstantRegisters() {
-	if ( !pd->registersAreConstant ) {
+void idMaterial::CheckForConstantRegisters() 
+{
+	if ( !pd->registersAreConstant )
 		return;
-	}
 
 	// evaluate the registers once, and save them 
-	constantRegisters = (float *)R_ClearedStaticAlloc( GetNumRegisters() * sizeof( float ) );
+	constantRegisters = (float *)tr.drawQueue->ClearedStaticAlloc( GetNumRegisters() * sizeof( float ) );
 
 	float shaderParms[MAX_ENTITY_SHADER_PARMS];
 	memset( shaderParms, 0, sizeof( shaderParms ) );
@@ -2641,12 +2670,13 @@ idMaterial::SetImageClassifications
 Just for image resource tracking.
 ===================
 */
-void idMaterial::SetImageClassifications( int tag ) const {
-	for ( int i = 0 ; i < numStages ; i++ ) {
+void idMaterial::SetImageClassifications( int tag ) const 
+{
+	for ( int i = 0 ; i < numStages ; i++ ) 
+	{
 		idImage	*image = stages[i].texture.image;
-		if ( image ) {
+		if ( image )
 			image->SetClassification( tag );
-		}
 	}
 }
 
@@ -2690,7 +2720,8 @@ bool idMaterial::SetDefaultText( void ) {
 idMaterial::DefaultDefinition
 ===================
 */
-const char *idMaterial::DefaultDefinition() const {
+const char *idMaterial::DefaultDefinition() const 
+{
 	return
 		"{\n"
 	"\t"	"{\n"
@@ -2706,13 +2737,14 @@ const char *idMaterial::DefaultDefinition() const {
 idMaterial::GetBumpStage
 ===================
 */
-const shaderStage_t *idMaterial::GetBumpStage( void ) const {
-	for ( int i = 0 ; i < numStages ; i++ ) {
-		if ( stages[i].lighting == SL_BUMP ) {
+const shaderStage_t *idMaterial::GetBumpStage( void ) const 
+{
+	for ( int i = 0 ; i < numStages ; i++ ) 
+	{
+		if ( stages[i].lighting == SL_BUMP )
 			return &stages[i];
-		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 /*

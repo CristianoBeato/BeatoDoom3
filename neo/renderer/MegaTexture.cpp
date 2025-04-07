@@ -620,7 +620,7 @@ void	idMegaTexture::GenerateMegaPreview( const char *fileName ) {
 		}
 	}
 
-	byte *pic = (byte *)R_StaticAlloc( width * height * tileBytes );
+	byte *pic = (byte *)tr.drawQueue->StaticAlloc( width * height * tileBytes );
 	byte	*oldBlock = (byte *)_alloca( tileBytes );
 	for ( int y = 0 ; y < height ; y++ ) {
 		for ( int x = 0 ; x < width ; x++ ) {
@@ -637,7 +637,7 @@ void	idMegaTexture::GenerateMegaPreview( const char *fileName ) {
 
 	R_WriteTGA( outName.c_str(), pic, width * tileSize, height * tileSize, false );
 
-	R_StaticFree( pic );
+	tr.drawQueue->StaticFree( pic );
 
 	delete fileHandle;
 }

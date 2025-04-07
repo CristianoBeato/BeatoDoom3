@@ -1336,7 +1336,7 @@ void crFrontend::AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *spa
 	}
 
 	// check for deformations
-	R_DeformDrawSurf( drawSurf );
+	DeformDrawSurf( drawSurf );
 
 // BEATO Begin: Done Via Shader
 #if 0

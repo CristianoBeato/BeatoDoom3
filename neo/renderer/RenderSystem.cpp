@@ -163,7 +163,7 @@ void R_LockSurfaceScene( viewDef_t *parms )
 	// the entity matricies
 	for( vModel = tr.lockSurfacesCmd.viewDef->viewEntitys ; vModel ; vModel = vModel->next ) 
 	{
-		crFrontend::GlMultMatrix( vModel->modelMatrix, tr.lockSurfacesCmd.viewDef->worldSpace.modelViewMatrix, vModel->modelViewMatrix );
+		crTransform::GlMultMatrix( vModel->modelMatrix, tr.lockSurfacesCmd.viewDef->worldSpace.modelViewMatrix, vModel->modelViewMatrix );
 	}
 
 	// add the stored off surface commands again

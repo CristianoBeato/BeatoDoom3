@@ -529,7 +529,8 @@ void world_to_hclip( const viewDef_t *viewDef, const idVec4 &global, idVec4 &cli
 
 idScreenRect R_CalcIntersectionScissor( const idRenderLightLocal * lightDef,
 									    const idRenderEntityLocal * entityDef,
-										const viewDef_t * viewDef ) {
+										const crAutoPointer<viewDef_t> viewDef ) 
+										{
 
 	idMat4 omodel = make_idMat4( entityDef->modelMatrix );
 	idMat4 lmodel = make_idMat4( lightDef->modelMatrix );
@@ -630,7 +631,8 @@ idScreenRect R_CalcIntersectionScissor( const idRenderLightLocal * lightDef,
 	rect.Intersect( lightDef->viewLight->scissorRect );
 
 	// debug //
-	if ( r_useInteractionScissors.GetInteger() == -2 && !rect.IsEmpty() ) {
+	if ( r_useInteractionScissors.GetInteger() == -2 && !rect.IsEmpty() ) 
+	{
 		viewDef->renderWorld->DebugScreenRect( colorYellow, rect, viewDef );
 	}
 

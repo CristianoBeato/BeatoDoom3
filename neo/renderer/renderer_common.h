@@ -1104,16 +1104,6 @@ void R_OrderIndexes( int numIndexes, glIndex_t *indexes );
 /*
 =============================================================
 
-TR_DEFORM
-
-=============================================================
-*/
-
-void R_DeformDrawSurf( drawSurf_t *drawSurf );
-
-/*
-=============================================================
-
 TR_TRACE
 
 =============================================================
@@ -1138,7 +1128,7 @@ TR_SHADOWBOUNDS
 
 =============================================================
 */
-idScreenRect R_CalcIntersectionScissor( const idRenderLightLocal * lightDef, const idRenderEntityLocal * entityDef, const viewDef_t * viewDef );
+idScreenRect R_CalcIntersectionScissor( const idRenderLightLocal * lightDef, const idRenderEntityLocal * entityDef, const crAutoPointer<viewDef_t> viewDef );
 
 //=============================================
 #include "renderworld/RenderEntity.h"

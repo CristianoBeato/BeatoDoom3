@@ -48,8 +48,10 @@ public:
     void                        SetViewMatrix( crAutoPointer<viewDef_t> viewDef );
     void                        GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idVec3 &ndc );
 
+    void                        SetViewDef( crAutoPointer<viewDef_t> &viewDef );
     crAutoPointer<viewDef_t>    GetViewDef( void ) const { return viewDef; }
     void                        SetViewDef( crAutoPointer<viewDef_t> viewDef ) { this->viewDef = viewDef; }
+    void                        SetViewCount( int viewCount ) { this->viewCount = viewCount; }
     int                         GetViewCount( void ) const { return viewCount; }
 
 private:
@@ -89,6 +91,19 @@ private:
     void            MirrorRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect scissor );
     void            XrayRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect scissor );
     viewDef_t*      XrayViewBySurface( drawSurf_t *drawSurf );
+
+    // Frontend_deform.cpp
+    void            FinishDeform( drawSurf_t *drawSurf, srfTriangles_t *newTri, idDrawVert *ac );
+    void            DeformDrawSurf( drawSurf_t *drawSurf );
+    void            AutospriteDeform( drawSurf_t *surf );
+    void            TubeDeform( drawSurf_t *surf );
+    void            FlareDeform( drawSurf_t *surf );
+    void            ExpandDeform( drawSurf_t *surf );
+    void            MoveDeform( drawSurf_t *surf );
+    void            TurbulentDeform( drawSurf_t *surf );
+    void            EyeballDeform( drawSurf_t *surf );
+    void            ParticleDeform( drawSurf_t *surf, bool useArea );
+
 
     // Frontend.cpp
     void            SetupProjection( void );
