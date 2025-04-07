@@ -463,7 +463,7 @@ void crFrontend::DeriveLightData( idRenderLightLocal *light )
 
 	// a projected light will have one shadowFrustum, a point light will have
 	// six unless the light center is outside the box
-	R_MakeShadowFrustums( light );
+	MakeShadowFrustums( light );
 }
 
 /*
@@ -669,7 +669,6 @@ Does not actually free the entityDef.
 */
 void crFrontend::FreeEntityDefDerivedData( idRenderEntityLocal *def, bool keepDecals, bool keepCachedDynamicModel ) 
 {
-	int i = 0;
 	areaReference_t *ref = nullptr, *next = nullptr;
 
 	// demo playback needs to free the joints, while normal play
@@ -688,7 +687,7 @@ void crFrontend::FreeEntityDefDerivedData( idRenderEntityLocal *def, bool keepDe
 			def->parms.callbackData = nullptr;
 		}
 		
-		for ( i = 0; i < MAX_RENDERENTITY_GUI; i++ ) 
+		for ( int i = 0; i < MAX_RENDERENTITY_GUI; i++ ) 
 		{
 			if ( def->parms.gui[ i ] ) 
 			{
@@ -845,15 +844,14 @@ crFrontend::CheckForEntityDefsUsingModel
 */
 void crFrontend::CheckForEntityDefsUsingModel( idRenderModel *model ) 
 {
-	int i = 0, j = 0;
 	idRenderWorldLocal* rw = nullptr;
 	idRenderEntityLocal* def = nullptr;
 
-	for ( j = 0; j < tr.worlds.Num(); j++ ) 
+	for ( int j = 0; j < tr.worlds.Num(); j++ ) 
 	{
 		rw = tr.worlds[j];
 
-		for ( i = 0 ; i < rw->entityDefs.Num(); i++ ) {
+		for ( int i = 0 ; i < rw->entityDefs.Num(); i++ ) {
 			def = rw->entityDefs[i];
 			if ( !def ) 
 				continue;
@@ -878,7 +876,6 @@ ReloadModels and RegenerateWorld call this
 */
 void crFrontend::ReCreateWorldReferences( void ) 
 {
-	int i = 0, j = 0;
 	idRenderWorldLocal *rw = nullptr;
 	idRenderEntityLocal *def = nullptr;
 	idRenderLightLocal *light = nullptr;
@@ -887,8 +884,9 @@ void crFrontend::ReCreateWorldReferences( void )
 	// a particular view
 	viewDef = nullptr;
 
-	for ( j = 0; j < tr.worlds.Num(); j++ ) 
+	for ( int j = 0; j < tr.worlds.Num(); j++ ) 
 	{
+		int i = 0;
 		rw = tr.worlds[j];
 
 		for ( i = 0 ; i < rw->entityDefs.Num() ; i++ ) 

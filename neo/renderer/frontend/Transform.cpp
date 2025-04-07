@@ -298,7 +298,6 @@ void crTransform::GlMultMatrix( const float a[16], const float b[16], float out[
 		_mm_storeu_ps(&out[i * 4], res);
 	}
 #elif 1
-	if 0
 	int		i, j;
 
 	for ( i = 0 ; i < 4 ; i++ ) {

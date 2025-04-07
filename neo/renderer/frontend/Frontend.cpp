@@ -255,11 +255,6 @@ void crFrontend::GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idVe
 	ndc[2] = ( clip[2] + clip[3] ) / ( 2 * clip[3] );
 }
 
-void crFrontend::SetViewDef( crAutoPointer<viewDef_t> &viewDef)
-{
-	viewDef = viewDef;
-}
-
 /*
 =================
 crFrontend::SetViewMatrix

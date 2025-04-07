@@ -73,14 +73,13 @@ quads, rebuild them as forward facing sprites
 */
 void crFrontend::AutospriteDeform( drawSurf_t *surf ) 
 {
-	int		i;
-	const idDrawVert	*v;
+	int		i = 0;
 	idVec3	mid, delta;
-	float	radius;
 	idVec3	left, up;
 	idVec3	leftDir, upDir;
-	const srfTriangles_t	*tri;
-	srfTriangles_t	*newTri;
+	const idDrawVert *v = nullptr;
+	const srfTriangles_t	*tri = nullptr;
+	srfTriangles_t	*newTri = nullptr;
 
 	tri = surf->geo;
 
@@ -105,14 +104,15 @@ void crFrontend::AutospriteDeform( drawSurf_t *surf )
 
 	// this srfTriangles_t and all its indexes and caches are in frame
 	// memory, and will be automatically disposed of
-	newTri = (srfTriangles_t *)tr.drawQueue->ClearedFrameAlloc( sizeof( *newTri ) );
+	newTri = static_cast<srfTriangles_t *>( tr.drawQueue->ClearedFrameAlloc( sizeof( *newTri ) ) );
 	newTri->numVerts = tri->numVerts;
 	newTri->numIndexes = tri->numIndexes;
-	newTri->indexes = (glIndex_t *)tr.drawQueue->FrameAlloc( newTri->numIndexes * sizeof( newTri->indexes[0] ) );
+	newTri->indexes = static_cast<glIndex_t*>( tr.drawQueue->FrameAlloc( newTri->numIndexes * sizeof( newTri->indexes[0] ) ) );
 
-	idDrawVert	*ac = (idDrawVert *)_alloca16( newTri->numVerts * sizeof( idDrawVert ) );
+	idDrawVert* ac = static_cast<idDrawVert*>( _alloca16( newTri->numVerts * sizeof( idDrawVert ) ) );
 
-	for ( i = 0 ; i < tri->numVerts ; i+=4 ) {
+	for ( i = 0 ; i < tri->numVerts ; i+=4 ) 
+	{
 		// find the midpoint
 		v = &tri->verts[i];
 
@@ -121,7 +121,7 @@ void crFrontend::AutospriteDeform( drawSurf_t *surf )
 		mid[2] = 0.25 * (v->xyz[2] + (v+1)->xyz[2] + (v+2)->xyz[2] + (v+3)->xyz[2]);
 
 		delta = v->xyz - mid;
-		radius = delta.Length() * 0.707;		// / sqrt(2)
+		float radius = delta.Length() * 0.707;		// / sqrt(2)
 
 		left = leftDir * radius;
 		up = upDir * radius;
@@ -197,13 +197,13 @@ void crFrontend::TubeDeform( drawSurf_t *surf )
 
 	// this srfTriangles_t and all its indexes and caches are in frame
 	// memory, and will be automatically disposed of
-	srfTriangles_t *newTri = (srfTriangles_t *)tr.drawQueue->ClearedFrameAlloc( sizeof( *newTri ) );
+	srfTriangles_t *newTri = static_cast<srfTriangles_t *>( tr.drawQueue->ClearedFrameAlloc( sizeof( *newTri ) ) );
 	newTri->numVerts = tri->numVerts;
 	newTri->numIndexes = tri->numIndexes;
-	newTri->indexes = (glIndex_t *)tr.drawQueue->FrameAlloc( newTri->numIndexes * sizeof( newTri->indexes[0] ) );
+	newTri->indexes = static_cast<glIndex_t *>( tr.drawQueue->FrameAlloc( newTri->numIndexes * sizeof( newTri->indexes[0] ) ) );
 	memcpy( newTri->indexes, tri->indexes, newTri->numIndexes * sizeof( newTri->indexes[0] ) );
 
-	idDrawVert	*ac = (idDrawVert *)_alloca16( newTri->numVerts * sizeof( idDrawVert ) );
+	idDrawVert	*ac = static_cast<idDrawVert *>( _alloca16( newTri->numVerts * sizeof( idDrawVert ) ) );
 	memset( ac, 0, sizeof( idDrawVert ) * newTri->numVerts );
 
 	// this is a lot of work for two triangles...
@@ -549,12 +549,12 @@ void crFrontend::FlareDeform( drawSurf_t *surf )
 
 	// this srfTriangles_t and all its indexes and caches are in frame
 	// memory, and will be automatically disposed of
-	newTri = (srfTriangles_t *)tr.drawQueue->ClearedFrameAlloc( sizeof( *newTri ) );
+	newTri = static_cast<srfTriangles_t *>(tr.drawQueue->ClearedFrameAlloc( sizeof( *newTri ) ) );
 	newTri->numVerts = 16;
 	newTri->numIndexes = 18*3;
-	newTri->indexes = (glIndex_t *)tr.drawQueue->FrameAlloc( newTri->numIndexes * sizeof( newTri->indexes[0] ) );
+	newTri->indexes = static_cast<glIndex_t*>( tr.drawQueue->FrameAlloc( newTri->numIndexes * sizeof( newTri->indexes[0] ) ) );
 	
-	idDrawVert *ac = (idDrawVert *)_alloca16( newTri->numVerts * sizeof( idDrawVert ) );
+	idDrawVert *ac = static_cast<idDrawVert *>( _alloca16( newTri->numVerts * sizeof( idDrawVert ) ) );
 
 	// find the plane
 	plane.FromPoints( tri->verts[tri->indexes[0]].xyz, tri->verts[tri->indexes[1]].xyz, tri->verts[tri->indexes[2]].xyz );
@@ -688,9 +688,8 @@ void crFrontend::FlareDeform( drawSurf_t *surf )
 
 	for ( i = 4 ; i < 16 ; i++ ) 
 	{
-		idVec3	dir = ac[i].xyz - localViewer;
+		dir = ac[i].xyz - localViewer;
 		float len = dir.Normalize();
-
 		float ang = dir * plane.Normal();
 
 //		ac[i].xyz -= dir * spread * 2;
@@ -743,12 +742,12 @@ void crFrontend::ExpandDeform( drawSurf_t *surf )
 
 	// this srfTriangles_t and all its indexes and caches are in frame
 	// memory, and will be automatically disposed of
-	newTri = (srfTriangles_t *)tr.drawQueue->ClearedFrameAlloc( sizeof( *newTri ) );
+	newTri = static_cast<srfTriangles_t *>( tr.drawQueue->ClearedFrameAlloc( sizeof( *newTri ) ) );
 	newTri->numVerts = tri->numVerts;
 	newTri->numIndexes = tri->numIndexes;
 	newTri->indexes = tri->indexes;
 
-	idDrawVert *ac = (idDrawVert *)_alloca16( newTri->numVerts * sizeof( idDrawVert ) );
+	idDrawVert *ac = static_cast<idDrawVert *>( _alloca16( newTri->numVerts * sizeof( idDrawVert ) ) );
 
 	float dist = surf->shaderRegisters[ surf->material->GetDeformRegister(0) ];
 	for ( i = 0 ; i < tri->numVerts ; i++ ) {
@@ -776,12 +775,12 @@ void crFrontend::MoveDeform( drawSurf_t *surf )
 
 	// this srfTriangles_t and all its indexes and caches are in frame
 	// memory, and will be automatically disposed of
-	newTri = (srfTriangles_t *)tr.drawQueue->ClearedFrameAlloc( sizeof( *newTri ) );
+	newTri = static_cast<srfTriangles_t *>( tr.drawQueue->ClearedFrameAlloc( sizeof( *newTri ) ) );
 	newTri->numVerts = tri->numVerts;
 	newTri->numIndexes = tri->numIndexes;
 	newTri->indexes = tri->indexes;
 
-	idDrawVert *ac = (idDrawVert *)_alloca16( newTri->numVerts * sizeof( idDrawVert ) );
+	idDrawVert *ac = static_cast<idDrawVert *>( _alloca16( newTri->numVerts * sizeof( idDrawVert ) ) );
 
 	float dist = surf->shaderRegisters[ surf->material->GetDeformRegister(0) ];
 	for ( i = 0 ; i < tri->numVerts ; i++ ) 
@@ -812,14 +811,14 @@ void crFrontend::TurbulentDeform( drawSurf_t *surf )
 
 	// this srfTriangles_t and all its indexes and caches are in frame
 	// memory, and will be automatically disposed of
-	newTri = (srfTriangles_t *)tr.drawQueue->ClearedFrameAlloc( sizeof( *newTri ) );
+	newTri = static_cast<srfTriangles_t *>( tr.drawQueue->ClearedFrameAlloc( sizeof( *newTri ) ) );
 	newTri->numVerts = tri->numVerts;
 	newTri->numIndexes = tri->numIndexes;
 	newTri->indexes = tri->indexes;
 
-	idDrawVert *ac = (idDrawVert *)_alloca16( newTri->numVerts * sizeof( idDrawVert ) );
+	idDrawVert *ac = static_cast<idDrawVert *>( _alloca16( newTri->numVerts * sizeof( idDrawVert ) ) );
 
-	idDeclTable	*table = (idDeclTable *)surf->material->GetDeformDecl();
+	idDeclTable	*table = const_cast<idDeclTable*>( static_cast< const idDeclTable *>( surf->material->GetDeformDecl() ) );
 	float range = surf->shaderRegisters[ surf->material->GetDeformRegister(0) ];
 	float timeOfs = surf->shaderRegisters[ surf->material->GetDeformRegister(1) ];
 	float domain = surf->shaderRegisters[ surf->material->GetDeformRegister(2) ];
@@ -957,12 +956,12 @@ void crFrontend::EyeballDeform( drawSurf_t *surf )
 	// memory, and will be automatically disposed of
 
 	// the surface cannot have more indexes or verts than the original
-	newTri = (srfTriangles_t *)tr.drawQueue->ClearedFrameAlloc( sizeof( *newTri ) );
+	newTri = static_cast<srfTriangles_t*>( tr.drawQueue->ClearedFrameAlloc( sizeof( *newTri ) ) );
 	memset( newTri, 0, sizeof( *newTri ) );
 	newTri->numVerts = tri->numVerts;
 	newTri->numIndexes = tri->numIndexes;
-	newTri->indexes = (glIndex_t *)tr.drawQueue->FrameAlloc( tri->numIndexes * sizeof( newTri->indexes[0] ) );
-	idDrawVert *ac = (idDrawVert *)_alloca16( tri->numVerts * sizeof( idDrawVert ) );
+	newTri->indexes = static_cast<glIndex_t*>( tr.drawQueue->FrameAlloc( tri->numIndexes * sizeof( newTri->indexes[0] ) ) );
+	idDrawVert *ac = static_cast<idDrawVert*>( _alloca16( tri->numVerts * sizeof( idDrawVert ) ) );
 
 	newTri->numIndexes = 0;
 
@@ -983,8 +982,8 @@ void crFrontend::EyeballDeform( drawSurf_t *surf )
 		// and the next-to-farthest will be the focal point
 		idVec3	origin, focus;
 		int		originIsland = 0;
-		float	dist[MAX_EYEBALL_ISLANDS];
-		int		sortOrder[MAX_EYEBALL_ISLANDS];
+		float	dist[MAX_EYEBALL_ISLANDS] = { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f };
+		int		sortOrder[MAX_EYEBALL_ISLANDS] = { 0, 0, 0, 0, 0, 0 };
 
 		for ( j = 0 ; j < numIslands ; j++ ) 
 		{
@@ -1074,7 +1073,7 @@ void crFrontend::ParticleDeform( drawSurf_t *surf, bool useArea )
 {
 	const struct renderEntity_s *renderEntity = &surf->space->entityDef->parms;
 	const crAutoPointer<struct viewDef_s> viewDef = this->viewDef;
-	const idDeclParticle *particleSystem = (idDeclParticle *)surf->material->GetDeformDecl();
+	const idDeclParticle *particleSystem = static_cast<const idDeclParticle*>( surf->material->GetDeformDecl() );
 
 	if ( r_skipParticles.GetBool() )
 		return;
@@ -1094,7 +1093,7 @@ void crFrontend::ParticleDeform( drawSurf_t *surf, bool useArea )
 
 	if ( useArea ) 
 	{
-		sourceTriAreas = (float *)_alloca( sizeof( *sourceTriAreas ) * numSourceTris );
+		sourceTriAreas = static_cast<float *>( _alloca( sizeof( *sourceTriAreas ) * numSourceTris ) );
 		int	triNum = 0;
 		for ( int i = 0 ; i < srcTri->numIndexes ; i += 3, triNum++ ) 
 		{
@@ -1138,11 +1137,11 @@ void crFrontend::ParticleDeform( drawSurf_t *surf, bool useArea )
 			// allocate a srfTriangles in temp memory that can hold all the particles
 			srfTriangles_t	*tri;
 
-			tri = (srfTriangles_t *)tr.drawQueue->ClearedFrameAlloc( sizeof( *tri ) );
+			tri = static_cast<srfTriangles_t *>( tr.drawQueue->ClearedFrameAlloc( sizeof( *tri ) ) );
 			tri->numVerts = 4 * count;
 			tri->numIndexes = 6 * count;
-			tri->verts = (idDrawVert *)tr.drawQueue->FrameAlloc( tri->numVerts * sizeof( tri->verts[0] ) );
-			tri->indexes = (glIndex_t *)tr.drawQueue->FrameAlloc( tri->numIndexes * sizeof( tri->indexes[0] ) );
+			tri->verts = static_cast<idDrawVert*>( tr.drawQueue->FrameAlloc( tri->numVerts * sizeof( tri->verts[0] ) ) );
+			tri->indexes = static_cast<glIndex_t*>( tr.drawQueue->FrameAlloc( tri->numIndexes * sizeof( tri->indexes[0] ) ) );
 
 			// just always draw the particles
 			tri->bounds = stage->bounds;
@@ -1153,7 +1152,7 @@ void crFrontend::ParticleDeform( drawSurf_t *surf, bool useArea )
 
 			int stageAge = g.renderView->time + renderEntity->shaderParms[SHADERPARM_TIMEOFFSET] * 1000 - stage->timeOffset * 1000;
 			int	stageCycle = stageAge / stage->cycleMsec;
-			int	inCycleTime = stageAge - stageCycle * stage->cycleMsec;
+			//int	inCycleTime = stageAge - stageCycle * stage->cycleMsec;
 
 			// some particles will be in this cycle, some will be in the previous cycle
 			steppingRandom.SetSeed( (( stageCycle << 10 ) & idRandom::MAX_RAND) ^ (int)( renderEntity->shaderParms[SHADERPARM_DIVERSITY] * idRandom::MAX_RAND )  );

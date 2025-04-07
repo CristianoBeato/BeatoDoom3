@@ -153,23 +153,23 @@ SET( RENDERER_FRONTEND_SOURCES
 	${CMAKE_SOURCE_DIR}/renderer/frontend/Frontend.cpp
 	${CMAKE_SOURCE_DIR}/renderer/frontend/Frontend.h
 	${CMAKE_SOURCE_DIR}/renderer/frontend/Frontend_deform.cpp
+	${CMAKE_SOURCE_DIR}/renderer/frontend/Frontend_guisurf.cpp
 	${CMAKE_SOURCE_DIR}/renderer/frontend/Frontend_light.cpp
 	${CMAKE_SOURCE_DIR}/renderer/frontend/Frontend_lightrun.cpp
+	${CMAKE_SOURCE_DIR}/renderer/frontend/Frontend_stencilshadow.cpp
 	${CMAKE_SOURCE_DIR}/renderer/frontend/Frontend_subview.cpp
 	${CMAKE_SOURCE_DIR}/renderer/frontend/Transform.cpp
 	${CMAKE_SOURCE_DIR}/renderer/frontend/Transform.h
-	
+
 	${CMAKE_SOURCE_DIR}/renderer/Interaction.cpp
 	${CMAKE_SOURCE_DIR}/renderer/Interaction.h
 	${CMAKE_SOURCE_DIR}/renderer/tr_font.cpp
 	${CMAKE_SOURCE_DIR}/renderer/tr_font.cpp
-	${CMAKE_SOURCE_DIR}/renderer/tr_guisurf.cpp
 	${CMAKE_SOURCE_DIR}/renderer/tr_orderIndexes.cpp
 	${CMAKE_SOURCE_DIR}/renderer/tr_polytope.cpp
 	${CMAKE_SOURCE_DIR}/renderer/tr_render.cpp
 	${CMAKE_SOURCE_DIR}/renderer/tr_rendertools.cpp
 	${CMAKE_SOURCE_DIR}/renderer/tr_shadowbounds.cpp
-	${CMAKE_SOURCE_DIR}/renderer/tr_stencilshadow.cpp
 	${CMAKE_SOURCE_DIR}/renderer/tr_trace.cpp
 	${CMAKE_SOURCE_DIR}/renderer/tr_trisurf.cpp
 	${CMAKE_SOURCE_DIR}/renderer/tr_turboshadow.cpp

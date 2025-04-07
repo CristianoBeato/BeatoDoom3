@@ -48,14 +48,13 @@ static void R_MirrorPoint( const idVec3 in, orientation_t *surface, orientation_
 	int		i;
 	idVec3	local;
 	idVec3	transformed;
-	float	d;
 
 	local = in - surface->origin;
 
 	transformed = vec3_origin;
 	for ( i = 0 ; i < 3 ; i++ ) 
 	{
-		d = local * surface->axis[i];
+		float d = local * surface->axis[i];
 		transformed += d * camera->axis[i];
 	}
 
@@ -138,17 +137,14 @@ OPTIMIZE: we could also take exact portal passing into consideration
 bool crFrontend::PreciseCullSurface( const drawSurf_t *drawSurf, idBounds &ndcBounds ) 
 {
 	const srfTriangles_t *tri;
-	int numTriangles;
 	idPlane clip, eye;
 	int i, j;
-	unsigned int pointOr;
 	unsigned int pointAnd;
 	idVec3 localView;
 	idFixedWinding w;
 
 	tri = drawSurf->geo;
 
-	pointOr = 0;
 	pointAnd = (unsigned int)~0;
 
 	// get an exact bounds of the triangles for scissor cropping
@@ -156,7 +152,7 @@ bool crFrontend::PreciseCullSurface( const drawSurf_t *drawSurf, idBounds &ndcBo
 
 	for ( i = 0; i < tri->numVerts; i++ ) 
 	{
-		int j = 0;
+		j = 0;
 		unsigned int pointFlags = 0;
 
 		crTransform::TransformModelToClip( tri->verts[i].xyz, drawSurf->space->modelViewMatrix, viewDef->projectionMatrix, eye, clip );
@@ -171,22 +167,17 @@ bool crFrontend::PreciseCullSurface( const drawSurf_t *drawSurf, idBounds &ndcBo
 		}
 
 		pointAnd &= pointFlags;
-		pointOr |= pointFlags;
 	}
 
 	// trivially reject
 	if ( pointAnd )
 		return true;
 
-	// backface and frustum cull
-	numTriangles = tri->numIndexes / 3;
-
 	crTransform::GlobalPointToLocal( drawSurf->space->modelMatrix, viewDef->renderView.vieworg, localView );
 
 	for ( i = 0; i < tri->numIndexes; i += 3 ) 
 	{
 		idVec3	dir, normal;
-		float	dot;
 		idVec3	d1, d2;
 
 		const idVec3 &v1 = tri->verts[tri->indexes[i]].xyz;
@@ -205,10 +196,9 @@ bool crFrontend::PreciseCullSurface( const drawSurf_t *drawSurf, idBounds &ndcBo
 
 			dir = v1 - localView;
 
-			dot = normal * dir;
-			if ( dot >= 0.0f ) {
+			float dot = normal * dir;
+			if ( dot >= 0.0f )
 				return true;
-			}
 		}
 
 		// now find the exact screen bounds of the clipped triangle
@@ -251,7 +241,7 @@ viewDef_t* crFrontend::MirrorViewBySurface( drawSurf_t *drawSurf )
 	idPlane			originalPlane, plane;
 
 	// copy the viewport size from the original
-	parms = (viewDef_t *)tr.drawQueue->FrameAlloc( sizeof( *parms ) );
+	parms = static_cast<viewDef_t*>( tr.drawQueue->FrameAlloc( sizeof( *parms ) ) );
 	*parms = *viewDef;
 	parms->renderView.viewID = 0;	// clear to allow player bodies to show up, and suppress view weapons
 
@@ -306,7 +296,7 @@ viewDef_t* crFrontend::XrayViewBySurface( drawSurf_t *drawSurf )
 	idPlane			originalPlane, plane;
 
 	// copy the viewport size from the original
-	parms = (viewDef_t *)tr.drawQueue->FrameAlloc( sizeof( *parms ) );
+	parms = static_cast<viewDef_t *>( tr.drawQueue->FrameAlloc( sizeof( *parms ) ) );
 	*parms = *viewDef;
 	parms->renderView.viewID = 0;	// clear to allow player bodies to show up, and suppress view weapons
 
@@ -334,7 +324,7 @@ void crFrontend::RemoteRender( drawSurf_t *surf, textureStage_t *stage )
 		return;
 
 	// copy the viewport size from the original
-	parms = (viewDef_t *)tr.drawQueue->FrameAlloc( sizeof( *parms ) );
+	parms = static_cast<viewDef_t *>( tr.drawQueue->FrameAlloc( sizeof( *parms ) ) );
 	*parms = *viewDef;
 
 	parms->isSubview = true;

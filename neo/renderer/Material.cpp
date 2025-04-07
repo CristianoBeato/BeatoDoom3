@@ -58,7 +58,8 @@ same texture matrix calculations a half dozen times.
 */
 
 // keep all of these on the stack, when they are static it makes material parsing non-reentrant
-typedef struct mtrParsingData_s {
+typedef struct mtrParsingData_s 
+{
 	bool			registerIsTemporary[MAX_EXPRESSION_REGISTERS];
 	float			shaderRegisters[MAX_EXPRESSION_REGISTERS];
 	expOp_t			shaderOps[MAX_EXPRESSION_OPS];
@@ -85,15 +86,15 @@ void idMaterial::CommonInit() {
 	cullType = CT_FRONT_SIDED;
 	deform = DFRM_NONE;
 	numOps = 0;
-	ops = NULL;
+	ops = nullptr;
 	numRegisters = 0;
-	expressionRegisters = NULL;
-	constantRegisters = NULL;
+	expressionRegisters = nullptr;
+	constantRegisters = nullptr;
 	numStages = 0;
 	numAmbientStages = 0;
-	stages = NULL;
-	editorImage = NULL;
-	lightFalloffImage = NULL;
+	stages = nullptr;
+	editorImage = nullptr;
+	lightFalloffImage = nullptr;
 	shouldCreateBackSides = false;
 	entityGui = 0;
 	fogLight = false;
@@ -103,7 +104,7 @@ void idMaterial::CommonInit() {
 	hasSubview = false;
 	allowOverlays = true;
 	unsmoothedTangents = false;
-	gui = NULL;
+	gui = nullptr;
 	memset( deformRegisters, 0, sizeof( deformRegisters ) );
 	editorAlpha = 1.0;
 	spectrum = 0;
@@ -129,7 +130,8 @@ void idMaterial::CommonInit() {
 idMaterial::idMaterial
 =============
 */
-idMaterial::idMaterial() {
+idMaterial::idMaterial( void ) 
+{
 	CommonInit();
 
 	// we put this here instead of in CommonInit, because
@@ -185,13 +187,13 @@ void idMaterial::FreeData( void )
 	if ( constantRegisters != nullptr ) 
 	{
 		tr.drawQueue->StaticFree( constantRegisters );
-		constantRegisters = nullptr
+		constantRegisters = nullptr;
 	}
 
 	if ( ops != nullptr ) 
 	{
 		tr.drawQueue->StaticFree( ops );
-		ops = nullptr
+		ops = nullptr;
 	}
 }
 
@@ -471,37 +473,39 @@ expOp_t	*idMaterial::GetExpressionOp( void ) {
 idMaterial::EmitOp
 =================
 */
-int idMaterial::EmitOp( int a, int b, expOpType_t opType ) {
-	expOp_t	*op;
+int idMaterial::EmitOp( int a, int b, expOpType_t opType ) 
+{
+	expOp_t	*op = nullptr;
 
 	// optimize away identity operations
-	if ( opType == OP_TYPE_ADD ) {
-		if ( !pd->registerIsTemporary[a] && pd->shaderRegisters[a] == 0 ) {
+	if ( opType == OP_TYPE_ADD ) 
+	{
+		if ( !pd->registerIsTemporary[a] && pd->shaderRegisters[a] == 0 )
 			return b;
-		}
-		if ( !pd->registerIsTemporary[b] && pd->shaderRegisters[b] == 0 ) {
+		
+		if ( !pd->registerIsTemporary[b] && pd->shaderRegisters[b] == 0 ) 
 			return a;
-		}
-		if ( !pd->registerIsTemporary[a] && !pd->registerIsTemporary[b] ) {
+		
+		if ( !pd->registerIsTemporary[a] && !pd->registerIsTemporary[b] ) 
 			return GetExpressionConstant( pd->shaderRegisters[a] + pd->shaderRegisters[b] );
-		}
 	}
-	if ( opType == OP_TYPE_MULTIPLY ) {
-		if ( !pd->registerIsTemporary[a] && pd->shaderRegisters[a] == 1 ) {
+
+	if ( opType == OP_TYPE_MULTIPLY ) 
+	{
+		if ( !pd->registerIsTemporary[a] && pd->shaderRegisters[a] == 1 ) 
 			return b;
-		}
-		if ( !pd->registerIsTemporary[a] && pd->shaderRegisters[a] == 0 ) {
+		
+		if ( !pd->registerIsTemporary[a] && pd->shaderRegisters[a] == 0 ) 
 			return a;
-		}
-		if ( !pd->registerIsTemporary[b] && pd->shaderRegisters[b] == 1 ) {
+		
+		if ( !pd->registerIsTemporary[b] && pd->shaderRegisters[b] == 1 ) 
 			return a;
-		}
-		if ( !pd->registerIsTemporary[b] && pd->shaderRegisters[b] == 0 ) {
+		
+		if ( !pd->registerIsTemporary[b] && pd->shaderRegisters[b] == 0 ) 
 			return b;
-		}
-		if ( !pd->registerIsTemporary[a] && !pd->registerIsTemporary[b] ) {
+		
+		if ( !pd->registerIsTemporary[a] && !pd->registerIsTemporary[b] ) 
 			return GetExpressionConstant( pd->shaderRegisters[a] * pd->shaderRegisters[b] );
-		}
 	}
 
 	op = GetExpressionOp();
@@ -518,10 +522,9 @@ int idMaterial::EmitOp( int a, int b, expOpType_t opType ) {
 idMaterial::ParseEmitOp
 =================
 */
-int idMaterial::ParseEmitOp( idLexer &src, int a, expOpType_t opType, int priority ) {
-	int		b;
-
-	b = ParseExpressionPriority( src, priority );
+int idMaterial::ParseEmitOp( idLexer &src, int a, expOpType_t opType, int priority ) 
+{
+	int b = ParseExpressionPriority( src, priority );
 	return EmitOp( a, b, opType );
 }
 
@@ -532,14 +535,16 @@ idMaterial::ParseTerm
 Returns a register index
 =================
 */
-int idMaterial::ParseTerm( idLexer &src ) {
+int idMaterial::ParseTerm( idLexer &src ) 
+{
 	idToken token;
-	int		a, b;
+	int		b;
 
 	src.ReadToken( &token );
 
-	if ( token == "(" ) {
-		a = ParseExpression( src );
+	if ( token == "(" ) 
+	{
+		int a = ParseExpression( src );
 		MatchToken( src, ")" );
 		return a;
 	}
@@ -852,7 +857,8 @@ void idMaterial::ParseBlend( idLexer &src, shaderStage_t *stage ) {
 		stage->drawStateBits = GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA;
 		return;
 	}
-	if ( !token.Icmp( "add" ) ) {
+	if ( !token.Icmp( "add" ) ) 
+	{
 		stage->drawStateBits = GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE;
 		return;
 	}
@@ -1566,8 +1572,9 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 
 
 	// if we are using newStage, allocate a copy of it
-	if ( newStage.fragmentProgram || newStage.vertexProgram ) {
-		ss->newStage = (newShaderStage_t *)Mem_Alloc( sizeof( newStage ) );
+	if ( newStage.fragmentProgram || newStage.vertexProgram ) 
+	{
+		ss->newStage = static_cast<newShaderStage_t *>( Mem_Alloc( sizeof( newStage ) ) );
 		*(ss->newStage) = newStage;
 	}
 
@@ -2146,7 +2153,8 @@ idMaterial::Parse
 Parses the current material definition and finds all necessary images.
 =========================
 */
-bool idMaterial::Parse( const char *text, const int textLength ) {
+bool idMaterial::Parse( const char *text, const int textLength ) 
+{
 	idLexer	src;
 	idToken	token;
 	mtrParsingData_t parsingData;
@@ -2158,7 +2166,7 @@ bool idMaterial::Parse( const char *text, const int textLength ) {
 	// reset to the unparsed state
 	CommonInit();
 
-	memset( &parsingData, 0, sizeof( parsingData ) );
+	memset( &parsingData, 0x00, sizeof( parsingData ) );
 
 	pd = &parsingData;	// this is only valid during parse
 
@@ -2320,17 +2328,19 @@ bool idMaterial::Parse( const char *text, const int textLength ) {
 
 	if (numStages) 
 	{
-		stages = (shaderStage_t *)tr.drawQueue->StaticAlloc( numStages * sizeof( stages[0] ) );
+		stages = static_cast<shaderStage_t*>( tr.drawQueue->StaticAlloc( numStages * sizeof( stages[0] ) ) );
 		memcpy( stages, pd->parseStages, numStages * sizeof( stages[0] ) );
 	}
 
-	if ( numOps ) {
-		ops = (expOp_t *)tr.drawQueue->StaticAlloc( numOps * sizeof( ops[0] ) );
+	if ( numOps ) 
+	{
+		ops = static_cast<expOp_t *>( tr.drawQueue->StaticAlloc( numOps * sizeof( ops[0] ) ) );
 		memcpy( ops, pd->shaderOps, numOps * sizeof( ops[0] ) );
 	}
 
-	if ( numRegisters ) {
-		expressionRegisters = (float *)tr.drawQueue->StaticAlloc( numRegisters * sizeof( expressionRegisters[0] ) );
+	if ( numRegisters ) 
+	{
+		expressionRegisters = static_cast<float *>( tr.drawQueue->StaticAlloc( numRegisters * sizeof( expressionRegisters[0] ) ) );
 		memcpy( expressionRegisters, pd->shaderRegisters, numRegisters * sizeof( expressionRegisters[0] ) );
 	}
 
@@ -2341,7 +2351,8 @@ bool idMaterial::Parse( const char *text, const int textLength ) {
 	pd = NULL;	// the pointer will be invalid after exiting this function
 
 	// finish things up
-	if ( TestMaterialFlag( MF_DEFAULTED ) ) {
+	if ( TestMaterialFlag( MF_DEFAULTED ) ) 
+	{
 		MakeDefault();
 		return false;
 	}

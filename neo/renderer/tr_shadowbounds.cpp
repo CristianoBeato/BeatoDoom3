@@ -489,7 +489,7 @@ idVec3 v4to3(const idVec4 & v)
 	return idVec3(v.x/v.w, v.y/v.w, v.z/v.w);
 }
 
-void draw_polyhedron( const viewDef_t *viewDef, const polyhedron & p, idVec4 color )
+void draw_polyhedron( const crAutoPointer<viewDef_t> viewDef, const polyhedron & p, idVec4 color )
 {
 	for(unsigned int i = 0; i < p.e.size(); i++)
 	{
@@ -497,7 +497,7 @@ void draw_polyhedron( const viewDef_t *viewDef, const polyhedron & p, idVec4 col
 	}
 }
 
-void draw_segments( const viewDef_t *viewDef, const MySegments & s, idVec4 color )
+void draw_segments( const crAutoPointer<viewDef_t> viewDef, const MySegments & s, idVec4 color )
 {
 	for(unsigned int i = 0; i < s.size(); i+=2)
 	{
@@ -505,11 +505,13 @@ void draw_segments( const viewDef_t *viewDef, const MySegments & s, idVec4 color
 	}
 }
 
-void world_to_hclip( const viewDef_t *viewDef, const idVec4 &global, idVec4 &clip ) {
+void world_to_hclip( const crAutoPointer<viewDef_t> viewDef, const idVec4 &global, idVec4 &clip ) 
+{
 	int		i;
 	idVec4	view;
 
-	for ( i = 0 ; i < 4 ; i ++ ) {
+	for ( i = 0 ; i < 4 ; i ++ ) 
+	{
 		view[i] = 
 			global[0] * viewDef->worldSpace.modelViewMatrix[ i + 0 * 4 ] +
 			global[1] * viewDef->worldSpace.modelViewMatrix[ i + 1 * 4 ] +
@@ -518,7 +520,8 @@ void world_to_hclip( const viewDef_t *viewDef, const idVec4 &global, idVec4 &cli
 	}
 
 
-	for ( i = 0 ; i < 4 ; i ++ ) {
+	for ( i = 0 ; i < 4 ; i ++ ) 
+	{
 		clip[i] = 
 			view[0] * viewDef->projectionMatrix[ i + 0 * 4 ] +
 			view[1] * viewDef->projectionMatrix[ i + 1 * 4 ] +
@@ -541,9 +544,8 @@ idScreenRect R_CalcIntersectionScissor( const idRenderLightLocal * lightDef,
 	//lvol.transform( lmodel );
 
 	// debug //
-	if ( r_useInteractionScissors.GetInteger() == -2 ) {
+	if ( r_useInteractionScissors.GetInteger() == -2 ) 
 		draw_polyhedron( viewDef, lvol, colorRed );
-	}
 
 	// compute object polyhedron
 	polyhedron vol = PolyhedronFromBounds( entityDef->referenceBounds );
@@ -555,9 +557,8 @@ idScreenRect R_CalcIntersectionScissor( const idRenderLightLocal * lightDef,
     vol.transform( omodel );
 
 	// debug //
-	if ( r_useInteractionScissors.GetInteger() == -2 ) {
+	if ( r_useInteractionScissors.GetInteger() == -2 ) 
 		draw_polyhedron( viewDef, vol, colorBlue );
-	}
 
 	// transform light position into world space
 	idVec4 lightpos = idVec4(lightDef->globalLightOrigin.x,
@@ -581,13 +582,15 @@ idScreenRect R_CalcIntersectionScissor( const idRenderLightLocal * lightDef,
     clip_segments(sv, in_segs, out_segs);
 
 	// debug // 
-	if ( r_useInteractionScissors.GetInteger() == -2 ) {
+	if ( r_useInteractionScissors.GetInteger() == -2 ) 
+	{
 		draw_segments( viewDef, out_segs, colorGreen );
 	}
 
 	idBounds outbounds;
 	outbounds.Clear();
-	for( unsigned int i = 0; i < out_segs.size(); i++ ) {
+	for( unsigned int i = 0; i < out_segs.size(); i++ ) 
+	{
 
 		idVec4 v;
 		world_to_hclip( viewDef, out_segs[i], v );
@@ -603,18 +606,18 @@ idScreenRect R_CalcIntersectionScissor( const idRenderLightLocal * lightDef,
 	}
 
 	// limit the bounds to avoid an inside out scissor rectangle due to floating point to short conversion
-	if ( outbounds[0].x < -1.0f ) {
+	if ( outbounds[0].x < -1.0f ) 
 		outbounds[0].x = -1.0f;
-	}
-	if ( outbounds[1].x > 1.0f ) {
+	
+	if ( outbounds[1].x > 1.0f ) 
 		outbounds[1].x = 1.0f;
-	}
-	if ( outbounds[0].y < -1.0f ) {
+	
+	if ( outbounds[0].y < -1.0f ) 
 		outbounds[0].y = -1.0f;
-	}
-	if ( outbounds[1].y > 1.0f ) {
+	
+	if ( outbounds[1].y > 1.0f ) 
 		outbounds[1].y = 1.0f;
-	}
+	
 
 	float w2 = ( viewDef->viewport.x2 - viewDef->viewport.x1 + 1 ) / 2.0f;
 	float x = viewDef->viewport.x1;
@@ -632,9 +635,7 @@ idScreenRect R_CalcIntersectionScissor( const idRenderLightLocal * lightDef,
 
 	// debug //
 	if ( r_useInteractionScissors.GetInteger() == -2 && !rect.IsEmpty() ) 
-	{
 		viewDef->renderWorld->DebugScreenRect( colorYellow, rect, viewDef );
-	}
 
 	return rect;
 }

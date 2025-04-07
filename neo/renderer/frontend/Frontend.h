@@ -48,9 +48,8 @@ public:
     void                        SetViewMatrix( crAutoPointer<viewDef_t> viewDef );
     void                        GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idVec3 &ndc );
 
-    void                        SetViewDef( crAutoPointer<viewDef_t> &viewDef );
     crAutoPointer<viewDef_t>    GetViewDef( void ) const { return viewDef; }
-    void                        SetViewDef( crAutoPointer<viewDef_t> viewDef ) { this->viewDef = viewDef; }
+    void                        SetViewDef( const crAutoPointer<viewDef_t> &viewDef ) { this->viewDef = viewDef; }
     void                        SetViewCount( int viewCount ) { this->viewCount = viewCount; }
     int                         GetViewCount( void ) const { return viewCount; }
 
@@ -104,13 +103,19 @@ private:
     void            EyeballDeform( drawSurf_t *surf );
     void            ParticleDeform( drawSurf_t *surf, bool useArea );
 
-
+    // Frontend_guisurf.cpp
+    void            RenderGuiSurf( idUserInterface *gui, drawSurf_t *drawSurf );
+    
+    // Frontend_stencilshadow.cpp
+    static void     MakeShadowFrustums( idRenderLightLocal *def );
+    
     // Frontend.cpp
     void            SetupProjection( void );
     void            SetupViewFrustum( void );
     void            ConstrainViewFrustum( void );
     void            SortDrawSurfs( void ); 
-    
+
+
 public:
     static bool     CullLocalBox( const idBounds &bounds, const float modelMatrix[16], int numPlanes, const idPlane *planes );
     static bool     RadiusCullLocalBox( const idBounds &bounds, const float modelMatrix[16], int numPlanes, const idPlane *planes );
@@ -127,7 +132,9 @@ public:
     static void     FreeEntityDefDecals( idRenderEntityLocal *def );
     static void     FreeEntityDefOverlay( idRenderEntityLocal *def );
     
-
+    // Frontend_guisurf.cpp
+    static void     SurfaceToTextureAxis( const srfTriangles_t *tri, idVec3 &origin, idVec3 axis[3] );
+    
     // returns the frustum planes in world space
     static void     RenderLightFrustum( const struct renderLight_s &renderLight, idPlane lightFrustum[6] );
 

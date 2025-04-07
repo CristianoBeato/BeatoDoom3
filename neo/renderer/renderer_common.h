@@ -881,9 +881,8 @@ TR_STENCILSHADOWS
 ============================================================
 */
 
-void R_MakeShadowFrustums( idRenderLightLocal *def );
-
-typedef enum {
+typedef enum 
+{
 	SG_DYNAMIC,		// use infinite projections
 	SG_STATIC,		// clip to bounds
 	SG_OFFLINE		// perform very time consuming optimizations
@@ -1079,17 +1078,6 @@ void RB_ShowImages( void );
 
 void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds );
 
-
-/*
-=============================================================
-
-TR_GUISURF
-
-=============================================================
-*/
-
-void R_SurfaceToTextureAxis( const srfTriangles_t *tri, idVec3 &origin, idVec3 axis[3] );
-void R_RenderGuiSurf( idUserInterface *gui, drawSurf_t *drawSurf );
 
 /*
 =============================================================

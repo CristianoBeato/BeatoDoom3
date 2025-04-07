@@ -28,7 +28,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
-#include "renderer_common.h"
+#include "renderer/renderer_common.h"
 
 /*
 ==========================================================================================
@@ -40,20 +40,21 @@ GUI SHADERS
 
 /*
 ================
-R_SurfaceToTextureAxis
+crFrontend::SurfaceToTextureAxis
 
 Calculates two axis for the surface sutch that a point dotted against
 the axis will give a 0.0 to 1.0 range in S and T when inside the gui surface
 ================
 */
-void R_SurfaceToTextureAxis( const srfTriangles_t *tri, idVec3 &origin, idVec3 axis[3] ) {
-	float		area, inva;
+void crFrontend::SurfaceToTextureAxis( const srfTriangles_t *tri, idVec3 &origin, idVec3 axis[3] ) 
+{
+	float		area = 0.0f, inva = 0.0f;
 	float		d0[5], d1[5];
-	idDrawVert	*a, *b, *c;
+	idDrawVert	*a = nullptr, *b = nullptr, *c = nullptr;
 	float		bounds[2][2];
 	float		boundsOrg[2];
-	int			i, j;
-	float		v;
+	int			i = 0, j = 0;
+	float		v = 0.0f;
 	
 	// find the bounds of the texture
 	bounds[0][0] = bounds[0][1] = 999999;
@@ -120,29 +121,28 @@ void R_SurfaceToTextureAxis( const srfTriangles_t *tri, idVec3 &origin, idVec3 a
 
 /*
 =================
-R_RenderGuiSurf
+crFrontend::RenderGuiSurf
 
 Create a texture space on the given surface and
 call the GUI generator to create quads for it.
 =================
 */
-void R_RenderGuiSurf( idUserInterface *gui, drawSurf_t *drawSurf ) {
+void crFrontend::RenderGuiSurf( idUserInterface *gui, drawSurf_t *drawSurf ) 
+{
 	idVec3	origin, axis[3];
 
 	// for testing the performance hit
-	if ( r_skipGuiShaders.GetInteger() == 1 ) {
+	if ( r_skipGuiShaders.GetInteger() == 1 ) 
 		return;
-	}
 
 	// don't allow an infinite recursion loop
-	if ( tr.guiRecursionLevel == 4 ) {
+	if ( tr.guiRecursionLevel == 4 ) 
 		return;
-	}
 
 	tr.pc.c_guiSurfs++;
 
 	// create the new matrix to draw on this surface
-	R_SurfaceToTextureAxis( drawSurf->geo, origin, axis );
+	SurfaceToTextureAxis( drawSurf->geo, origin, axis );
 
 	float	guiModelMatrix[16];
 	float	modelMatrix[16];
@@ -174,7 +174,7 @@ void R_RenderGuiSurf( idUserInterface *gui, drawSurf_t *drawSurf ) {
 
 	// call the gui, which will call the 2D drawing functions
 	tr.guiModel->Clear();
-	gui->Redraw( tr.viewDef->renderView.time );
+	gui->Redraw( viewDef->renderView.time );
 	tr.guiModel->EmitToCurrentView( modelMatrix, drawSurf->space->weaponDepthHack );
 	tr.guiModel->Clear();
 

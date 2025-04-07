@@ -47,7 +47,7 @@ static ID_INLINE const size_t _alignedSize( const size_t size, const size_t alig
 	return  ((size)+((align)-1)) & ~((align)-1);
 }
 
-static ID_INLINE const void* _alloca16( const size_t size )
+static ID_INLINE void* _alloca16( const size_t size )
 {
 	return _alloca( _alignedSize( size, 16 ) );
 }

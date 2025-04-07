@@ -1035,12 +1035,13 @@ guiPoint_t	idRenderWorldLocal::GuiTrace( qhandle_t entityHandle, const idVec3 st
 		}
 
 		local = R_LocalTrace( localStart, localEnd, 0.0f, tri );
-		if ( local.fraction < 1.0 ) {
+		if ( local.fraction < 1.0 ) 
+		{
 			idVec3				origin, axis[3];
 			idVec3				cursor;
 			float				axisLen[2];
 
-			R_SurfaceToTextureAxis( tri, origin, axis );
+			crFrontend::SurfaceToTextureAxis( tri, origin, axis );
 			cursor = local.point - origin;
 
 			axisLen[0] = axis[0].Length();

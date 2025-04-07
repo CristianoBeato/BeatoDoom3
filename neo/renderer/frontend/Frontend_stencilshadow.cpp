@@ -553,8 +553,8 @@ If one point is clearly clipped by the plane and the
 other point is on the plane, it will be completely removed.
 ===================
 */
-static bool R_ClipLineToLight(	const idVec3 &a, const idVec3 &b, const idPlane frustum[4], 
-						   idVec3 &p1, idVec3 &p2 ) {
+static bool R_ClipLineToLight(	const idVec3 &a, const idVec3 &b, const idPlane frustum[6], idVec3 &p1, idVec3 &p2 ) 
+						   {
 	float	*clip;
 	int		j;
 	float	d1, d2;
@@ -564,27 +564,29 @@ static bool R_ClipLineToLight(	const idVec3 &a, const idVec3 &b, const idPlane f
 	p2 = b;
 
 	// clip it
-	for ( j = 0 ; j < 6 ; j++ ) {
+	for ( j = 0 ; j < 6 ; j++ ) 
+	{
 		d1 = frustum[j].Distance( p1 );
 		d2 = frustum[j].Distance( p2 );
 
 		// if both on or in front, not clipped to this plane
-		if ( d1 > -LIGHT_CLIP_EPSILON && d2 > -LIGHT_CLIP_EPSILON ) {
+		if ( d1 > -LIGHT_CLIP_EPSILON && d2 > -LIGHT_CLIP_EPSILON ) 
 			continue;
-		}
 
 		// if one is behind and the other isn't clearly in front, the edge is clipped off
-		if ( d1 <= -LIGHT_CLIP_EPSILON && d2 < LIGHT_CLIP_EPSILON ) {
+		if ( d1 <= -LIGHT_CLIP_EPSILON && d2 < LIGHT_CLIP_EPSILON ) 
 			return false;
-		}
-		if ( d2 <= -LIGHT_CLIP_EPSILON && d1 < LIGHT_CLIP_EPSILON ) {
+
+		if ( d2 <= -LIGHT_CLIP_EPSILON && d1 < LIGHT_CLIP_EPSILON ) 
 			return false;
-		}
 
 		// clip it, keeping the negative side
-		if ( d1 < 0 ) {
+		if ( d1 < 0 ) 
+		{
 			clip = p1.ToFloatPtr();
-		} else {
+		} 
+		else 
+		{
 			clip = p2.ToFloatPtr();
 		}
 
@@ -614,7 +616,8 @@ the frustum.
 Only done for simple projected lights, not point lights.
 ==================
 */
-static void R_AddClipSilEdges( void ) {
+static void R_AddClipSilEdges( void ) 
+{
 	int		v1, v2;
 	int		v1_back, v2_back;
 	int		i;
@@ -1041,12 +1044,12 @@ c_sils += numShadowIndexes - preSilIndexes;
 
 /*
 ===================
-R_MakeShadowFrustums
+crFrontend::MakeShadowFrustums
 
 Called at definition derivation time
 ===================
 */
-static void R_MakeShadowFrustums( idRenderLightLocal *light ) 
+void crFrontend::MakeShadowFrustums( idRenderLightLocal *light ) 
 {
 	int		i = 0, j = 0;
 

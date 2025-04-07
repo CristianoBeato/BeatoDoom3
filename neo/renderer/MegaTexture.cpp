@@ -888,14 +888,16 @@ void idMegaTexture::MakeMegaTexture_f( const idCmdArgs &args ) {
 		//
 		// write out individual blocks from the full row block buffer
 		//
-		for ( int rowBlock = 0 ; rowBlock < mtHeader.tilesWide ; rowBlock++ ) {
-			for ( int y = 0 ; y < TILE_SIZE ; y++ ) {
+		for ( int rowBlock = 0 ; rowBlock < mtHeader.tilesWide ; rowBlock++ ) 
+		{
+			for ( int y = 0 ; y < TILE_SIZE ; y++ ) 
+			{
 				out->Write( targa_rgba + ( y * targa_header.width + rowBlock * TILE_SIZE ) * 4, TILE_SIZE * 4 );
 			}
 		}
 	}
 
-	R_StaticFree( targa_rgba );
+	tr.drawQueue->StaticFree( targa_rgba );
 
 	GenerateMegaMipMaps( &mtHeader, out );
 

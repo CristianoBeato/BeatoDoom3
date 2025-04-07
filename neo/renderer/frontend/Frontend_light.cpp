@@ -1392,7 +1392,7 @@ void crFrontend::AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *spa
 		{
 			// did we ever use this to forward an entity color to a gui that didn't set color?
 //			memcpy( tr.guiShaderParms, shaderParms, sizeof( tr.guiShaderParms ) );
-			R_RenderGuiSurf( gui, drawSurf );
+			RenderGuiSurf( gui, drawSurf );
 		}
 
 		viewDef->floatTime = oldFloatTime;
