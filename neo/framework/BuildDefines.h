@@ -140,4 +140,12 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef ID_USE_INSTRINSEC
 #define ID_USE_INSTRINSEC 1
 #endif // !ID_USE_INSTRINSEC
+
+#ifdef VULKAN_BUILD
+#	define CR_USE_VULKAN 1
+#	define CR_USE_OPENGL 0
+#else
+#	define CR_USE_OPENGL 1
+#	define CR_USE_VULKAN 0
+#endif
 // BEATO End
