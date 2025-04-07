@@ -2698,20 +2698,22 @@ intptr_t idWindow::ExpressionConstant(float f)
 {
 	intptr_t	i = 0;
 
-	for ( i = WEXP_REG_NUM_PREDEFINED ; i < expressionRegisters.Num() ; i++ ) {
+	for ( i = WEXP_REG_NUM_PREDEFINED ; i < expressionRegisters.Num() ; i++ ) 
+	{
 		if ( !registerIsTemporary[i] && expressionRegisters[i] == f ) 
-		{
 			return i;
-		}
 	}
-	if ( expressionRegisters.Num() == MAX_EXPRESSION_REGISTERS ) {
+	if ( expressionRegisters.Num() == MAX_EXPRESSION_REGISTERS ) 
+	{
 		common->Warning( "expressionConstant: gui %s hit MAX_EXPRESSION_REGISTERS", gui->GetSourceFile() );
 		return 0;
 	}
 
 	int c = expressionRegisters.Num();
-	if (i > c) {
-		while (i > c) {
+	if (i > c) 
+	{
+		while (i > c) 
+		{
 			expressionRegisters.Append(-9999999);
 			i--;
 		}
@@ -2727,7 +2729,8 @@ intptr_t idWindow::ExpressionConstant(float f)
 idWindow::ExpressionTemporary
 ================
 */
-int idWindow::ExpressionTemporary() {
+int idWindow::ExpressionTemporary() 
+{
 	if ( expressionRegisters.Num() == MAX_EXPRESSION_REGISTERS ) {
 		common->Warning( "expressionTemporary: gui %s hit MAX_EXPRESSION_REGISTERS", gui->GetSourceFile());
 		return 0;

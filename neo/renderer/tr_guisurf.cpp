@@ -58,7 +58,8 @@ void R_SurfaceToTextureAxis( const srfTriangles_t *tri, idVec3 &origin, idVec3 a
 	// find the bounds of the texture
 	bounds[0][0] = bounds[0][1] = 999999;
 	bounds[1][0] = bounds[1][1] = -999999;
-	for ( i = 0 ; i < tri->numVerts ; i++ ) {
+	for ( i = 0 ; i < tri->numVerts ; i++ ) 
+	{
 		for ( j = 0 ; j < 2 ; j++ ) {
 			v = tri->verts[i].st[j];
 			if ( v < bounds[0][j] ) {
@@ -166,7 +167,7 @@ void R_RenderGuiSurf( idUserInterface *gui, drawSurf_t *drawSurf ) {
 	guiModelMatrix[11] = 0;
 	guiModelMatrix[15] = 1;
 
-	myGlMultMatrix( guiModelMatrix, drawSurf->space->modelMatrix, 
+	crTransform::GlMultMatrix( guiModelMatrix, drawSurf->space->modelMatrix, 
 			modelMatrix );
 
 	tr.guiRecursionLevel++;

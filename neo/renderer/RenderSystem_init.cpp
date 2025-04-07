@@ -1456,7 +1456,8 @@ extern	PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT;
 R_VidRestart_f
 =================
 */
-void R_VidRestart_f( const idCmdArgs &args ) {
+void R_VidRestart_f( const idCmdArgs &args ) 
+{
 	int	err;
 
 	// if OpenGL isn't started, do nothing

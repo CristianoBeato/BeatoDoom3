@@ -125,7 +125,7 @@ typedef struct viewDef_s
 	// these are real physical pixel values, possibly scaled and offset from the
 	// renderView x/y/width/height
 
-	struct viewDef_s *	superView;				// never go into an infinite subview loop 
+	crAutoPointer<viewDef_s> superView;				// never go into an infinite subview loop 
 	struct drawSurf_s *	subviewSurface;
 
 	// drawSurfs are the visible surfaces of the viewEntities, sorted

@@ -130,6 +130,11 @@ source_group("" FILES ${RENDERER_SOURCES} )
 ## Backend
 ## 
 SET( RENDERER_BAKCEND_SOURCES
+
+	${CMAKE_SOURCE_DIR}/renderer/backend/Buffer.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/Buffer.h
+	${CMAKE_SOURCE_DIR}/renderer/backend/Texture.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/Texture.h
 	${CMAKE_SOURCE_DIR}/renderer/backend/qgl.cpp
 	${CMAKE_SOURCE_DIR}/renderer/backend/qgl.h
 	${CMAKE_SOURCE_DIR}/renderer/backend/qvk.cpp

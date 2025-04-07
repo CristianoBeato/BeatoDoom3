@@ -156,6 +156,18 @@ extern PFNGLBUFFERSUBDATAPROC	 			glBufferSubData;
 extern PFNGLGETBUFFERSUBDATAPROC	 		glGetBufferSubData;
 extern PFNGLCOPYBUFFERSUBDATAPROC			glCopyBufferSubData;
 
+// ARB_vertex_array_object
+extern PFNGLBINDVERTEXARRAYPROC				glBindVertexArray;
+extern PFNGLCREATEVERTEXARRAYSPROC			glCreateVertexArrays;
+extern PFNGLDELETEVERTEXARRAYSPROC			glDeleteVertexArrays;
+extern PFNGLISVERTEXARRAYPROC				glIsVertexArray;
+extern PFNGLENABLEVERTEXARRAYATTRIBPROC		glEnableVertexArrayAttrib;
+extern PFNGLDISABLEVERTEXARRAYATTRIBPROC	glDisableVertexArrayAttrib;
+extern PFNGLVERTEXARRAYATTRIBBINDINGPROC	glVertexArrayAttribBinding;
+extern PFNGLVERTEXARRAYATTRIBFORMATPROC		glVertexArrayAttribFormat;
+extern PFNGLVERTEXARRAYVERTEXBUFFERPROC		glVertexArrayVertexBuffer;
+extern PFNGLVERTEXARRAYELEMENTBUFFERPROC	glVertexArrayElementBuffer;
+
 // BEATO Begin
 extern PFNGLCREATEBUFFERSPROC				glCreateBuffers;
 extern PFNGLNAMEDBUFFERSTORAGEPROC			glNamedBufferStorage;
@@ -192,10 +204,101 @@ extern PFNGLCOPYTEXIMAGE2DPROC				glCopyTexImage2D;
 extern PFNGLCOPYTEXSUBIMAGE2DPROC			glCopyTexSubImage2D;
 extern PFNGLCOPYTEXSUBIMAGE3DPROC			glCopyTexSubImage3D;
 
+// GLSL and Progrma Pipelines
+extern PFNGLCREATESHADERPROC				glCreateShader;
+extern PFNGLDELETESHADERPROC				glDeleteShader;
+extern PFNGLSHADERSOURCEPROC				glShaderSource;
+extern PFNGLSHADERBINARYPROC				glShaderBinary;
+extern PFNGLSPECIALIZESHADERPROC			glSpecializeShader;
+extern PFNGLCOMPILESHADERPROC				glCompileShader;
+extern PFNGLGETSHADERIVPROC					glGetShaderiv;
+extern PFNGLGETSHADERINFOLOGPROC			glGetShaderInfoLog;
+extern PFNGLCREATEPROGRAMPROC				glCreateProgram;
+extern PFNGLDELETEPROGRAMPROC				glDeleteProgram;
+extern PFNGLPROGRAMPARAMETERIPROC			glProgramParameteri;
+extern PFNGLATTACHSHADERPROC				glAttachShader;
+extern PFNGLDETACHSHADERPROC				glDetachShader;
+extern PFNGLLINKPROGRAMPROC					glLinkProgram;
+extern PFNGLUSEPROGRAMPROC					glUseProgram;
+extern PFNGLGETPROGRAMIVPROC				glGetProgramiv;
+extern PFNGLGETPROGRAMINFOLOGPROC			glGetProgramInfoLog;
+extern PFNGLGETACTIVEATTRIBPROC				glGetActiveAttrib;
+extern PFNGLGETACTIVEUNIFORMPROC			glGetActiveUniform;
+extern PFNGLGETATTRIBLOCATIONPROC			glGetAttribLocation;
+extern PFNGLGETUNIFORMLOCATIONPROC			glGetUniformLocation;
+
+// GL_ARB_separate_shader_objects
+extern PFNGLGENPROGRAMPIPELINESPROC			glGenProgramPipelines;
+extern PFNGLUSEPROGRAMSTAGESPROC			glUseProgramStages;
+extern PFNGLACTIVESHADERPROGRAMPROC			glActiveShaderProgram;
+extern PFNGLBINDPROGRAMPIPELINEPROC			glBindProgramPipeline;
+extern PFNGLDELETEPROGRAMPIPELINESPROC		glDeleteProgramPipelines;
+extern PFNGLISPROGRAMPIPELINEPROC			glIsProgramPipeline;
+extern PFNGLPROGRAMUNIFORM1FPROC			glProgramUniform1f;
+extern PFNGLPROGRAMUNIFORM1FVPROC			glProgramUniform1fv;
+extern PFNGLPROGRAMUNIFORM1IPROC			glProgramUniform1i;
+extern PFNGLPROGRAMUNIFORM1IVPROC			glProgramUniform1iv;
+extern PFNGLPROGRAMUNIFORM2FPROC			glProgramUniform2f;
+extern PFNGLPROGRAMUNIFORM2FVPROC			glProgramUniform2fv;
+extern PFNGLPROGRAMUNIFORM2IPROC			glProgramUniform2i;
+extern PFNGLPROGRAMUNIFORM2IVPROC			glProgramUniform2iv;	
+
 // ARB_texture_compression
 extern PFNGLCOMPRESSEDTEXIMAGE2DPROC		glCompressedTexImage2D;
 extern PFNGLCOMPRESSEDTEXIMAGE3DPROC		glCompressedTexImage3D;
 extern PFNGLGETCOMPRESSEDTEXIMAGEPROC		glGetCompressedTexImage;
+
+// texture object GL_ARB_direct_state_access && GL_ARB_texture_storage
+extern PFNGLCREATETEXTURESPROC				glCreateTextures;
+extern PFNGLTEXTURESTORAGE1DPROC			glTextureStorage1D;
+extern PFNGLTEXTURESTORAGE2DPROC			glTextureStorage2D;
+extern PFNGLTEXTURESTORAGE3DPROC			glTextureStorage3D;
+extern PFNGLTEXTURESUBIMAGE1DPROC			glTextureSubImage1D;
+extern PFNGLTEXTURESUBIMAGE2DPROC			glTextureSubImage2D;
+extern PFNGLTEXTURESUBIMAGE3DPROC			glTextureSubImage3D;
+extern PFNGLTEXTUREPARAMETERIPROC			glTextureParameteri;
+extern PFNGLTEXTUREPARAMETERFPROC			glTextureParameterf;
+
+// GL_ARB_texture_storage_multisample
+extern PFNGLTEXTURESTORAGE2DMULTISAMPLEPROC	glTextureStorage2DMultisample;
+extern PFNGLTEXTURESTORAGE3DMULTISAMPLEPROC	glTextureStorage3DMultisample;
+
+// GL_ARB_sampler_objects
+extern PFNGLDELETESAMPLERSPROC					glDeleteSamplers;
+extern PFNGLCREATESAMPLERSPROC					glCreateSamplers;
+extern PFNGLSAMPLERPARAMETERIPROC				glSamplerParameteri;
+extern PFNGLSAMPLERPARAMETERIVPROC				glSamplerParameteriv;
+extern PFNGLSAMPLERPARAMETERFPROC				glSamplerParameterf;
+extern PFNGLSAMPLERPARAMETERFVPROC				glSamplerParameterfv;
+extern PFNGLGETSAMPLERPARAMETERIVPROC			glGetSamplerParameteriv;
+
+// GL_ARB_framebuffer_object
+extern PFNGLBINDFRAMEBUFFERPROC					glBindFramebuffer;
+extern PFNGLDELETEFRAMEBUFFERSPROC				glDeleteFramebuffers;
+extern PFNGLCREATEFRAMEBUFFERSPROC				glCreateFramebuffers;
+extern PFNGLNAMEDFRAMEBUFFERTEXTUREPROC			glNamedFramebufferTexture;
+extern PFNGLNAMEDFRAMEBUFFERRENDERBUFFERPROC	glNamedFramebufferRenderbuffer;
+extern PFNGLNAMEDFRAMEBUFFERDRAWBUFFERPROC		glNamedFramebufferDrawBuffer;
+extern PFNGLNAMEDFRAMEBUFFERDRAWBUFFERSPROC		glNamedFramebufferDrawBuffers;
+extern PFNGLNAMEDFRAMEBUFFERREADBUFFERPROC		glNamedFramebufferReadBuffer;
+extern PFNGLFRAMEBUFFERRENDERBUFFERPROC			glFramebufferRenderbuffer;
+extern PFNGLFRAMEBUFFERTEXTURE1DPROC			glFramebufferTexture1D;
+extern PFNGLFRAMEBUFFERTEXTURE2DPROC			glFramebufferTexture2D;
+extern PFNGLFRAMEBUFFERTEXTURE3DPROC			glFramebufferTexture3D;
+extern PFNGLFRAMEBUFFERTEXTURELAYERPROC			glFramebufferTextureLayer;
+extern PFNGLFRAMEBUFFERTEXTUREPROC				glFramebufferTexture;
+extern PFNGLCHECKNAMEDFRAMEBUFFERSTATUSPROC		glCheckNamedFramebufferStatus;
+
+
+// ARB_viewport_array
+extern PFNGLVIEWPORTARRAYVPROC				glViewportArrayv;
+extern PFNGLVIEWPORTINDEXEDFPROC			glViewportIndexedf;
+extern PFNGLVIEWPORTINDEXEDFVPROC			glViewportIndexedfv;
+extern PFNGLSCISSORARRAYVPROC				glScissorArrayv;
+extern PFNGLSCISSORINDEXEDPROC				glScissorIndexed;
+extern PFNGLSCISSORINDEXEDVPROC				glScissorIndexedv;
+extern PFNGLDEPTHRANGEARRAYVPROC			glDepthRangeArrayv;
+extern PFNGLDEPTHRANGEINDEXEDPROC			glDepthRangeIndexed;
 
 //===========================================================================
 // DEPRECATE TO REMOVE and WORK ARROUND

@@ -29,6 +29,12 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __TR_LOCAL_H__
 #define __TR_LOCAL_H__
 
+// BEATO Begin: pipeline implementation
+#include "backend/Buffer.h"
+#include "backend/Texture.h"
+#include "backend/RenderPipe.h"
+// BEATO End
+
 #include "images/Image.h"
 #include "MegaTexture.h"
 
