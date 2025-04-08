@@ -1298,7 +1298,7 @@ static void RB_T_BlendLight( const drawSurf_t *surf )
 
 		for ( i = 0 ; i < 4 ; i++ ) 
 		{
-			GlobalPlaneToLocal( surf->space->modelMatrix, backEnd.vLight->lightProject[i], lightProject[i] );
+			crTransform::GlobalPlaneToLocal( surf->space->modelMatrix, backEnd.vLight->lightProject[i], lightProject[i] );
 		}
 
 		GL_SelectTexture( 0 );
@@ -1311,10 +1311,13 @@ static void RB_T_BlendLight( const drawSurf_t *surf )
 	}
 
 	// this gets used for both blend lights and shadow draws
-	if ( tri->ambientCache ) {
+	if ( tri->ambientCache ) 
+	{
 		idDrawVert	*ac = (idDrawVert *)vertexCache.Position( tri->ambientCache );
 		glVertexPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
-	} else if ( tri->shadowCache ) {
+	} 
+	else if ( tri->shadowCache ) 
+	{
 		shadowCache_t	*sc = (shadowCache_t *)vertexCache.Position( tri->shadowCache );
 		glVertexPointer( 3, GL_FLOAT, sizeof( shadowCache_t ), sc->xyz.ToFloatPtr() );
 	}
@@ -1653,7 +1656,8 @@ void RB_STD_LightScale( void ) {
 	RB_LogComment( "---------- RB_STD_LightScale ----------\n" );
 
 	// the scissor may be smaller than the viewport for subviews
-	if ( r_useScissor.GetBool() ) {
+	if ( r_useScissor.GetBool() ) 
+	{
 		glScissor( backEnd.viewDef->viewport.x1 + backEnd.viewDef->scissor.x1, 
 			backEnd.viewDef->viewport.y1 + backEnd.viewDef->scissor.y1, 
 			backEnd.viewDef->scissor.x2 - backEnd.viewDef->scissor.x1 + 1,

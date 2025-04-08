@@ -132,16 +132,19 @@ source_group("" FILES ${RENDERER_SOURCES} )
 SET( RENDERER_BAKCEND_SOURCES
 	${CMAKE_SOURCE_DIR}/renderer/backend/Buffer.cpp
 	${CMAKE_SOURCE_DIR}/renderer/backend/Buffer.h
-	${CMAKE_SOURCE_DIR}/renderer/backend/Texture.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/Texture.h
+	${CMAKE_SOURCE_DIR}/renderer/backend/Backend.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/Backend_render.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/draw_arb.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/draw_arb2.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/draw_common.cpp
 	${CMAKE_SOURCE_DIR}/renderer/backend/qgl.cpp
 	${CMAKE_SOURCE_DIR}/renderer/backend/qgl.h
 	${CMAKE_SOURCE_DIR}/renderer/backend/qvk.cpp
 	${CMAKE_SOURCE_DIR}/renderer/backend/qvk.h
-	${CMAKE_SOURCE_DIR}/renderer/backend/draw_arb.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/draw_arb2.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/draw_common.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/tr_backend.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/Texture.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/Texture.h
+	${CMAKE_SOURCE_DIR}/renderer/backend/Uniform.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/Uniform.h
 	)
 
 source_group("Backend" FILES ${RENDERER_BAKCEND_SOURCES} )
@@ -167,7 +170,6 @@ SET( RENDERER_FRONTEND_SOURCES
 	${CMAKE_SOURCE_DIR}/renderer/tr_font.cpp
 	${CMAKE_SOURCE_DIR}/renderer/tr_orderIndexes.cpp
 	${CMAKE_SOURCE_DIR}/renderer/tr_polytope.cpp
-	${CMAKE_SOURCE_DIR}/renderer/tr_render.cpp
 	${CMAKE_SOURCE_DIR}/renderer/tr_rendertools.cpp
 	${CMAKE_SOURCE_DIR}/renderer/tr_shadowbounds.cpp
 	${CMAKE_SOURCE_DIR}/renderer/tr_trace.cpp

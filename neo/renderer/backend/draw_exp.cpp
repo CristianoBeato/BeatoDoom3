@@ -811,9 +811,9 @@ void RB_EXP_RenderOccluders( viewLight_t *vLight ) {
 
 			// render it
 			const srfTriangles_t *tri = surfInt->ambientTris;
-			if ( !tri->ambientCache ) {
-				R_CreateAmbientCache( const_cast<srfTriangles_t *>(tri), false ); 
-			}
+			if ( !tri->ambientCache ) 
+				frontEnd->CreateAmbientCache( const_cast<srfTriangles_t *>(tri), false ); 
+			
 			idDrawVert *ac = (idDrawVert *)vertexCache.Position( tri->ambientCache );
 			qglVertexPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
 	qglTexCoordPointer( 2, GL_FLOAT, sizeof( idDrawVert ), ac->st.ToFloatPtr() );
@@ -2467,9 +2467,8 @@ void    RB_Exp_DrawInteractions( void ) {
 			continue;
 		}
 
-		if ( !vLight->frustumTris->ambientCache ) {
-			R_CreateAmbientCache( const_cast<srfTriangles_t *>(vLight->frustumTris), false ); 
-		}
+		if ( !vLight->frustumTris->ambientCache )
+			frontEnd->CreateAmbientCache( const_cast<srfTriangles_t *>(vLight->frustumTris), false ); 
 
 		// all light side projections must currently match, so non-centered
 		// and non-cubic lights must take the largest length
