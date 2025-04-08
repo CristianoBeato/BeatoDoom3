@@ -87,7 +87,7 @@ bool crFrontend::CreateLightingCache( const idRenderEntityLocal *ent, const idRe
 	crTransform::GlobalPointToLocal( ent->modelMatrix, light->globalLightOrigin, localLightOrigin );
 
 	int	size = tri->ambientSurface->numVerts * sizeof( lightingCache_t );
-	lightingCache_t *cache = (lightingCache_t *)_alloca16( size );
+	lightingCache_t *cache = static_cast<lightingCache_t *>( _alloca16( size ) );
 
 #if 1
 
@@ -146,23 +146,21 @@ void crFrontend::CreatePrivateShadowCache( srfTriangles_t *tri )
 
 /*
 ==================
-R_CreateVertexProgramShadowCache
+crFrontend::CreateVertexProgramShadowCache
 
 This is constant for any number of lights, the vertex program
 takes care of projecting the verts to infinity.
 ==================
 */
-void R_CreateVertexProgramShadowCache( srfTriangles_t *tri ) 
+void crFrontend::CreateVertexProgramShadowCache( srfTriangles_t *tri ) 
 {
 	if ( tri->verts == nullptr ) 
 		return;
 
-	shadowCache_t *temp = (shadowCache_t *)_alloca16( tri->numVerts * 2 * sizeof( shadowCache_t ) );
+	shadowCache_t *temp = static_cast<shadowCache_t *>( _alloca16( tri->numVerts * 2 * sizeof( shadowCache_t ) ) );
 
 #if 1
-
 	SIMDProcessor->CreateVertexProgramShadowCache( &temp->xyz, tri->verts, tri->numVerts );
-
 #else
 
 	int numVerts = tri->numVerts;
@@ -380,7 +378,7 @@ This does not instantiate dynamic models for the entity yet.
 */
 viewEntity_t *crFrontend::SetEntityDefViewEntity( idRenderEntityLocal *def ) 
 {
-	viewEntity_t		*vModel;
+	viewEntity_t* vModel = nullptr;
 
 	if ( def->viewCount == viewCount ) 
 		return def->viewEntity;
@@ -388,7 +386,7 @@ viewEntity_t *crFrontend::SetEntityDefViewEntity( idRenderEntityLocal *def )
 	def->viewCount = viewCount;
 
 	// set the model and modelview matricies
-	vModel = (viewEntity_t *)tr.drawQueue->ClearedFrameAlloc( sizeof( *vModel ) );
+	vModel = static_cast<viewEntity_t*>( tr.drawQueue->ClearedFrameAlloc( sizeof( *vModel ) ) );
 	vModel->entityDef = def;
 
 	// the scissorRect will be expanded as the model bounds is accepted into visible portal chains
@@ -449,10 +447,8 @@ static bool R_PointInFrustum( idVec3 &p, idPlane *planes, int numPlanes )
 	for ( int i = 0 ; i < numPlanes ; i++ ) 
 	{
 		float d = planes[i].Distance( p );
-		if ( d > 0 ) 
-		{
+		if ( d > 0 )
 			return false;
-		}
 	}
 	return true;
 }
@@ -475,7 +471,7 @@ viewLight_t* crFrontend::SetLightDefViewLight( idRenderLightLocal *light )
 	light->viewCount = viewCount;
 
 	// add to the view light chain
-	vLight = (viewLight_t *)tr.drawQueue->ClearedFrameAlloc( sizeof( *vLight ) );
+	vLight = static_cast<viewLight_t *>( tr.drawQueue->ClearedFrameAlloc( sizeof( *vLight ) ) );
 	vLight->lightDef = light;
 
 	// the scissorRect will be expanded as the light bounds is accepted into visible portal chains
@@ -646,7 +642,7 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef )
 			//
 			// create a new interaction, but don't do any work other than bbox to frustum culling
 			//
-			idInteraction *inter = idInteraction::AllocAndLink( edef, ldef );
+			inter = idInteraction::AllocAndLink( edef, ldef );
 
 			// do a check of the entity reference bounds against the light frustum,
 			// trying to avoid creating a viewEntity if it hasn't been already
@@ -654,9 +650,7 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef )
 			float	*m;
 
 			if ( edef->viewCount == viewCount ) 
-			{
 				m = edef->viewEntity->modelMatrix;
-			} 
 			else 
 			{
 				crTransform::AxisToModelMatrix( edef->parms.axis, edef->parms.origin, modelMatrix );
@@ -692,8 +686,7 @@ void crFrontend::LinkLightSurf( const drawSurf_t **link, const srfTriangles_t *t
 	if ( !space ) 
 		space = &viewDef->worldSpace;
 	
-
-	drawSurf = (drawSurf_t *)tr.drawQueue->FrameAlloc( sizeof( *drawSurf ) );
+	drawSurf = static_cast<drawSurf_t *>( tr.drawQueue->FrameAlloc( sizeof( *drawSurf ) ) );
 
 	drawSurf->geo = tri;
 	drawSurf->space = space;
@@ -704,25 +697,18 @@ void crFrontend::LinkLightSurf( const drawSurf_t **link, const srfTriangles_t *t
 	if ( viewInsideShadow ) 
 		drawSurf->dsFlags |= DSF_VIEW_INSIDE_SHADOW;
 	
-
 	if ( !shader ) 
-	{
-		// shadows won't have a shader
-		drawSurf->shaderRegisters = nullptr;
-	} 
+		drawSurf->shaderRegisters = nullptr; // shadows won't have a shader
 	else 
 	{
 		// process the shader expressions for conditionals / color / texcoords
 		const float *constRegs = shader->ConstantRegisters();
 		if ( constRegs ) 
-		{
-			// this shader has only constants for parameters
-			drawSurf->shaderRegisters = constRegs;
-		} 
+			drawSurf->shaderRegisters = constRegs; // this shader has only constants for parameters
 		else 
 		{
 			// FIXME: share with the ambient surface?
-			float *regs = (float *)tr.drawQueue->FrameAlloc( shader->GetNumRegisters() * sizeof( float ) );
+			float *regs = static_cast<float *>( tr.drawQueue->FrameAlloc( shader->GetNumRegisters() * sizeof( float ) ) );
 			drawSurf->shaderRegisters = regs;
 			shader->EvaluateRegisters( regs, space->entityDef->parms.shaderParms, viewDef, space->entityDef->parms.referenceSound );
 		}
@@ -842,16 +828,16 @@ idScreenRect crFrontend::CalcLightScissorRectangle( viewLight_t *vLight )
 	idPlane			eye, clip;
 	idVec3			ndc;
 
-	if ( vLight->lightDef->parms.pointLight ) {
+	if ( vLight->lightDef->parms.pointLight ) 
+	{
 		idBounds bounds;
 		idRenderLightLocal *lightDef = vLight->lightDef;
 		viewDef->viewFrustum.ProjectionBounds( idBox( lightDef->parms.origin, lightDef->parms.lightRadius, lightDef->parms.axis ), bounds );
 		return ScreenRectFromViewFrustumBounds( bounds );
 	}
 
-	if ( r_useClippedLightScissors.GetInteger() == 2 ) {
+	if ( r_useClippedLightScissors.GetInteger() == 2 ) 
 		return R_ClippedLightScissorRectangle( vLight );
-	}
 
 	r.Clear();
 
@@ -862,11 +848,15 @@ idScreenRect crFrontend::CalcLightScissorRectangle( viewLight_t *vLight )
 			viewDef->projectionMatrix, eye, clip );
 
 		// if it is near clipped, clip the winding polygons to the view frustum
-		if ( clip[3] <= 1 ) {
+		if ( clip[3] <= 1 ) 
+		{
 			c_clippedLight++;
-			if ( r_useClippedLightScissors.GetInteger() ) {
+			if ( r_useClippedLightScissors.GetInteger() ) 
+			{
 				return R_ClippedLightScissorRectangle( vLight );
-			} else {
+			} 
+			else 
+			{
 				r.x1 = r.y1 = 0;
 				r.x2 = ( viewDef->viewport.x2 - viewDef->viewport.x1 ) - 1;
 				r.y2 = ( viewDef->viewport.y2 - viewDef->viewport.y1 ) - 1;
@@ -879,16 +869,15 @@ idScreenRect crFrontend::CalcLightScissorRectangle( viewLight_t *vLight )
 		float windowX = 0.5f * ( 1.0f + ndc[0] ) * ( viewDef->viewport.x2 - viewDef->viewport.x1 );
 		float windowY = 0.5f * ( 1.0f + ndc[1] ) * ( viewDef->viewport.y2 - viewDef->viewport.y1 );
 
-		if ( windowX > viewDef->scissor.x2 ) {
+		if ( windowX > viewDef->scissor.x2 )
 			windowX = viewDef->scissor.x2;
-		} else if ( windowX < viewDef->scissor.x1 ) {
+		else if ( windowX < viewDef->scissor.x1 ) 
 			windowX = viewDef->scissor.x1;
-		}
-		if ( windowY > viewDef->scissor.y2 ) {
+		
+		if ( windowY > viewDef->scissor.y2 )
 			windowY = viewDef->scissor.y2;
-		} else if ( windowY < viewDef->scissor.y1 ) {
+		else if ( windowY < viewDef->scissor.y1 )
 			windowY = viewDef->scissor.y1;
-		}
 
 		r.AddPoint( windowX, windowY );
 	}
@@ -955,7 +944,7 @@ void crFrontend::AddLightSurfaces( void )
 		}
 
 		// evaluate the light shader registers
-		float *lightRegs =(float *)tr.drawQueue->FrameAlloc( lightShader->GetNumRegisters() * sizeof( float ) );
+		float *lightRegs = static_cast<float*>( tr.drawQueue->FrameAlloc( lightShader->GetNumRegisters() * sizeof( float ) ) );
 		vLight->shaderRegisters = lightRegs;
 		lightShader->EvaluateRegisters( lightRegs, light->parms.shaderParms, viewDef, light->parms.referenceSound );
 
@@ -1176,10 +1165,8 @@ idRenderModel* crFrontend::EntityDefDynamicModel( idRenderEntityLocal *def )
 
 	// continously animating models (particle systems, etc) will have their snapshot updated every single view
 	if ( callbackUpdate || ( model->IsDynamicModel() == DM_CONTINUOUS && def->dynamicModelFrameCount != tr.frameCount ) ) 
-	{
 		ClearEntityDefDynamicModel( def );
-	}
-
+	
 	// if we don't have a snapshot of the dynamic model, generate it now
 	if ( !def->dynamicModel ) {
 
@@ -1241,7 +1228,7 @@ void crFrontend::AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *spa
 	static float	refRegs[MAX_EXPRESSION_REGISTERS];	// don't put on stack, or VC++ will do a page touch
 	float			generatedShaderParms[MAX_ENTITY_SHADER_PARMS];
 
-	drawSurf = (drawSurf_t *)tr.drawQueue->FrameAlloc( sizeof( *drawSurf ) );
+	drawSurf = static_cast<drawSurf_t *>( tr.drawQueue->FrameAlloc( sizeof( *drawSurf ) ) );
 	drawSurf->geo = tri;
 	drawSurf->space = space;
 	drawSurf->material = shader;
@@ -1270,7 +1257,7 @@ void crFrontend::AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *spa
 			viewDef->maxDrawSurfs *= 2;
 		}
 
-		viewDef->drawSurfs = (drawSurf_t **)tr.drawQueue->FrameAlloc( viewDef->maxDrawSurfs * sizeof( viewDef->drawSurfs[0] ) );
+		viewDef->drawSurfs = static_cast<drawSurf_t **>( tr.drawQueue->FrameAlloc( viewDef->maxDrawSurfs * sizeof( viewDef->drawSurfs[0] ) ) );
 		memcpy( viewDef->drawSurfs, old, count );
 	}
 
@@ -1286,7 +1273,7 @@ void crFrontend::AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *spa
 	} 
 	else 
 	{
-		float *regs = (float *)tr.drawQueue->FrameAlloc( shader->GetNumRegisters() * sizeof( float ) );
+		float *regs = static_cast<float *>( tr.drawQueue->FrameAlloc( shader->GetNumRegisters() * sizeof( float ) ) );
 		drawSurf->shaderRegisters = regs;
 
 		// a reference shader will take the calculated stage color value from another shader
@@ -1364,14 +1351,10 @@ void crFrontend::AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *spa
 	{
 		int guiNum = shader->GetEntityGui() - 1;
 		if ( guiNum >= 0 && guiNum < MAX_RENDERENTITY_GUI ) 
-		{
 			gui = renderEntity->gui[ guiNum ];
-		}
 
 		if ( gui == nullptr ) 
-		{
 			gui = shader->GlobalGui();
-		}
 	}
 
 	if ( gui ) 
@@ -1567,7 +1550,7 @@ void crFrontend::AddModelSurfaces( void )
 			vEntity->scissorRect.Intersect( scissorRect );
 
 			if ( r_showEntityScissors.GetBool() ) 
-				ShowColoredScreenRect( vEntity->scissorRect, vEntity->entityDef->index );
+				tr.frontEnd->ShowColoredScreenRect( vEntity->scissorRect, vEntity->entityDef->index );
 		}
 
 		float oldFloatTime;

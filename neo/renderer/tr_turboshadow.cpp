@@ -246,7 +246,7 @@ srfTriangles_t *R_CreateTurboShadowVolume( const idRenderEntityLocal *ent,
 	shadowCache_t *shadowVerts = (shadowCache_t *)_alloca16( tri->numVerts * 2 * sizeof( shadowVerts[0] ) );
 #endif
 
-	R_GlobalPointToLocal( ent->modelMatrix, light->globalLightOrigin, localLightOrigin );
+	crTransform::GlobalPointToLocal( ent->modelMatrix, light->globalLightOrigin, localLightOrigin );
 
 	int	*vertRemap = (int *)_alloca16( tri->numVerts * sizeof( vertRemap[0] ) );
 

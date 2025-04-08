@@ -389,8 +389,8 @@ void RB_ShowTrace( drawSurf_t **drawSurfs, int numDrawSurfs ) {
 		}
 
 		// transform the points into local space
-		R_GlobalPointToLocal( surf->space->modelMatrix, start, localStart );
-		R_GlobalPointToLocal( surf->space->modelMatrix, end, localEnd );
+		crTransform::GlobalPointToLocal( surf->space->modelMatrix, start, localStart );
+		crTransform::GlobalPointToLocal( surf->space->modelMatrix, end, localEnd );
 
 		// check the bounding box
 		if ( !tri->bounds.Expand( radius ).LineIntersection( localStart, localEnd ) ) {

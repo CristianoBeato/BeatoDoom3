@@ -32,26 +32,32 @@ public:
     ~crFrontend( void );
 
     // Frontend_light.cpp
-    viewEntity_t*               SetEntityDefViewEntity( idRenderEntityLocal *def );
-    bool                        IssueEntityDefCallback( idRenderEntityLocal *def );
+    viewEntity_t*   SetEntityDefViewEntity( idRenderEntityLocal *def );
+    bool            IssueEntityDefCallback( idRenderEntityLocal *def );
+    bool            CreateAmbientCache( srfTriangles_t *tri, bool needsLighting );
+    bool            CreateLightingCache( const idRenderEntityLocal *ent, const idRenderLightLocal *light, srfTriangles_t *tri );
+    void            LinkLightSurf( const drawSurf_t **link, const srfTriangles_t *tri, const viewEntity_t *space, const idRenderLightLocal *light, const idMaterial *shader, const idScreenRect &scissor, bool viewInsideShadow );
+    void            CreatePrivateShadowCache( srfTriangles_t *tri );
+    void            AddAmbientDrawsurfs( viewEntity_t *vEntity );
 
     // Frontend_lightrun.cpp
-    void                        CreateLightRefs( idRenderLightLocal *light );
-    void                        CreateEntityRefs( idRenderEntityLocal *def );
-    void                        ReCreateWorldReferences( void );
-    void                        FreeDerivedData( void );
+    void            CreateLightRefs( idRenderLightLocal *light );
+    void            CreateEntityRefs( idRenderEntityLocal *def );
+    void            ReCreateWorldReferences( void );
+    void            FreeDerivedData( void );
     
     // Frontend.cpp
-    void                        RenderView( crAutoPointer<viewDef_t> parms );
-    idScreenRect                ScreenRectFromViewFrustumBounds( const idBounds &bounds );
-    void                        ShowColoredScreenRect( const idScreenRect &rect, int colorIndex );
-    void                        SetViewMatrix( crAutoPointer<viewDef_t> viewDef );
-    void                        GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idVec3 &ndc );
+    void            RenderView( crAutoPointer<viewDef_t> parms );
+    idScreenRect    ScreenRectFromViewFrustumBounds( const idBounds &bounds );
+    void            ShowColoredScreenRect( const idScreenRect &rect, int colorIndex );
+    void            SetViewMatrix( crAutoPointer<viewDef_t> viewDef );
+    void            GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idVec3 &ndc );
 
+    void            SetViewCount( int viewCount ) { this->viewCount = viewCount; }
+    void            SetViewDef( const crAutoPointer<viewDef_t> &viewDef ) { this->viewDef = viewDef; }
+    int             GetViewCount( void ) const { return viewCount; }
     crAutoPointer<viewDef_t>    GetViewDef( void ) const { return viewDef; }
-    void                        SetViewDef( const crAutoPointer<viewDef_t> &viewDef ) { this->viewDef = viewDef; }
-    void                        SetViewCount( int viewCount ) { this->viewCount = viewCount; }
-    int                         GetViewCount( void ) const { return viewCount; }
+    const viewEntity_t          GetWorldSpace( void )const { return viewDef->worldSpace; }
 
 private:
     int						viewCount;		// incremented every view (twice a scene if subviewed)
@@ -61,21 +67,13 @@ private:
     // Frontend_light.cpp
     idScreenRect    CalcEntityScissorRectangle( viewEntity_t *vEntity );
     void            AddLightSurfaces( void );
-    void            CreatePrivateShadowCache( srfTriangles_t *tri );
-    void            LinkLightSurf( const drawSurf_t **link, const srfTriangles_t *tri, const viewEntity_t *space, const idRenderLightLocal *light,
-        const idMaterial *shader, const idScreenRect &scissor, bool viewInsideShadow );
     idRenderModel*  EntityDefDynamicModel( idRenderEntityLocal *def ); 
     void            AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const renderEntity_t *renderEntity, const idMaterial *shader,
         const idScreenRect &scissor );
-    bool            CreateAmbientCache( srfTriangles_t *tri, bool needsLighting );
-    bool            CreateLightingCache( const idRenderEntityLocal *ent, const idRenderLightLocal *light, srfTriangles_t *tri );
-    void            CreateVertexProgramShadowCache( srfTriangles_t *tri );
-    void            AddAmbientDrawsurfs( viewEntity_t *vEntity );
     void            AddModelSurfaces( void );
     void            RemoveUnecessaryViewLights( void );
     viewLight_t*    SetLightDefViewLight( idRenderLightLocal *def );
     idScreenRect    CalcLightScissorRectangle( viewLight_t *vLight ); 
-
 
     // Frontend_lightrun.cpp
     void            FreeEntityDefCachedDynamicModel( idRenderEntityLocal *def );
@@ -131,6 +129,9 @@ public:
     static void     CreateLightDefFogPortals( idRenderLightLocal *ldef );
     static void     FreeEntityDefDecals( idRenderEntityLocal *def );
     static void     FreeEntityDefOverlay( idRenderEntityLocal *def );
+    
+    // Frontend_light.cpp
+    static void     CreateVertexProgramShadowCache( srfTriangles_t *tri );
     
     // Frontend_guisurf.cpp
     static void     SurfaceToTextureAxis( const srfTriangles_t *tri, idVec3 &origin, idVec3 axis[3] );

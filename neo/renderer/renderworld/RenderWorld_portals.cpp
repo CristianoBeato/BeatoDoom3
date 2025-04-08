@@ -65,7 +65,8 @@ typedef struct portalStack_s {
 idRenderWorldLocal::ScreenRectForWinding
 ===================
 */
-idScreenRect idRenderWorldLocal::ScreenRectFromWinding( const idWinding *w, viewEntity_t *space ) {
+idScreenRect idRenderWorldLocal::ScreenRectFromWinding( const idWinding *w, viewEntity_t *space ) 
+{
 	idScreenRect	r;
 	int				i;
 	idVec3			v;
@@ -73,12 +74,13 @@ idScreenRect idRenderWorldLocal::ScreenRectFromWinding( const idWinding *w, view
 	float			windowX, windowY;
 
 	r.Clear();
-	for ( i = 0 ; i < w->GetNumPoints() ; i++ ) {
-		R_LocalPointToGlobal( space->modelMatrix, (*w)[i].ToVec3(), v );
-		R_GlobalToNormalizedDeviceCoordinates( v, ndc );
+	for ( i = 0 ; i < w->GetNumPoints() ; i++ ) 
+	{
+		crTransform::LocalPointToGlobal( space->modelMatrix, (*w)[i].ToVec3(), v );
+		crTransform::GlobalToNormalizedDeviceCoordinates( v, ndc );
 
-		windowX = 0.5f * ( 1.0f + ndc[0] ) * ( tr.viewDef->viewport.x2 - tr.viewDef->viewport.x1 );
-		windowY = 0.5f * ( 1.0f + ndc[1] ) * ( tr.viewDef->viewport.y2 - tr.viewDef->viewport.y1 );
+		windowX = 0.5f * ( 1.0f + ndc[0] ) * ( tr.frontEnd->GetViewDef()->viewport.x2 - tr.viewDef->viewport.x1 );
+		windowY = 0.5f * ( 1.0f + ndc[1] ) * ( tr.frontEnd->GetViewDef()->viewport.y2 - tr.viewDef->viewport.y1 );
 
 		r.AddPoint( windowX, windowY );
 	}
@@ -109,7 +111,7 @@ bool idRenderWorldLocal::PortalIsFoggedOut( const portal_t *p ) {
 	int		size = sizeof( float ) *lightShader->GetNumRegisters();
 	float	*regs =(float *)_alloca( size );
 
-	lightShader->EvaluateRegisters( regs, ldef->parms.shaderParms, tr.viewDef, ldef->parms.referenceSound );
+	lightShader->EvaluateRegisters( regs, ldef->parms.shaderParms, tr.frontEnd->GetViewDef(), ldef->parms.referenceSound );
 
 	const shaderStage_t	*stage = lightShader->GetStage(0);
 
@@ -1041,15 +1043,17 @@ idRenderWorldLocal::ShowPortals
 Debugging tool, won't work correctly with SMP or when mirrors are present
 =====================
 */
-void idRenderWorldLocal::ShowPortals() 
+void idRenderWorldLocal::ShowPortals( void ) 
 {
+#if 0 // TODO: Fix
 	int			i, j;
 	portalArea_t	*area;
 	portal_t	*p;
 	idWinding	*w;
 
 	// flood out through portals, setting area viewCount
-	for ( i = 0 ; i < numPortalAreas ; i++ ) {
+	for ( i = 0 ; i < numPortalAreas ; i++ ) 
+	{
 		area = &portalAreas[i];
 		if ( area->viewCount != tr.viewCount ) {
 			continue;
@@ -1075,4 +1079,5 @@ void idRenderWorldLocal::ShowPortals()
 			glEnd();
 		}
 	}
+#endif // TODO: Fix
 }

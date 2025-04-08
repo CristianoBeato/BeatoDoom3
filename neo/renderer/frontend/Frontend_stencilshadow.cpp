@@ -29,7 +29,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
-#include "renderer_common.h"
+#include "renderer/renderer_common.h"
 
 // tr_stencilShadow.c -- creaton of stencil shadow volumes
 
@@ -365,14 +365,15 @@ I have some worries about edge flag cases when polygons are clipped
 multiple times near the epsilon.
 =============
 */
-static int R_ChopWinding( clipTri_t clipTris[2], int inNum, const idPlane &plane ) {
+static int R_ChopWinding( clipTri_t clipTris[2], int inNum, const idPlane &plane ) 
+{
 	clipTri_t	*in, *out;
 	float	dists[MAX_CLIPPED_POINTS];
 	int		sides[MAX_CLIPPED_POINTS];
 	int		counts[3];
 	float	dot;
 	int		i, j;
-	idVec3	*p1, *p2;
+	idVec3	*p2 = nullptr;
 	idVec3	mid;
 
 	in = &clipTris[inNum];
@@ -384,18 +385,15 @@ static int R_ChopWinding( clipTri_t clipTris[2], int inNum, const idPlane &plane
 	{
 		dot = plane.Distance( in->verts[i] );
 		dists[i] = dot;
+
+		//
 		if ( dot < -LIGHT_CLIP_EPSILON ) 
-		{
 			sides[i] = SIDE_BACK;
-		} 
 		else if ( dot > LIGHT_CLIP_EPSILON ) 
-		{
 			sides[i] = SIDE_FRONT;
-		} 
 		else 
-		{
 			sides[i] = SIDE_ON;
-		}
+		
 		counts[sides[i]]++;
 	}
 
@@ -407,9 +405,7 @@ static int R_ChopWinding( clipTri_t clipTris[2], int inNum, const idPlane &plane
 	}
 	
 	if ( !counts[SIDE_BACK] ) 
-	{
 		return inNum;		// inout stays the same
-	}
 
 	// avoid wrapping checks by duplicating first value to end
 	sides[i] = sides[0];
@@ -420,7 +416,7 @@ static int R_ChopWinding( clipTri_t clipTris[2], int inNum, const idPlane &plane
 	out->numVerts = 0;
 	for ( i = 0 ; i < in->numVerts ; i++ ) 
 	{
-		p1 = &in->verts[i];
+		idVec3* p1 = &in->verts[i];
 
 		if ( sides[i] != SIDE_BACK ) 
 		{
@@ -618,29 +614,30 @@ Only done for simple projected lights, not point lights.
 */
 static void R_AddClipSilEdges( void ) 
 {
-	int		v1, v2;
-	int		v1_back, v2_back;
-	int		i;
-
 	// don't allow it to overflow
-	if ( numShadowIndexes + numClipSilEdges * 6 > MAX_SHADOW_INDEXES ) {
+	if ( numShadowIndexes + numClipSilEdges * 6 > MAX_SHADOW_INDEXES ) 
+	{
 		overflowed = true;
 		return;
 	}
 
-	for ( i = 0 ; i < numClipSilEdges ; i++ ) {
-		v1 = clipSilEdges[i][0];
-		v2 = clipSilEdges[i][1];
-		v1_back = v1 + 1;
-		v2_back = v2 + 1;
-		if ( PointsOrdered( shadowVerts[ v1 ].ToVec3(), shadowVerts[ v2 ].ToVec3() ) ) {
+	for ( int i = 0 ; i < numClipSilEdges ; i++ ) 
+	{
+		int v1 = clipSilEdges[i][0];
+		int v2 = clipSilEdges[i][1];
+		int v1_back = v1 + 1;
+		int v2_back = v2 + 1;
+		if ( PointsOrdered( shadowVerts[ v1 ].ToVec3(), shadowVerts[ v2 ].ToVec3() ) ) 
+		{
 			shadowIndexes[numShadowIndexes++] = v1;
 			shadowIndexes[numShadowIndexes++] = v2;
 			shadowIndexes[numShadowIndexes++] = v1_back;
 			shadowIndexes[numShadowIndexes++] = v2;
 			shadowIndexes[numShadowIndexes++] = v2_back;
 			shadowIndexes[numShadowIndexes++] = v1_back;
-		} else {
+		} 
+		else 
+		{
 			shadowIndexes[numShadowIndexes++] = v1;
 			shadowIndexes[numShadowIndexes++] = v2;
 			shadowIndexes[numShadowIndexes++] = v2_back;
@@ -659,18 +656,17 @@ Add quads from the front points to the projected points
 for each silhouette edge in the light
 =================
 */
-static void R_AddSilEdges( const srfTriangles_t *tri, unsigned short *pointCull, const idPlane frustum[6] ) {
-	int		v1, v2;
-	int		i;
-	silEdge_t	*sil;
-	int		numPlanes;
-
-	numPlanes = tri->numIndexes / 3;
+static void R_AddSilEdges( const srfTriangles_t *tri, const unsigned short *pointCull, const idPlane frustum[6] ) 
+{
+	int		v1 = 0, v2 = 0;
+	int numPlanes = tri->numIndexes / 3;
 
 	// add sil edges for any true silhouette boundaries on the surface
-	for ( i = 0 ; i < tri->numSilEdges ; i++ ) {
-		sil = tri->silEdges + i;
-		if ( sil->p1 < 0 || sil->p1 > numPlanes || sil->p2 < 0 || sil->p2 > numPlanes ) {
+	for ( int i = 0 ; i < tri->numSilEdges ; i++ ) 
+	{
+		silEdge_t	*sil = tri->silEdges + i;
+		if ( sil->p1 < 0 || sil->p1 > numPlanes || sil->p2 < 0 || sil->p2 > numPlanes ) 
+		{
 			common->Error( "Bad sil planes" );
 		}
 
@@ -680,43 +676,47 @@ static void R_AddSilEdges( const srfTriangles_t *tri, unsigned short *pointCull,
 		// not just that it has the correct facing direction
 		// This will cause edges that are exactly on the frustum plane
 		// to be considered sil edges if the face inside casts a shadow.
-		if ( !( faceCastsShadow[ sil->p1 ] ^ faceCastsShadow[ sil->p2 ] ) ) {
+		if ( !( faceCastsShadow[ sil->p1 ] ^ faceCastsShadow[ sil->p2 ] ) ) 
 			continue;
-		}
 
 		// if the edge is completely off the negative side of
 		// a frustum plane, don't add it at all.  This can still
 		// happen even if the face is visible and casting a shadow
 		// if it is partially clipped
-		if ( EDGE_CULLED( sil->v1, sil->v2 ) ) {
+		if ( EDGE_CULLED( sil->v1, sil->v2 ) ) 
 			continue;
-		}
 
 		// see if the edge needs to be clipped
-		if ( EDGE_CLIPPED( sil->v1, sil->v2 ) ) {
-			if ( numShadowVerts + 4 > MAX_SHADOW_VERTS ) {
+		if ( EDGE_CLIPPED( sil->v1, sil->v2 ) ) 
+		{
+			if ( numShadowVerts + 4 > MAX_SHADOW_VERTS ) 
+			{
 				overflowed = true;
 				return;
 			}
+
 			v1 = numShadowVerts;
 			v2 = v1 + 2;
-			if ( !R_ClipLineToLight( tri->verts[ sil->v1 ].xyz, tri->verts[ sil->v2 ].xyz, 
-				frustum, shadowVerts[v1].ToVec3(), shadowVerts[v2].ToVec3() ) ) {
+			if ( !R_ClipLineToLight( tri->verts[ sil->v1 ].xyz, tri->verts[ sil->v2 ].xyz, frustum, shadowVerts[v1].ToVec3(), shadowVerts[v2].ToVec3() ) ) 
+				{
 				continue;	// clipped away
 			}
 
 			numShadowVerts += 4;
-		} else {
+		}
+		else 
+		{
 			// use the entire edge
 			v1 = remap[ sil->v1 ];
 			v2 = remap[ sil->v2 ];
-			if ( v1 < 0 || v2 < 0 ) {
+			if ( v1 < 0 || v2 < 0 )
 				common->Error( "R_AddSilEdges: bad remap[]" );
-			}
+			
 		}
 
 		// don't overflow
-		if ( numShadowIndexes + 6 > MAX_SHADOW_INDEXES ) {
+		if ( numShadowIndexes + 6 > MAX_SHADOW_INDEXES ) 
+		{
 			overflowed = true;
 			return;
 		}
@@ -725,15 +725,19 @@ static void R_AddSilEdges( const srfTriangles_t *tri, unsigned short *pointCull,
 		// consistantly between any two points, no matter which order they are specified.
 		// If this wasn't done, slight rasterization cracks would show in the shadow
 		// volume when two sil edges were exactly coincident
-		if ( faceCastsShadow[ sil->p2 ] ) {
-			if ( PointsOrdered( shadowVerts[ v1 ].ToVec3(), shadowVerts[ v2 ].ToVec3() ) ) {
+		if ( faceCastsShadow[ sil->p2 ] ) 
+		{
+			if ( PointsOrdered( shadowVerts[ v1 ].ToVec3(), shadowVerts[ v2 ].ToVec3() ) ) 
+			{
 				shadowIndexes[numShadowIndexes++] = v1;
 				shadowIndexes[numShadowIndexes++] = v1+1;
 				shadowIndexes[numShadowIndexes++] = v2;
 				shadowIndexes[numShadowIndexes++] = v2;
 				shadowIndexes[numShadowIndexes++] = v1+1;
 				shadowIndexes[numShadowIndexes++] = v2+1;
-			} else {
+			} 
+			else 
+			{
 				shadowIndexes[numShadowIndexes++] = v1;
 				shadowIndexes[numShadowIndexes++] = v2+1;
 				shadowIndexes[numShadowIndexes++] = v2;
@@ -741,15 +745,20 @@ static void R_AddSilEdges( const srfTriangles_t *tri, unsigned short *pointCull,
 				shadowIndexes[numShadowIndexes++] = v1+1;
 				shadowIndexes[numShadowIndexes++] = v2+1;
 			}
-		} else { 
-			if ( PointsOrdered( shadowVerts[ v1 ].ToVec3(), shadowVerts[ v2 ].ToVec3() ) ) {
+		} 
+		else 
+		{	 
+			if ( PointsOrdered( shadowVerts[ v1 ].ToVec3(), shadowVerts[ v2 ].ToVec3() ) ) 
+			{
 				shadowIndexes[numShadowIndexes++] = v1;
 				shadowIndexes[numShadowIndexes++] = v2;
 				shadowIndexes[numShadowIndexes++] = v1+1;
 				shadowIndexes[numShadowIndexes++] = v2;
 				shadowIndexes[numShadowIndexes++] = v2+1;
 				shadowIndexes[numShadowIndexes++] = v1+1;
-			} else {
+			} 
+			else 
+			{
 				shadowIndexes[numShadowIndexes++] = v1;
 				shadowIndexes[numShadowIndexes++] = v2;
 				shadowIndexes[numShadowIndexes++] = v2+1;
@@ -793,23 +802,24 @@ static void R_CalcPointCull( const srfTriangles_t *tri, const idPlane frustum[6]
 		return;
 	}
 
-	planeSide = (float *) _alloca16( tri->numVerts * sizeof( float ) );
-	side1 = (byte *) _alloca16( tri->numVerts * sizeof( byte ) );
-	side2 = (byte *) _alloca16( tri->numVerts * sizeof( byte ) );
+	planeSide = static_cast<float *>( _alloca16( tri->numVerts * sizeof( float ) ) );
+	side1 = static_cast<byte *>( _alloca16( tri->numVerts * sizeof( byte ) ) );
+	side2 = static_cast<byte *>( _alloca16( tri->numVerts * sizeof( byte ) ) );
 	SIMDProcessor->Memset( side1, 0, tri->numVerts * sizeof( byte ) );
 	SIMDProcessor->Memset( side2, 0, tri->numVerts * sizeof( byte ) );
 
-	for ( i = 0; i < 6; i++ ) {
-
-		if ( frontBits & (1<<(i+6)) ) {
+	for ( i = 0; i < 6; i++ ) 
+	{
+		if ( frontBits & (1<<(i+6)) ) 
 			continue;
-		}
 
 		SIMDProcessor->Dot( planeSide, frustum[i], tri->verts, tri->numVerts );
 		SIMDProcessor->CmpLT( side1, i, planeSide, LIGHT_CLIP_EPSILON, tri->numVerts );
 		SIMDProcessor->CmpGT( side2, i, planeSide, -LIGHT_CLIP_EPSILON, tri->numVerts );
 	}
-	for ( i = 0; i < tri->numVerts; i++ ) {
+
+	for ( i = 0; i < tri->numVerts; i++ ) 
+	{
 		pointCull[i] |= side1[i] | (side2[i] << 6);
 	}
 }
@@ -834,7 +844,8 @@ static void R_CreateShadowVolumeInFrustum( const idRenderEntityLocal *ent,
 										  const idVec3 lightOrigin,
 										  const idPlane frustum[6],
 										  const idPlane &farPlane,
-										  bool makeClippedPlanes ) {
+										  bool makeClippedPlanes ) 
+										  {
 	int		i;
 	int		numTris;
 	unsigned short		*pointCull;
@@ -843,7 +854,7 @@ static void R_CreateShadowVolumeInFrustum( const idRenderEntityLocal *ent,
 	int		firstShadowVert;
 	int		cullBits;
 
-	pointCull = (unsigned short *)_alloca16( tri->numVerts * sizeof( pointCull[0] ) );
+	pointCull = static_cast<unsigned short *>( _alloca16( tri->numVerts * sizeof( pointCull[0] ) ) );
 
 	// test the vertexes for inside the light frustum, which will allow
 	// us to completely cull away some triangles from consideration.
@@ -1135,7 +1146,8 @@ void crFrontend::MakeShadowFrustums( idRenderLightLocal *light )
 		}
 
 		light->numShadowFrustums = 0;
-		for ( int side = 0 ; side < 6 ; side++ ) {
+		for ( int side = 0 ; side < 6 ; side++ ) 
+		{
 			shadowFrustum_t	*frust = &light->shadowFrustums[ light->numShadowFrustums ];
 			idVec3 &p1 = corners[faceCorners[side][0]];
 			idVec3 &p2 = corners[faceCorners[side][1]];
@@ -1156,7 +1168,8 @@ void crFrontend::MakeShadowFrustums( idRenderLightLocal *light )
 			frust->planes[4] = backPlane;	// we don't really need the extra plane
 
 			// make planes with positive side facing inwards in light local coordinates
-			for ( int edge = 0 ; edge < 4 ; edge++ ) {
+			for ( int edge = 0 ; edge < 4 ; edge++ ) 
+			{
 				idVec3 &p1 = corners[faceCorners[side][edge]];
 				idVec3 &p2 = corners[faceCorners[side][(edge+1)&3]];
 
@@ -1282,11 +1295,9 @@ srfTriangles_t *R_CreateShadowVolume( const idRenderEntityLocal *ent,
 	{
 		allFront &= cullInfo.facing[i];
 	}
+
 	if ( allFront ) 
-	{
-		// if no faces are the right direction, don't make a shadow at all
-		return nullptr;
-	}
+		return nullptr;	// if no faces are the right direction, don't make a shadow at all
 
 	// clear the shadow volume
 	numShadowIndexes = 0;
@@ -1299,8 +1310,8 @@ srfTriangles_t *R_CreateShadowVolume( const idRenderEntityLocal *ent,
 	// the facing information will be the same for all six projections
 	// from a point light, as well as for any directed lights
 	globalFacing = cullInfo.facing;
-	faceCastsShadow = (byte *)_alloca16( tri->numIndexes / 3 + 1 );	// + 1 for fake dangling edge face
-	remap = (int *)_alloca16( tri->numVerts * sizeof( remap[0] ) );
+	faceCastsShadow = static_cast<byte*>( _alloca16( tri->numIndexes / 3 + 1 ) );	// + 1 for fake dangling edge face
+	remap = static_cast<int *>( _alloca16( tri->numVerts * sizeof( remap[0] ) ) );
 
 	crTransform::GlobalPointToLocal( ent->modelMatrix, light->globalLightOrigin, lightOrigin );
 

@@ -1054,7 +1054,8 @@ envshot <basename>
 Saves out env/<basename>_ft.tga, etc
 ================== 
 */  
-void R_EnvShot_f( const idCmdArgs &args ) {
+void R_EnvShot_f( const idCmdArgs &args ) 
+{
 	idStr		fullname;
 	const char	*baseName;
 	int			i;
@@ -1062,7 +1063,7 @@ void R_EnvShot_f( const idCmdArgs &args ) {
 	renderView_t	ref;
 	viewDef_t	primary;
 	int			blends;
-	char	*extensions[6] =  { "_px.tga", "_nx.tga", "_py.tga", "_ny.tga", 
+	const char	*extensions[6] =  { "_px.tga", "_nx.tga", "_py.tga", "_ny.tga", 
 		"_pz.tga", "_nz.tga" };
 	int			size;
 
