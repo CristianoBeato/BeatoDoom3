@@ -30,10 +30,20 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "renderer/renderer_common.h"
 
+// BEATO Begin:
+#include "Backend_common.h"
+
+crBackend::crBackend( void )
+{
+}
+
+crBackend::~crBackend( void )
+{
+}
+// BEATO End
 
 frameData_t		*frameData;
 backEndState_t	backEnd;
-
 
 /*
 ======================
@@ -43,7 +53,8 @@ This should initialize all GL state that any part of the entire program
 may touch, including the editor.
 ======================
 */
-void RB_SetDefaultGLState( void ) {
+void RB_SetDefaultGLState( void ) 
+{
 	int		i;
 
 	RB_LogComment( "--- R_SetDefaultGLState ---\n" );

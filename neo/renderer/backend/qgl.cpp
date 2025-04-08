@@ -74,6 +74,9 @@ PFNGLCLEARNAMEDBUFFERDATAPROC		    glClearNamedBufferData = nullptr;
 PFNGLMAPNAMEDBUFFERRANGEPROC			glMapNamedBufferRange = nullptr;
 PFNGLUNMAPNAMEDBUFFERPROC			    glUnmapNamedBuffer = nullptr;
 
+// GL_ARB_multi_bind
+PFNGLBINDBUFFERSRANGEPROC               glBindBuffersRange = nullptr;
+
 // Draw Command
 PFNGLDRAWELEMENTSPROC				    glDrawElements = nullptr;
 

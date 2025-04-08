@@ -32,7 +32,7 @@ If you have questions concerning this license or the applicable additional terms
 // BEATO Begin: pipeline implementation
 #include "backend/Buffer.h"
 #include "backend/Texture.h"
-#include "backend/RenderPipe.h"
+#include "backend/Backend_common.h"
 // BEATO End
 
 #include "images/Image.h"
@@ -46,6 +46,10 @@ class idRenderWorldLocal;
 // to be double buffered to allow it to run in
 // parallel on a dual cpu machine
 const uint32_t	SMP_FRAMES = 1;
+
+// BEATO Begin:
+const uint32_t	MAX_FRAME_DRAW_CALL = 4096;
+// BEATO End
 
 const uint32_t	FALLOFF_TEXTURE_SIZE =	64;
 
@@ -276,8 +280,8 @@ typedef struct
 // from the front end state
 typedef struct viewLight_s viewLight_t;
 typedef struct {
-	int					frameCount;		// used to track all images used in a frame
-	const viewDef_t	*	viewDef;
+	int								frameCount;		// used to track all images used in a frame
+	const crAutoPointer<viewDef_t>	viewDef;
 	backEndCounters_t	pc;
 
 	const viewEntity_t *currentSpace;		// for detecting when a matrix must change

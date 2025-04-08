@@ -156,6 +156,18 @@ extern PFNGLBUFFERSUBDATAPROC	 			glBufferSubData;
 extern PFNGLGETBUFFERSUBDATAPROC	 		glGetBufferSubData;
 extern PFNGLCOPYBUFFERSUBDATAPROC			glCopyBufferSubData;
 
+// GL_ARB_direct_state_access GL_ARB_buffer_storage  GL_ARB_uniform_buffer_object  GL_ARB_map_buffer_range
+extern PFNGLCREATEBUFFERSPROC				glCreateBuffers;
+extern PFNGLNAMEDBUFFERSTORAGEPROC			glNamedBufferStorage;
+extern PFNGLNAMEDBUFFERSUBDATAPROC			glNamedBufferSubData;
+extern PFNGLCOPYNAMEDBUFFERSUBDATAPROC		glCopyNamedBufferSubData;
+extern PFNGLCLEARNAMEDBUFFERDATAPROC		glClearNamedBufferData;
+extern PFNGLMAPNAMEDBUFFERRANGEPROC			glMapNamedBufferRange;
+extern PFNGLUNMAPNAMEDBUFFERPROC			glUnmapNamedBuffer;
+
+// GL_ARB_multi_bind
+extern PFNGLBINDBUFFERSRANGEPROC            glBindBuffersRange;
+
 // ARB_vertex_array_object
 extern PFNGLBINDVERTEXARRAYPROC				glBindVertexArray;
 extern PFNGLCREATEVERTEXARRAYSPROC			glCreateVertexArrays;

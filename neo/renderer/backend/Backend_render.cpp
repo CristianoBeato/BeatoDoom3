@@ -414,13 +414,18 @@ void RB_BindStageTexture( const float *shaderRegisters, const textureStage_t *te
 	RB_BindVariableStageImage( texture, shaderRegisters );
 
 	// texgens
-	if ( texture->texgen == TG_DIFFUSE_CUBE ) {
+	if ( texture->texgen == TG_DIFFUSE_CUBE ) 
+	{
 		glTexCoordPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ((idDrawVert *)vertexCache.Position( surf->geo->ambientCache ))->normal.ToFloatPtr() );
 	}
-	if ( texture->texgen == TG_SKYBOX_CUBE || texture->texgen == TG_WOBBLESKY_CUBE ) {
+	
+	if ( texture->texgen == TG_SKYBOX_CUBE || texture->texgen == TG_WOBBLESKY_CUBE ) 
+	{
 		glTexCoordPointer( 3, GL_FLOAT, 0, vertexCache.Position( surf->dynamicTexCoords ) );
 	}
-	if ( texture->texgen == TG_REFLECT_CUBE ) {
+	
+	if ( texture->texgen == TG_REFLECT_CUBE ) 
+	{
 		glEnable( GL_TEXTURE_GEN_S );
 		glEnable( GL_TEXTURE_GEN_T );
 		glEnable( GL_TEXTURE_GEN_R );
@@ -433,14 +438,15 @@ void RB_BindStageTexture( const float *shaderRegisters, const textureStage_t *te
 		glMatrixMode( GL_TEXTURE );
 		float	mat[16];
 
-		R_TransposeGLMatrix( backEnd.viewDef->worldSpace.modelViewMatrix, mat );
+		crTransform::TransposeGLMatrix( backEnd.viewDef->worldSpace.modelViewMatrix, mat );
 
 		glLoadMatrixf( mat );
 		glMatrixMode( GL_MODELVIEW );
 	}
 
 	// matrix
-	if ( texture->hasMatrix ) {
+	if ( texture->hasMatrix ) 
+	{
 		RB_LoadShaderTextureMatrix( shaderRegisters, texture );
 	}
 }
@@ -725,37 +731,38 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf, void (*DrawInterac
 	}
 
 	// hack depth range if needed
-	if ( surf->space->weaponDepthHack ) {
+	if ( surf->space->weaponDepthHack ) 
 		RB_EnterWeaponDepthHack();
-	}
 
-	if ( surf->space->modelDepthHack ) {
+	if ( surf->space->modelDepthHack ) 
+	{
 		RB_EnterModelDepthHack( surf->space->modelDepthHack );
 	}
 
 	inter.surf = surf;
 	inter.lightFalloffImage = vLight->falloffImage;
 
-	R_GlobalPointToLocal( surf->space->modelMatrix, vLight->globalLightOrigin, inter.localLightOrigin.ToVec3() );
-	R_GlobalPointToLocal( surf->space->modelMatrix, backEnd.viewDef->renderView.vieworg, inter.localViewOrigin.ToVec3() );
+	crTransform::GlobalPointToLocal( surf->space->modelMatrix, vLight->globalLightOrigin, inter.localLightOrigin.ToVec3() );
+	crTransform::GlobalPointToLocal( surf->space->modelMatrix, backEnd.viewDef->renderView.vieworg, inter.localViewOrigin.ToVec3() );
 	inter.localLightOrigin[3] = 0;
 	inter.localViewOrigin[3] = 1;
 	inter.ambientLight = lightShader->IsAmbientLight();
 
 	// the base projections may be modified by texture matrix on light stages
 	idPlane lightProject[4];
-	for ( int i = 0 ; i < 4 ; i++ ) {
-		R_GlobalPlaneToLocal( surf->space->modelMatrix, backEnd.vLight->lightProject[i], lightProject[i] );
+	for ( int i = 0 ; i < 4 ; i++ ) 
+	{
+		crTransform::GlobalPlaneToLocal( surf->space->modelMatrix, backEnd.vLight->lightProject[i], lightProject[i] );
 	}
 
-	for ( int lightStageNum = 0 ; lightStageNum < lightShader->GetNumStages() ; lightStageNum++ ) {
+	for ( int lightStageNum = 0 ; lightStageNum < lightShader->GetNumStages() ; lightStageNum++ ) 
+	{
 		const shaderStage_t	*lightStage = lightShader->GetStage( lightStageNum );
 
 		// ignore stages that fail the condition
-		if ( !lightRegs[ lightStage->conditionRegister ] ) {
+		if ( !lightRegs[ lightStage->conditionRegister ] )
 			continue;
-		}
-
+		
 		inter.lightImage = lightStage->texture.image;
 
 		memcpy( inter.lightProjection, lightProject, sizeof( inter.lightProjection ) );
@@ -784,31 +791,37 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf, void (*DrawInterac
 		for ( int surfaceStageNum = 0 ; surfaceStageNum < surfaceShader->GetNumStages() ; surfaceStageNum++ ) {
 			const shaderStage_t	*surfaceStage = surfaceShader->GetStage( surfaceStageNum );
 
-			switch( surfaceStage->lighting ) {
-				case SL_AMBIENT: {
+			switch( surfaceStage->lighting ) 
+			{
+				case SL_AMBIENT: 
+				{
 					// ignore ambient stages while drawing interactions
 					break;
 				}
-				case SL_BUMP: {
+				case SL_BUMP: 
+				{
 					// ignore stage that fails the condition
-					if ( !surfaceRegs[ surfaceStage->conditionRegister ] ) {
+					if ( !surfaceRegs[ surfaceStage->conditionRegister ] ) 
 						break;
-					}
+				
 					// draw any previous interaction
 					RB_SubmittInteraction( &inter, DrawInteraction );
-					inter.diffuseImage = NULL;
-					inter.specularImage = NULL;
-					R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.bumpImage, inter.bumpMatrix, NULL );
+					inter.diffuseImage = nullptr;
+					inter.specularImage = nullptr;
+					R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.bumpImage, inter.bumpMatrix, nullptr );
 					break;
 				}
-				case SL_DIFFUSE: {
+				case SL_DIFFUSE: 
+				{
 					// ignore stage that fails the condition
-					if ( !surfaceRegs[ surfaceStage->conditionRegister ] ) {
+					if ( !surfaceRegs[ surfaceStage->conditionRegister ] ) 
 						break;
-					}
-					if ( inter.diffuseImage ) {
+					
+					if ( inter.diffuseImage ) 
+					{
 						RB_SubmittInteraction( &inter, DrawInteraction );
 					}
+					
 					R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.diffuseImage,
 											inter.diffuseMatrix, inter.diffuseColor.ToFloatPtr() );
 					inter.diffuseColor[0] *= lightColor[0];
@@ -853,7 +866,8 @@ void RB_CreateSingleDrawInteractions( const drawSurf_t *surf, void (*DrawInterac
 RB_DrawView
 =============
 */
-void RB_DrawView( const void *data ) {
+void RB_DrawView( const void *data ) 
+{
 	const drawSurfsCommand_t	*cmd;
 
 	cmd = (const drawSurfsCommand_t *)data;
