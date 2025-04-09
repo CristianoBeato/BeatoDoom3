@@ -276,38 +276,8 @@ typedef struct
 	int		msec;			// total msec for backend run
 } backEndCounters_t;
 
-// all state modified by the back end is separated
-// from the front end state
+
 typedef struct viewLight_s viewLight_t;
-typedef struct {
-	int								frameCount;		// used to track all images used in a frame
-	const crAutoPointer<viewDef_t>	viewDef;
-	backEndCounters_t	pc;
-
-	const viewEntity_t *currentSpace;		// for detecting when a matrix must change
-	idScreenRect		currentScissor;
-	// for scissor clipping, local inside renderView viewport
-
-	viewLight_t *		vLight;
-	int					depthFunc;			// GLS_DEPTHFUNC_EQUAL, or GLS_DEPTHFUNC_LESS for translucent
-	float				lightTextureMatrix[16];	// only if lightStage->texture.hasMatrix
-	float				lightColor[4];		// evaluation of current light's color stage
-
-	float				lightScale;			// Every light color calaculation will be multiplied by this,
-											// which will guarantee that the result is < tr.backEndRendererMaxLight
-											// A card with high dynamic range will have this set to 1.0
-	float				overBright;			// The amount that all light interactions must be multiplied by
-											// with post processing to get the desired total light level.
-											// A high dynamic range card will have this set to 1.0.
-
-	bool				currentRenderCopied;	// true if any material has already referenced _currentRender
-
-	// our OpenGL state deltas
-	glstate_t			glState;
-
-	int					c_copyFrameBuffer;
-} backEndState_t;
-
 
 const int MAX_GUI_SURFACES	= 1024;		// default size of the drawSurfs list for guis, will
 										// be automatically expanded as needed
@@ -445,8 +415,9 @@ public:
 	unsigned short			gammaTable[256];	// brightness / gamma modify this
 
 // BEATO Begin: 
-	crDraw*					drawQueue; // draw queue interface
-	crFrontend*				frontEnd; // frontend interface
+	crAutoPointer<crDraw>		drawQueue;	// draw queue interface
+	crAutoPointer<crFrontend>	frontEnd;	// frontend interface
+	crAutoPointer<crBackend>	backEnd;	// backend interface
 // BEATO End
 
 };
@@ -728,55 +699,6 @@ POLYTOPE
 
 srfTriangles_t *R_PolytopeSurface( int numPlanes, const idPlane *planes, idWinding **windings );
 
-/*
-============================================================
-
-RENDER
-
-============================================================
-*/
-
-void RB_EnterWeaponDepthHack();
-void RB_EnterModelDepthHack( float depth );
-void RB_LeaveDepthHack();
-void RB_DrawElementsImmediate( const srfTriangles_t *tri );
-void RB_RenderTriangleSurface( const srfTriangles_t *tri );
-void RB_T_RenderTriangleSurface( const drawSurf_t *surf );
-void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs, 
-					  void (*triFunc_)( const drawSurf_t *) );
-void RB_RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs, 
-										void (*triFunc_)( const drawSurf_t *) );
-void RB_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs );
-void RB_LoadShaderTextureMatrix( const float *shaderRegisters, const textureStage_t *texture );
-void RB_GetShaderTextureMatrix( const float *shaderRegisters, const textureStage_t *texture, float matrix[16] );
-void RB_CreateSingleDrawInteractions( const drawSurf_t *surf, void (*DrawInteraction)(const drawInteraction_t *) );
-
-const shaderStage_t *RB_SetLightTexture( const idRenderLightLocal *light );
-
-void RB_DrawView( const void *data );
-
-void RB_DetermineLightScale( void );
-void RB_STD_LightScale( void );
-void RB_BeginDrawingView (void);
-
-/*
-============================================================
-
-DRAW_STANDARD
-
-============================================================
-*/
-
-void RB_DrawElementsWithCounters( const srfTriangles_t *tri );
-void RB_DrawShadowElementsWithCounters( const srfTriangles_t *tri, int numIndexes );
-void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs );
-void RB_BindVariableStageImage( const textureStage_t *texture, const float *shaderRegisters );
-void RB_BindStageTexture( const float *shaderRegisters, const textureStage_t *texture, const drawSurf_t *surf );
-void RB_FinishStageTexture( const textureStage_t *texture, const drawSurf_t *surf );
-void RB_StencilShadowPass( const drawSurf_t *drawSurfs );
-void RB_STD_DrawView( void );
-void RB_STD_FogAllLights( void );
-void RB_BakeTextureMatrixIntoTexgen( idPlane lightProject[3], const float textureMatrix[16] );
 
 /*
 ============================================================

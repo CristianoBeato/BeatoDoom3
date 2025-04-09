@@ -137,6 +137,8 @@ SET( RENDERER_BAKCEND_SOURCES
 	${CMAKE_SOURCE_DIR}/renderer/backend/draw_arb.cpp
 	${CMAKE_SOURCE_DIR}/renderer/backend/draw_arb2.cpp
 	${CMAKE_SOURCE_DIR}/renderer/backend/draw_common.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/Pipeline.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/Pipeline.h
 	${CMAKE_SOURCE_DIR}/renderer/backend/qgl.cpp
 	${CMAKE_SOURCE_DIR}/renderer/backend/qgl.h
 	${CMAKE_SOURCE_DIR}/renderer/backend/qvk.cpp

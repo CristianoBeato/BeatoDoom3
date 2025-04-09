@@ -1707,11 +1707,11 @@ void RB_STD_LightScale( void ) {
 
 /*
 =============
-RB_STD_DrawView
-
+crBackend::STD_DrawView
 =============
 */
-void	RB_STD_DrawView( void ) {
+void crBackend::STD_DrawView( void ) 
+{
 	drawSurf_t	 **drawSurfs;
 	int			numDrawSurfs;
 
@@ -1723,14 +1723,14 @@ void	RB_STD_DrawView( void ) {
 	numDrawSurfs = backEnd.viewDef->numDrawSurfs;
 
 	// clear the z buffer, set the projection matrix, etc
-	RB_BeginDrawingView();
+	BeginDrawingView();
 
 	// decide how much overbrighting we are going to do
-	RB_DetermineLightScale();
+	DetermineLightScale();
 
 	// fill the depth buffer and clear color buffer to black except on
 	// subviews
-	RB_STD_FillDepthBuffer( drawSurfs, numDrawSurfs );
+	STD_FillDepthBuffer( drawSurfs, numDrawSurfs );
 
 	// main light renderer
 	switch( tr.backEndRenderer ) 

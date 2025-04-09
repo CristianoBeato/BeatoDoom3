@@ -62,11 +62,6 @@ void RB_SetDefaultGLState( void )
 	glClearDepth( 1.0f );
 	glColor4f (1,1,1,1);
 
-	// the vertex array is always enabled
-	glEnableClientState( GL_VERTEX_ARRAY );
-	glEnableClientState( GL_TEXTURE_COORD_ARRAY );
-	glDisableClientState( GL_COLOR_ARRAY );
-
 	//
 	// make sure our GL state vector is set correctly
 	//
@@ -75,11 +70,17 @@ void RB_SetDefaultGLState( void )
 
 	glColorMask( 1, 1, 1, 1 );
 
+// BEATO Begin: enable our fake scissor by shader 
+	glEnable( GL_CLIP_DISTANCE0 );
+	glEnable( GL_CLIP_DISTANCE1 );
+	glEnable( GL_CLIP_DISTANCE2 );
+	glEnable( GL_CLIP_DISTANCE3 );
+// BEATO End
+
 	glEnable( GL_DEPTH_TEST );
 	glEnable( GL_BLEND );
 	glEnable( GL_SCISSOR_TEST );
 	glEnable( GL_CULL_FACE );
-	glDisable( GL_LIGHTING );
 	glDisable( GL_LINE_STIPPLE );
 	glDisable( GL_STENCIL_TEST );
 

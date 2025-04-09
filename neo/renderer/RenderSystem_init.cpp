@@ -1727,11 +1727,10 @@ void idRenderSystemLocal::Init( void )
 	// there may be other state we need to reset
 
 // BEATO Begin:
-	// draw comand queue and frame allocator 
-	drawQueue = new crDraw();
-
-	// Create the front end pipe 
-	frontEnd = new crFrontend();
+	drawQueue.New(); // draw comand queue and frame allocator 
+	frontEnd.New();  // create the front end pipe 
+	backEnd.New();   // create back end pipe 
+	backEnd->StartUp();
 // BEATO End
 
 	ambientLightVector[0] = 0.5f;
@@ -1822,8 +1821,13 @@ void idRenderSystemLocal::Shutdown( void )
 
 	ShutdownAPI();
 
-	SAFE_DELETE( frontEnd );
-	SAFE_DELETE( drawQueue );
+// BEATO Begin:
+	backEnd->ShutDown();
+	backEnd.Delete();
+	frontEnd.Delete();
+	drawQueue.Delete();
+// BEATO End
+
 }
 
 /*

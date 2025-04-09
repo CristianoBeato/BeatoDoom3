@@ -30,7 +30,6 @@ GNU General Public License which accompanied the Beato Tech 4 Source Code.
 
 #include <stdexcept>
 
-
 //TODO: move to you onw header 
 class crBasicAllocator
 {
@@ -617,7 +616,7 @@ public:
 
 	/// @brief Create a new objet from reference 
 	/// @param ref 
-	ID_INLINE virtual void				New( const_reference ref ) override;
+	ID_INLINE virtual void				New( const_reference ref = t_() ) override;
 	// ID_INLINE virtual void				New( const_pointer ref ) override;
 
 	// Destroy object from reference 
