@@ -32,6 +32,11 @@ If you have questions concerning this license or the applicable additional terms
 #extension GL_ARB_separate_shader_objects : enable
 #endif
 
+#extension GL_GOOGLE_include_directive : enable
+
+#define VERTEX
+#include "shader_common.inc"
+
 // vertex 
 layout( location = 0 ) in vec3 attrb_position;
 layout( location = 1 ) in vec2 attrb_texcoord;
@@ -40,17 +45,6 @@ layout( location = 3 ) in vec4 attrb_color;
 layout( location = 4 ) in vec3 attrb_binormal;
 layout( location = 5 ) in vec3 attrb_tangent;
 
-// vertex transform block 
-struct vetexTransform
-{
-  vec4 rpColorModulate;
-  vec4 rpColorAdd;
-  vec4 rpLocalViewOrigin;
-  mat4 rpModelMatrix;
-  mat4 rpViewMatrix;
-  mat4 rpProjectionMatrix;
-  mat4 rpTextureMatrix0;
-};
 
 // vertex shader storage buffer 
 layout( std430, binding = 1 ) buffer vertexStorageBlock
@@ -64,18 +58,27 @@ layout( location = 0 ) out vs_output
   vec4 vcolor;
 } result;
 
-out gl_PerVertex
-{
-    vec4 gl_Position;
-};
-
 void main(void)
 {
   //
   mat4 mvp = vertUnifom[gl_DrawID].rpModelMatrix * vertUnifom[gl_DrawID].rpViewMatrix * vertUnifom[gl_DrawID].rpProjectionMatrix;
   
+  //
+  vec4 vert = mvp * vec4( attrb_position, 1.0);
+
   // primitive raster 
-  gl_Position = mvp * vec4( attrb_position, 1.0);  
-  
+  gl_Position = vert;
+
+  // our fake scissor rect
+  vec4 scissor = vertUnifom[gl_DrawID].rpClipBounds;
+  Scissor( vert, scissor );
+
+  // gl_Position is in clip space (-w to w)
+  // Then we scissor transform to this space ( assuming normalization )
+  gl_ClipDistance[0] = vert.x - scissor.x;         // x >= scissor.x
+  gl_ClipDistance[1] = scissor.z - vert.x;         // x <= scissor.z
+  gl_ClipDistance[2] = vert.y - scissor.y;         // y >= scissor.y
+  gl_ClipDistance[3] = scissor.w - vert.y;         // y <= scissor.w
+
   result.vcolor = ( attrb_color / 255.0 ) * vertUnifom[gl_DrawID].rpColorModulate + vertUnifom[gl_DrawID].rpColorAdd;
 }

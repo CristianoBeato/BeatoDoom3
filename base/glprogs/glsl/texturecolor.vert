@@ -28,7 +28,11 @@ If you have questions concerning this license or the applicable additional terms
 */
 #version 460 core
 
-#extension GL_ARB_shader_draw_parameters :enable
+#extension GL_ARB_shader_draw_parameters : enable
+#extension GL_GOOGLE_include_directive : enable
+
+#define VERTEX
+#include "shader_common.inc"
 
 // vertex attributes 
 layout( location = 0 ) in vec3 attrb_position;
@@ -37,19 +41,6 @@ layout( location = 2 ) in vec3 attrb_normal;
 layout( location = 3 ) in vec4 attrb_color;
 layout( location = 4 ) in vec3 attrb_binormal;
 layout( location = 5 ) in vec3 attrb_tangent;
-
-// vertex transform block 
-struct vetexTransform
-{
-  vec4 rpLocalViewOrigin; 
-  vec4 rpColorModulate;   //
-  vec4 rpColorAdd;        //
-  vec4 rpTextureMatrixS;
-  vec4 rpTextureMatrixT;
-  mat4 rpModelMatrix;
-  mat4 rpViewMatrix;
-  mat4 rpProjectionMatrix;
-};
 
 // vertex shader storage buffer 
 layout( std430, binding = 1 ) buffer vertexStorageBlock
@@ -70,11 +61,20 @@ void main(void)
   //
   mat4 mvp = vertUnifom[gl_DrawID].rpModelMatrix * vertUnifom[gl_DrawID].rpViewMatrix * vertUnifom[gl_DrawID].rpProjectionMatrix;
 
-  gl_Position = mvp * vec4( attrb_position, 1.0 );  
+  //
+  vec4 vert = mvp * vec4( attrb_position, 1.0);
+
+  gl_Position = vert;
+
+  // our fake scissor rect, and perform clipping 
+  vec4 scissor = vertUnifom[gl_DrawID].rpClipBounds;
+  Scissor( vert, scissor );
 
   vec4 vertex_texcoord4 = vec4( attrb_texcoord, 1.0, 1.0 );
+  vec4 TextureMatrixT = vertUnifom[gl_DrawID].rpTextureMatrix[0];
+  vec4 TextureMatrixS = vertUnifom[gl_DrawID].rpTextureMatrix[1];
 
   result.drawID = gl_DrawID;
-  result.vtexcoord = vec2( dot( vertUnifom[gl_DrawID].rpTextureMatrixS, vertex_texcoord4 ), dot( vertUnifom[gl_DrawID].rpTextureMatrixT, vertex_texcoord4 ) );
+  result.vtexcoord = vec2( dot( TextureMatrixS, vertex_texcoord4 ), dot( TextureMatrixT, vertex_texcoord4 ) );
   result.vcolor = ( attrb_color / 255.0 ) * vertUnifom[gl_DrawID].rpColorModulate + vertUnifom[gl_DrawID].rpColorAdd;
 }

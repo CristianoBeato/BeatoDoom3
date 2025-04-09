@@ -20,26 +20,6 @@ layout( std430, binding = 0 ) buffer TextureHandles
     sampler2D sampleArray[]; // Array de texturas
 };
 
-//vertex shader storage estructure:
-struct vetexTransform
-{
-  vec4 rpLocalViewOrigin; 
-  vec4 rpColorModulate;   //
-  vec4 rpColorAdd;        //
-  vec4 rpTextureMatrixS;
-  vec4 rpTextureMatrixT;
-  mat4 rpModelMatrix;
-  mat4 rpViewMatrix;
-  mat4 rpProjectionMatrix;
-};
-
-// vertex shader storage buffer 
-layout( std430, binding = 1 ) buffer vertexStorageBlock
-{
-  vetexTransform vertUnifom[];
-};
-
-
 // fragment shader storage structure 
 struct fragmentTransfom
 {
@@ -75,3 +55,42 @@ layout( std430, binding = 3 ) buffer lightStorageBlock
 {
     lightTransform lightUnifom[];
 };
+
+
+#######################################
+VERTEX SHADERS
+#######################################
+
+//vertex shader storage estructure:
+struct vetexTransform
+{
+  vec4 rpLocalViewOrigin; 
+  vec4 rpColorModulate;   //
+  vec4 rpColorAdd;        //
+  mat4 rpTextureMatrix;  
+  mat4 rpModelMatrix;
+  mat4 rpViewMatrix;
+  mat4 rpProjectionMatrix;
+};
+
+// vertex shader storage buffer 
+layout( std430, binding = 1 ) buffer vertexStorageBlock
+{
+  vetexTransform vertUnifom[];
+};
+
+
+// Scissor cliping utils 
+void Scissor( vec4 clipPos )
+{
+    // our fake scissor rect
+  vec4 scissor = vertUnifom[gl_DrawID].rpClipBounds;
+
+  // gl_Position is in clip space (-w to w)
+  // Then we scissor transform to this space ( assuming normalization )
+  gl_ClipDistance[0] = clipPos.x - scissor.x;         // x >= scissor.x
+  gl_ClipDistance[1] = scissor.z - clipPos.x;         // x <= scissor.z
+  gl_ClipDistance[2] = clipPos.y - scissor.y;         // y >= scissor.y
+  gl_ClipDistance[3] = scissor.w - clipPos.y;         // y <= scissor.w
+}
+

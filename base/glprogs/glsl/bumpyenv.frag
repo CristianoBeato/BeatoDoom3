@@ -26,39 +26,54 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "global.inc"
+#version 460 core
 
-layout(binding = 1) uniform samplerCube texture1;
-layout(binding = 2) uniform sampler2D texture2;
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_nonuniform_qualifier : enable
 
-in vs_output
+#define FRAGMENT // 
+#include "shader_common.inc"
+
+layout( set = 0, binding = 0 ) uniform sampler2D samplers[];
+
+// fragment shader storage buffer 
+layout( std430, binding = 2 ) buffer fragmentStorageBlock
 {
+    fragmentTransfom fragUnifom[];
+};
+
+
+layout( location = 0 ) in vs_output
+{
+  uint drawID;
   vec4 color;
   vec3 cubecoord;
-
   vec3 normal;
   vec3 tangent;
   vec3 binormal;
-
   vec2 texcoord;
 } frag;
 
-out vec4 result;
-
-vec3 reflect(vec3 I, vec3 N)
+vec3 reflect( vec3 I, vec3 N )
 {
-  return I - 2.0 * dot(N, I) * N;  
+  return I - 2.0 * dot( N, I ) * N;  
 }
+
+// fragment color output 
+layout( location = 0 ) out vec4 fragColor;
 
 void main(void)
 { 
-  vec3 localNormal = 2.0 * texture2D(texture2, frag.texcoord.st).agb - 1.0;  
+  uint normalID = fragUnifom[frag.drawID].samp[0];
+  uint colorID = fragUnifom[frag.drawID].samp[1];
 
-  vec3 normal = normalize(frag.normal);
-  vec3 tangent = normalize(frag.tangent);    
-  vec3 binormal = normalize(frag.binormal);    
+  vec3 localNormal = 2.0 * texture( samplers[normalID], frag.texcoord.st).agb - 1.0;  
+
+  vec3 normal = normalize( frag.normal );
+  vec3 tangent = normalize( frag.tangent );    
+  vec3 binormal = normalize( frag.binormal );    
   mat3 TBN = mat3(tangent, binormal, normal);  
 
   vec3 r = reflect(frag.cubecoord, TBN * localNormal);
-  result = texture(texture1, toOpenGlCorrdinates(r)) * frag.color * rpDiffuseColor;
+  fragColor = texture( samplers[colorID], toOpenGlCorrdinates( r ).xy ) * frag.color * fragUnifom[frag.drawID].rpDiffuseColor;
 }

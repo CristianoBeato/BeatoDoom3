@@ -32,39 +32,20 @@ If you have questions concerning this license or the applicable additional terms
 # extension GL_ARB_bindless_texture : enable
 #endif
 
-# extension GL_ARB_shader_storage_buffer_object : enable
-# extension GL_ARB_texture_storage : enable
-# extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_ARB_shader_storage_buffer_object : enable
+#extension GL_EXT_nonuniform_qualifier : enable
 
-// Uniform buffer para armazenar os identificadores de texturas
-layout(std140, binding = 0) buffer TextureArray 
-{
-    uint textureHandles[]; // Array de handles de texturas
-};
+#define FRAGMENT
+#include "shader_common.inc"
 
 layout( set = 0, binding = 0 ) uniform sampler2D samplers[];
-
-// fragment shader storage structure 
-struct fragmentTransfom
-{
-    uint        samp0[8]; // we can acess the max of 8 textures from the sampler buffer 
-    vec4        rpCurrentRenderSize;
-    vec4        rpDiffuseColor;
-    vec4        rpSpecularColor;
-    vec4        shaderParm0;
-    vec4        shaderParm1;
-    vec4        shaderParm2;
-    vec4        shaderParm3;
-};
 
 // fragment shader storage buffer 
 layout( std430, binding = 2 ) buffer fragmentStorageBlock
 {
     fragmentTransfom fragUnifom[];
 };
-
-// fragment color output 
-layout( location = 0 ) out vec4 fragColor;
 
 // vertex shader to fragment shader variables
 layout( location = 0 ) in vs_output
@@ -74,15 +55,15 @@ layout( location = 0 ) in vs_output
   vec2 vtexcoord;
 } frag;
 
+// fragment color output 
+layout( location = 0 ) out vec4 fragColor;
+
 void main(void)
 {
   // get the texture index from the uniform buffer
-  uint texIndex = fragUnifom[frag.drawID].samp0[0]; 
+  uint texIndex = fragUnifom[frag.drawID].samp[0]; 
   
-  // get the texture handle from the texture array
-  uint textureHandle = textureHandles[texIndex];
-
   // bind the texture using the handle
-  vec4 textureColor = texture( samplers[textureHandle], frag.vtexcoord );
+  vec4 textureColor = texture( samplers[texIndex], frag.vtexcoord );
   fragColor = textureColor *  frag.vcolor * clamp( fragUnifom[frag.drawID].rpDiffuseColor, vec4(0,0,0,0), vec4(1,1,1,1));
 }

@@ -20,3 +20,7 @@ glslc "./glsl/vertexcolor.frag" -o "./spirv/vertexcolor_frag.spv" ${COMPILE_FRAG
 # compile texturecolor shaders
 glslc "./glsl/texturecolor.vert" -o "./spirv/texturecolor_vert.spv" ${COMPILE_VERTEX_FLAGS}
 glslc "./glsl/texturecolor.frag" -o "./spirv/texturecolor_frag.spv" ${COMPILE_FRAGMENT_FLAGS}
+
+# compile bumpy enviroment shader
+glslc "./glsl/bumpyenv.vert" -o "./spirv/bumpyenv_vert.spv" ${COMPILE_VERTEX_FLAGS}
+glslc "./glsl/bumpyenv.frag" -o "./spirv/bumpyenv_frag.spv" ${COMPILE_FRAGMENT_FLAGS}

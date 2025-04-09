@@ -29,6 +29,15 @@ If you have questions concerning this license or the applicable additional terms
 
 #version 460 core
 
+#if defined( OPENGL ) 
+#extension GL_ARB_separate_shader_objects : enable
+#endif
+
+#extension GL_GOOGLE_include_directive : enable
+
+#define VERTEX
+#include "shader_common.inc"
+
 // vertex attributes 
 layout( location = 0 ) in vec3 attrb_position;
 layout( location = 1 ) in vec2 attrb_texcoord;
@@ -37,18 +46,6 @@ layout( location = 3 ) in vec4 attrb_color;
 layout( location = 4 ) in vec3 attrb_binormal;
 layout( location = 5 ) in vec3 attrb_tangent;
 
-// vertex transform block 
-struct vetexTransform
-{
-  vec4 rpLocalViewOrigin; 
-  vec4 rpColorModulate;   //
-  vec4 rpColorAdd;        //
-  mat4 rpModelMatrix;
-  mat4 rpViewMatrix;
-  mat4 rpProjectionMatrix;
-  vec4 rpTextureMatrixS;
-  vec4 rpTextureMatrixT;
-};
 
 // vertex shader storage buffer 
 layout( std430, binding = 1 ) buffer vertexStorageBlock
@@ -66,28 +63,35 @@ layout( location = 0 ) out vs_output
   vec3 tangent;
   vec3 binormal;
   vec2 texcoord;
-} result;
+} vsout;
 
 void main(void)
 {
   // get the draw id from the gl_DrawID built-in variable
-  result.drawID = gl_DrawID;
+  vsout.drawID = gl_DrawID;
 
   //
   mat4 mvp = vertUnifom[gl_DrawID].rpModelMatrix * vertUnifom[gl_DrawID].rpViewMatrix * vertUnifom[gl_DrawID].rpProjectionMatrix;
 
-  gl_Position = mvp * vec4( attrb_position, 1.0 );  
-  
-  vec4 cubecoord = vec4( attrb_position - rpLocalViewOrigin.xyz, 1.0 );
-  result.cubecoord = cubecoord.xyz;
-  
-  result.normal = ( vertUnifom[gl_DrawID].rpModelMatrix * vec4( attrb_normal, 1.0)).xyz;
-  result.tangent = ( vertUnifom[gl_DrawID].rpModelMatrix * vec4( attrb_tangent, 1.0)).xyz;
-  result.binormal = ( vertUnifom[gl_DrawID].rpModelMatrix * vec4( attrb_binormal, 1.0)).xyz;
+  vec4 vert = mvp * vec4( attrb_position, 1.0 );
 
-  vec4 vertex_texcoord4 = vec4(vertex_texcoord, 1.0, 1.0);
-  result.texcoord.x = dot( rpBumpMatrixS, vertex_texcoord4);
-  result.texcoord.y = dot( rpBumpMatrixT, vertex_texcoord4);
+  gl_Position = vert;  
+  
+    // our fake scissor rect
+  vec4 scissor = vertUnifom[gl_DrawID].rpClipBounds;
+  Scissor( vert, scissor );
 
-  result.color = (vertex_color / 255.0) * rpColorModulate + rpColorAdd;
+  vec4 cubecoord = vec4( attrb_position - vertUnifom[gl_DrawID].rpLocalViewOrigin.xyz, 1.0 );
+  vsout.cubecoord = cubecoord.xyz;
+  
+  vsout.normal = ( vertUnifom[gl_DrawID].rpModelMatrix * vec4( attrb_normal, 1.0)).xyz;
+  vsout.tangent = ( vertUnifom[gl_DrawID].rpModelMatrix * vec4( attrb_tangent, 1.0)).xyz;
+  vsout.binormal = ( vertUnifom[gl_DrawID].rpModelMatrix * vec4( attrb_binormal, 1.0)).xyz;
+
+  vec4 BumpMatrixS = vertUnifom[gl_DrawID].rpTextureMatrix[0];
+  vec4 BumpMatrixT = vertUnifom[gl_DrawID].rpTextureMatrix[1];
+
+  vec4 vertex_texcoord4 = vec4( attrb_texcoord, 1.0, 1.0);
+  vsout.texcoord = vec2( dot( BumpMatrixS, vertex_texcoord4), dot( BumpMatrixT, vertex_texcoord4) );
+  vsout.color = ( attrb_color / 255.0 ) * vertUnifom[gl_DrawID].rpColorModulate + vertUnifom[gl_DrawID].rpColorAdd;
 }
