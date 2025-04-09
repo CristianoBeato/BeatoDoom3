@@ -55,6 +55,8 @@ struct bufferTextureRect_t
     uintptr_t   bufferOffset = 0;
 };
 
+class crTextureSampler;
+
 /// @brief  texture image
 /// @note   this class is used to create a texture image object that store and control texture image loading, binding, etc.
 class crTexture
@@ -83,6 +85,22 @@ public:
     /// @param imageMap // image coordenates
     void    CopyBufferToImage( const crBuffer* buffer, const uint32_t rowLength, const bufferTextureRect_t * imageMap, const uint32_t count );
 
+    /// @brief Return the binding index in the texture buffer binding 
+    /// @return the texture index in the buffer or -1 if not bind 
+    int32_t GetBindingIndex( void ) const { return m_bindindex; }
+
+    /// @brief Set the texture binding index in the texture buffer 
+    /// @param index the index 
+    void    SetBinding( const int32_t index ) { m_bindindex = index; }
+
+    /// @brief 
+    /// @param sampler 
+    void    MakeResident( const crTextureSampler* sampler );
+    
+    /// @brief 
+    /// @param  
+    void    Unmakeresident( void );
+
 
 #if CR_USE_VULKAN
     /// @brief get the texture image handle
@@ -92,6 +110,8 @@ public:
 #elif CR_USE_OPENGL
     /// @brief get the texture object handle
     GLuint      GetHandler( void ) const { return m_texture; }
+    /// @brief  Get the 64bit handler for resident texture binding 
+    GLuint64    GetBindingHandler( void ) const { return m_bindingHandler; }
     /// @brief get the texture target
     GLenum      GetTarget( void ) const { return m_target; }
     /// @brief get the texture format
@@ -109,14 +129,16 @@ private:
     uint32_t    m_layers;       // texture layers
     uint32_t    m_mipcount;     // texture mipmap count
     uint32_t    m_samples;      // texture smple count
+    int32_t     m_bindindex;    // texture binding index -1 if not in texture binding buffer 
 
 #if CR_USE_VULKAN
     VkImage     m_image;        // texture image
     VkDeviceMemory m_memory;    // texture memory
     VkImageView m_imageView;    // texture image view
 #elif CR_USE_OPENGL
-    GLuint              m_texture;      // texture object
-    GLenum              m_target;      // texture target
+    GLuint              m_texture;          // texture object
+    GLenum              m_target;           // texture target
+    GLuint64            m_bindingHandler;   // texture binding handler  
     internalFormat_t    m_format;
 #endif
 

@@ -155,6 +155,8 @@ uint32_t internalFormat_t::GetFormat( void ) const
         assert( !"invalid format!" );
         break;
     }
+
+    return GL_NONE;
 }
 
 uint32_t internalFormat_t::GetDataType(void) const
@@ -250,26 +252,27 @@ uint32_t internalFormat_t::GetDataType(void) const
         assert( !"invalid format" );
         break;
     }
+
+    return GL_NONE;
 }
 
-crTexture::crTexture( void )
-{
-    m_width = 0;
-    m_height = 0;
-    m_depth = 0;
-    m_layers = 0;
-    m_mipcount = 0;
-    
+crTexture::crTexture( void ) :
+    m_width( 0 ),
+    m_height( 0 ),
+    m_depth( 0 ),
+    m_layers( 0 ),
+    m_mipcount( 0 ),
 #if CR_USE_VULKAN
-    m_image = VK_NULL_HANDLE;
-    m_memory = VK_NULL_HANDLE;
-    m_imageView = VK_NULL_HANDLE;
+    m_image( VK_NULL_HANDLE ),
+    m_memory( VK_NULL_HANDLE ),
+    m_imageView( VK_NULL_HANDLE )
 #else CR_USE_OPENGL
-    m_texture = 0;
-    m_target = 0;
-    m_format = 0;
+    m_bindingHandler( 0 ),
+    m_texture( 0 ),
+    m_target( 0 ),
+    m_format( 0 )
 #endif // CR_USE_OPENGL
-
+{
 }
 
 crTexture::~crTexture( void )
@@ -454,13 +457,27 @@ void crTexture::CopyBufferToImage(const crBuffer *buffer, const uint32_t rowLeng
 #endif // CR_USE_OPENGL
 }
 
-crTextureSampler::crTextureSampler( void )
+void crTexture::MakeResident( const crTextureSampler* sampler )
 {
-#if CR_USE_VULKAN
-    m_sampler = VK_NULL_HANDLE;
-#elif CR_USE_OPENGL
-    m_sampler = 0;
+#if CR_USE_OPENGL
+    m_bindingHandler = glGetTextureSamplerHandleARB( m_texture, sampler->GetHandler() );
 #endif // CR_USE_OPENGL
+}
+
+void crTexture::Unmakeresident(void)
+{
+#if CR_USE_OPENGL
+    glMakeTextureHandleNonResidentARB( m_bindingHandler );
+#endif // CR_USE_OPENGL
+}
+
+crTextureSampler::crTextureSampler( void ) :
+#if CR_USE_VULKAN
+    m_sampler( VK_NULL_HANDLE )
+#elif CR_USE_OPENGL
+    m_sampler( 0 )
+#endif // CR_USE_OPENGL
+{
 }
 
 crTextureSampler::~crTextureSampler( void )

@@ -78,11 +78,11 @@ struct vertexAttribute_t
 };
 
 class crBuffer;
-class crRenderPipe
+class crPipeline
 {
 public:
-    crRenderPipe( void );
-    ~crRenderPipe( void );
+crPipeline( void );
+    ~crPipeline( void );
 
     /// @brief Create render pipeline objects
     /// @param program 

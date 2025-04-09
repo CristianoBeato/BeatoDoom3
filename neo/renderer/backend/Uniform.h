@@ -31,8 +31,8 @@ enum
     VERTEX_UNIFORM_LOCATION_LOCAL_VIEW_ORIGIN = 0,    // vec4 rpLocalViewOrigin;
     VERTEX_UNIFORM_LOCATION_COLOR_MODULATE,           // vec4 rpColorModulate;
     VERTEX_UNIFORM_LOCATION_COLOR_ADD,                // vec4 rpColorAdd;
-    VERTEX_UNIFORM_LOCATION_TEXTURE_MATRIXS,          // vec4 rpTextureMatrixS;
-    VERTEX_UNIFORM_LOCATION_TEXTURE_MATRIXT,          // vec4 rpTextureMatrixT;
+    VERTEX_UNIFORM_LOCATION_TEXTURE_MATRIX,           // vec4 rpTextureMatrix;
+    VERTEX_UNIFORM_LOCATION_CLIP_BOUDS,               // vec4 rpClipBounds;
     VERTEX_UNIFORM_LOCATION_MODEL_MATRIX,             // mat4 rpModelMatrix;
     VERTEX_UNIFORM_LOCATION_VIEW_MATRIX,              // mat4 rpViewMatrix;
     VERTEX_UNIFORM_LOCATION_PROJECTION_MATRIX,        // mat4 rpProjectionMatrix;
@@ -74,13 +74,24 @@ public:
     void    SetUniform( const void* uniform, const uint32_t location );
     void    Submit( void );
     void    Flush( void );
+
 private:
+    // current frame size uniforms  
     size_t                      m_vertexUniformSize;
     size_t                      m_fragmentUniformSize;
     size_t                      m_lightUniformSize;
+    
+    // buffer region offsets
     uintptr_t                   m_vertexUniformOffset;
     uintptr_t                   m_fragmentUniformOffset;
     uintptr_t                   m_lightUniformOffset;
+
+    // temp uniform memmoty
+    crPointer<byte*>            m_vertexUniform;
+    crPointer<byte*>            m_fragmentUniform;
+    crPointer<byte*>            m_lightUniform;
+
+    // buffer handler 
     crAutoPointer<crBuffer>     m_vertexUniformSSBO;
     crAutoPointer<crBuffer>     m_fragmentUniformSSBO;
     crAutoPointer<crBuffer>     m_lightUniformSSBO;

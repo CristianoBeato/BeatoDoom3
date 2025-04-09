@@ -32,7 +32,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "renderer/renderer_common.h"
 #include "Pipeline.h"
 
-crRenderPipe::crRenderPipe( void )
+crPipeline::crPipeline( void )
 {
 #if CR_USE_VULKAN
 #else
@@ -47,25 +47,25 @@ crRenderPipe::crRenderPipe( void )
 #endif
 }
 
-crRenderPipe::~crRenderPipe( void )
+crPipeline::~crPipeline( void )
 {
 }
 
-void crRenderPipe::Create(const shaderProgram_t *program, const frameBuffer_t *frameBuffer, const vertexAttribute_t *attributes, const size_t numAttributes)
+void crPipeline::Create(const shaderProgram_t *program, const frameBuffer_t *frameBuffer, const vertexAttribute_t *attributes, const size_t numAttributes)
 {
     CreateShaderProgram( program );
     CreateVertexPipeline( attributes, numAttributes );
     CreateFrameBuffer( frameBuffer );
 }
 
-void crRenderPipe::Destroy(void)
+void crPipeline::Destroy(void)
 {
     DestroyFrameBuffer();
     DestroyVertexPipeline();
     DestroyShaderProgram();
 }
 
-void crRenderPipe::Begin(void)
+void crPipeline::Begin(void)
 {
 #if CR_USE_VULKAN
 #elif CR_USE_OPENGL
@@ -84,7 +84,7 @@ void crRenderPipe::Begin(void)
 #endif
 }
 
-void crRenderPipe::End(void)
+void crPipeline::End(void)
 {
 
 
@@ -98,12 +98,12 @@ void crRenderPipe::End(void)
     glBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 ); 
 }
 
-void crRenderPipe::AttachVertexBuffer(crBuffer *buffer, uintptr_t offset, const size_t size)
+void crPipeline::AttachVertexBuffer(crBuffer *buffer, uintptr_t offset, const size_t size)
 {
     
 }
 
-void crRenderPipe::SetViewport(int x, int y, int width, int height)
+void crPipeline::SetViewport(int x, int y, int width, int height)
 {
 #if CR_USE_VULKAN
     // Vulkan specific code to set the viewport
@@ -112,7 +112,7 @@ void crRenderPipe::SetViewport(int x, int y, int width, int height)
 #endif // CR_USE_OPENGL
 }
 
-void crRenderPipe::SetScissor(int x, int y, int width, int height)
+void crPipeline::SetScissor(int x, int y, int width, int height)
 {
 #if CR_USE_VULKAN
     // Vulkan specific code to set the scissor
@@ -121,7 +121,7 @@ void crRenderPipe::SetScissor(int x, int y, int width, int height)
 #endif // CR_USE_OPENGL
 }
 
-void crRenderPipe::Clear(void)
+void crPipeline::Clear(void)
 {
 #if CR_USE_VULKAN
     // Vulkan specific code to clear the pipeline state and buffers
@@ -148,7 +148,7 @@ void crRenderPipe::Clear(void)
 #endif // CR_USE_OPENGL
 }
 
-bool crRenderPipe::CreateFrameBuffer( const frameBuffer_t *frameBuffer )
+bool crPipeline::CreateFrameBuffer( const frameBuffer_t *frameBuffer )
 {
 #if CR_USE_VULKAN
     // Vulkan specific code to create the framebuffer
@@ -194,7 +194,7 @@ bool crRenderPipe::CreateFrameBuffer( const frameBuffer_t *frameBuffer )
     return true;
 }
 
-void crRenderPipe::DestroyFrameBuffer(void)
+void crPipeline::DestroyFrameBuffer(void)
 {
 #if CR_USE_VULKAN
     // Vulkan specific code to destroy the framebuffer
@@ -207,7 +207,7 @@ void crRenderPipe::DestroyFrameBuffer(void)
 #endif // CR_USE_OPENGL
 }
 
-bool crRenderPipe::CreateVertexPipeline(const vertexAttribute_t *attributes, const size_t numAttributes)
+bool crPipeline::CreateVertexPipeline(const vertexAttribute_t *attributes, const size_t numAttributes)
 {
 #if CR_USE_VULKAN
     // Vulkan specific code to create the vertex array
@@ -225,7 +225,7 @@ bool crRenderPipe::CreateVertexPipeline(const vertexAttribute_t *attributes, con
     return true;
 }
 
-void crRenderPipe::DestroyVertexPipeline(void)
+void crPipeline::DestroyVertexPipeline(void)
 {
 #if CR_USE_VULKAN
     // Vulkan specific code to destroy the vertex array
@@ -238,7 +238,7 @@ void crRenderPipe::DestroyVertexPipeline(void)
 #endif // CR_USE_OPENGL
 }
 
-bool crRenderPipe::CreateShaderProgram(const shaderProgram_t *program)
+bool crPipeline::CreateShaderProgram(const shaderProgram_t *program)
 {
 #if CR_USE_VULKAN
     // Vulkan specific code to create the shader program
@@ -337,7 +337,7 @@ bool crRenderPipe::CreateShaderProgram(const shaderProgram_t *program)
     return true;
 }
 
-void crRenderPipe::DestroyShaderProgram(void)
+void crPipeline::DestroyShaderProgram(void)
 {
 #if CR_USE_VULKAN
     // Vulkan specific code to destroy the shader program

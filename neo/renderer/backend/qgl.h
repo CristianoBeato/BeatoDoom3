@@ -197,6 +197,8 @@ extern PFNGLGETBUFFERPOINTERVPROC 			glGetBufferPointerv;
 
 // Draw Command
 extern PFNGLDRAWELEMENTSPROC				glDrawElements;
+extern PFNGLDRAWELEMENTSBASEVERTEXPROC		glDrawElementsBaseVertex;
+extern PFNGLDRAWELEMENTSINDIRECTPROC		glDrawElementsIndirect;
 
 // Textures
 extern PFNGLACTIVETEXTUREPROC				glActiveTexture;
@@ -215,6 +217,20 @@ extern PFNGLCOPYTEXIMAGE2DPROC				glCopyTexImage2D;
 //extern PFNGLCOPYTEXIMAGE3DPROC				glCopyTexImage3D;
 extern PFNGLCOPYTEXSUBIMAGE2DPROC			glCopyTexSubImage2D;
 extern PFNGLCOPYTEXSUBIMAGE3DPROC			glCopyTexSubImage3D;
+
+// texture handler
+extern PFNGLGETTEXTUREHANDLEARBPROC				glGetTextureHandleARB;
+extern PFNGLGETTEXTURESAMPLERHANDLEARBPROC		glGetTextureSamplerHandleARB;
+extern PFNGLMAKETEXTUREHANDLERESIDENTARBPROC	glMakeTextureHandleResidentARB;
+extern PFNGLMAKETEXTUREHANDLENONRESIDENTARBPROC	glMakeTextureHandleNonResidentARB;
+extern PFNGLMAKEIMAGEHANDLERESIDENTARBPROC 		glMakeImageHandleResidentARB;
+extern PFNGLMAKEIMAGEHANDLENONRESIDENTARBPROC 	glMakeImageHandleNonResidentARB;
+extern PFNGLUNIFORMHANDLEUI64ARBPROC 			glUniformHandleui64ARB;
+extern PFNGLUNIFORMHANDLEUI64VARBPROC 			glUniformHandleui64vARB;
+extern PFNGLPROGRAMUNIFORMHANDLEUI64ARBPROC 	glProgramUniformHandleui64ARB;
+extern PFNGLPROGRAMUNIFORMHANDLEUI64VARBPROC 	glProgramUniformHandleui64vARB;
+extern PFNGLISTEXTUREHANDLERESIDENTARBPROC		glIsTextureHandleResidentARB;
+extern PFNGLISIMAGEHANDLERESIDENTARBPROC		glIsImageHandleResidentARB;
 
 // GLSL and Progrma Pipelines
 extern PFNGLCREATESHADERPROC				glCreateShader;
@@ -360,13 +376,7 @@ extern void (*glTexEnvi)(GLenum target, GLenum pname, GLint param);
 extern void (*glTexEnvfv)(GLenum target, GLenum pname, const GLfloat *params);
 extern void (*glTexGenfv)(GLenum coord, GLenum pname, const GLfloat *params);
 extern void (*glTexGenf)(GLenum coord, GLenum pname, GLfloat param);
-extern void (*glVertexPointer)(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
-extern void (*glTexCoordPointer)(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
-extern void (*glNormalPointer)(GLenum type, GLsizei stride, const GLvoid *pointer);
-extern void (*glEnableClientState)(GLenum array);
-extern void (*glDisableClientState)(GLenum array);
 extern void (*glPrioritizeTextures)(GLsizei n, const GLuint *textures, const GLclampf *priorities);
-extern void (*glColorPointer)(GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
 extern void (*glAlphaFunc)(GLenum func, GLclampf ref);
 extern void (*glOrtho)(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar);
 extern void (*glDrawPixels)(GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels);
@@ -435,6 +445,5 @@ extern void (*glShadeModel)(GLenum mode);
 #define GL_ALPHA8					        0x803C
 #define GL_SMOOTH				            0x1D01
 #define GL_LINE_STIPPLE				        0x0B24
-#define GL_LIGHTING				            0x0B50
 
 #endif // !__QGL_H__

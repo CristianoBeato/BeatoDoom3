@@ -44,8 +44,8 @@ static const uint32_t MAX4x4_SIZE = FLOAT_SIZE * 16;
 //  vec4 rpLocalViewOrigin; 
 //  vec4 rpColorModulate;   //
 //  vec4 rpColorAdd;        //
-//  vec4 rpTextureMatrixS;
-//  vec4 rpTextureMatrixT;
+//  vec4 rpClipBounds;
+//  mat4 rpTextureMatrix;
 //  mat4 rpModelMatrix;
 //  mat4 rpViewMatrix;
 //  mat4 rpProjectionMatrix;
@@ -77,15 +77,15 @@ static const uint32_t MAX4x4_SIZE = FLOAT_SIZE * 16;
 
 // Vertex Uniforms (buffer vertexStorageBlock)
 // Observação: alguns gaps podem existir por alinhamento.
-static const uint32_t VERTEX_OFFSET_RPLOCALVIEWORIGIN    = 0;
-static const uint32_t VERTEX_OFFSET_RPCOLORMODULATE      = FLOAT_SIZE * 4;
-static const uint32_t VERTEX_OFFSET_RPCOLORADD           = FLOAT_SIZE * 8;
-static const uint32_t VERTEX_OFFSET_RPTEXMATRIXS         = FLOAT_SIZE * 12;
-static const uint32_t VERTEX_OFFSET_RPTEXMATRIXT         = FLOAT_SIZE * 16;
-static const uint32_t VERTEX_OFFSET_RPMODELMATRIX        = FLOAT_SIZE * 32;
-static const uint32_t VERTEX_OFFSET_RPVIEWMATRIX         = FLOAT_SIZE * 48;
-static const uint32_t VERTEX_OFFSET_RPPROJECTIONMATRIX   = FLOAT_SIZE * 64;
-static const uint32_t SHADER_VERTEX_BLOCK_SIZE           = FLOAT_SIZE * 68;
+static const uint32_t VERTEX_OFFSET_LOCALVIEWORIGIN    = 0;
+static const uint32_t VERTEX_OFFSET_COLORMODULATE      = VEC4F_SIZE;
+static const uint32_t VERTEX_OFFSET_COLORADD           = VEC4F_SIZE * 2;
+static const uint32_t VERTEX_OFFSET_CLIP_BOUDS         = VEC4F_SIZE * 3;
+static const uint32_t VERTEX_OFFSET_TEXMATRIX          = VEC4F_SIZE * 4;
+static const uint32_t VERTEX_OFFSET_MODELMATRIX        = VEC4F_SIZE * 8;
+static const uint32_t VERTEX_OFFSET_VIEWMATRIX         = VEC4F_SIZE * 12;
+static const uint32_t VERTEX_OFFSET_PROJECTIONMATRIX   = VEC4F_SIZE * 16;
+static const uint32_t SHADER_VERTEX_BLOCK_SIZE         = VEC4F_SIZE * 20;
 
 // Fragment Uniforms (buffer fragmentStorageBlock)
 static const uint32_t FRAG_OFFSET_SAMPLER0             = 0;
@@ -97,8 +97,8 @@ static const uint32_t FRAG_OFFSET_SAMPLER5             = UINT_SIZE * 5;
 static const uint32_t FRAG_OFFSET_SAMPLER6             = UINT_SIZE * 6;
 static const uint32_t FRAG_OFFSET_SAMPLER7             = UINT_SIZE * 7;
 static const uint32_t FRAG_OFFSET_CURRENTRENDERSIZE    = UINT_SIZE * 8;
-static const uint32_t FRAG_OFFSET_RPDIFFUSECOLOR       = FRAG_OFFSET_CURRENTRENDERSIZE + VEC4F_SIZE;
-static const uint32_t FRAG_OFFSET_RPSPECULARCOLOR      = FRAG_OFFSET_CURRENTRENDERSIZE + ( 2 * VEC4F_SIZE );
+static const uint32_t FRAG_OFFSET_DIFFUSECOLOR       = FRAG_OFFSET_CURRENTRENDERSIZE + VEC4F_SIZE;
+static const uint32_t FRAG_OFFSET_SPECULARCOLOR      = FRAG_OFFSET_CURRENTRENDERSIZE + ( 2 * VEC4F_SIZE );
 static const uint32_t FRAG_OFFSET_SHADERPARM0          = FRAG_OFFSET_CURRENTRENDERSIZE + ( 3 * VEC4F_SIZE );
 static const uint32_t FRAG_OFFSET_SHADERPARM1          = FRAG_OFFSET_CURRENTRENDERSIZE + ( 4 * VEC4F_SIZE );
 static const uint32_t FRAG_OFFSET_SHADERPARM2          = FRAG_OFFSET_CURRENTRENDERSIZE + ( 5 * VEC4F_SIZE );
@@ -121,27 +121,27 @@ static struct uniformLocation_t
 uniformList[MAX_UNIFORMS] = 
 {
     // Vertex Uniforms
-    { VERTEX_OFFSET_RPLOCALVIEWORIGIN,     VEC4F_SIZE },    // 0 - vec4 rpLocalViewOrigin
-    { VERTEX_OFFSET_RPCOLORMODULATE,       VEC4F_SIZE },    // 1 - vec4 rpColorModulate
-    { VERTEX_OFFSET_RPCOLORADD,            VEC4F_SIZE },    // 2 - vec4 rpColorAdd
-    { VERTEX_OFFSET_RPTEXMATRIXS,          VEC4F_SIZE },    // 3 - vec4 rpTextureMatrixS
-    { VERTEX_OFFSET_RPTEXMATRIXT,          VEC4F_SIZE },    // 4 - vec4 rpTextureMatrixT
-    { VERTEX_OFFSET_RPMODELMATRIX,         MAX4x4_SIZE },   // 5 - mat4 rpModelMatrix
-    { VERTEX_OFFSET_RPVIEWMATRIX,          MAX4x4_SIZE },   // 6 - mat4 rpViewMatrix
-    { VERTEX_OFFSET_RPPROJECTIONMATRIX,    MAX4x4_SIZE },   // 7 - mat4 rpProjectionMatrix
+    { VERTEX_OFFSET_LOCALVIEWORIGIN,     VEC4F_SIZE },    // 0 - vec4 rpLocalViewOrigin
+    { VERTEX_OFFSET_COLORMODULATE,       VEC4F_SIZE },    // 1 - vec4 rpColorModulate
+    { VERTEX_OFFSET_COLORADD,            VEC4F_SIZE },    // 2 - vec4 rpColorAdd
+    { VERTEX_OFFSET_CLIP_BOUDS,          VEC4F_SIZE },    // 3 - vec4 rpClipBounds
+    { VERTEX_OFFSET_TEXMATRIX,           MAX4x4_SIZE },   // 4 - mat4 rpTextureMatrix
+    { VERTEX_OFFSET_MODELMATRIX,         MAX4x4_SIZE },   // 5 - mat4 rpModelMatrix
+    { VERTEX_OFFSET_VIEWMATRIX,          MAX4x4_SIZE },   // 6 - mat4 rpViewMatrix
+    { VERTEX_OFFSET_PROJECTIONMATRIX,    MAX4x4_SIZE },   // 7 - mat4 rpProjectionMatrix
 
     // Fragment Uniforms
     { FRAG_OFFSET_SAMPLER0,                UINT_SIZE },     // 8  - uint32_t sampler[0]
     { FRAG_OFFSET_SAMPLER1,                UINT_SIZE },     // 9  - uint32_t sampler[1]
-    { FRAG_OFFSET_SAMPLER2,                UINT_SIZE },     // 10 - uint32_t sampler[2]
+    { FRAG_OFFSET_SAMPLER2,                UINT_SIZE },     // 10  - uint32_t sampler[2]
     { FRAG_OFFSET_SAMPLER3,                UINT_SIZE },     // 11 - uint32_t sampler[3]
     { FRAG_OFFSET_SAMPLER4,                UINT_SIZE },     // 12 - uint32_t sampler[4]
     { FRAG_OFFSET_SAMPLER5,                UINT_SIZE },     // 13 - uint32_t sampler[5]
     { FRAG_OFFSET_SAMPLER6,                UINT_SIZE },     // 14 - uint32_t sampler[6]
     { FRAG_OFFSET_SAMPLER7,                UINT_SIZE },     // 15 - uint32_t sampler[7]
     { FRAG_OFFSET_CURRENTRENDERSIZE,       VEC4F_SIZE },    // 16 - vec4 rpCurrentRenderSize
-    { FRAG_OFFSET_RPDIFFUSECOLOR,          VEC4F_SIZE },    // 17 - vec4 rpDiffuseColor
-    { FRAG_OFFSET_RPSPECULARCOLOR,         VEC4F_SIZE },    // 18 - vec4 rpSpecularColor
+    { FRAG_OFFSET_DIFFUSECOLOR,            VEC4F_SIZE },    // 17 - vec4 rpDiffuseColor
+    { FRAG_OFFSET_SPECULARCOLOR,           VEC4F_SIZE },    // 18 - vec4 rpSpecularColor
     { FRAG_OFFSET_SHADERPARM0,             VEC4F_SIZE },    // 19 - vec4 shaderParm0
     { FRAG_OFFSET_SHADERPARM1,             VEC4F_SIZE },    // 20 - vec4 shaderParm1
     { FRAG_OFFSET_SHADERPARM2,             VEC4F_SIZE },    // 21 - vec4 shaderParm2
@@ -161,9 +161,9 @@ uniformList[MAX_UNIFORMS] =
 static const uint32_t SHADER_BUFFER_BINDING_VERTEX_BLOCK = 1;     // layout( std430, binding = 1 ) buffer vertexStorageBlock
 static const uint32_t SHADER_BUFFER_BINDING_FRAGMENT_BLOCK = 2;   // layout( std430, binding = 2 ) buffer fragmentStorageBlock
 static const uint32_t SHADER_BUFFER_BINDING_LIGHT_BLOCK = 3;      // layout( std430, binding = 3 ) buffer lightStorageBlock
-static const size_t   UNIFORMS_BUFFER_VERTEX_SIZE = SHADER_VERTEX_BLOCK_SIZE * MAX_FRAME_DRAW_CALL;
-static const size_t   UNIFORMS_BUFFER_FRAGMENT_UNIFORMS_SIZE = SHADER_FRAGMENT_BLOCK_SIZE * MAX_FRAME_DRAW_CALL;
-static const size_t   UNIFORMS_BUFFER_LIGHT_UNIFORMS_SIZE = SHADER_LIGHT_BLOCK_SIZE * MAX_FRAME_DRAW_CALL;
+static const size_t   UNIFORMS_BUFFER_VERTEX_SIZE = SHADER_VERTEX_BLOCK_SIZE * MAX_FRAME_DRAW_CALL * SMP_FRAMES;
+static const size_t   UNIFORMS_BUFFER_FRAGMENT_UNIFORMS_SIZE = SHADER_FRAGMENT_BLOCK_SIZE * MAX_FRAME_DRAW_CALL * SMP_FRAMES;
+static const size_t   UNIFORMS_BUFFER_LIGHT_UNIFORMS_SIZE = SHADER_LIGHT_BLOCK_SIZE * MAX_FRAME_DRAW_CALL * SMP_FRAMES;
 
 /*
 =====================================================================================
@@ -197,32 +197,53 @@ void crUniform::StartUp(void)
 
 void crUniform::ShutDown(void)
 {
-    if( m_lightUniformSSBO ) m_lightUniformSSBO.Delete();
-    if( m_fragmentUniformSSBO ) m_fragmentUniformSSBO.Delete();
-    if( m_vertexUniformSSBO ) m_vertexUniformSSBO.Delete();
+    // release out copy space 
+    if( m_vertexUniform ) 
+        m_vertexUniform.Free();
+
+    if( m_fragmentUniform ) 
+        m_fragmentUniform.Free();
+    
+    if( m_lightUniform ) 
+        m_lightUniform.Free();   
+
+    // release our buffer
+    if( m_lightUniformSSBO ) 
+        m_lightUniformSSBO.Delete();
+
+    if( m_fragmentUniformSSBO ) 
+        m_fragmentUniformSSBO.Delete();
+
+    if( m_vertexUniformSSBO ) 
+        m_vertexUniformSSBO.Delete();
 }
 
 void crUniform::SetUniform( const void *uniform, const uint32_t location )
 {
     if ( location < FRAGMENT_UNIFORM_LOCATION_SAMPLERS0 )
-        m_vertexUniformSSBO->Upload( uniform, uniformList[location].offset + m_vertexUniformOffset, uniformList[location].size );
+        m_vertexUniform.Memcpy( uniform, uniformList[location].offset, uniformList->size );
     else if ( location < LIGHT_UNIFORM_LOCATION_LOCAL_ORIGIN )
-        m_fragmentUniformSSBO->Upload( uniform, uniformList[location].offset + m_fragmentUniformOffset, uniformList[location].size );
+        m_fragmentUniform.Memcpy( uniform, uniformList[location].offset, uniformList->size );
     else if( location < MAX_UNIFORMS )
-        m_lightUniformSSBO->Upload( uniform, uniformList[location].offset + m_lightUniformOffset, uniformList[location].size );    
+        m_lightUniform.Memcpy( uniform, uniformList[location].offset, uniformList->size );
 }
 
 void crUniform::Submit(void)
 {
-    // count size
+    // copy current uniform to our buffer 
+    m_vertexUniformSSBO->Upload( &m_vertexUniform,  m_vertexUniformOffset, SHADER_VERTEX_BLOCK_SIZE );
+    m_fragmentUniformSSBO->Upload( &m_fragmentUniform, m_fragmentUniformOffset, SHADER_FRAGMENT_BLOCK_SIZE );
+    m_lightUniformSSBO->Upload( &m_lightUniform, m_lightUniformOffset, SHADER_LIGHT_BLOCK_SIZE );    
+
+    // Move offsets, and loop on the buffer size
+    m_vertexUniformOffset = ( m_vertexUniformOffset + SHADER_VERTEX_BLOCK_SIZE ) % UNIFORMS_BUFFER_VERTEX_SIZE;
+    m_fragmentUniformOffset = ( m_fragmentUniformOffset + SHADER_FRAGMENT_BLOCK_SIZE ) % UNIFORMS_BUFFER_FRAGMENT_UNIFORMS_SIZE;
+    m_lightUniformOffset = ( m_lightUniformOffset + SHADER_LIGHT_BLOCK_SIZE ) % UNIFORMS_BUFFER_LIGHT_UNIFORMS_SIZE;
+
+    // increment the frame size 
     m_vertexUniformSize += SHADER_VERTEX_BLOCK_SIZE;
     m_fragmentUniformSize += SHADER_FRAGMENT_BLOCK_SIZE;
     m_lightUniformSize += SHADER_LIGHT_BLOCK_SIZE;
-
-    // Move offsets
-    m_vertexUniformOffset += SHADER_VERTEX_BLOCK_SIZE;
-    m_fragmentUniformOffset += SHADER_FRAGMENT_BLOCK_SIZE;
-    m_lightUniformOffset += SHADER_LIGHT_BLOCK_SIZE;
 }
 
 void crUniform::Flush(void)
