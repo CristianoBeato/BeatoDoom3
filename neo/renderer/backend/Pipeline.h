@@ -136,32 +136,19 @@ crPipeline( void );
     /// @param height scissor height
     void        SetScissor( int x, int y, int width, int height );
 
-    /// @brief Get the number of viewports 
-    /// @return thew viewport count 
-    uint32_t    GetNumViewports( void ) const { return m_numViewports; }
-
-    /// @brief Get the number of scissors
-    /// @return the scissor count
-    uint32_t    GetNumScissors( void ) const { return m_numScissors; }
-
-    /// @brief Get the current viewport
-    /// @return the current viewport index
-    uint32_t    GetCurrentViewport( void ) const { return m_numViewports - 1; }
-
-    /// @brief Get the current scissor
-    /// @return the current scissor index
-    uint32_t    GetCurrentScissor( void ) const { return m_numScissors - 1; }
+    /// @brief set the buffer clear color
+    /// @param red 
+    /// @param green 
+    /// @param blue 
+    /// @param alpha 
+    void        ClearColor( const float red, const float green, const float blue, const float alpha );
 
     /// @brief Clear the pipeline state and buffers
     void        Clear( void );
 
 private:
-    uint32_t        m_numViewports;
-    uint32_t        m_numScissors;
-    float           m_viewports[MAX_VIEWPORTS][4];
-    float           m_scissors[MAX_SCISSORS][4];
-
 #if CR_USE_VULKAN
+    VkClearValue      m_clearColor;
     VkPipelineLayout  m_pipelineLayout;
     VkPipeline        m_pipeline;
     VkDescriptorSet   m_descriptorSet;

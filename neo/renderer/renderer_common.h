@@ -45,7 +45,7 @@ class idRenderWorldLocal;
 // everything that is needed by the backend needs
 // to be double buffered to allow it to run in
 // parallel on a dual cpu machine
-const uint32_t	SMP_FRAMES = 1;
+const uint32_t	SMP_FRAMES = 3;
 
 // BEATO Begin:
 const uint32_t	MAX_FRAME_DRAW_CALL = 4096;
@@ -244,7 +244,6 @@ const int MAX_MULTITEXTURE_UNITS =	8;
 typedef struct 
 {
 	tmu_t		tmu[MAX_MULTITEXTURE_UNITS];
-	int			currenttmu;
 
 	int			faceCulling;
 	int			glStateBits;
@@ -419,10 +418,8 @@ public:
 	crAutoPointer<crFrontend>	frontEnd;	// frontend interface
 	crAutoPointer<crBackend>	backEnd;	// backend interface
 // BEATO End
-
 };
 
-extern backEndState_t		backEnd;
 extern idRenderSystemLocal	tr;
 extern glconfig_t			glConfig;		// outside of TR since it shouldn't be cleared during ref re-init
 

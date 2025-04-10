@@ -67,7 +67,8 @@ typedef struct
 // (until malloc fails), but it may force the
 // allocation of a new memory block that will
 // be discontinuous with the existing memory
-typedef struct frameMemoryBlock_s {
+typedef struct frameMemoryBlock_s 
+{
 	struct frameMemoryBlock_s *next;
 	int		size;
 	int		used;

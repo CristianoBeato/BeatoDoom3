@@ -42,9 +42,6 @@ crBackend::~crBackend( void )
 }
 // BEATO End
 
-frameData_t		*frameData;
-backEndState_t	backEnd;
-
 /*
 ======================
 RB_SetDefaultGLState
@@ -140,32 +137,6 @@ void RB_LogComment( const char *comment, ... ) {
 
 
 //=============================================================================
-
-
-
-/*
-====================
-GL_SelectTexture
-====================
-*/
-void GL_SelectTexture( int unit ) 
-{
-	if ( backEnd.glState.currenttmu == unit ) 
-		return;
-
-	if ( unit < 0 || unit >= glConfig.maxTextureUnits && unit >= glConfig.maxTextureImageUnits ) 
-	{
-		common->Warning( "GL_SelectTexture: unit = %i", unit );
-		return;
-	}
-
-	glActiveTexture( GL_TEXTURE0 + unit );
-	glClientActiveTextureARB( GL_TEXTURE0 + unit );
-	RB_LogComment( "glActiveTextureARB( %i );\nglClientActiveTextureARB( %i );\n", unit, unit );
-
-	backEnd.glState.currenttmu = unit;
-}
-
 
 /*
 ====================
@@ -498,11 +469,10 @@ void RB_SetGL2D( void )
 
 /*
 =============
-RB_SetBuffer
-
+crBackend::SetBuffer
 =============
 */
-static void	RB_SetBuffer( const void *data ) 
+void crBackend::SetBuffer( const void *data ) 
 {
 	const setBufferCommand_t	*cmd;
 
@@ -510,9 +480,10 @@ static void	RB_SetBuffer( const void *data )
 
 	cmd = (const setBufferCommand_t *)data;
 
-	backEnd.frameCount = cmd->frameCount;
+	frameCount = cmd->frameCount;
 
-	glDrawBuffer( cmd->buffer );
+	// glDrawBuffer( cmd->buffer );
+	m_uniforms->Begin(); // swap uniform buffer, and prepare for a new frame
 
 	// clear screen for debugging
 	// automatically enable this with several other debug tools
@@ -520,16 +491,17 @@ static void	RB_SetBuffer( const void *data )
 	if ( r_clear.GetFloat() || idStr::Length( r_clear.GetString() ) != 1 || r_lockSurfaces.GetBool() || r_singleArea.GetBool() || r_showOverDraw.GetBool() ) 
 	{
 		float c[3];
-		if ( sscanf( r_clear.GetString(), "%f %f %f", &c[0], &c[1], &c[2] ) == 3 ) {
-			glClearColor( c[0], c[1], c[2], 1 );
-		} else if ( r_clear.GetInteger() == 2 ) {
-			glClearColor( 0.0f, 0.0f,  0.0f, 1.0f );
-		} else if ( r_showOverDraw.GetBool() ) {
-			glClearColor( 1.0f, 1.0f, 1.0f, 1.0f );
-		} else {
-			glClearColor( 0.4f, 0.0f, 0.25f, 1.0f );
-		}
-		glClear( GL_COLOR_BUFFER_BIT );
+		if ( sscanf( r_clear.GetString(), "%f %f %f", &c[0], &c[1], &c[2] ) == 3 ) 
+			m_currentPipeline->ClearColor( c[0], c[1], c[2], 1 );
+		else if ( r_clear.GetInteger() == 2 ) 
+			m_currentPipeline->ClearColor( 0.0f, 0.0f,  0.0f, 1.0f );
+		else if ( r_showOverDraw.GetBool() ) 
+			m_currentPipeline->ClearColor( 1.0f, 1.0f, 1.0f, 1.0f );
+		else 
+			m_currentPipeline->ClearColor( 0.4f, 0.0f, 0.25f, 1.0f );
+		
+		// clear current frame buffer 
+		m_currentPipeline->Clear();
 	}
 }
 
@@ -541,7 +513,7 @@ Draw all the images to the screen, on top of whatever
 was there.  This is used to test for texture thrashing.
 ===============
 */
-void RB_ShowImages( void )
+static void RB_ShowImages( void )
  {
 	int		i;
 	idImage	*image;
@@ -597,19 +569,20 @@ void RB_ShowImages( void )
 
 /*
 =============
-RB_SwapBuffers
-
+crBackend::SwapBuffers
 =============
 */
-const void	RB_SwapBuffers( const void *data ) 
+void crBackend::SwapBuffers( const void *data ) 
 {
 	// texture swapping test
-	if ( r_showImages.GetInteger() != 0 ) {
+	if ( r_showImages.GetInteger() != 0 ) 
+	{
 		RB_ShowImages();
 	}
 
 	// force a gl sync if requested
-	if ( r_finish.GetBool() ) {
+	if ( r_finish.GetBool() ) 
+	{
 		glFinish();
 	}
 

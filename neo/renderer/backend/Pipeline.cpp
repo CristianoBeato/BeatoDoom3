@@ -69,10 +69,6 @@ void crPipeline::Begin(void)
 {
 #if CR_USE_VULKAN
 #elif CR_USE_OPENGL
-    
-    // sed
-    glViewportArrayv( 0, m_numViewports, m_viewports );
-
     // bind the frame buffer to draw
     glBindFramebuffer( GL_DRAW_FRAMEBUFFER, m_frameBuffer );
 
@@ -86,8 +82,6 @@ void crPipeline::Begin(void)
 
 void crPipeline::End(void)
 {
-
-
     // release program pipeline
     glBindProgramPipeline( 0 );
 
@@ -100,7 +94,19 @@ void crPipeline::End(void)
 
 void crPipeline::AttachVertexBuffer(crBuffer *buffer, uintptr_t offset, const size_t size)
 {
-    
+#if CR_USE_VULKAN
+#elif CR_USE_OPENGL
+    glVertexArrayVertexBuffer( m_vertexArrayObject, 0, buffer->GetHandler(), offset, sizeof(idDrawVert) );
+#endif //CR_USE_OPENGL
+}
+
+void crPipeline::AttachIndexBuffer(crBuffer *buffer, uintptr_t offset, const size_t size)
+{
+#if CR_USE_VULKAN
+#elif CR_USE_OPENGL
+    glVertexArrayElementBuffer( m_vertexArrayObject, buffer->GetHandler() );
+#endif //CR_USE_OPENGL
+
 }
 
 void crPipeline::SetViewport(int x, int y, int width, int height)
@@ -121,10 +127,30 @@ void crPipeline::SetScissor(int x, int y, int width, int height)
 #endif // CR_USE_OPENGL
 }
 
+void crPipeline::ClearColor(const float red, const float green, const float blue, const float alpha)
+{
+#if CR_USE_VULKAN
+    m_clearColor.color = { { red, green, blue, alpha } }; // RGBA
+#elif CR_USE_OPENGL
+    glClearColor( red, green, blue, alpha );
+#endif //CR_USE_OPENGL
+}
+
 void crPipeline::Clear(void)
 {
 #if CR_USE_VULKAN
-    // Vulkan specific code to clear the pipeline state and buffers
+    VkRenderPassBeginInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = m_renderPass;
+    renderPassInfo.framebuffer = m_framebuffer;
+    renderPassInfo.renderArea.offset = { 0, 0 };
+    renderPassInfo.renderArea.extent = swapchainExtent;
+
+    renderPassInfo.clearValueCount = 1;
+    renderPassInfo.pClearValues = &m_clearColor;
+
+    // Inicia o render pass com o clear
+    vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 #elif CR_USE_OPENGL
     // get current bind to draw framebuffer
     GLint currentFrameBuffer = 0;
@@ -139,12 +165,6 @@ void crPipeline::Clear(void)
     glClearDepth( 1.0f );
     glClearStencil( 0 );
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-    // clear viewport and scissors
-    m_numViewports = 0;
-    m_numScissors = 0;
-    memset(m_viewports, 0, sizeof(m_viewports));
-    memset(m_scissors, 0, sizeof(m_scissors));
 #endif // CR_USE_OPENGL
 }
 

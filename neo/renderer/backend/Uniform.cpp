@@ -182,6 +182,7 @@ crUniform::crUniform( void ) :
 #if CR_USE_OPENGL
     m_handlers( nullptr ),
 #endif
+    m_textureCount( 0 ),
     m_currentTextureIndex( 0 ),
     m_unformOffsetVertex( 0 ),
     m_unformOffsetFragment( 0 ),

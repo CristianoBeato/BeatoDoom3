@@ -21,13 +21,11 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 
 ===========================================================================
 */
-
 #ifndef __BACKEND_COMMON_H__
 #define __BACKEND_COMMON_H__
 
 #include "Uniform.h"
 #include "Pipeline.h"
-#include "TextureBindingLayout.h"
 
 // all state modified by the back end is separated
 // from the front end state
@@ -75,6 +73,10 @@ public:
     void        BeginDrawingView (void);
     void        CreateSingleDrawInteractions( const drawSurf_t *surf, void (*DrawInteraction)(const drawInteraction_t *) );
     
+    // Backend.cpp
+    void        SetBuffer( const void *data );
+    void        SwapBuffers( const void *data ); 
+
 private:
     bool				            currentRenderCopied;	// true if any material has already referenced _currentRender
     int					            c_copyFrameBuffer;
@@ -91,7 +93,7 @@ private:
     glstate_t			            glState;                // our OpenGL state deltas
 	idScreenRect		            currentScissor;         // for scissor clipping, local inside renderView viewport
 	const viewEntity_t*             currentSpace;		    // for detecting when a matrix must change
-	viewLight_t*		            vLight;
+	viewLight_t*		            viewLight;
 	backEndCounters_t	            pc;
     crAutoPointer<crPipeline>       m_currentPipeline; 
     crAutoPointer<crUniform>        m_uniforms;
