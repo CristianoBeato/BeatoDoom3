@@ -22,22 +22,32 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 ===========================================================================
 */
 
-#ifndef __GL_FENCE_H__
-#define __GL_FENCE_H__
+#ifndef __GL_SHADER_STORAGE_H__
+#define __GL_SHADER_STORAGE_H__
 
-class crGLFence : public crFence
+/// @brief 
+class crGLShaderStorage : public crShaderStorage
 {
 public:
-    crGLFence( void );
-    ~crGLFence( void );
+    crGLShaderStorage( void );
+    ~crGLShaderStorage( void );
+    
+    /// @brief create buffer, allocate memory, create temp uniforms
+    void    StartUp( void );
 
-    void    Create( void );
-    void    Wait( void );
-    void    Reset( void );
-    bool    IsSignaled( void ) const;
+    /// @brief Release buffers and temporary uniforms 
+    void    ShutDown( void );
 
+    void    Begin( void );
+
+    void    End( void );
+    void    BindTexture( const uint32_t binding, crAutoPointer<crTexture> texture, crAutoPointer<crTextureSampler> sampler );
+    
+    
 private:
-    GLsync     m_fence;
+#if CR_USE_OPENGL
+    GLuint64*                           m_handlers;         // acess diret from buffer 
+#endif // CR_USE_OPENGL
 };
 
-#endif //!__GL_FENCE_H__
+#endif //__UNIFORM_H__

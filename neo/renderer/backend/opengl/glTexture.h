@@ -22,8 +22,8 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 ===========================================================================
 */
 
-#ifndef __TEXTURE_H__
-#define __TEXTURE_H__
+#ifndef __GL_TEXTURE_H__
+#define __GL_TEXTURE_H__
 
 // helper structure form image format
 struct internalFormat_t

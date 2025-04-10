@@ -192,4 +192,158 @@ protected:
     int32_t     m_bindindex;    // texture binding index -1 if not in texture binding buffer 
 };
 
+
+// ===========================================================================
+
+//vertex shader storage estructure:
+//struct vetexTransform
+//{
+//  vec4 rpLocalViewOrigin; 
+//  vec4 rpColorModulate;   //
+//  vec4 rpColorAdd;        //
+//  vec4 rpClipBounds;
+//  mat4 rpTextureMatrix;
+//  mat4 rpModelMatrix;
+//  mat4 rpViewMatrix;
+//  mat4 rpProjectionMatrix;
+//};
+
+// fragment shader storage structure 
+//struct fragmentTransfom
+//{
+//    uint32_t    sampler[8]; // we can acess the max of 8 textures from the sampler buffer 
+//    vec4        rpCurrentRenderSize;
+//    vec4        rpDiffuseColor;
+//    vec4        rpSpecularColor;
+//    vec4        shaderParm0;
+//    vec4        shaderParm1;
+//    vec4        shaderParm2;
+//    vec4        shaderParm3;
+//};
+
+//interaction shader pass transform
+//struct lightTransform
+//{
+//    vec4 rpLocalLightOrigin;
+//    vec4 rpLightProjectionS;
+//    vec4 rpLightProjectionT;
+//    vec4 rpLightProjectionQ;
+//    vec4 rpLightFallOff;
+//
+//};
+
+// ATTENTION: Must match the definition in the shader.
+// 0 is for the texture sampler array 
+static const uint32_t SHADER_BUFFER_BINDING_VERTEX_BLOCK = 1;     // layout( std430, binding = 1 ) buffer vertexStorageBlock
+static const uint32_t SHADER_BUFFER_BINDING_FRAGMENT_BLOCK = 2;   // layout( std430, binding = 2 ) buffer fragmentStorageBlock
+static const uint32_t SHADER_BUFFER_BINDING_LIGHT_BLOCK = 3;      // layout( std430, binding = 3 ) buffer lightStorageBlock
+
+static const size_t   FRAME_UNIFORM_VERTEX_SIZE;       // ~1,25 mb
+static const size_t   FRAME_UNIFORM_FRAGMENT_SIZE;   // ~576 kb
+static const size_t   FRAME_UNIFORM_LIGHT_SIZE;         // ~320 kbb
+static const size_t   FRAME_TEXTURE_HANDLE_SIZE;     // ~256 kb
+
+static const size_t   UNIFORMS_BUFFER_VERTEX_SIZE;
+static const size_t   UNIFORMS_BUFFER_FRAGMENT_UNIFORMS_SIZE;
+static const size_t   UNIFORMS_BUFFER_LIGHT_UNIFORMS_SIZE;
+static const size_t   TEXTURE_BUFFER_HANDLES_SIZE;
+
+// ===========================================================================
+
+enum
+{
+    // VERTEX SHADER UNIFORMS
+    VERTEX_UNIFORM_LOCATION_LOCAL_VIEW_ORIGIN = 0,    // vec4 rpLocalViewOrigin;
+    VERTEX_UNIFORM_LOCATION_COLOR_MODULATE,           // vec4 rpColorModulate;
+    VERTEX_UNIFORM_LOCATION_COLOR_ADD,                // vec4 rpColorAdd;
+    VERTEX_UNIFORM_LOCATION_TEXTURE_MATRIX,           // vec4 rpTextureMatrix;
+    VERTEX_UNIFORM_LOCATION_CLIP_BOUDS,               // vec4 rpClipBounds;
+    VERTEX_UNIFORM_LOCATION_MODEL_MATRIX,             // mat4 rpModelMatrix;
+    VERTEX_UNIFORM_LOCATION_VIEW_MATRIX,              // mat4 rpViewMatrix;
+    VERTEX_UNIFORM_LOCATION_PROJECTION_MATRIX,        // mat4 rpProjectionMatrix;
+    
+    // FRAGMENT SHADER UNIFORMS
+    FRAGMENT_UNIFORM_LOCATION_SAMPLERS0,              // uint32_t    sampler[0];
+    FRAGMENT_UNIFORM_LOCATION_SAMPLERS1,              // uint32_t    sampler[1];
+    FRAGMENT_UNIFORM_LOCATION_SAMPLERS2,              // uint32_t    sampler[2];
+    FRAGMENT_UNIFORM_LOCATION_SAMPLERS3,              // uint32_t    sampler[3];
+    FRAGMENT_UNIFORM_LOCATION_SAMPLERS4,              // uint32_t    sampler[4];
+    FRAGMENT_UNIFORM_LOCATION_SAMPLERS5,              // uint32_t    sampler[5];
+    FRAGMENT_UNIFORM_LOCATION_SAMPLERS6,              // uint32_t    sampler[6];
+    FRAGMENT_UNIFORM_LOCATION_SAMPLERS7,              // uint32_t    sampler[7];
+    FRAGMENT_UNIFORM_LOCATION_CURRENT_RENDER_SIZE,    // vec4 rpCurrentRenderSize;
+    FRAGMENT_UNIFORM_LOCATION_DIFUSE_COLOR,           // vec4 rpDiffuseColor;
+    FRAGMENT_UNIFORM_LOCATION_SPECULAR_COLOR,         // vec4 rpSpecularColor;
+    FRAGMENT_UNIFORM_LOCATION_SHADER_PARM0,           // vec4 shaderParm0;
+    FRAGMENT_UNIFORM_LOCATION_SHADER_PARM1,           // vec4 shaderParm1;
+    FRAGMENT_UNIFORM_LOCATION_SHADER_PARM2,           // vec4 shaderParm2;
+    FRAGMENT_UNIFORM_LOCATION_SHADER_PARM3,           // vec4 shaderParm3;
+    
+    // LIGHT SHADER UNIFORMS
+    LIGHT_UNIFORM_LOCATION_LOCAL_ORIGIN,              // vec4 rpLocalLightOrigin;
+    LIGHT_UNIFORM_LOCATION_PROJECTION_S,              // vec4 rpLightProjectionS;
+    LIGHT_UNIFORM_LOCATION_PROJECTION_T,              // vec4 rpLightProjectionT;
+    LIGHT_UNIFORM_LOCATION_PROJECTION_Q,              // vec4 rpLightProjectionQ;
+    LIGHT_UNIFORM_LOCATION_FALLOFF,                   // vec4 rpLightFallOff;
+    MAX_UNIFORMS
+};
+
+/*
+===========================================================================
+crShaderStorage
+===========================================================================
+*/
+class crShaderStorage
+{
+public:
+    crShaderStorage( void );
+    virtual ~crShaderStorage( void ) = default;
+
+    /// @brief create buffer, allocate memory, create temp uniforms
+    virtual void    StartUp( void ) = 0;
+
+    /// @brief Release buffers and temporary uniforms 
+    virtual void    ShutDown( void ) = 0;
+   
+    /// @brief load texture into the hanlde buffer, and store offset
+    /// @param binding the texture binding location
+    /// @param texture texture object handler 
+    /// @param sampler texture sampling object handler 
+    virtual void        BindTexture( const uint32_t binding, crAutoPointer<crTexture> texture, crAutoPointer<crTextureSampler> sampler ) = 0;
+        
+    ///@brief Begin frame, bind buffers    
+    virtual void    Begin( void ) = 0;
+   
+    /// @brief swap buffer offsets 
+    void    End( void );
+   
+    /// @brief copy our uniform to temporary memory  
+    /// @param uniform uniform data 
+    /// @param location uniform block location enum
+    void    SetUniform( const void* uniform, const uint32_t location );
+       
+    /// @brief flush ou temp uniform memry to the buffer  
+    void    Submit( void );
+
+protected:
+    // current texture index
+    uint32_t                    m_currentTextureIndex;          // current texture index
+    uint32_t                    m_textureCount;                 // attached texture count
+    uintptr_t                   m_unformOffsetVertex;           // vertex block position in frame 
+    uintptr_t                   m_unformOffsetFragment;         // fragment block positio in frame
+    uintptr_t                   m_unformOffsetLight;            // light block position in frame 
+    uintptr_t                   m_frameOffsetVertex;            // vertex buffer region positio 
+    uintptr_t                   m_frameOffsetFragment;          // fragment buffer region position
+    uintptr_t                   m_frameOffsetLight;             // light buffer offset position 
+    uintptr_t                   m_frameOffsetTextureHandler;    // texture handler buffer offset position 
+    crPointer<byte*>            m_vertexUniform;                //
+    crPointer<byte*>            m_fragmentUniform;              //
+    crPointer<byte*>            m_lightUniform;                 //
+    crAutoPointer<crBuffer>     m_vertexUniformSSBO;            // vertex shader storage buffer 
+    crAutoPointer<crBuffer>     m_fragmentUniformSSBO;          // fragment  shader storage buffer
+    crAutoPointer<crBuffer>     m_lightUniformSSBO;             // light shader storage buffer
+    crAutoPointer<crBuffer>     m_textureHandlerSSBO;           // texture handler shader storage buffer
+    crAutoPointer<crTexture>    m_bindTextures[32768];          // chage the number if the FRAME_TEXTURE_HANDLE_SIZE has changed 
+};
+
 #endif //__BACKEND_API_WRAPER_H__

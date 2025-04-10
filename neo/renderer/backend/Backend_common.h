@@ -36,7 +36,6 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #include "opengl/glTexture.h"
 #endif // CR_USE_OPENGL
 
-
 // all state modified by the back end is separated
 // from the front end state
 class crBackend
@@ -106,7 +105,7 @@ private:
 	viewLight_t*		            viewLight;
 	backEndCounters_t	            pc;
     crAutoPointer<crPipeline>       m_currentPipeline; 
-    crAutoPointer<crUniform>        m_uniforms;
+    crAutoPointer<crShaderStorage>  m_uniforms;
 	crAutoPointer<viewDef_t>	    viewDef;
 };
 

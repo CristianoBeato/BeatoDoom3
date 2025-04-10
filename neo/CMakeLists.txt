@@ -125,7 +125,6 @@ SET( RENDERER_SOURCES
 	
 source_group("" FILES ${RENDERER_SOURCES} )
 
-
 #
 # Backend OpenGL
 #
@@ -140,7 +139,9 @@ SET ( RENDERER_BACKEND_OPENGL_SOURCES
 	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/qgl.h
 	)
 
-	
+#
+# Backend Vulkan
+#	
 SET ( RENDERER_BACKEND_VULKAN_SOURCES
 	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/qvk.cpp
 	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/qvk.h
@@ -148,7 +149,7 @@ SET ( RENDERER_BACKEND_VULKAN_SOURCES
 ##
 ## Backend
 ## 
-SET( RENDERER_BAKCEND_SOURCES
+SET( RENDERER_BACKEND_SOURCES
 	${CMAKE_SOURCE_DIR}/renderer/backend/Backend.cpp
 	${CMAKE_SOURCE_DIR}/renderer/backend/Backend_common.h
 	${CMAKE_SOURCE_DIR}/renderer/backend/Backend_render.cpp
