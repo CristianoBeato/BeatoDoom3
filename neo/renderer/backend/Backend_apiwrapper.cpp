@@ -1,7 +1,7 @@
 /*
 ===========================================================================
 
-Beato idTech 4 Source Code
+Beato idTech 4 Source Code 
 Copyright (C) 2016-2024 Cristiano B. Santos <cristianobeato_dm@hotmail.com>.
 
 This file is part of the Beato idTech 4  GPL Source Code (?Beato idTech 4  Source Code?).
@@ -26,62 +26,17 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #pragma hdrstop
 
 #include "renderer/renderer_common.h"
-#include "Buffer.h"
+#include "Backend_apiwrapper.h"
 
-crBuffer::crBuffer( void ) : 
+/*
+===========================================================================
+crBuffer
+===========================================================================
+*/
+crBuffer::crBuffer(void) :
     m_size( 0 ),
     m_map( nullptr )
 {
-#if CR_USE_VULKAN
-    m_buffer = VK_NULL_HANDLER;
-#elif CR_USE_OPENGL
-    m_buffer = 0;
-#endif // CR_USE_OPENGL
-}
-
-crBuffer::~crBuffer( void )
-{
-    Destroy();
-}
-
-bool crBuffer::Create( const size_t size, const bool write, const bool read )
-{
-#if CR_USE_VULKAN
-#elif CR_USE_OPENGL
-    GLbitfield flags = GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
-
-    // create buffer object
-    glCreateBuffers(1, &m_buffer );
-
-    // reserve buffer memory 
-    glNamedBufferStorage( m_buffer, size, nullptr, flags );
-
-    if( write )
-        flags != GL_MAP_WRITE_BIT;
-
-    if( read )
-        flags != GL_MAP_READ_BIT;
-
-    // get buffer pointer 
-    m_map = glMapNamedBufferRange( m_buffer, 0, m_size, flags );
-
-#endif // CR_USE_OPENGL
-    
-    return true;
-}
-
-void crBuffer::Destroy(void)
-{
-#if CR_USE_VULKAN
-
-#elif CR_USE_OPENGL
-    if( m_buffer != 0 )
-    {
-        glUnmapNamedBuffer( m_buffer );
-        glDeleteBuffers( 1, &m_buffer );
-        m_buffer = 0;
-    }
-#endif    
 }
 
 void crBuffer::Upload( const void *data, const uintptr_t offset, const size_t size ) const
@@ -92,4 +47,20 @@ void crBuffer::Upload( const void *data, const uintptr_t offset, const size_t si
 void crBuffer::Download( void *data, const uintptr_t offset, const size_t size ) const
 {
     ::memcpy( data, reinterpret_cast<void*>( reinterpret_cast<uintptr_t>( m_map ) + offset ), size );
+}
+
+/*
+===========================================================================
+crTexture
+===========================================================================
+*/
+crTexture::crTexture(void) :     
+    m_width( 0 ),
+    m_height( 0 ),
+    m_depth( 0 ),
+    m_layers( 0 ),
+    m_mipcount( 0 ),
+    m_bindindex( 0 ),
+    m_samples( 0 )
+{
 }

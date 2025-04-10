@@ -26,7 +26,10 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #pragma hdrstop
 
 #include "renderer/renderer_common.h"
-#include "Texture.h"
+#include "renderer/backend/Backend_apiwrapper.h"
+#include "qgl.h"
+#include "glBuffer.h"
+#include "glTexture.h"
 
 // OpenGL
 // internal formats suported (OpenGL 4.6) 
@@ -256,93 +259,32 @@ uint32_t internalFormat_t::GetDataType(void) const
     return GL_NONE;
 }
 
-crTexture::crTexture( void ) :
-    m_width( 0 ),
-    m_height( 0 ),
-    m_depth( 0 ),
-    m_layers( 0 ),
-    m_mipcount( 0 ),
-#if CR_USE_VULKAN
-    m_image( VK_NULL_HANDLE ),
-    m_memory( VK_NULL_HANDLE ),
-    m_imageView( VK_NULL_HANDLE )
-#else CR_USE_OPENGL
+/*
+===========================================================================
+crGLTexture
+===========================================================================
+*/
+crGLTexture::crGLTexture( void ) : 
+    crTexture(),
     m_bindingHandler( 0 ),
     m_texture( 0 ),
     m_target( 0 ),
     m_format( 0 )
-#endif // CR_USE_OPENGL
 {
 }
 
-crTexture::~crTexture( void )
+crGLTexture::~crGLTexture( void )
 {
     Destroy();
 }
 
-bool crTexture::Create( const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t layers, const uint32_t mips, const GLenum format, const uint32_t type )
+bool crGLTexture::Create( const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t layers, const uint32_t mips, const GLenum format, const uint32_t type )
 {
     m_width = width;
     m_height = height;
     m_depth = depth;
     m_layers = layers;
     m_mipcount = mips;
-
-#if CR_USE_VULKAN
-    VkImageCreateInfo imageInfo = {};
-    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    imageInfo.imageType = VK_IMAGE_TYPE_2D;
-    imageInfo.format = format;
-    imageInfo.extent.width = width;
-    imageInfo.extent.height = height;
-    imageInfo.extent.depth = depth;
-    imageInfo.mipLevels = 1;
-    imageInfo.arrayLayers = 1;
-    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-    imageInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    if ( vkCreateImage( m_device, &imageInfo, nullptr, &m_image ) != VK_SUCCESS )
-    {
-        common->Printf( "Failed to create texture image!\n" );
-        return false;
-    }
-
-    VkMemoryRequirements memRequirements;
-    vkGetImageMemoryRequirements( m_device, m_image, &memRequirements );
-    VkMemoryAllocateInfo allocInfo = {};
-    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = FindMemoryType( memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT );
-    if ( vkAllocateMemory( m_device, &allocInfo, nullptr, &m_memory ) != VK_SUCCESS )
-    {
-        common->Printf( "Failed to allocate texture image memory!\n" );
-        return false;
-    }
-
-    vkBindImageMemory( m_device, m_image, m_memory, 0 );
-    VkImageViewCreateInfo viewInfo = {};
-    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    viewInfo.image = m_image;
-    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    viewInfo.format = format;
-    viewInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-    viewInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-    viewInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-    viewInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    viewInfo.subresourceRange.baseMipLevel = 0;
-    viewInfo.subresourceRange.levelCount = 1;
-    viewInfo.subresourceRange.baseArrayLayer = 0;
-    viewInfo.subresourceRange.layerCount = 1;
-    if ( vkCreateImageView( m_device, &viewInfo, nullptr, &m_imageView ) != VK_SUCCESS )
-    {
-        common->Printf( "Failed to create texture image view!\n" );
-        return false;
-    }
-
-#elif CR_USE_OPENGL
 
     //todo: check multisamples and cubemaps
     if ( m_height != 0 )
@@ -384,36 +326,18 @@ bool crTexture::Create( const uint32_t width, const uint32_t height, const uint3
         break;
     default:
         // TODO: cast a error
-        break;
+        return false;
     }
 
-#endif // CR_USE_OPENGL
     return true;
 }
 
-void crTexture::CopyBufferToImage(const crBuffer *buffer, const uint32_t rowLength, const bufferTextureRect_t *imageMap, const uint32_t count )
+void crGLTexture::CopyBufferToImage(const crBuffer *buffer, const uint32_t rowLength, const bufferTextureRect_t *imageMap, const uint32_t count )
 {
-#if CR_USE_VULKAN
-    VkBufferImageCopy region{};
-    region.bufferOffset = 0;
-    region.bufferRowLength = 0;    // 0 = sem padding, tightly packed
-    region.bufferImageHeight = 0;
-
-    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region.imageSubresource.mipLevel = 0;
-    region.imageSubresource.baseArrayLayer = 0;
-    region.imageSubresource.layerCount = 1;
-
-    region.imageOffset = {0, 0, 0};
-    region.imageExtent = { texWidth, texHeight, 1 };
-
-    // texture copy command 
-    vkCmdCopyBufferToImage( commandBuffer, stagingBuffer, textureImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, count, &region );
-#elif CR_USE_OPENGL
     GLint currentBuffer = 0;
     glGetIntegerv( GL_PIXEL_UNPACK_BUFFER_BINDING, &currentBuffer );
 
-    GLuint bufferhnd = buffer->GetHandler();
+    GLuint bufferhnd = dynamic_cast<const crGLBuffer*>(buffer)->GetHandler();
     if ( currentBuffer == bufferhnd )
         glBindBuffer(GL_PIXEL_UNPACK_BUFFER, bufferhnd );
 
@@ -453,68 +377,36 @@ void crTexture::CopyBufferToImage(const crBuffer *buffer, const uint32_t rowLeng
     // restaure bind buffer 
     if ( currentBuffer == bufferhnd )
         glBindBuffer( GL_PIXEL_UNPACK_BUFFER, currentBuffer );
-
-#endif // CR_USE_OPENGL
 }
 
-void crTexture::MakeResident( const crTextureSampler* sampler )
+void crGLTexture::MakeResident( const crGLTextureSampler* sampler )
 {
-#if CR_USE_OPENGL
     if( m_bindingHandler == 0 )
         m_bindingHandler = glGetTextureSamplerHandleARB( m_texture, sampler->GetHandler() );
-#endif // CR_USE_OPENGL
 }
 
-void crTexture::Unmakeresident(void)
+void crGLTexture::Unmakeresident(void)
 {
-#if CR_USE_OPENGL
     if( m_bindingHandler != 0 )
         glMakeTextureHandleNonResidentARB( m_bindingHandler );
-#endif // CR_USE_OPENGL
 }
 
-crTextureSampler::crTextureSampler( void ) :
-#if CR_USE_VULKAN
-    m_sampler( VK_NULL_HANDLE )
-#elif CR_USE_OPENGL
-    m_sampler( 0 )
-#endif // CR_USE_OPENGL
+/*
+===========================================================================
+crGLTextureSampler
+===========================================================================
+*/
+crGLTextureSampler::crGLTextureSampler( void ) : m_sampler( 0 )
 {
 }
 
-crTextureSampler::~crTextureSampler( void )
+crGLTextureSampler::~crGLTextureSampler( void )
 {
     Destroy();
 }
 
-bool crTextureSampler::Create(const uint32_t minFilter, const uint32_t magFilter, const uint32_t wrapS, const uint32_t wrapT, const float anisotropicLevel)
+bool crGLTextureSampler::Create(const uint32_t minFilter, const uint32_t magFilter, const uint32_t wrapS, const uint32_t wrapT, const float anisotropicLevel)
 {
-#if CR_USE_VULKAN
-    VkSamplerCreateInfo samplerInfo = {};
-    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    samplerInfo.magFilter = magFilter;
-    samplerInfo.minFilter = minFilter;
-    samplerInfo.addressModeU = wrapS;
-    samplerInfo.addressModeV = wrapT;
-    samplerInfo.addressModeW = wrapS;
-    samplerInfo.anisotropyEnable = VK_TRUE;
-    samplerInfo.maxAnisotropy = anisotropicLevel;
-    samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-    samplerInfo.unnormalizedCoordinates = VK_FALSE;
-    samplerInfo.compareEnable = VK_FALSE;
-    samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    samplerInfo.mipLodBias = 0.0f;
-    samplerInfo.minLod = 0.0f;
-    samplerInfo.maxLod = 0.0f;
-    samplerInfo.unnormalizedCoordinates = VK_FALSE;
-
-    if ( vkCreateSampler( m_device, &samplerInfo, nullptr, &m_sampler ) != VK_SUCCESS )
-    {
-        common->Printf( "Failed to create texture sampler!\n" );
-        return false;
-    }
-#elif CR_USE_OPENGL
     glCreateSamplers( 1, &m_sampler );
     glSamplerParameteri( m_sampler, GL_TEXTURE_MIN_FILTER, minFilter );
     glSamplerParameteri( m_sampler, GL_TEXTURE_MAG_FILTER, magFilter );
@@ -530,24 +422,15 @@ bool crTextureSampler::Create(const uint32_t minFilter, const uint32_t magFilter
     glSamplerParameteri( m_sampler, GL_TEXTURE_LOD_BIAS, 0 );
     glSamplerParameteri( m_sampler, GL_TEXTURE_BASE_LEVEL, 0 );
     glSamplerParameteri( m_sampler, GL_TEXTURE_MAX_LEVEL, 0 );
-#endif // CR_USE_OPENGL
+    
     return true;
 }
 
-void crTextureSampler::Destroy(void)
+void crGLTextureSampler::Destroy(void)
 {
-#if CR_USE_VULKAN
-    if ( m_sampler != VK_NULL_HANDLE )
-    {
-        vkDestroySampler( m_device, m_sampler, nullptr );
-        m_sampler = VK_NULL_HANDLE;
-    }
-#elif CR_USE_OPENGL
     if ( m_sampler != 0 )
     {
         glDeleteSamplers( 1, &m_sampler );
         m_sampler = 0;
     }
-#endif // CR_USE_OPENGL
 }
-

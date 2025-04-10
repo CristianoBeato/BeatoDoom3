@@ -319,16 +319,23 @@ extern PFNGLFRAMEBUFFERTEXTURELAYERPROC			glFramebufferTextureLayer;
 extern PFNGLFRAMEBUFFERTEXTUREPROC				glFramebufferTexture;
 extern PFNGLCHECKNAMEDFRAMEBUFFERSTATUSPROC		glCheckNamedFramebufferStatus;
 
+// ARB_sync
+extern PFNGLFENCESYNCPROC						glFenceSync;
+extern PFNGLISSYNCPROC 							glIsSync;
+extern PFNGLDELETESYNCPROC 						glDeleteSync;
+extern PFNGLCLIENTWAITSYNCPROC 					glClientWaitSync;
+extern PFNGLWAITSYNCPROC 						glWaitSync;
+extern PFNGLGETSYNCIVPROC						glGetSynciv;
 
 // ARB_viewport_array
-extern PFNGLVIEWPORTARRAYVPROC				glViewportArrayv;
-extern PFNGLVIEWPORTINDEXEDFPROC			glViewportIndexedf;
-extern PFNGLVIEWPORTINDEXEDFVPROC			glViewportIndexedfv;
-extern PFNGLSCISSORARRAYVPROC				glScissorArrayv;
-extern PFNGLSCISSORINDEXEDPROC				glScissorIndexed;
-extern PFNGLSCISSORINDEXEDVPROC				glScissorIndexedv;
-extern PFNGLDEPTHRANGEARRAYVPROC			glDepthRangeArrayv;
-extern PFNGLDEPTHRANGEINDEXEDPROC			glDepthRangeIndexed;
+extern PFNGLVIEWPORTARRAYVPROC					glViewportArrayv;
+extern PFNGLVIEWPORTINDEXEDFPROC				glViewportIndexedf;
+extern PFNGLVIEWPORTINDEXEDFVPROC				glViewportIndexedfv;
+extern PFNGLSCISSORARRAYVPROC					glScissorArrayv;
+extern PFNGLSCISSORINDEXEDPROC					glScissorIndexed;
+extern PFNGLSCISSORINDEXEDVPROC					glScissorIndexedv;
+extern PFNGLDEPTHRANGEARRAYVPROC				glDepthRangeArrayv;
+extern PFNGLDEPTHRANGEINDEXEDPROC				glDepthRangeIndexed;
 
 //===========================================================================
 // DEPRECATE TO REMOVE and WORK ARROUND

@@ -126,25 +126,37 @@ SET( RENDERER_SOURCES
 source_group("" FILES ${RENDERER_SOURCES} )
 
 
+#
+# Backend OpenGL
+#
+SET ( RENDERER_BACKEND_OPENGL_SOURCES 
+	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glBuffer.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glBuffer.h
+	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glFence.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glFence.h
+	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glTexture.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glTexture.h
+	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/qgl.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/qgl.h
+	)
+
+	
+SET ( RENDERER_BACKEND_VULKAN_SOURCES
+	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/qvk.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/qvk.h
+	)
 ##
 ## Backend
 ## 
 SET( RENDERER_BAKCEND_SOURCES
-	${CMAKE_SOURCE_DIR}/renderer/backend/Buffer.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/Buffer.h
 	${CMAKE_SOURCE_DIR}/renderer/backend/Backend.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/Backend_common.h
 	${CMAKE_SOURCE_DIR}/renderer/backend/Backend_render.cpp
 	${CMAKE_SOURCE_DIR}/renderer/backend/draw_arb.cpp
 	${CMAKE_SOURCE_DIR}/renderer/backend/draw_arb2.cpp
 	${CMAKE_SOURCE_DIR}/renderer/backend/draw_common.cpp
 	${CMAKE_SOURCE_DIR}/renderer/backend/Pipeline.cpp
 	${CMAKE_SOURCE_DIR}/renderer/backend/Pipeline.h
-	${CMAKE_SOURCE_DIR}/renderer/backend/qgl.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/qgl.h
-	${CMAKE_SOURCE_DIR}/renderer/backend/qvk.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/qvk.h
-	${CMAKE_SOURCE_DIR}/renderer/backend/Texture.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/Texture.h
 	${CMAKE_SOURCE_DIR}/renderer/backend/Uniform.cpp
 	${CMAKE_SOURCE_DIR}/renderer/backend/Uniform.h
 	)
@@ -372,7 +384,9 @@ source_group("" FILES ${ENGINE_SOURCES} )
 
 set( BEATO_DOOM_SOURCES 
 	${RENDERER_SOURCES}
-	${RENDERER_BAKCEND_SOURCES}
+	${RENDERER_BACKEND_OPENGL_SOURCES}
+	${RENDERER_BACKEND_VULKAN_SOURCES}
+	${RENDERER_BACKEND_SOURCES}
 	${RENDERER_FRONTEND_SOURCES}
 	${RENDERER_RENDERWORL_SOURCES}
 	${RENDERER_IMAGENS_SOURCES}

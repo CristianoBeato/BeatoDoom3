@@ -24,8 +24,18 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #ifndef __BACKEND_COMMON_H__
 #define __BACKEND_COMMON_H__
 
-#include "Uniform.h"
-#include "Pipeline.h"
+#include "Backend_apiwrapper.h"
+
+#if CR_USE_VULKAN
+#endif // CR_USE_VULKAN
+
+#if CR_USE_OPENGL
+#include "opengl/qgl.h"
+#include "opengl/glFence.h"
+#include "opengl/glBuffer.h"
+#include "opengl/glTexture.h"
+#endif // CR_USE_OPENGL
+
 
 // all state modified by the back end is separated
 // from the front end state

@@ -30,8 +30,6 @@ If you have questions concerning this license or the applicable additional terms
 #define __TR_LOCAL_H__
 
 // BEATO Begin: pipeline implementation
-#include "backend/Buffer.h"
-#include "backend/Texture.h"
 #include "backend/Backend_common.h"
 // BEATO End
 
