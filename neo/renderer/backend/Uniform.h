@@ -63,38 +63,78 @@ enum
     MAX_UNIFORMS
 };
 
+class crTexture;
+class crTextureSampler;
+
+/// @brief 
 class crUniform
 {
 public:
     crUniform( void );
     ~crUniform( void );
+    
+    /// @brief create buffer, allocate memory, create temp uniforms
     void    StartUp( void );
+
+    /// @brief Release buffers and temporary uniforms 
     void    ShutDown( void );
 
-    void    SetUniform( const void* uniform, const uint32_t location );
-    void    Submit( void );
-    void    Flush( void );
+    // Begin frame, bind buffers  
+    void    Begin( void );
 
+    /// @brief swap buffer offsets 
+    void    End( void );
+
+    /// @brief load texture into the hanlde buffer, and store offset
+    /// @param binding the texture binding location
+    /// @param texture texture object handler 
+    /// @param sampler texture sampling object handler 
+    void        BindTexture( const uint32_t binding, crAutoPointer<crTexture> texture, crAutoPointer<crTextureSampler> sampler );
+    
+    /// @brief release texture 
+    /// @param texture 
+    void        Purge( crAutoPointer<crTexture> texture );
+    
+    /// @brief copy our uniform to temporary memory  
+    /// @param uniform uniform data 
+    /// @param location uniform block location enum
+    void    SetUniform( const void* uniform, const uint32_t location );
+    
+    /// @brief flush ou temp uniform memry to the buffer  
+    void    Submit( void );
+    
 private:
-    // current frame size uniforms  
-    size_t                      m_vertexUniformSize;
-    size_t                      m_fragmentUniformSize;
-    size_t                      m_lightUniformSize;
+    // current texture index
+    uint32_t                    m_currentTextureIndex;
+    uint32_t                    m_textureCount;
+
+    // frame offsets 
+    uintptr_t                   m_unformOffsetVertex;
+    uintptr_t                   m_unformOffsetFragment;
+    uintptr_t                   m_unformOffsetLight;
     
     // buffer region offsets
-    uintptr_t                   m_vertexUniformOffset;
-    uintptr_t                   m_fragmentUniformOffset;
-    uintptr_t                   m_lightUniformOffset;
+    uintptr_t                   m_frameOffsetVertex;
+    uintptr_t                   m_frameOffsetFragment;
+    uintptr_t                   m_frameOffsetLight;
+    uintptr_t                   m_frameOffsetTextureHandler;
 
-    // temp uniform memmoty
+    // temp uniform memmory
     crPointer<byte*>            m_vertexUniform;
     crPointer<byte*>            m_fragmentUniform;
     crPointer<byte*>            m_lightUniform;
 
     // buffer handler 
-    crAutoPointer<crBuffer>     m_vertexUniformSSBO;
-    crAutoPointer<crBuffer>     m_fragmentUniformSSBO;
-    crAutoPointer<crBuffer>     m_lightUniformSSBO;
+    crAutoPointer<crBuffer>     m_vertexUniformSSBO;        // vertex shader storage buffer 
+    crAutoPointer<crBuffer>     m_fragmentUniformSSBO;      // fragment  shader storage buffer
+    crAutoPointer<crBuffer>     m_lightUniformSSBO;         // light shader storage buffer
+    crAutoPointer<crBuffer>     m_textureHandlerSSBO;       // texture handler shader storage buffer
+
+    crAutoPointer<crTexture>    m_bindTextures[32768];      // chage the number if the FRAME_TEXTURE_HANDLE_SIZE has changed 
+
+#if CR_USE_OPENGL
+    GLuint64*                           m_handlers;         // acess diret from buffer 
+#endif // CR_USE_OPENGL
 };
 
 #endif //__UNIFORM_H__

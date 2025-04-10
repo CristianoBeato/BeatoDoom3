@@ -65,14 +65,17 @@ PFNGLGETBUFFERPARAMETERIVPROC 		    glGetBufferParameteriv = nullptr;
 PFNGLGETBUFFERPOINTERVPROC 			    glGetBufferPointerv = nullptr;
 PFNGLCOPYBUFFERSUBDATAPROC			    glCopyBufferSubData = nullptr;
 
+
 // GL_ARB_direct_state_access GL_ARB_buffer_storage  GL_ARB_uniform_buffer_object  GL_ARB_map_buffer_range
 PFNGLCREATEBUFFERSPROC				    glCreateBuffers = nullptr;
 PFNGLNAMEDBUFFERSTORAGEPROC			    glNamedBufferStorage = nullptr;
 PFNGLNAMEDBUFFERSUBDATAPROC			    glNamedBufferSubData = nullptr;
 PFNGLCOPYNAMEDBUFFERSUBDATAPROC		    glCopyNamedBufferSubData = nullptr;
 PFNGLCLEARNAMEDBUFFERDATAPROC		    glClearNamedBufferData = nullptr;
-PFNGLMAPNAMEDBUFFERRANGEPROC			glMapNamedBufferRange = nullptr;
 PFNGLUNMAPNAMEDBUFFERPROC			    glUnmapNamedBuffer = nullptr;
+
+// GL_ARB_map_buffer_range
+PFNGLMAPNAMEDBUFFERRANGEPROC			glMapNamedBufferRange = nullptr;
 
 // GL_ARB_multi_bind
 PFNGLBINDBUFFERSRANGEPROC               glBindBuffersRange = nullptr;

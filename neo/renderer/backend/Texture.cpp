@@ -460,14 +460,16 @@ void crTexture::CopyBufferToImage(const crBuffer *buffer, const uint32_t rowLeng
 void crTexture::MakeResident( const crTextureSampler* sampler )
 {
 #if CR_USE_OPENGL
-    m_bindingHandler = glGetTextureSamplerHandleARB( m_texture, sampler->GetHandler() );
+    if( m_bindingHandler == 0 )
+        m_bindingHandler = glGetTextureSamplerHandleARB( m_texture, sampler->GetHandler() );
 #endif // CR_USE_OPENGL
 }
 
 void crTexture::Unmakeresident(void)
 {
 #if CR_USE_OPENGL
-    glMakeTextureHandleNonResidentARB( m_bindingHandler );
+    if( m_bindingHandler != 0 )
+        glMakeTextureHandleNonResidentARB( m_bindingHandler );
 #endif // CR_USE_OPENGL
 }
 

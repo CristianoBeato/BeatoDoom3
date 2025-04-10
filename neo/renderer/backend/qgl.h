@@ -165,6 +165,8 @@ extern PFNGLCLEARNAMEDBUFFERDATAPROC		glClearNamedBufferData;
 extern PFNGLMAPNAMEDBUFFERRANGEPROC			glMapNamedBufferRange;
 extern PFNGLUNMAPNAMEDBUFFERPROC			glUnmapNamedBuffer;
 
+extern PFNGLBINDBUFFERRANGEPROC            	glBindBufferRange;
+
 // GL_ARB_multi_bind
 extern PFNGLBINDBUFFERSRANGEPROC            glBindBuffersRange;
 

@@ -28,16 +28,6 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #include "renderer/renderer_common.h"
 #include "Uniform.h"
 
-// typo sizes helpers 
-static const uint32_t FLOAT_SIZE = sizeof( float );   
-static const uint32_t INT_SIZE = sizeof( int );
-static const uint32_t UINT_SIZE = sizeof( uint32_t );
-static const uint32_t VEC3F_SIZE = FLOAT_SIZE * 3;
-static const uint32_t VEC4F_SIZE = FLOAT_SIZE * 4;
-static const uint32_t MAT4X2_SIZE = FLOAT_SIZE * 8;
-static const uint32_t MAT4X3_SIZE = FLOAT_SIZE * 12;
-static const uint32_t MAX4x4_SIZE = FLOAT_SIZE * 16;
- 
 //vertex shader storage estructure:
 //struct vetexTransform
 //{
@@ -74,6 +64,16 @@ static const uint32_t MAX4x4_SIZE = FLOAT_SIZE * 16;
 //    vec4 rpLightFallOff;
 //
 //};
+
+// type size_s helpers 
+static const uint32_t FLOAT_SIZE = sizeof( float );   
+static const uint32_t INT_SIZE = sizeof( int );
+static const uint32_t UINT_SIZE = sizeof( uint32_t );
+static const uint32_t VEC3F_SIZE = FLOAT_SIZE * 3;
+static const uint32_t VEC4F_SIZE = FLOAT_SIZE * 4;
+static const uint32_t MAT4X2_SIZE = FLOAT_SIZE * 8;
+static const uint32_t MAT4X3_SIZE = FLOAT_SIZE * 12;
+static const uint32_t MAX4x4_SIZE = FLOAT_SIZE * 16;
 
 // Vertex Uniforms (buffer vertexStorageBlock)
 // Observação: alguns gaps podem existir por alinhamento.
@@ -161,9 +161,17 @@ uniformList[MAX_UNIFORMS] =
 static const uint32_t SHADER_BUFFER_BINDING_VERTEX_BLOCK = 1;     // layout( std430, binding = 1 ) buffer vertexStorageBlock
 static const uint32_t SHADER_BUFFER_BINDING_FRAGMENT_BLOCK = 2;   // layout( std430, binding = 2 ) buffer fragmentStorageBlock
 static const uint32_t SHADER_BUFFER_BINDING_LIGHT_BLOCK = 3;      // layout( std430, binding = 3 ) buffer lightStorageBlock
-static const size_t   UNIFORMS_BUFFER_VERTEX_SIZE = SHADER_VERTEX_BLOCK_SIZE * MAX_FRAME_DRAW_CALL * SMP_FRAMES;
-static const size_t   UNIFORMS_BUFFER_FRAGMENT_UNIFORMS_SIZE = SHADER_FRAGMENT_BLOCK_SIZE * MAX_FRAME_DRAW_CALL * SMP_FRAMES;
-static const size_t   UNIFORMS_BUFFER_LIGHT_UNIFORMS_SIZE = SHADER_LIGHT_BLOCK_SIZE * MAX_FRAME_DRAW_CALL * SMP_FRAMES;
+
+static const size_t   FRAME_UNIFORM_VERTEX_SIZE = SHADER_VERTEX_BLOCK_SIZE * MAX_FRAME_DRAW_CALL;       // ~1,25 mb
+static const size_t   FRAME_UNIFORM_FRAGMENT_SIZE = SHADER_FRAGMENT_BLOCK_SIZE * MAX_FRAME_DRAW_CALL;   // ~576 kb
+static const size_t   FRAME_UNIFORM_LIGHT_SIZE = SHADER_LIGHT_BLOCK_SIZE * MAX_FRAME_DRAW_CALL;         // ~320 kbb
+static const size_t   FRAME_TEXTURE_HANDLE_SIZE = ( sizeof( GLuint64 ) * 8 ) * MAX_FRAME_DRAW_CALL;     // ~256 kb
+
+static const size_t   UNIFORMS_BUFFER_VERTEX_SIZE = FRAME_UNIFORM_VERTEX_SIZE * SMP_FRAMES;
+static const size_t   UNIFORMS_BUFFER_FRAGMENT_UNIFORMS_SIZE = FRAME_UNIFORM_FRAGMENT_SIZE * SMP_FRAMES;
+static const size_t   UNIFORMS_BUFFER_LIGHT_UNIFORMS_SIZE = FRAME_UNIFORM_LIGHT_SIZE * SMP_FRAMES;
+static const size_t   TEXTURE_BUFFER_HANDLES_SIZE = FRAME_TEXTURE_HANDLE_SIZE * SMP_FRAMES;
+
 
 /*
 =====================================================================================
@@ -171,12 +179,17 @@ crUniform
 =====================================================================================
 */
 crUniform::crUniform( void ) :
-    m_vertexUniformSize( 0 ),
-    m_fragmentUniformSize( 0 ),
-    m_lightUniformSize( 0 ),
-    m_vertexUniformOffset( 0 ),
-    m_fragmentUniformOffset( 0 ),
-    m_lightUniformOffset( 0 )
+#if CR_USE_OPENGL
+    m_handlers( nullptr ),
+#endif
+    m_currentTextureIndex( 0 ),
+    m_unformOffsetVertex( 0 ),
+    m_unformOffsetFragment( 0 ),
+    m_unformOffsetLight( 0 ),
+    m_frameOffsetVertex( 0 ),
+    m_frameOffsetFragment( 0 ),
+    m_frameOffsetLight( 0 ),
+    m_frameOffsetTextureHandler( 0 )
 {
 }
 
@@ -190,9 +203,19 @@ void crUniform::StartUp(void)
     m_fragmentUniformSSBO.New( crBuffer() );
     m_lightUniformSSBO.New( crBuffer() );
 
+    // Create buffers 
     m_vertexUniformSSBO->Create( UNIFORMS_BUFFER_VERTEX_SIZE ); // Create vertex uniform buffer storage 
     m_fragmentUniformSSBO->Create( UNIFORMS_BUFFER_FRAGMENT_UNIFORMS_SIZE ); // Create fragment uniform buffer storage 
     m_lightUniformSSBO->Create( UNIFORMS_BUFFER_LIGHT_UNIFORMS_SIZE ); // Create light uniform buffer stogare
+    m_textureHandlerSSBO->Create( TEXTURE_BUFFER_HANDLES_SIZE ); // Create texture binding buffer 
+
+    // reserve temp unifom 
+    m_vertexUniform.Alloc( SHADER_VERTEX_BLOCK_SIZE );
+    m_fragmentUniform.Alloc( SHADER_FRAGMENT_BLOCK_SIZE );
+    m_lightUniform.Alloc( SHADER_LIGHT_BLOCK_SIZE );
+
+    // get texture buffer array
+    m_handlers = static_cast<GLuint64*>( m_textureHandlerSSBO->GetMap() );
 }
 
 void crUniform::ShutDown(void)
@@ -218,6 +241,95 @@ void crUniform::ShutDown(void)
         m_vertexUniformSSBO.Delete();
 }
 
+void crUniform::Begin(void)
+{
+#if CR_USE_VULKAN
+#elif CR_USE_OPENGL
+    // 0 texture  
+    // 1 vertex 
+    // 2 fragement
+    // 3 light 
+    GLuint      buffers[4];
+    GLintptr    offsets[4]; 
+    GLsizeiptr  sizes[4];
+    
+    // buffer handlers
+    buffers[0] = m_textureHandlerSSBO->GetHandler();
+    buffers[1] = m_vertexUniformSSBO->GetHandler();
+    buffers[2] = m_fragmentUniformSSBO->GetHandler();
+    buffers[3] = m_lightUniformSSBO->GetHandler();
+        
+    // location offsets s
+    offsets[0] = m_frameOffsetTextureHandler;
+    offsets[1] = m_frameOffsetVertex;
+    offsets[2] = m_frameOffsetFragment;
+    offsets[3] = m_frameOffsetLight;
+        
+    // block size 
+    sizes[0] = FRAME_TEXTURE_HANDLE_SIZE;
+    sizes[1] = FRAME_UNIFORM_VERTEX_SIZE;
+    sizes[2] = FRAME_UNIFORM_FRAGMENT_SIZE;
+    sizes[3] = FRAME_UNIFORM_LIGHT_SIZE;
+    
+    glBindBuffersRange( GL_SHADER_STORAGE_BUFFER, 0, 3, buffers, offsets, sizes );
+
+    // update the copy uniforms 
+    m_unformOffsetVertex = m_frameOffsetVertex; 
+    m_unformOffsetFragment = m_frameOffsetFragment; 
+    m_unformOffsetLight = m_frameOffsetLight; 
+    m_currentTextureIndex = m_frameOffsetTextureHandler != 0 ? ( m_frameOffsetTextureHandler / sizeof( GLuint64 ) ) : 0;
+#endif
+}
+
+void crUniform::End(void)
+{
+    
+    // update buffer positions ( swap buffers )
+    m_frameOffsetTextureHandler = ( m_frameOffsetTextureHandler + FRAME_TEXTURE_HANDLE_SIZE ) % TEXTURE_BUFFER_HANDLES_SIZE;
+    m_frameOffsetVertex = ( m_frameOffsetVertex + FRAME_UNIFORM_VERTEX_SIZE ) % UNIFORMS_BUFFER_VERTEX_SIZE;
+    m_frameOffsetFragment = ( m_frameOffsetFragment + FRAME_UNIFORM_FRAGMENT_SIZE ) % UNIFORMS_BUFFER_FRAGMENT_UNIFORMS_SIZE;
+    m_frameOffsetLight = ( m_frameOffsetLight + FRAME_UNIFORM_LIGHT_SIZE ) % UNIFORMS_BUFFER_LIGHT_UNIFORMS_SIZE;
+
+    // release textures 
+    for ( uint32_t i = 0; i < m_textureCount; i++)
+    {
+        // remove texture binding 
+        m_bindTextures[i]->SetBinding( -1 );
+        m_bindTextures[i] = nullptr;
+    }
+    
+    m_textureCount = 0;
+    m_currentTextureIndex = 0;
+}
+
+void crUniform::BindTexture(const uint32_t binding, crAutoPointer<crTexture> texture, crAutoPointer<crTextureSampler> sampler)
+{
+    uint32_t index = 0;
+    assert( texture && sampler );
+
+    // texture is already bind, get current index 
+    if ( texture->GetBindingIndex() > -1 )
+    {
+        index = texture->GetBindingIndex();
+        SetUniform( &index, FRAGMENT_UNIFORM_LOCATION_SAMPLERS0 + binding );
+        return;
+    }
+
+    // create texture sampler handler 
+    texture->MakeResident( &sampler );
+
+    // get the last offset in the buffer 
+    index = m_currentTextureIndex++;
+
+    // set texture handler in the buffer 
+    m_handlers[index] = texture->GetBindingHandler();
+
+    // set the texture as binded 
+    texture->SetBinding( index );
+
+    m_bindTextures[m_textureCount++] = texture;
+}
+
 void crUniform::SetUniform( const void *uniform, const uint32_t location )
 {
     if ( location < FRAGMENT_UNIFORM_LOCATION_SAMPLERS0 )
@@ -231,49 +343,12 @@ void crUniform::SetUniform( const void *uniform, const uint32_t location )
 void crUniform::Submit(void)
 {
     // copy current uniform to our buffer 
-    m_vertexUniformSSBO->Upload( &m_vertexUniform,  m_vertexUniformOffset, SHADER_VERTEX_BLOCK_SIZE );
-    m_fragmentUniformSSBO->Upload( &m_fragmentUniform, m_fragmentUniformOffset, SHADER_FRAGMENT_BLOCK_SIZE );
-    m_lightUniformSSBO->Upload( &m_lightUniform, m_lightUniformOffset, SHADER_LIGHT_BLOCK_SIZE );    
+    m_vertexUniformSSBO->Upload( &m_vertexUniform, m_unformOffsetVertex, SHADER_VERTEX_BLOCK_SIZE );
+    m_fragmentUniformSSBO->Upload( &m_fragmentUniform, m_unformOffsetFragment, SHADER_FRAGMENT_BLOCK_SIZE );
+    m_lightUniformSSBO->Upload( &m_lightUniform, m_unformOffsetLight, SHADER_LIGHT_BLOCK_SIZE );    
 
-    // Move offsets, and loop on the buffer size
-    m_vertexUniformOffset = ( m_vertexUniformOffset + SHADER_VERTEX_BLOCK_SIZE ) % UNIFORMS_BUFFER_VERTEX_SIZE;
-    m_fragmentUniformOffset = ( m_fragmentUniformOffset + SHADER_FRAGMENT_BLOCK_SIZE ) % UNIFORMS_BUFFER_FRAGMENT_UNIFORMS_SIZE;
-    m_lightUniformOffset = ( m_lightUniformOffset + SHADER_LIGHT_BLOCK_SIZE ) % UNIFORMS_BUFFER_LIGHT_UNIFORMS_SIZE;
-
-    // increment the frame size 
-    m_vertexUniformSize += SHADER_VERTEX_BLOCK_SIZE;
-    m_fragmentUniformSize += SHADER_FRAGMENT_BLOCK_SIZE;
-    m_lightUniformSize += SHADER_LIGHT_BLOCK_SIZE;
-}
-
-void crUniform::Flush(void)
-{
-#if CR_USE_VULKAN
-#elif CR_USE_OPENGL
-    GLuint      buffers[3];
-    GLintptr    offsets[3]; 
-    GLsizeiptr  sizes[3];
-
-    //
-    buffers[0] = m_vertexUniformSSBO->GetHandler();
-    buffers[1] = m_fragmentUniformSSBO->GetHandler();
-    buffers[2] = m_lightUniformSSBO->GetHandler();
-    
-    // pass the buffer offsets 
-    offsets[0] = m_vertexUniformOffset;
-    offsets[1] = m_fragmentUniformOffset;
-    offsets[2] = m_lightUniformOffset;
-    
-    // pass the buffers range size
-    sizes[0] = m_vertexUniformSize;
-    sizes[1] = m_fragmentUniformSize;
-    sizes[2] = m_lightUniformSize;
-
-    // just to remember the buffer 0 is for the texture sampler array 
-    glBindBuffersRange( GL_SHADER_STORAGE_BUFFER, 1, 3, buffers, offsets, sizes );
-
-    m_vertexUniformSize = 0;
-    m_fragmentUniformSize = 0;
-    m_lightUniformSize = 0;
-#endif
+    // Move copy offsets
+    m_unformOffsetVertex += SHADER_VERTEX_BLOCK_SIZE;
+    m_unformOffsetFragment += SHADER_FRAGMENT_BLOCK_SIZE;
+    m_unformOffsetLight += SHADER_LIGHT_BLOCK_SIZE;    
 }

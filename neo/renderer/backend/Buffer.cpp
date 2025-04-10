@@ -50,17 +50,17 @@ bool crBuffer::Create( const size_t size, const bool write, const bool read )
 #elif CR_USE_OPENGL
     GLbitfield flags = GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
 
-    if( write )
-        flags != GL_MAP_WRITE_BIT;
-
-    if( read )
-        flags != GL_MAP_READ_BIT;
-
     // create buffer object
     glCreateBuffers(1, &m_buffer );
 
     // reserve buffer memory 
     glNamedBufferStorage( m_buffer, size, nullptr, flags );
+
+    if( write )
+        flags != GL_MAP_WRITE_BIT;
+
+    if( read )
+        flags != GL_MAP_READ_BIT;
 
     // get buffer pointer 
     m_map = glMapNamedBufferRange( m_buffer, 0, m_size, flags );
