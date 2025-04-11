@@ -27,6 +27,11 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #include "Backend_apiwrapper.h"
 
 #if CR_USE_VULKAN
+#include "vulkan/qvk.h"
+#include "vulkan/vkFence.h"
+#include "vulkan/vkBuffer.h"
+#include "vulkan/vkTexture.h"
+#include "vulkan/vkShaderStorage.h"
 #endif // CR_USE_VULKAN
 
 #if CR_USE_OPENGL
@@ -34,6 +39,7 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #include "opengl/glFence.h"
 #include "opengl/glBuffer.h"
 #include "opengl/glTexture.h"
+#include "opengl/glShaderStorage.h"
 #endif // CR_USE_OPENGL
 
 // all state modified by the back end is separated

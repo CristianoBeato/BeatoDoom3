@@ -146,6 +146,6 @@ If you have questions concerning this license or the applicable additional terms
 #	define CR_USE_OPENGL 0
 #else
 #	define CR_USE_OPENGL 1
-#	define CR_USE_VULKAN 0
+#	define CR_USE_VULKAN 1
 #endif
 // BEATO End

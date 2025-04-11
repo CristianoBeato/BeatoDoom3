@@ -29,55 +29,6 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #define VK_NO_PROTOTYPES
 #include <vulkan/vulkan.h>
 
-//
-static const uint32_t   k_VSYNC_IMEDIATE = 0;   // No Vsync, imediate update can cause tearing
-static const uint32_t   k_VSYNC_WAIT_FRAME = 1;   // Wait frame end before update, can cause leg 
-static const uint32_t   k_VSYNC_ADAPTATIVE = 2; // Present frame soon as possible 
-
-// Device suported features flags
-static const uint32_t   k_FEATURE_SWAP_CHAIN = 1 << 0;
-static const uint32_t   k_FEATURE_GEOMETRY_SHADER = 1 << 1;
-static const uint32_t   k_FEATURE_TESSELATION_SHADER = 1 << 2;
-static const uint32_t   k_FEATURE_MULTIDRAW_INDIRECT = 1 << 3;
-static const uint32_t   k_FEATURE_MULTI_VIEWPORT = 1 << 4;
-static const uint32_t   k_FEATURE_SAMPLER_ANISOSTROPY = 1 << 5;
-static const uint32_t   k_FEATURE_COMPRESSION_ETC2 = 1 << 6;
-static const uint32_t   k_FEATURE_OCLUSION_QUERY = 1 << 7;
-static const uint32_t   k_FEATURE_DEPTH_BOUNDS = 1 << 8;
-static const uint32_t   k_FEATURE_DEPTH_CLAMP = 1 << 9;
-static const uint32_t   k_FEATURE_GRAPHIC_QUEUE = 1 << 10;
-static const uint32_t   k_FEATURE_COMPUTE_QUEUE = 1 << 11;
-static const uint32_t   k_FEATURE_TRANSFER_QUEUE = 1 << 12;
-static const uint32_t   k_FEATURE_SWAP_CHAIN_MODE_IMMEDIATE = 1 << 13;
-static const uint32_t   k_FEATURE_SWAP_CHAIN_MODE_FIFO = 1 << 14;
-static const uint32_t   k_FEATURE_SWAP_CHAIN_MODE_FIFO_RELAXED = 1 << 15; 
-static const uint32_t   k_FEATURE_SWAP_CHAIN_MODE_MAILBOX = 1 << 16;
-static const uint32_t   k_FEATURE_SWAP_CHAIN_FORMAT_BGRA8_SRGB = 1 << 17;
-
-typedef struct 
-{
-	int			width;
-	int			height;
-    int         device;
-	bool		fullScreen;
-	bool		stereo;
-	int			displayHz;
-	int			multiSamples;
-} vkParms_t;
-
-extern void                 Sys_StartUpVulkanAPI( void );
-extern void                 Sys_ShutDownVulkanAPI( void );
-extern const VkInstance     Sys_GetVulkanInstance( void );
-extern const bool           Sys_InitVulkanDevice( const vkParms_t parms );
-extern void                 Sys_ShutDownVulkanDevice( void );
-extern void                 Sys_SwapBuffersVK( void );
-extern const uint32_t       Sys_GetDeviceCount( void );
-extern const uint32_t       Sys_GetVulkanDeviceFeatures( void );
-extern const VkDevice       Sys_GetVulkanDevice( void );
-extern const VkSwapchainKHR Sys_GetVulkanSwapChain( void );
-extern const VkSurfaceKHR   Sys_GetVulkanSurface( void );
-extern void                 LoadVulkanFunctions( const VkInstance instance );
-
 /*
 =================================================================================================
 =================================================================================================
@@ -103,6 +54,7 @@ extern PFN_vkGetPhysicalDeviceSurfaceFormatsKHR         vkGetPhysicalDeviceSurfa
 extern PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR    vkGetPhysicalDeviceSurfaceCapabilitiesKHR;
 extern PFN_vkGetPhysicalDeviceSurfacePresentModesKHR    vkGetPhysicalDeviceSurfacePresentModesKHR;
 extern PFN_vkGetPhysicalDeviceMemoryProperties          vkGetPhysicalDeviceMemoryProperties;
+extern PFN_vkGetPhysicalDeviceFormatProperties          vkGetPhysicalDeviceFormatProperties;
 
 // Logic device
 extern PFN_vkCreateDevice                               vkCreateDevice;
@@ -130,6 +82,10 @@ extern PFN_vkDestroyImage                               vkDestroyImage;
 // Image View
 extern PFN_vkCreateImageView                            vkCreateImageView;
 extern PFN_vkDestroyImageView                           vkDestroyImageView;                        
+
+// Sampler 
+extern PFN_vkCreateSampler                              vkCreateSampler;
+extern PFN_vkDestroySampler                             vkDestroySampler;
 
 // VK_EXT_debug_utils
 extern PFN_vkCreateDebugUtilsMessengerEXT               vkCreateDebugUtilsMessengerEXT;
@@ -170,12 +126,22 @@ extern PFN_vkUnmapMemory                                vkUnmapMemory;
 extern PFN_vkFlushMappedMemoryRanges                    vkFlushMappedMemoryRanges;
 extern PFN_vkInvalidateMappedMemoryRanges               vkInvalidateMappedMemoryRanges;
 extern PFN_vkBindBufferMemory                           vkBindBufferMemory;
+extern PFN_vkBindImageMemory                            vkBindImageMemory;
+extern PFN_vkGetBufferMemoryRequirements                vkGetBufferMemoryRequirements;
+extern PFN_vkGetImageMemoryRequirements                 vkGetImageMemoryRequirements;
 
 // Buffer
 extern PFN_vkCreateBuffer                               vkCreateBuffer;
 extern PFN_vkCreateBufferView                           vkCreateBufferView;
 extern PFN_vkDestroyBuffer                              vkDestroyBuffer;
 extern PFN_vkDestroyBufferView                          vkDestroyBufferView;
+
+// Fence
+extern PFN_vkCreateFence                                vkCreateFence;
+extern PFN_vkDestroyFence                               vkDestroyFence;
+extern PFN_vkWaitForFences                              vkWaitForFences;
+extern PFN_vkResetFences                                vkResetFences;
+extern PFN_vkGetFenceStatus                             vkGetFenceStatus;
 
 // Comand Buffers
 extern PFN_vkAllocateCommandBuffers                     vkAllocateCommandBuffers;

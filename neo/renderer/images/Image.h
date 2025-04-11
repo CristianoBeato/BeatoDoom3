@@ -201,7 +201,7 @@ public:
 
 	void		GetDownsize( int &scaled_width, int &scaled_height ) const;
 	void		MakeDefault();	// fill with a grid pattern
-	void		SetImageFilterAndRepeat() const;
+	void		SetImageFilterAndRepeat( void );
 	bool		ShouldImageBePartialCached();
 	void		WritePrecompressedImage();
 	bool		CheckPrecompressedImage( bool fullLoad );
@@ -258,6 +258,11 @@ public:
 	idImage *			hashNext;				// for hash chains to speed lookup
 
 	int					refCount;				// overall ref count
+
+// BEATO Begin:
+	crAutoPointer<crTexture>		m_handler;	//
+	crAutoPointer<crTextureSampler> m_sampler; 	//
+// BEATO End
 };
 
 ID_INLINE idImage::idImage() {
@@ -431,8 +436,8 @@ public:
 	byte				compressedPalette[768];		// the palette that normal maps use
 
 	// default filter modes for images
-	GLenum				textureMinFilter;
-	GLenum				textureMaxFilter;
+	uint32_t			textureMinFilter;
+	uint32_t			textureMaxFilter;
 	float				textureAnisotropy;
 	float				textureLODBias;
 

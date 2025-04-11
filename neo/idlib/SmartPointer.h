@@ -584,6 +584,27 @@ public:
 	crAutoPointer( const crAutoPointer<t_, a_>& ptr );
 	~crAutoPointer( void );
 
+#if 0
+	// 
+	template<u_>
+	crAutoPointer( const crAutoPointer<u_, a_>& ptr )
+	{
+		// if already have a reference
+		if( crPointerBase<t_>::m_object != nullptr )
+		{
+			if ( DecRefCount( crPointerBase<t_>::m_object ) < 1 )
+				Delete();
+		}
+		
+		// reference the pointer 
+		crPointerBase<t_>::m_object =  dynamic_cast<pointer>( ptr.m_object );
+		
+		// incrase pointer reference
+		if( crPointerBase<t_>::m_object != nullptr )
+			IncRefCount( crPointerBase<t_>::m_object );
+	}
+#endif
+
 	// WARNING: don't use external pointers, this is only for "this" operator use only 
 	crAutoPointer( pointer ptr ) : crPointerBase<t_>()
 	{
@@ -622,16 +643,44 @@ public:
 	// Destroy object from reference 
 	ID_INLINE virtual void				Delete( void ) override;
 
+	ID_INLINE crAutoPointer<t_, a_> operator = ( const crAutoPointer<t_, a> &ref ) 
+	{
+		// if already have a reference
+		if( crPointerBase<t_>::m_object != nullptr )
+		{
+			if ( DecRefCount( crPointerBase<t_>::m_object ) < 1 )
+				Delete();
+		}
+		
+		// reference the pointer 
+		crPointerBase<t_>::m_object = ref.m_object;
+		
+		// incrase pointer reference
+		if( crPointerBase<t_>::m_object != nullptr )
+			IncRefCount( crPointerBase<t_>::m_object );
+
+		return *this;
+	}
+
 	/// @brief Re cast from types to diferents types
 	/// @tparam u_ new cast type
 	/// @param  
 	/// @return 
 	template< typename u_ >
-	ID_INLINE crPointer<u_, a_>	ReinterpretCast( void ) const
+	ID_INLINE crAutoPointer<u_, a_>	ReinterpretCast( void ) const
 	{
 		return crAutoPointer<u_, a_>( reinterpret_cast<u_*>( crPointerBase<t_>::m_object ) );
 	}
 
+	/// @brief 
+	/// @tparam u_ 
+	/// @param  
+	/// @return 
+	template< typename u_ >
+	ID_INLINE crAutoPointer<u_, a_>	DynamicCast( void ) const
+	{
+		return crAutoPointer<u_, a_>( dynamic_cast<u_*>( crPointerBase<t_>::m_object ) );
+	}
 
 private:
 	// DANGER: 

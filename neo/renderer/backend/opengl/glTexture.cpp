@@ -89,7 +89,7 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 // GL_RGB9_E5                // RGB compacto (9+9+9+5 bits)
 // GL_RGB10_A2UI             // RGBA inteiro com 10+10+10+2 bits
 
-uint32_t internalFormat_t::GetFormat( void ) const
+uint32_t glInternalFormat_t::GetFormat( void ) const
 {
     switch ( format )
     {
@@ -162,7 +162,7 @@ uint32_t internalFormat_t::GetFormat( void ) const
     return GL_NONE;
 }
 
-uint32_t internalFormat_t::GetDataType(void) const
+GLenum glInternalFormat_t::GetDataType(void) const
 {
     switch ( format )
     {
@@ -259,6 +259,48 @@ uint32_t internalFormat_t::GetDataType(void) const
     return GL_NONE;
 }
 
+static GLenum GLTextureTypeTarget( const uint32_t type )
+{
+    GLenum target = GL_NONE;
+
+    switch ( type )
+    {
+    case TEXTURE_TYPE_1D:
+        target = GL_TEXTURE_1D;
+        break;
+    case TEXTURE_TYPE_1D_ARRAY:
+        target = GL_TEXTURE_1D_ARRAY;
+        break;
+    case TEXTURE_TYPE_2D:
+        target = GL_TEXTURE_2D;
+        break;
+    case TEXTURE_TYPE_2D_ARRAY:
+        target = GL_TEXTURE_2D_ARRAY;
+        break;
+    case TEXTURE_TYPE_3D:
+        target = GL_TEXTURE_3D;
+        break;
+    case TEXTURE_TYPE_CUBE:
+        target = GL_TEXTURE_CUBE_MAP;
+        break;
+    case TEXTURE_TYPE_CUBE_ARRAY:
+        target = GL_TEXTURE_CUBE_MAP_ARRAY;
+        break;
+    default:
+        // TODO: Cast a error 
+        break;
+    }
+
+    return target;
+}
+
+static const GLenum GLTextureFormat( uint32_t format )
+{
+    GLenum internalFormat = GL_NONE;
+
+    return internalFormat;
+}
+
 /*
 ===========================================================================
 crGLTexture
@@ -285,6 +327,8 @@ bool crGLTexture::Create( const uint32_t width, const uint32_t height, const uin
     m_depth = depth;
     m_layers = layers;
     m_mipcount = mips;
+    m_target = GLTextureTypeTarget( type );
+    m_format = GLTextureFormat( format );
 
     //todo: check multisamples and cubemaps
     if ( m_height != 0 )
@@ -405,7 +449,7 @@ crGLTextureSampler::~crGLTextureSampler( void )
     Destroy();
 }
 
-bool crGLTextureSampler::Create(const uint32_t minFilter, const uint32_t magFilter, const uint32_t wrapS, const uint32_t wrapT, const float anisotropicLevel)
+bool crGLTextureSampler::Create(const uint32_t minFilter, const uint32_t magFilter, const uint32_t wrapS, const uint32_t wrapT, const float anisotropicLevel, const float LODBias )
 {
     glCreateSamplers( 1, &m_sampler );
     glSamplerParameteri( m_sampler, GL_TEXTURE_MIN_FILTER, minFilter );
@@ -417,9 +461,9 @@ bool crGLTextureSampler::Create(const uint32_t minFilter, const uint32_t magFilt
     glSamplerParameteri( m_sampler, GL_TEXTURE_COMPARE_MODE, GL_NONE );
     glSamplerParameteri( m_sampler, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL );
     glSamplerParameteri( m_sampler, GL_TEXTURE_BORDER_COLOR, 0xFFFFFFFF );
-    glSamplerParameteri( m_sampler, GL_TEXTURE_MIN_LOD, 0 );
-    glSamplerParameteri( m_sampler, GL_TEXTURE_MAX_LOD, 0 );
-    glSamplerParameteri( m_sampler, GL_TEXTURE_LOD_BIAS, 0 );
+    glSamplerParameterf( m_sampler, GL_TEXTURE_MIN_LOD, 0.0f );
+    glSamplerParameterf( m_sampler, GL_TEXTURE_MAX_LOD, 1.0f );
+    glSamplerParameterf( m_sampler, GL_TEXTURE_LOD_BIAS, LODBias );
     glSamplerParameteri( m_sampler, GL_TEXTURE_BASE_LEVEL, 0 );
     glSamplerParameteri( m_sampler, GL_TEXTURE_MAX_LEVEL, 0 );
     

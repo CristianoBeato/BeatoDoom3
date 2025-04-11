@@ -47,6 +47,7 @@ PFN_vkGetPhysicalDeviceSurfaceFormatsKHR        vkGetPhysicalDeviceSurfaceFormat
 PFN_vkGetPhysicalDeviceSurfaceCapabilitiesKHR   vkGetPhysicalDeviceSurfaceCapabilitiesKHR = nullptr;
 PFN_vkGetPhysicalDeviceSurfacePresentModesKHR   vkGetPhysicalDeviceSurfacePresentModesKHR = nullptr;
 PFN_vkGetPhysicalDeviceMemoryProperties         vkGetPhysicalDeviceMemoryProperties = nullptr;
+PFN_vkGetPhysicalDeviceFormatProperties         vkGetPhysicalDeviceFormatProperties = nullptr;
 
 // Logic device
 PFN_vkCreateDevice                              vkCreateDevice = nullptr;
@@ -74,6 +75,10 @@ PFN_vkDestroyImage                               vkDestroyImage = nullptr;
 // Image View
 PFN_vkCreateImageView                            vkCreateImageView = nullptr;
 PFN_vkDestroyImageView                           vkDestroyImageView = nullptr;
+
+// sampler
+PFN_vkCreateSampler                             vkCreateSampler = nullptr;
+PFN_vkDestroySampler                            vkDestroySampler = nullptr;
 
 // VK_EXT_debug_utils
 PFN_vkCreateDebugUtilsMessengerEXT              vkCreateDebugUtilsMessengerEXT = nullptr;
@@ -114,11 +119,23 @@ PFN_vkUnmapMemory                               vkUnmapMemory = nullptr;
 PFN_vkFlushMappedMemoryRanges                   vkFlushMappedMemoryRanges = nullptr;
 PFN_vkInvalidateMappedMemoryRanges              vkInvalidateMappedMemoryRanges = nullptr;
 PFN_vkBindBufferMemory                          vkBindBufferMemory = nullptr;
+PFN_vkBindImageMemory                           vkBindImageMemory = nullptr;
+PFN_vkGetBufferMemoryRequirements               vkGetBufferMemoryRequirements = nullptr;
+PFN_vkGetImageMemoryRequirements                vkGetImageMemoryRequirements = nullptr;
 
+// Buffer
 PFN_vkCreateBuffer                              vkCreateBuffer = nullptr;
 PFN_vkCreateBufferView                          vkCreateBufferView = nullptr;
 PFN_vkDestroyBuffer                             vkDestroyBuffer = nullptr;
 PFN_vkDestroyBufferView                         vkDestroyBufferView = nullptr;
+
+// Fence
+PFN_vkCreateFence                                vkCreateFence = nullptr;
+PFN_vkDestroyFence                               vkDestroyFence = nullptr;
+PFN_vkWaitForFences                              vkWaitForFences = nullptr;
+PFN_vkResetFences                                vkResetFences = nullptr;
+PFN_vkGetFenceStatus                             vkGetFenceStatus = nullptr;
+
 
 // Comand Buffers
 PFN_vkAllocateCommandBuffers                     vkAllocateCommandBuffers = nullptr;
@@ -166,14 +183,14 @@ PFN_vkCmdEndQuery                                vkCmdEndQuery = nullptr;
 PFN_vkCmdResetQueryPool                          vkCmdResetQueryPool = nullptr;
 
 template< typename _t >
-inline VkBool32 vkGetInstaProc( const VkInstance instance, _t &proc, const char* name )
+inline void vkGetInstaProc( const VkInstance instance, _t &proc, const char* name )
 {
     return ( ( proc = reinterpret_cast<_t>( vkGetInstanceProcAddr( instance, name ) ) ) != nullptr ) ? VK_TRUE : VK_FALSE;
 }
-#define VK_LOAD_PROC( X , I ) assert( vkGetInstaProc( I, X, #X ) == VK_TRUE )
+#define VK_LOAD_PROC( X , I ) vkGetInstaProc( I, X, #X )
 
 // Get vulkan instance functions
-void LoadVulkanFunctions( const VkInstance instance )
+void crVulkanContext::LoadVulkanFunctions( const VkInstance instance )
 {
     // Instance properties
     VK_LOAD_PROC( vkDestroyInstance, instance );
@@ -192,6 +209,7 @@ void LoadVulkanFunctions( const VkInstance instance )
     VK_LOAD_PROC( vkGetPhysicalDeviceSurfaceCapabilitiesKHR, instance );
     VK_LOAD_PROC( vkGetPhysicalDeviceSurfacePresentModesKHR, instance );
     VK_LOAD_PROC( vkGetPhysicalDeviceMemoryProperties, instance );
+    VK_LOAD_PROC( vkGetPhysicalDeviceFormatProperties, instance );
 
     // Logical device
     VK_LOAD_PROC( vkCreateDevice, instance );
@@ -218,6 +236,10 @@ void LoadVulkanFunctions( const VkInstance instance )
     //
     VK_LOAD_PROC( vkCreateImageView, instance );
     VK_LOAD_PROC( vkDestroyImageView, instance );
+
+    //
+    VK_LOAD_PROC( vkCreateSampler, instance );
+    VK_LOAD_PROC( vkDestroySampler, instance );
 
     //
     VK_LOAD_PROC( vkCreateDebugUtilsMessengerEXT, instance );
@@ -256,12 +278,21 @@ void LoadVulkanFunctions( const VkInstance instance )
     VK_LOAD_PROC( vkFlushMappedMemoryRanges, instance );
     VK_LOAD_PROC( vkInvalidateMappedMemoryRanges, instance );
     VK_LOAD_PROC( vkBindBufferMemory, instance );
+    VK_LOAD_PROC( vkBindImageMemory, instance );
+    VK_LOAD_PROC( vkGetBufferMemoryRequirements, instance );
+    VK_LOAD_PROC( vkGetImageMemoryRequirements, instance );
 
     // Buffer object 
     VK_LOAD_PROC( vkCreateBuffer, instance );
     VK_LOAD_PROC( vkCreateBufferView, instance );
     VK_LOAD_PROC( vkDestroyBuffer, instance );
     VK_LOAD_PROC( vkDestroyBufferView, instance );
+
+    VK_LOAD_PROC( vkCreateFence, instance );
+    VK_LOAD_PROC( vkDestroyFence, instance );
+    VK_LOAD_PROC( vkWaitForFences, instance );
+    VK_LOAD_PROC( vkResetFences, instance );
+    VK_LOAD_PROC( vkGetFenceStatus, instance );
 
     // Command buffer 
     VK_LOAD_PROC( vkAllocateCommandBuffers, instance );

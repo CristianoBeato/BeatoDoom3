@@ -30,6 +30,13 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "renderer/renderer_common.h"
+#include "renderer/backend/Backend_apiwrapper.h"
+
+#if CR_USE_VULKAN
+#include "renderer/backend/vulkan/vkTexture.h"
+#elif CR_USE_OPENGL
+#include "renderer/backend/opengl/glTexture.h"
+#endif //CR_USE_OPENGL
 
 /*
 PROBLEM: compressed textures may break the zero clamp rule!
@@ -360,60 +367,121 @@ GLenum idImage::SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, in
 SetImageFilterAndRepeat
 ==================
 */
-void idImage::SetImageFilterAndRepeat() const {
+void idImage::SetImageFilterAndRepeat( void )
+{
+	float		textureLODBias = 1.0f;
+	float 		anisotropy = 1.0f;
+	uint32_t 	magFilter = 0;
+	uint32_t 	minFilter = 0;
+	uint32_t	wrapS = 0;
+	uint32_t	wrapT = 0;
+
+	// Create the sampler
+#if CR_USE_VULKAN
+	crAutoPointer<crVKTextureSampler> sampler = crAutoPointer<crVKTextureSampler>();
+#elif CR_USE_OPENGL
+	crAutoPointer<crGLTextureSampler> sampler = crAutoPointer<crVKTextureSampler>();
+#endif CR_USE_OPENGL
+	sampler.New();
+
+	m_sampler = sampler.DynamicCast<crTextureSampler>();
+
 	// set the minimize / maximize filtering
+#if CR_USE_VULKAN
 	switch( filter ) 
 	{
 	case TF_DEFAULT:
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, globalImages->textureMinFilter );
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, globalImages->textureMaxFilter );
+		magFilter = globalImages->textureMinFilter;
+		minFilter = globalImages->textureMaxFilter;
 		break;
 	case TF_LINEAR:
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+		magFilter = VK_FILTER_LINEAR;
+		minFilter = VK_FILTER_LINEAR;
 		break;
 	case TF_NEAREST:
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+		magFilter = VK_FILTER_NEAREST;
+		minFilter = VK_FILTER_NEAREST;
 		break;
 	default:
 		common->FatalError( "R_CreateImage: bad texture filter" );
 	}
+#elif CR_USE_OPENGL
+	switch( filter ) 
+	{
+	case TF_DEFAULT:
+		magFilter = globalImages->textureMinFilter;
+		minFilter = globalImages->textureMaxFilter;
+		break;
+	case TF_LINEAR:
+		magFilter = GL_LINEAR;
+		minFilter = GL_LINEAR;
+		break;
+	case TF_NEAREST:
+		magFilter = GL_NEAREST;
+		minFilter = GL_NEAREST;
+		break;
+	default:
+		common->FatalError( "R_CreateImage: bad texture filter" );
+	}
+#endif // CR_USE_OPENGL
 
 	if ( glConfig.anisotropicAvailable ) 
 	{
 		// only do aniso filtering on mip mapped images
 		if ( filter == TF_DEFAULT ) 
-			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, globalImages->textureAnisotropy );
+			anisotropy = globalImages->textureAnisotropy;
 		else
-			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, 1 );
+			anisotropy = 1.0f;
 	}
 
-	if ( glConfig.textureLODBiasAvailable ) 
-	{
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, globalImages->textureLODBias );
-	}
+	if ( glConfig.textureLODBiasAvailable )
+		textureLODBias = globalImages->textureLODBias;// 
 
-	// set the wrap/clamp modes
+		// set the wrap/clamp modes
+#if CR_USE_VULKAN
 	switch( repeat ) 
 	{
 	case TR_REPEAT:
-		glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
-		glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
+		wrapS = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		wrapT = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 		break;
 	case TR_CLAMP_TO_BORDER:
-		glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER );
-		glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER );
+		wrapS = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+		wrapT = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
 		break;
 	case TR_CLAMP_TO_ZERO:
 	case TR_CLAMP_TO_ZERO_ALPHA:
 	case TR_CLAMP:
-		glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-		glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+		wrapS = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
+		wrapT = VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
 		break;
 	default:
 		common->FatalError( "R_CreateImage: bad texture repeat" );
 	}
+#elif CR_USE_OPENGL
+	switch( repeat ) 
+	{
+	case TR_REPEAT:
+		wrapS = GL_REPEAT;
+		wrapT = GL_REPEAT;
+		break;
+	case TR_CLAMP_TO_BORDER:
+		wrapS = GL_CLAMP_TO_BORDER;
+		wrapT = GL_CLAMP_TO_BORDER;
+		break;
+	case TR_CLAMP_TO_ZERO:
+	case TR_CLAMP_TO_ZERO_ALPHA:
+	case TR_CLAMP:
+		wrapS = GL_CLAMP_TO_EDGE;
+		wrapT = GL_CLAMP_TO_EDGE;
+		break;
+	default:
+		common->FatalError( "R_CreateImage: bad texture repeat" );
+	}
+#endif //CR_USE_OPENGL
+
+	sampler->Create( minFilter, magFilter, wrapS, wrapT, anisotropy, textureLODBias );
+	
 }
 
 /*

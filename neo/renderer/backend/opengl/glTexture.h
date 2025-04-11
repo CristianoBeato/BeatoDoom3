@@ -26,18 +26,18 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #define __GL_TEXTURE_H__
 
 // helper structure form image format
-struct internalFormat_t
+struct glInternalFormat_t
 {
-    internalFormat_t( void ) : format( 0 ){}
-    internalFormat_t( uint32_t _format ) : format( _format ) {}
+    glInternalFormat_t( void ) : format( 0 ){}
+    glInternalFormat_t( const GLenum__format ) : format( _format ) {}
 
-    uint32_t    GetInternalFormat( void ) const { return format; }
-    uint32_t    GetFormat( void ) const;
+    GLenum    GetInternalFormat( void ) const { return format; }
+    GLenum    GetFormat( void ) const;
 //    uint32_t    GetElementSize( void ) const;
-    uint32_t    GetDataType( void ) const;
+    GLenum    GetDataType( void ) const;
 
 private:
-    uint32_t format;
+    GLenum format;
 };
 
 /// @brief  texture image
@@ -71,8 +71,7 @@ private:
     GLuint              m_texture;          // texture object
     GLenum              m_target;           // texture target
     GLuint64            m_bindingHandler;   // texture binding handler  
-    internalFormat_t    m_format;
-
+    glInternalFormat_t  m_format;
 };
 
 /// @brief texture sampler
@@ -90,10 +89,10 @@ public:
     /// @param wrapT the wrap mode for the T axis
     /// @param anisotropicLevel the anisotropic level
     /// @return true if the sampler was created successfully
-    virtual bool    Create( const uint32_t minFilter, const uint32_t magFilter, const uint32_t wrapS, const uint32_t wrapT, const float anisotropicLevel ) = 0;
+    virtual bool    Create( const uint32_t minFilter, const uint32_t magFilter, const uint32_t wrapS, const uint32_t wrapT, const float anisotropicLevel, const float LODBias );
     
     /// @brief destroy the sampler
-    virtual void    Destroy( void ) = 0;
+    virtual void    Destroy( void );
 
     /// @brief get the sampler handle
     GLuint      GetHandler( void ) const { return m_sampler; }

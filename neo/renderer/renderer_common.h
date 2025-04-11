@@ -33,6 +33,10 @@ If you have questions concerning this license or the applicable additional terms
 #include "backend/Backend_common.h"
 // BEATO End
 
+#if CR_USE_VULKAN
+#	include "backend/vulkan/vkContext.h"
+#endif
+
 #include "images/Image.h"
 #include "MegaTexture.h"
 
@@ -412,9 +416,12 @@ public:
 	unsigned short			gammaTable[256];	// brightness / gamma modify this
 
 // BEATO Begin: 
-	crAutoPointer<crDraw>		drawQueue;	// draw queue interface
-	crAutoPointer<crFrontend>	frontEnd;	// frontend interface
-	crAutoPointer<crBackend>	backEnd;	// backend interface
+	// Vulkan Context ( instance, device, memmory and surface management )
+	crAutoPointer<crVulkanContext>	vulkan;
+
+	crAutoPointer<crDraw>			drawQueue;	// draw queue interface
+	crAutoPointer<crFrontend>		frontEnd;	// frontend interface
+	crAutoPointer<crBackend>		backEnd;	// backend interface
 // BEATO End
 };
 

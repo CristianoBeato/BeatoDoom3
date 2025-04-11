@@ -113,7 +113,7 @@ public:
     /// @param wrapT the wrap mode for the T axis
     /// @param anisotropicLevel the anisotropic level
     /// @return true if the sampler was created successfully
-    virtual bool    Create( const uint32_t minFilter, const uint32_t magFilter, const uint32_t wrapS, const uint32_t wrapT, const float anisotropicLevel ) = 0;
+    virtual bool    Create( const uint32_t minFilter, const uint32_t magFilter, const uint32_t wrapS, const uint32_t wrapT, const float anisotropicLevel, const float LODBias ) = 0;
     
     /// @brief destroy the sampler
     virtual void    Destroy( void ) = 0;
@@ -136,6 +136,71 @@ struct bufferTextureRect_t
     uint32_t    height = 0;
     uint32_t    depth = 0;
     uintptr_t   bufferOffset = 0;
+};
+
+enum
+{
+    // RED component 
+    PIXEL_COLOR_R8I,        // int8_t
+    PIXEL_COLOR_R8UI,       // uint8_t
+    PIXEL_COLOR_R16I,       // int16_t
+    PIXEL_COLOR_R16UI,      // uint16_t
+    PIXEL_COLOR_R32I,       // int32_t
+    PIXEL_COLOR_R32UI,      // uint32_t
+    PIXEL_COLOR_R16F,       // float16 ( half float )
+    PIXEL_COLOR_R32F,       // float 
+
+    // RED GREEN Component 
+    PIXEL_COLOR_RG8I,       // int8_t
+    PIXEL_COLOR_RG8UI,      // uint8_t
+    PIXEL_COLOR_RG16I,      // int16_t
+    PIXEL_COLOR_RG16UI,     // uint16_t
+    PIXEL_COLOR_RG32I,      // int32_t
+    PIXEL_COLOR_RG32UI,     // uint32_t
+    PIXEL_COLOR_RG16F,      // float16
+    PIXEL_COLOR_RG32F,      // float
+
+    // RED GREEN BLUE Component
+    PIXEL_COLOR_RGB8I,       // int8_t
+    PIXEL_COLOR_RGB8UI,      // uint8_t
+    PIXEL_COLOR_RGB16I,      // int16_t
+    PIXEL_COLOR_RGB16UI,     // uint16_t
+    PIXEL_COLOR_RGB32I,      // int32_t
+    PIXEL_COLOR_RGB32UI,     // uint32_t
+    PIXEL_COLOR_RGB16F,      // float16
+    PIXEL_COLOR_RGB32F,      // float
+
+    // RED GREEN BLUE ALPHA Component
+    PIXEL_COLOR_RGBA8I,       // int8_t
+    PIXEL_COLOR_RGBA8UI,      // uint8_t
+    PIXEL_COLOR_RGBA16I,      // int16_t
+    PIXEL_COLOR_RGBA16UI,     // uint16_t
+    PIXEL_COLOR_RGBA32I,      // int32_t
+    PIXEL_COLOR_RGBA32UI,     // uint32_t
+    PIXEL_COLOR_RGBA16F,      // float16
+    PIXEL_COLOR_RGBA32F,      // float
+
+    // TODO: srgb color 
+    // TODO: compressed textures 
+
+    // DEPTH COMPONENT 
+    PIXEL_DEPTH_D16UI,
+    PIXEL_DEPTH_D32F,
+
+    // DEPTH STENCIL
+    PIXEL_DEPTH_STENCIL_D24S8UI,
+    PIXEL_DEPTH_STENCIL_D32F_S8UI
+};
+
+enum
+{
+    TEXTURE_TYPE_1D,
+    TEXTURE_TYPE_1D_ARRAY,
+    TEXTURE_TYPE_2D,
+    TEXTURE_TYPE_2D_ARRAY,
+    TEXTURE_TYPE_3D,
+    TEXTURE_TYPE_CUBE,
+    TEXTURE_TYPE_CUBE_ARRAY
 };
 
 /// @brief  texture image
