@@ -38,7 +38,6 @@ public:
 
 private:
     VkFence     m_fence;
-    VkDevice    m_device; // use reference
 };
 
 #endif //!__VK_FENCE_H__

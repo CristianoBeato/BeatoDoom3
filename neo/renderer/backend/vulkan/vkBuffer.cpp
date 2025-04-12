@@ -45,8 +45,8 @@ crVKBuffer::~crVKBuffer(void)
 bool crVKBuffer::Create(size_t size, const bool write, const bool read )
 {
     VkResult res = VK_SUCCESS;
-    VkAllocationCallbacks *allccbk = tr.vulkan->GetAllocator();
-    VkDevice device = tr.vulkan->GetDevice();
+    auto allccbk = tr.vulkan->GetAllocator();
+    auto device = tr.vulkan->GetDevice();
     m_size = size;
 
     // Criação do buffer
@@ -56,7 +56,7 @@ bool crVKBuffer::Create(size_t size, const bool write, const bool read )
     bufferInfo.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    res = vkCreateBuffer( device, &bufferInfo, allccbk, &m_buffer );
+    res = vkCreateBuffer( device, &bufferInfo, &allccbk, &m_buffer );
     if ( res != VK_SUCCESS ) 
         return false; // TODO: add debug output 
 
@@ -73,7 +73,7 @@ bool crVKBuffer::Create(size_t size, const bool write, const bool read )
     allocInfo.allocationSize = memRequirements.size;
     allocInfo.memoryTypeIndex = memTypeIndex;
 
-    res = vkAllocateMemory( device, &allocInfo, allccbk, &m_memory);
+    res = vkAllocateMemory( device, &allocInfo, &allccbk, &m_memory );
     if ( res != VK_SUCCESS)
         return false;
 
@@ -88,23 +88,27 @@ bool crVKBuffer::Create(size_t size, const bool write, const bool read )
 
 void crVKBuffer::Destroy( void ) 
 {
-    VkAllocationCallbacks *allccbk = tr.vulkan->GetAllocator();
-    VkDevice device = tr.vulkan->GetDevice();
+    auto allccbk = tr.vulkan->GetAllocator();
+    auto device = tr.vulkan->GetDevice();
 
     // unmap memmory 
     if ( m_map != VK_NULL_HANDLE )
-        vkUnmapMemory( device, m_memory);
-    
-    
-    // Release device memmory
-    if (m_memory != VK_NULL_HANDLE )
-        vkFreeMemory( device, m_memory, allccbk);
+    {
+        vkUnmapMemory( device, m_memory );
+        m_map = nullptr;
+    }
 
+    // Release device memmory
+    if ( m_memory != VK_NULL_HANDLE )
+    {
+        vkFreeMemory( device, m_memory, &allccbk );
+        m_memory = VK_NULL_HANDLE;
+    }
+    
     // destroy buffer objcet
     if (m_buffer != VK_NULL_HANDLE )
-        vkDestroyBuffer( device, m_buffer, allccbk);
-    
-    m_map = nullptr;
-    m_buffer = VK_NULL_HANDLE;
-    m_memory = VK_NULL_HANDLE;
+    {
+        vkDestroyBuffer( device, m_buffer, &allccbk );
+        m_buffer = VK_NULL_HANDLE;
+    }
 }

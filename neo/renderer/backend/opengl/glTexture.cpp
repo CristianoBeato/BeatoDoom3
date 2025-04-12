@@ -452,18 +452,30 @@ crGLTextureSampler::~crGLTextureSampler( void )
 bool crGLTextureSampler::Create(const uint32_t minFilter, const uint32_t magFilter, const uint32_t wrapS, const uint32_t wrapT, const float anisotropicLevel, const float LODBias )
 {
     glCreateSamplers( 1, &m_sampler );
+ 
+    // Magnification/Minification filtering 
     glSamplerParameteri( m_sampler, GL_TEXTURE_MIN_FILTER, minFilter );
     glSamplerParameteri( m_sampler, GL_TEXTURE_MAG_FILTER, magFilter );
+
+    // Anisostropic filtering 
+    glSamplerParameterf( m_sampler, GL_TEXTURE_MAX_ANISOTROPY, anisotropicLevel );
+
+    // Repeating
     glSamplerParameteri( m_sampler, GL_TEXTURE_WRAP_S, wrapS );
     glSamplerParameteri( m_sampler, GL_TEXTURE_WRAP_T, wrapT );
     glSamplerParameteri( m_sampler, GL_TEXTURE_WRAP_R, wrapS );
-    glSamplerParameterf( m_sampler, GL_TEXTURE_MAX_ANISOTROPY, anisotropicLevel );
-    glSamplerParameteri( m_sampler, GL_TEXTURE_COMPARE_MODE, GL_NONE );
-    glSamplerParameteri( m_sampler, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL );
-    glSamplerParameteri( m_sampler, GL_TEXTURE_BORDER_COLOR, 0xFFFFFFFF );
+
+    // Mipmaping 
     glSamplerParameterf( m_sampler, GL_TEXTURE_MIN_LOD, 0.0f );
     glSamplerParameterf( m_sampler, GL_TEXTURE_MAX_LOD, 1.0f );
     glSamplerParameterf( m_sampler, GL_TEXTURE_LOD_BIAS, LODBias );
+
+    // texture compare 
+    glSamplerParameteri( m_sampler, GL_TEXTURE_COMPARE_MODE, GL_NONE );
+    glSamplerParameteri( m_sampler, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL );
+
+    //
+    glSamplerParameteri( m_sampler, GL_TEXTURE_BORDER_COLOR, 0xFFFFFFFF );
     glSamplerParameteri( m_sampler, GL_TEXTURE_BASE_LEVEL, 0 );
     glSamplerParameteri( m_sampler, GL_TEXTURE_MAX_LEVEL, 0 );
     

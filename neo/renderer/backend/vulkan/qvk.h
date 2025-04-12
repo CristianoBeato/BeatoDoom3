@@ -136,6 +136,15 @@ extern PFN_vkCreateBufferView                           vkCreateBufferView;
 extern PFN_vkDestroyBuffer                              vkDestroyBuffer;
 extern PFN_vkDestroyBufferView                          vkDestroyBufferView;
 
+// Descriptors
+extern PFN_vkCreateDescriptorSetLayout                  vkCreateDescriptorSetLayout;
+extern PFN_vkDestroyDescriptorSetLayout                 vkDestroyDescriptorSetLayout;
+extern PFN_vkCreateDescriptorPool                       vkCreateDescriptorPool;
+extern PFN_vkDestroyDescriptorPool                      vkDestroyDescriptorPool;
+extern PFN_vkAllocateDescriptorSets                     vkAllocateDescriptorSets;
+extern PFN_vkFreeDescriptorSets                         vkFreeDescriptorSets;
+extern PFN_vkUpdateDescriptorSets                       vkUpdateDescriptorSets;
+
 // Fence
 extern PFN_vkCreateFence                                vkCreateFence;
 extern PFN_vkDestroyFence                               vkDestroyFence;

@@ -39,7 +39,6 @@ static struct btRenderContext_s
 	SDL_GLContext			renderContext = nullptr;
 }renderContext;
 
-extern idCVar r_inhibitFragmentProgram;
 static void R_CheckPortableExtensions( void );
 static bool R_CheckExtension( const char *name );
 static const bool CheckExtension( const char* extName, const bool required = false );

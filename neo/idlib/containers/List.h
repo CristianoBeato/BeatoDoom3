@@ -91,14 +91,14 @@ public:
 	typedef int		cmp_t( const type *, const type * );
 	typedef type	new_t( void );
 
-					idList( int newgranularity = 16 );
+					idList( uint32_t newgranularity = 16 );
 					idList( const idList<type> &other );
 					~idList<type>( void );
 
 	void			Clear( void );										// clear the list
-	int				Num( void ) const;									// returns number of elements in list
-	int				NumAllocated( void ) const;							// returns number of elements allocated for
-	void			SetGranularity( int newgranularity );				// set new granularity
+	uint32_t		Num( void ) const;									// returns number of elements in list
+	size_t			NumAllocated( void ) const;							// returns number of elements allocated for
+	void			SetGranularity( uint32_t newgranularity );				// set new granularity
 	int				GetGranularity( void ) const;						// get the current granularity
 
 	size_t			Allocated( void ) const;							// returns total size of allocated memory
@@ -118,13 +118,13 @@ public:
 	inline operator type*( void ) const{ return list; };
 // BEATO End
 
-	void			Condense( void );									// resizes list to exactly the number of elements it contains
-	void			Resize( int newsize );								// resizes list to the given number of elements
-	void			Resize( int newsize, int newgranularity	 );			// resizes list and sets new granularity
-	void			SetNum( int newnum, bool resize = true );			// set number of elements in list and resize to exactly this number if necessary
-	void			AssureSize( int newSize);							// assure list has given number of elements, but leave them uninitialized
-	void			AssureSize( int newSize, const type &initValue );	// assure list has given number of elements and initialize any new elements
-	void			AssureSizeAlloc( int newSize, new_t *allocator );	// assure the pointer list has the given number of elements and allocate any new elements
+	void			Condense( void );										// resizes list to exactly the number of elements it contains
+	void			Resize( uint32_t newsize );								// resizes list to the given number of elements
+	void			Resize( uint32_t newsize, uint32_t newgranularity );	// resizes list and sets new granularity
+	void			SetNum( uint32_t newnum, bool resize = true );			// set number of elements in list and resize to exactly this number if necessary
+	void			AssureSize( uint32_t newSize);							// assure list has given number of elements, but leave them uninitialized
+	void			AssureSize( uint32_t newSize, const type &initValue );	// assure list has given number of elements and initialize any new elements
+	void			AssureSizeAlloc( uint32_t newSize, new_t *allocator );	// assure the pointer list has the given number of elements and allocate any new elements
 
 	type *			Ptr( void );										// returns a pointer to the list
 	const type *	Ptr( void ) const;									// returns a pointer to the list
@@ -144,10 +144,14 @@ public:
 	void			Swap( idList<type> &other );						// swap the contents of the lists
 	void			DeleteContents( bool clear );						// delete the contents of the list
 
+// BEATO Begin: 
+	bool			Empty( void ) const { return num == 0; }
+// BEATO End  
+
 private:
-	int				num;
-	int				size;
-	int				granularity;
+	uint32_t		num;
+	uint32_t		granularity;
+	size_t			size;
 	type *			list;
 };
 
@@ -157,7 +161,7 @@ idList<type>::idList( int )
 ================
 */
 template< typename type >
-ID_INLINE idList<type>::idList( int newgranularity ) 
+ID_INLINE idList<type>::idList( uint32_t newgranularity ) 
 {
 	assert( newgranularity > 0 );
 
@@ -200,7 +204,11 @@ template< typename type >
 ID_INLINE void idList<type>::Clear( void ) 
 {
 	if ( list )
+#if 0
 		delete[] list;
+#else
+		Mem_Free( list );
+#endif
 
 	list	= nullptr;
 	num		= 0;
@@ -283,7 +291,7 @@ Note that this is NOT an indication of the memory allocated.
 ================
 */
 template< typename type >
-ID_INLINE int idList<type>::Num( void ) const 
+ID_INLINE uint32_t idList<type>::Num( void ) const 
 {
 	return num;
 }
@@ -296,7 +304,7 @@ Returns the number of elements currently allocated for.
 ================
 */
 template< typename type >
-ID_INLINE int idList<type>::NumAllocated( void ) const 
+ID_INLINE size_t idList<type>::NumAllocated( void ) const 
 {
 	return size;
 }
@@ -309,7 +317,7 @@ Resize to the exact size specified irregardless of granularity
 ================
 */
 template< typename type >
-ID_INLINE void idList<type>::SetNum( int newnum, bool resize ) 
+ID_INLINE void idList<type>::SetNum( uint32_t newnum, bool resize ) 
 {
 	assert( newnum >= 0 );
 	if ( resize || newnum > size ) 
@@ -326,17 +334,15 @@ Sets the base size of the array and resizes the array to match.
 ================
 */
 template< typename type >
-ID_INLINE void idList<type>::SetGranularity( int newgranularity ) 
+ID_INLINE void idList<type>::SetGranularity( uint32_t newgranularity ) 
 {
-	int newsize;
-
 	assert( newgranularity > 0 );
 	granularity = newgranularity;
 
 	if ( list ) 
 	{
 		// resize it to the closest level of granularity
-		newsize = num + granularity - 1;
+		uint32_t newsize = num + granularity - 1;
 		newsize -= newsize % granularity;
 		if ( newsize != size ) 
 			Resize( newsize );
@@ -384,14 +390,13 @@ Contents are copied using their = operator so that data is correnctly instantiat
 ================
 */
 template< typename type >
-ID_INLINE void idList<type>::Resize( int newsize ) {
-	type	*temp;
-	int		i;
-
-	assert( newsize >= 0 );
+ID_INLINE void idList<type>::Resize( uint32_t newsize ) 
+{
+	type*		temp = nullptr;
+	uint32_t	i = 0;
 
 	// free up the list if no data is being reserved
-	if ( newsize <= 0 ) 
+	if ( newsize == 0 ) 
 	{
 		Clear();
 		return;
@@ -438,17 +443,16 @@ Contents are copied using their = operator so that data is correnctly instantiat
 ================
 */
 template< typename type >
-ID_INLINE void idList<type>::Resize( int newsize, int newgranularity ) 
+ID_INLINE void idList<type>::Resize( uint32_t newsize, uint32_t newgranularity ) 
 {
-	type	*temp;
-	int		i;
+	type*		temp = nullptr;
+	uint32_t 	i = 0;
 
-	assert( newsize >= 0 );
 	assert( newgranularity > 0 );
 	granularity = newgranularity;
 
 	// free up the list if no data is being reserved
-	if ( newsize <= 0 ) 
+	if ( newsize == 0 ) 
 	{
 		Clear();
 		return;
@@ -490,13 +494,12 @@ Makes sure the list has at least the given number of elements.
 ================
 */
 template< typename type >
-ID_INLINE void idList<type>::AssureSize( int newSize ) 
+ID_INLINE void idList<type>::AssureSize( uint32_t newSize ) 
 {
 	int newNum = newSize;
 
 	if ( newSize > size ) 
 	{
-
 		// this is a hack to fix our memset classes
 		if ( granularity == 0 )
 			granularity = 16;
@@ -517,10 +520,9 @@ Makes sure the list has at least the given number of elements and initialize any
 ================
 */
 template< typename type >
-ID_INLINE void idList<type>::AssureSize( int newSize, const type &initValue ) 
+ID_INLINE void idList<type>::AssureSize( uint32_t newSize, const type &initValue ) 
 {
 	int newNum = newSize;
-
 	if ( newSize > size ) 
 	{
 
@@ -533,7 +535,7 @@ ID_INLINE void idList<type>::AssureSize( int newSize, const type &initValue )
 		num = size;
 		Resize( newSize );
 
-		for ( int i = num; i < newSize; i++ ) 
+		for ( uint32_t i = num; i < newSize; i++ ) 
 		{
 			list[i] = initValue;
 		}
@@ -553,9 +555,9 @@ on non-pointer lists will cause a compiler error.
 ================
 */
 template< typename type >
-ID_INLINE void idList<type>::AssureSizeAlloc( int newSize, new_t *allocator ) 
+ID_INLINE void idList<type>::AssureSizeAlloc( uint32_t newSize, new_t *allocator ) 
 {
-	int newNum = newSize;
+	uint32_t newNum = newSize;
 
 	if ( newSize > size ) 
 	{
@@ -568,7 +570,7 @@ ID_INLINE void idList<type>::AssureSizeAlloc( int newSize, new_t *allocator )
 		num = size;
 		Resize( newSize );
 
-		for ( int i = num; i < newSize; i++ ) 
+		for ( uint32_t i = num; i < newSize; i++ ) 
 		{
 			list[i] = (*allocator)();
 		}
@@ -587,7 +589,7 @@ Copies the contents and size attributes of another list.
 template< typename type >
 ID_INLINE idList<type> &idList<type>::operator=( const idList<type> &other ) 
 {
-	int	i;
+	uint32_t i = 0;
 
 	Clear();
 
@@ -597,7 +599,11 @@ ID_INLINE idList<type> &idList<type>::operator=( const idList<type> &other )
 
 	if ( size ) 
 	{
+#if 0
 		list = new type[ size ];
+#else
+		list = Mem_AllocType<type>( size );
+#endif
 		for( i = 0; i < num; i++ ) 
 		{
 			list[ i ] = other.list[ i ];
@@ -703,7 +709,6 @@ ID_INLINE type &idList<type>::Alloc( void )
 	if ( !list ) 
 		Resize( granularity );
 	
-
 	if ( num == size ) 
 		Resize( size + granularity );
 
@@ -723,13 +728,11 @@ template< typename type >
 ID_INLINE int idList<type>::Append( type const & obj ) 
 {
 	if ( !list ) 
-	{
 		Resize( granularity );
-	}
 
 	if ( num == size ) 
 	{
-		int newsize;
+		uint32_t newsize = 0;
 
 		if ( granularity == 0 ) 	// this is a hack to fix our memset classes
 			granularity = 16;
@@ -778,7 +781,7 @@ ID_INLINE int idList<type>::Insert( type const & obj, int index )
 	else if ( index > num ) 
 		index = num;
 	
-	for ( int i = num; i > index; --i ) 
+	for ( uint32_t i = num; i > index; --i ) 
 	{
 		list[i] = list[i-1];
 	}
@@ -827,7 +830,7 @@ Adds the data to the list if it doesn't already exist.  Returns the index of the
 template< typename type >
 ID_INLINE int idList<type>::AddUnique( type const & obj ) 
 {
-	int index;
+	int index = 0;
 
 	index = FindIndex( obj );
 	if ( index < 0 )
@@ -868,7 +871,7 @@ Searches for the specified data in the list and returns it's address. Returns NU
 template< typename type >
 ID_INLINE type *idList<type>::Find( type const & obj ) const 
 {
-	int i;
+	int i = 0;
 
 	i = FindIndex( obj );
 	if ( i >= 0 ) 
@@ -890,7 +893,7 @@ on non-pointer lists will cause a compiler error.
 template< typename type >
 ID_INLINE int idList<type>::FindNull( void ) const 
 {
-	int i;
+	int i = 0;
 
 	for( i = 0; i < num; i++ ) 
 	{

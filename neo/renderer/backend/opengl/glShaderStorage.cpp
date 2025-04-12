@@ -35,10 +35,9 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 crGLShaderStorage
 =====================================================================================
 */
-crGLShaderStorage::crGLShaderStorage( void ) :
-#if CR_USE_OPENGL
-    m_handlers( nullptr ),
-#endif
+crGLShaderStorage::crGLShaderStorage( void ) : 
+    crShaderStorage(),
+    m_handlers( nullptr )
 {
 }
 
@@ -48,15 +47,28 @@ crGLShaderStorage::~crGLShaderStorage( void )
 
 void crGLShaderStorage::StartUp(void)
 {
-    m_vertexUniformSSBO.New( crBuffer() );
-    m_fragmentUniformSSBO.New( crBuffer() );
-    m_lightUniformSSBO.New( crBuffer() );
+    crAutoPointer<crGLBuffer> vertexUniformSSBO;
+    crAutoPointer<crGLBuffer> fragmentUniformSSBO;
+    crAutoPointer<crGLBuffer> lightUniformSSBO;
+    crAutoPointer<crGLBuffer> textureHandlerSSBO;
+
+    vertexUniformSSBO.New();
+    fragmentUniformSSBO.New();
+    lightUniformSSBO.New();
+    textureHandlerSSBO.New();
 
     // Create buffers 
-    m_vertexUniformSSBO->Create( UNIFORMS_BUFFER_VERTEX_SIZE ); // Create vertex uniform buffer storage 
-    m_fragmentUniformSSBO->Create( UNIFORMS_BUFFER_FRAGMENT_UNIFORMS_SIZE ); // Create fragment uniform buffer storage 
-    m_lightUniformSSBO->Create( UNIFORMS_BUFFER_LIGHT_UNIFORMS_SIZE ); // Create light uniform buffer stogare
-    m_textureHandlerSSBO->Create( TEXTURE_BUFFER_HANDLES_SIZE ); // Create texture binding buffer 
+    vertexUniformSSBO->Create( UNIFORMS_BUFFER_VERTEX_SIZE ); // Create vertex uniform buffer storage 
+    fragmentUniformSSBO->Create( UNIFORMS_BUFFER_FRAGMENT_UNIFORMS_SIZE ); // Create fragment uniform buffer storage 
+    lightUniformSSBO->Create( UNIFORMS_BUFFER_LIGHT_UNIFORMS_SIZE ); // Create light uniform buffer stogare
+    textureHandlerSSBO->Create( TEXTURE_BUFFER_HANDLES_SIZE ); // Create texture binding buffer 
+
+    // reference the buffer 
+    m_vertexUniformSSBO = vertexUniformSSBO.DynamicCast<crBuffer>();
+    m_fragmentUniformSSBO = m_fragmentUniformSSBO.DynamicCast<crBuffer>();
+    m_lightUniformSSBO = m_lightUniformSSBO.DynamicCast<crBuffer>();
+    m_textureHandlerSSBO = m_textureHandlerSSBO.DynamicCast<crBuffer>();
+
 
     // reserve temp unifom 
     m_vertexUniform.Alloc( SHADER_VERTEX_BLOCK_SIZE );
@@ -80,20 +92,33 @@ void crGLShaderStorage::ShutDown(void)
         m_lightUniform.Free();   
 
     // release our buffer
-    if( m_lightUniformSSBO ) 
+    if( m_lightUniformSSBO )
+    { 
+        m_lightUniformSSBO->Destroy();
         m_lightUniformSSBO.Delete();
+    }
 
     if( m_fragmentUniformSSBO ) 
+    {
+        m_fragmentUniformSSBO->Destroy();
         m_fragmentUniformSSBO.Delete();
+    }
 
     if( m_vertexUniformSSBO ) 
+    {
+        m_vertexUniformSSBO->Destroy();
         m_vertexUniformSSBO.Delete();
+    }
+
+    if ( m_textureHandlerSSBO )
+    {
+        m_textureHandlerSSBO->Destroy();
+        m_textureHandlerSSBO.Delete();
+    }
 }
 
 void crGLShaderStorage::Begin(void)
 {
-#if CR_USE_VULKAN
-#elif CR_USE_OPENGL
     // 0 texture  
     // 1 vertex 
     // 2 fragement
@@ -103,10 +128,10 @@ void crGLShaderStorage::Begin(void)
     GLsizeiptr  sizes[4];
     
     // buffer handlers
-    buffers[0] = m_textureHandlerSSBO->GetHandler();
-    buffers[1] = m_vertexUniformSSBO->GetHandler();
-    buffers[2] = m_fragmentUniformSSBO->GetHandler();
-    buffers[3] = m_lightUniformSSBO->GetHandler();
+    buffers[0] = m_textureHandlerSSBO.DynamicCast<crGLBuffer>()->GetHandler();
+    buffers[1] = m_vertexUniformSSBO.DynamicCast<crGLBuffer>()->GetHandler();
+    buffers[2] = m_fragmentUniformSSBO.DynamicCast<crGLBuffer>()->GetHandler();
+    buffers[3] = m_lightUniformSSBO.DynamicCast<crGLBuffer>()->GetHandler();
         
     // location offsets s
     offsets[0] = m_frameOffsetTextureHandler;
@@ -127,7 +152,6 @@ void crGLShaderStorage::Begin(void)
     m_unformOffsetFragment = m_frameOffsetFragment; 
     m_unformOffsetLight = m_frameOffsetLight; 
     m_currentTextureIndex = m_frameOffsetTextureHandler != 0 ? ( m_frameOffsetTextureHandler / sizeof( GLuint64 ) ) : 0;
-#endif
 }
 
 void crGLShaderStorage::BindTexture(const uint32_t binding, crAutoPointer<crTexture> texture, crAutoPointer<crTextureSampler> sampler)
@@ -150,7 +174,7 @@ void crGLShaderStorage::BindTexture(const uint32_t binding, crAutoPointer<crText
     index = m_currentTextureIndex++;
 
     // set texture handler in the buffer 
-    m_handlers[index] = texture->GetBindingHandler();
+    m_handlers[index] = texture.DynamicCast<crGLTexture>()->GetBindingHandler();
 
     // set the texture as binded 
     texture->SetBinding( index );

@@ -91,7 +91,7 @@ static const uint32_t VERTEX_OFFSET_TEXMATRIX          = VEC4F_SIZE * 4;
 static const uint32_t VERTEX_OFFSET_MODELMATRIX        = VEC4F_SIZE * 8;
 static const uint32_t VERTEX_OFFSET_VIEWMATRIX         = VEC4F_SIZE * 12;
 static const uint32_t VERTEX_OFFSET_PROJECTIONMATRIX   = VEC4F_SIZE * 16;
-static const uint32_t SHADER_VERTEX_BLOCK_SIZE         = VEC4F_SIZE * 20;
+const size_t SHADER_VERTEX_BLOCK_SIZE         = VEC4F_SIZE * 20;
 
 // Fragment Uniforms (buffer fragmentStorageBlock)
 static const uint32_t FRAG_OFFSET_SAMPLER0             = 0;
@@ -109,7 +109,7 @@ static const uint32_t FRAG_OFFSET_SHADERPARM0          = FRAG_OFFSET_CURRENTREND
 static const uint32_t FRAG_OFFSET_SHADERPARM1          = FRAG_OFFSET_CURRENTRENDERSIZE + ( 4 * VEC4F_SIZE );
 static const uint32_t FRAG_OFFSET_SHADERPARM2          = FRAG_OFFSET_CURRENTRENDERSIZE + ( 5 * VEC4F_SIZE );
 static const uint32_t FRAG_OFFSET_SHADERPARM3          = FRAG_OFFSET_CURRENTRENDERSIZE + ( 6 * VEC4F_SIZE );
-static const uint32_t SHADER_FRAGMENT_BLOCK_SIZE       = ( UINT_SIZE * 8 ) + ( 7 * VEC4F_SIZE );
+const size_t SHADER_FRAGMENT_BLOCK_SIZE       = ( UINT_SIZE * 8 ) + ( 7 * VEC4F_SIZE );
 
 // Light Uniforms (buffer lightStorageBlock)
 static const uint32_t LIGHT_OFFSET_LOCALORIGIN         = 0;
@@ -117,7 +117,7 @@ static const uint32_t LIGHT_OFFSET_PROJECTIONS         = VEC4F_SIZE * 1;
 static const uint32_t LIGHT_OFFSET_PROJECTIONT         = VEC4F_SIZE * 2;
 static const uint32_t LIGHT_OFFSET_PROJECTIONQ         = VEC4F_SIZE * 3;
 static const uint32_t LIGHT_OFFSET_FALLOFF             = VEC4F_SIZE * 4;
-static const uint32_t SHADER_LIGHT_BLOCK_SIZE          = 5 * VEC4F_SIZE;
+const size_t SHADER_LIGHT_BLOCK_SIZE          = 5 * VEC4F_SIZE;
 
 const size_t   FRAME_UNIFORM_VERTEX_SIZE = SHADER_VERTEX_BLOCK_SIZE * MAX_FRAME_DRAW_CALL;       // ~1,25 mb
 const size_t   FRAME_UNIFORM_FRAGMENT_SIZE = SHADER_FRAGMENT_BLOCK_SIZE * MAX_FRAME_DRAW_CALL;   // ~576 kb

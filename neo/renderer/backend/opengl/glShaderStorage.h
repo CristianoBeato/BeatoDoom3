@@ -30,24 +30,14 @@ class crGLShaderStorage : public crShaderStorage
 {
 public:
     crGLShaderStorage( void );
-    ~crGLShaderStorage( void );
-    
-    /// @brief create buffer, allocate memory, create temp uniforms
+    ~crGLShaderStorage( void );    
     void    StartUp( void );
-
-    /// @brief Release buffers and temporary uniforms 
     void    ShutDown( void );
-
     void    Begin( void );
-
-    void    End( void );
     void    BindTexture( const uint32_t binding, crAutoPointer<crTexture> texture, crAutoPointer<crTextureSampler> sampler );
-    
-    
+        
 private:
-#if CR_USE_OPENGL
     GLuint64*                           m_handlers;         // acess diret from buffer 
-#endif // CR_USE_OPENGL
 };
 
 #endif //__UNIFORM_H__

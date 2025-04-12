@@ -26,6 +26,7 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #pragma hdrstop
 
 #include "qvk.h"
+#include "vkContext.h"
 
 // Instance properties
 PFN_vkCreateInstance                            vkCreateInstance = nullptr;
@@ -129,6 +130,15 @@ PFN_vkCreateBufferView                          vkCreateBufferView = nullptr;
 PFN_vkDestroyBuffer                             vkDestroyBuffer = nullptr;
 PFN_vkDestroyBufferView                         vkDestroyBufferView = nullptr;
 
+// decriptros 
+PFN_vkCreateDescriptorSetLayout                 vkCreateDescriptorSetLayout = nullptr;
+PFN_vkDestroyDescriptorSetLayout                vkDestroyDescriptorSetLayout = nullptr;
+PFN_vkCreateDescriptorPool                      vkCreateDescriptorPool = nullptr;
+PFN_vkDestroyDescriptorPool                     vkDestroyDescriptorPool = nullptr;
+PFN_vkAllocateDescriptorSets                    vkAllocateDescriptorSets = nullptr;
+PFN_vkFreeDescriptorSets                        vkFreeDescriptorSets = nullptr;
+PFN_vkUpdateDescriptorSets                      vkUpdateDescriptorSets = nullptr;
+
 // Fence
 PFN_vkCreateFence                                vkCreateFence = nullptr;
 PFN_vkDestroyFence                               vkDestroyFence = nullptr;
@@ -190,153 +200,162 @@ inline void vkGetInstaProc( const VkInstance instance, _t &proc, const char* nam
 #define VK_LOAD_PROC( X , I ) vkGetInstaProc( I, X, #X )
 
 // Get vulkan instance functions
-void crVulkanContext::LoadVulkanFunctions( const VkInstance instance )
+void crVulkanContext::LoadVulkanFunctions( void )
 {
     // Instance properties
-    VK_LOAD_PROC( vkDestroyInstance, instance );
-    VK_LOAD_PROC( vkEnumerateInstanceExtensionProperties, instance );
+    VK_LOAD_PROC( vkDestroyInstance, m_instance );
+    VK_LOAD_PROC( vkEnumerateInstanceExtensionProperties, m_instance );
     
     // Surface
-    VK_LOAD_PROC( vkDestroySurfaceKHR, instance );
+    VK_LOAD_PROC( vkDestroySurfaceKHR, m_instance );
     
     // Physical Device
-    VK_LOAD_PROC( vkEnumeratePhysicalDevices, instance );
-    VK_LOAD_PROC( vkGetPhysicalDeviceProperties, instance );
-    VK_LOAD_PROC( vkGetPhysicalDeviceFeatures, instance );
-    VK_LOAD_PROC( vkEnumerateDeviceExtensionProperties, instance );
-    VK_LOAD_PROC( vkGetPhysicalDeviceSurfaceSupportKHR, instance );
-    VK_LOAD_PROC( vkGetPhysicalDeviceSurfaceFormatsKHR, instance );
-    VK_LOAD_PROC( vkGetPhysicalDeviceSurfaceCapabilitiesKHR, instance );
-    VK_LOAD_PROC( vkGetPhysicalDeviceSurfacePresentModesKHR, instance );
-    VK_LOAD_PROC( vkGetPhysicalDeviceMemoryProperties, instance );
-    VK_LOAD_PROC( vkGetPhysicalDeviceFormatProperties, instance );
+    VK_LOAD_PROC( vkEnumeratePhysicalDevices, m_instance );
+    VK_LOAD_PROC( vkGetPhysicalDeviceProperties, m_instance );
+    VK_LOAD_PROC( vkGetPhysicalDeviceFeatures, m_instance );
+    VK_LOAD_PROC( vkEnumerateDeviceExtensionProperties, m_instance );
+    VK_LOAD_PROC( vkGetPhysicalDeviceSurfaceSupportKHR, m_instance );
+    VK_LOAD_PROC( vkGetPhysicalDeviceSurfaceFormatsKHR, m_instance );
+    VK_LOAD_PROC( vkGetPhysicalDeviceSurfaceCapabilitiesKHR, m_instance );
+    VK_LOAD_PROC( vkGetPhysicalDeviceSurfacePresentModesKHR, m_instance );
+    VK_LOAD_PROC( vkGetPhysicalDeviceMemoryProperties, m_instance );
+    VK_LOAD_PROC( vkGetPhysicalDeviceFormatProperties, m_instance );
 
     // Logical device
-    VK_LOAD_PROC( vkCreateDevice, instance );
-    VK_LOAD_PROC( vkDestroyDevice, instance );
-    VK_LOAD_PROC( vkGetDeviceQueue, instance );
-    VK_LOAD_PROC( vkDeviceWaitIdle, instance );
+    VK_LOAD_PROC( vkCreateDevice, m_instance );
+    VK_LOAD_PROC( vkDestroyDevice, m_instance );
+    VK_LOAD_PROC( vkGetDeviceQueue, m_instance );
+    VK_LOAD_PROC( vkDeviceWaitIdle, m_instance );
 
-    VK_LOAD_PROC( vkGetPhysicalDeviceQueueFamilyProperties, instance );
-
-    //
-    VK_LOAD_PROC( vkQueueSubmit, instance );
-    VK_LOAD_PROC( vkQueueWaitIdle, instance );
+    VK_LOAD_PROC( vkGetPhysicalDeviceQueueFamilyProperties, m_instance );
 
     //
-    VK_LOAD_PROC( vkCreateSwapchainKHR, instance );
-    VK_LOAD_PROC( vkDestroySwapchainKHR, instance );
-    VK_LOAD_PROC( vkGetSwapchainImagesKHR, instance );
-    VK_LOAD_PROC( vkQueuePresentKHR, instance );
+    VK_LOAD_PROC( vkQueueSubmit, m_instance );
+    VK_LOAD_PROC( vkQueueWaitIdle, m_instance );
 
     //
-    VK_LOAD_PROC( vkCreateImage, instance );
-    VK_LOAD_PROC( vkDestroyImage, instance );
+    VK_LOAD_PROC( vkCreateSwapchainKHR, m_instance );
+    VK_LOAD_PROC( vkDestroySwapchainKHR, m_instance );
+    VK_LOAD_PROC( vkGetSwapchainImagesKHR, m_instance );
+    VK_LOAD_PROC( vkQueuePresentKHR, m_instance );
 
     //
-    VK_LOAD_PROC( vkCreateImageView, instance );
-    VK_LOAD_PROC( vkDestroyImageView, instance );
+    VK_LOAD_PROC( vkCreateImage, m_instance );
+    VK_LOAD_PROC( vkDestroyImage, m_instance );
 
     //
-    VK_LOAD_PROC( vkCreateSampler, instance );
-    VK_LOAD_PROC( vkDestroySampler, instance );
+    VK_LOAD_PROC( vkCreateImageView, m_instance );
+    VK_LOAD_PROC( vkDestroyImageView, m_instance );
 
     //
-    VK_LOAD_PROC( vkCreateDebugUtilsMessengerEXT, instance );
-    VK_LOAD_PROC( vkDestroyDebugUtilsMessengerEXT, instance );
+    VK_LOAD_PROC( vkCreateSampler, m_instance );
+    VK_LOAD_PROC( vkDestroySampler, m_instance );
 
     //
-    VK_LOAD_PROC( vkCreateShaderModule, instance );
-    VK_LOAD_PROC( vkDestroyShaderModule, instance );
+    VK_LOAD_PROC( vkCreateDebugUtilsMessengerEXT, m_instance );
+    VK_LOAD_PROC( vkDestroyDebugUtilsMessengerEXT, m_instance );
 
     //
-    VK_LOAD_PROC( vkCreateGraphicsPipelines, instance );
-    VK_LOAD_PROC( vkCreateComputePipelines, instance );
-    VK_LOAD_PROC( vkDestroyPipeline, instance );
-    VK_LOAD_PROC( vkCreatePipelineLayout, instance );
-    VK_LOAD_PROC( vkDestroyPipelineLayout, instance );
+    VK_LOAD_PROC( vkCreateShaderModule, m_instance );
+    VK_LOAD_PROC( vkDestroyShaderModule, m_instance );
+
+    //
+    VK_LOAD_PROC( vkCreateGraphicsPipelines, m_instance );
+    VK_LOAD_PROC( vkCreateComputePipelines, m_instance );
+    VK_LOAD_PROC( vkDestroyPipeline, m_instance );
+    VK_LOAD_PROC( vkCreatePipelineLayout, m_instance );
+    VK_LOAD_PROC( vkDestroyPipelineLayout, m_instance );
 
     // 
-    VK_LOAD_PROC( vkCreateRenderPass, instance );
-    VK_LOAD_PROC( vkDestroyRenderPass, instance );
+    VK_LOAD_PROC( vkCreateRenderPass, m_instance );
+    VK_LOAD_PROC( vkDestroyRenderPass, m_instance );
 
     // Pipeline 
-    VK_LOAD_PROC( vkDestroyPipelineCache, instance );
-    VK_LOAD_PROC( vkCreatePipelineCache, instance );
-    VK_LOAD_PROC( vkGetPipelineCacheData, instance );
-    VK_LOAD_PROC( vkMergePipelineCaches, instance );
+    VK_LOAD_PROC( vkDestroyPipelineCache, m_instance );
+    VK_LOAD_PROC( vkCreatePipelineCache, m_instance );
+    VK_LOAD_PROC( vkGetPipelineCacheData, m_instance );
+    VK_LOAD_PROC( vkMergePipelineCaches, m_instance );
 
     // Frame Buffer 
-    VK_LOAD_PROC( vkCreateFramebuffer, instance );
-    VK_LOAD_PROC( vkDestroyFramebuffer, instance );
+    VK_LOAD_PROC( vkCreateFramebuffer, m_instance );
+    VK_LOAD_PROC( vkDestroyFramebuffer, m_instance );
 
     // Memory control 
-    VK_LOAD_PROC( vkAllocateMemory, instance );
-    VK_LOAD_PROC( vkFreeMemory, instance );
-    VK_LOAD_PROC( vkMapMemory, instance );
-    VK_LOAD_PROC( vkUnmapMemory, instance );
-    VK_LOAD_PROC( vkFlushMappedMemoryRanges, instance );
-    VK_LOAD_PROC( vkInvalidateMappedMemoryRanges, instance );
-    VK_LOAD_PROC( vkBindBufferMemory, instance );
-    VK_LOAD_PROC( vkBindImageMemory, instance );
-    VK_LOAD_PROC( vkGetBufferMemoryRequirements, instance );
-    VK_LOAD_PROC( vkGetImageMemoryRequirements, instance );
+    VK_LOAD_PROC( vkAllocateMemory, m_instance );
+    VK_LOAD_PROC( vkFreeMemory, m_instance );
+    VK_LOAD_PROC( vkMapMemory, m_instance );
+    VK_LOAD_PROC( vkUnmapMemory, m_instance );
+    VK_LOAD_PROC( vkFlushMappedMemoryRanges, m_instance );
+    VK_LOAD_PROC( vkInvalidateMappedMemoryRanges, m_instance );
+    VK_LOAD_PROC( vkBindBufferMemory, m_instance );
+    VK_LOAD_PROC( vkBindImageMemory, m_instance );
+    VK_LOAD_PROC( vkGetBufferMemoryRequirements, m_instance );
+    VK_LOAD_PROC( vkGetImageMemoryRequirements, m_instance );
 
     // Buffer object 
-    VK_LOAD_PROC( vkCreateBuffer, instance );
-    VK_LOAD_PROC( vkCreateBufferView, instance );
-    VK_LOAD_PROC( vkDestroyBuffer, instance );
-    VK_LOAD_PROC( vkDestroyBufferView, instance );
+    VK_LOAD_PROC( vkCreateBuffer, m_instance );
+    VK_LOAD_PROC( vkCreateBufferView, m_instance );
+    VK_LOAD_PROC( vkDestroyBuffer, m_instance );
+    VK_LOAD_PROC( vkDestroyBufferView, m_instance );
 
-    VK_LOAD_PROC( vkCreateFence, instance );
-    VK_LOAD_PROC( vkDestroyFence, instance );
-    VK_LOAD_PROC( vkWaitForFences, instance );
-    VK_LOAD_PROC( vkResetFences, instance );
-    VK_LOAD_PROC( vkGetFenceStatus, instance );
+    // decriptors 
+    VK_LOAD_PROC( vkCreateDescriptorSetLayout, m_instance );
+    VK_LOAD_PROC( vkDestroyDescriptorSetLayout, m_instance );
+    VK_LOAD_PROC( vkCreateDescriptorPool, m_instance );
+    VK_LOAD_PROC( vkDestroyDescriptorPool, m_instance );
+    VK_LOAD_PROC( vkAllocateDescriptorSets, m_instance );
+    VK_LOAD_PROC( vkFreeDescriptorSets, m_instance );
+    VK_LOAD_PROC( vkUpdateDescriptorSets, m_instance );
+
+    VK_LOAD_PROC( vkCreateFence, m_instance );
+    VK_LOAD_PROC( vkDestroyFence, m_instance );
+    VK_LOAD_PROC( vkWaitForFences, m_instance );
+    VK_LOAD_PROC( vkResetFences, m_instance );
+    VK_LOAD_PROC( vkGetFenceStatus, m_instance );
 
     // Command buffer 
-    VK_LOAD_PROC( vkAllocateCommandBuffers, instance );
-    VK_LOAD_PROC( vkFreeCommandBuffers, instance );
-    VK_LOAD_PROC( vkBeginCommandBuffer, instance );
-    VK_LOAD_PROC( vkEndCommandBuffer, instance );
-    VK_LOAD_PROC( vkResetCommandBuffer, instance );
+    VK_LOAD_PROC( vkAllocateCommandBuffers, m_instance );
+    VK_LOAD_PROC( vkFreeCommandBuffers, m_instance );
+    VK_LOAD_PROC( vkBeginCommandBuffer, m_instance );
+    VK_LOAD_PROC( vkEndCommandBuffer, m_instance );
+    VK_LOAD_PROC( vkResetCommandBuffer, m_instance );
 
     // Comand buffer 
-    VK_LOAD_PROC( vkCmdBindPipeline, instance );
-    VK_LOAD_PROC( vkCmdSetViewport, instance );
-    VK_LOAD_PROC( vkCmdSetScissor, instance );
-    VK_LOAD_PROC( vkCmdSetLineWidth, instance );
-    VK_LOAD_PROC( vkCmdSetDepthBias, instance );
-    VK_LOAD_PROC( vkCmdSetBlendConstants, instance );
-    VK_LOAD_PROC( vkCmdSetDepthBounds, instance );
-    VK_LOAD_PROC( vkCmdSetStencilCompareMask, instance );
-    VK_LOAD_PROC( vkCmdSetStencilWriteMask, instance );
-    VK_LOAD_PROC( vkCmdSetStencilReference, instance );
-    VK_LOAD_PROC( vkCmdBindDescriptorSets, instance );
-    VK_LOAD_PROC( vkCmdBindIndexBuffer, instance );
-    VK_LOAD_PROC( vkCmdBindVertexBuffers, instance );
-    VK_LOAD_PROC( vkCmdDraw, instance );
-    VK_LOAD_PROC( vkCmdDrawIndexed, instance );
-    VK_LOAD_PROC( vkCmdDrawIndirect, instance );
-    VK_LOAD_PROC( vkCmdDrawIndexedIndirect, instance );
-    VK_LOAD_PROC( vkCmdDispatch, instance );
-    VK_LOAD_PROC( vkCmdDispatchIndirect, instance );
-    VK_LOAD_PROC( vkCmdCopyBuffer, instance );
-    VK_LOAD_PROC( vkCmdCopyImage, instance );
-    VK_LOAD_PROC( vkCmdBlitImage, instance );
-    VK_LOAD_PROC( vkCmdCopyBufferToImage, instance );
-    VK_LOAD_PROC( vkCmdCopyImageToBuffer, instance );
-    VK_LOAD_PROC( vkCmdUpdateBuffer, instance );
-    VK_LOAD_PROC( vkCmdFillBuffer, instance );
-    VK_LOAD_PROC( vkCmdClearColorImage, instance );
-    VK_LOAD_PROC( vkCmdClearDepthStencilImage, instance );
-    VK_LOAD_PROC( vkCmdClearAttachments, instance );
-    VK_LOAD_PROC( vkCmdResolveImage, instance );
-    VK_LOAD_PROC( vkCmdSetEvent, instance );
-    VK_LOAD_PROC( vkCmdResetEvent, instance );
-    VK_LOAD_PROC( vkCmdWaitEvents, instance );
-    VK_LOAD_PROC( vkCmdPipelineBarrier, instance );
-    VK_LOAD_PROC( vkCmdBeginQuery, instance );
-    VK_LOAD_PROC( vkCmdEndQuery, instance );
-    VK_LOAD_PROC( vkCmdResetQueryPool, instance );
- }
+    VK_LOAD_PROC( vkCmdBindPipeline, m_instance );
+    VK_LOAD_PROC( vkCmdSetViewport, m_instance );
+    VK_LOAD_PROC( vkCmdSetScissor, m_instance );
+    VK_LOAD_PROC( vkCmdSetLineWidth, m_instance );
+    VK_LOAD_PROC( vkCmdSetDepthBias, m_instance );
+    VK_LOAD_PROC( vkCmdSetBlendConstants, m_instance );
+    VK_LOAD_PROC( vkCmdSetDepthBounds, m_instance );
+    VK_LOAD_PROC( vkCmdSetStencilCompareMask, m_instance );
+    VK_LOAD_PROC( vkCmdSetStencilWriteMask, m_instance );
+    VK_LOAD_PROC( vkCmdSetStencilReference, m_instance );
+    VK_LOAD_PROC( vkCmdBindDescriptorSets, m_instance );
+    VK_LOAD_PROC( vkCmdBindIndexBuffer, m_instance );
+    VK_LOAD_PROC( vkCmdBindVertexBuffers, m_instance );
+    VK_LOAD_PROC( vkCmdDraw, m_instance );
+    VK_LOAD_PROC( vkCmdDrawIndexed, m_instance );
+    VK_LOAD_PROC( vkCmdDrawIndirect, m_instance );
+    VK_LOAD_PROC( vkCmdDrawIndexedIndirect, m_instance );
+    VK_LOAD_PROC( vkCmdDispatch, m_instance );
+    VK_LOAD_PROC( vkCmdDispatchIndirect, m_instance );
+    VK_LOAD_PROC( vkCmdCopyBuffer, m_instance );
+    VK_LOAD_PROC( vkCmdCopyImage, m_instance );
+    VK_LOAD_PROC( vkCmdBlitImage, m_instance );
+    VK_LOAD_PROC( vkCmdCopyBufferToImage, m_instance );
+    VK_LOAD_PROC( vkCmdCopyImageToBuffer, m_instance );
+    VK_LOAD_PROC( vkCmdUpdateBuffer, m_instance );
+    VK_LOAD_PROC( vkCmdFillBuffer, m_instance );
+    VK_LOAD_PROC( vkCmdClearColorImage, m_instance );
+    VK_LOAD_PROC( vkCmdClearDepthStencilImage, m_instance );
+    VK_LOAD_PROC( vkCmdClearAttachments, m_instance );
+    VK_LOAD_PROC( vkCmdResolveImage, m_instance );
+    VK_LOAD_PROC( vkCmdSetEvent, m_instance );
+    VK_LOAD_PROC( vkCmdResetEvent, m_instance );
+    VK_LOAD_PROC( vkCmdWaitEvents, m_instance );
+    VK_LOAD_PROC( vkCmdPipelineBarrier, m_instance );
+    VK_LOAD_PROC( vkCmdBeginQuery, m_instance );
+    VK_LOAD_PROC( vkCmdEndQuery, m_instance );
+    VK_LOAD_PROC( vkCmdResetQueryPool, m_instance );
+}

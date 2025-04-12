@@ -32,46 +32,52 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 // FenceVK.cpp
 #include "vkFence.h"
 
-crVKFence::crVKFence( void ): 
-    m_fence( VK_NULL_HANDLE ),
-    m_device( VK_NULL_HANDLE )
+crVKFence::crVKFence( void ): m_fence( VK_NULL_HANDLE )
 {
-    // get device handler 
-    m_device = tr.vulkan->GetDevice();
 }
 
 crVKFence::~crVKFence( void )
 {
+    auto allocator = tr.vulkan->GetAllocator();
+    auto device = tr.vulkan->GetDevice();
+
     // free fence 
     if ( m_fence )
-        vkDestroyFence( m_device, m_fence, tr.vulkan->GetAllocator() );
-
-    m_device = nullptr;
+    {
+        vkDestroyFence( device, m_fence, &allocator );
+        m_fence = nullptr;
+    }
 }
 
 void crVKFence::Create( void )
 {
+    auto device = tr.vulkan->GetDevice();
+    auto allocator = tr.vulkan->GetAllocator();
+
     VkResult res = VK_SUCCESS;
     VkFenceCreateInfo info = {};
     info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     info.flags = 0;
-    res = vkCreateFence( m_device, &info, tr.vulkan->GetAllocator(), &m_fence );
+    res = vkCreateFence( device, &info, &allocator, &m_fence );
     if ( res != VK_SUCCESS) 
         throw crVkException( "vkCreateFence failed!", res );
 }
 
 void crVKFence::Wait( void )
 {
-    vkWaitForFences( m_device, 1, &m_fence, VK_TRUE, 0xFFFFFFFFFFFFFFFF );
+    auto device = tr.vulkan->GetDevice();
+    vkWaitForFences( device, 1, &m_fence, VK_TRUE, 0xFFFFFFFFFFFFFFFF );
 }
 
 void crVKFence::Reset(void)
 {
-    vkResetFences( m_device, 1, &m_fence );
+    auto device = tr.vulkan->GetDevice();
+    vkResetFences( device, 1, &m_fence );
 }
 
 bool crVKFence::IsSignaled( void ) const
 {
-    return vkGetFenceStatus( m_device, m_fence ) == VK_SUCCESS;
+    auto device = tr.vulkan->GetDevice();
+    return vkGetFenceStatus( device, m_fence ) == VK_SUCCESS;
 }
 

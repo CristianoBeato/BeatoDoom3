@@ -25,4 +25,25 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #ifndef __VK_SHADER_STORAGE_H__
 #define __VK_SHADER_STORAGE_H__
 
+class crVKShaderStorage : public crShaderStorage
+{
+public:
+    crVKShaderStorage( void );
+    ~crVKShaderStorage( void );
+    void    StartUp( void ) override;
+    void    ShutDown( void ) override;
+    void    Begin( void ) override;
+    void    BindTexture( const uint32_t binding, crAutoPointer<crTexture> texture, crAutoPointer<crTextureSampler> sampler ) override;
+
+private:
+    VkDescriptorSetLayout   m_descriptorSetLayout;
+    VkDescriptorPool        m_descriptorPool;
+    VkDescriptorSet         m_descriptorSet;
+
+    void    CreateBuffer( void );
+    void    DestroyBuffers( void );
+    void    CreateDescriptor( void );
+    void    DestroyDescriptor( void );
+};
+
 #endif //!__VK_SHADER_STORAGE_H__

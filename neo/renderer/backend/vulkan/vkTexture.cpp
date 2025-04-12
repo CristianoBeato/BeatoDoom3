@@ -231,8 +231,8 @@ crVKTexture::crVKTexture(void) :
 bool crVKTexture::Create(const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t layers, const uint32_t mips, const GLenum format, const uint32_t type)
 {
     VkResult res = VK_SUCCESS;
-    VkDevice device = tr.vulkan->GetDevice();
-    VkAllocationCallbacks* allccbk = tr.vulkan->GetAllocator();
+    auto device = tr.vulkan->GetDevice();
+    auto allocator = tr.vulkan->GetAllocator();
 
     m_width = width;
     m_height = height;
@@ -256,7 +256,7 @@ bool crVKTexture::Create(const uint32_t width, const uint32_t height, const uint
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     // create texture handler 
-    res = vkCreateImage(device, &imageInfo, allccbk, &m_texture );
+    res = vkCreateImage(device, &imageInfo, &allocator, &m_texture );
     if ( res != VK_SUCCESS)
         return false;
     
@@ -272,7 +272,7 @@ bool crVKTexture::Create(const uint32_t width, const uint32_t height, const uint
     viewInfo.subresourceRange.baseArrayLayer = 0;
     viewInfo.subresourceRange.layerCount = m_layers;
 
-    res = vkCreateImageView( device, &viewInfo, allccbk, &m_view );
+    res = vkCreateImageView( device, &viewInfo, &allocator, &m_view );
     if ( res != VK_SUCCESS)
         return false;
 
@@ -286,7 +286,7 @@ bool crVKTexture::Create(const uint32_t width, const uint32_t height, const uint
     allocInfo.memoryTypeIndex = tr.vulkan->FindMemoryType( memReq.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT );
 
     // reserve device memory to texture 
-    res = vkAllocateMemory(device, &allocInfo, allccbk, &m_memory);
+    res = vkAllocateMemory(device, &allocInfo, &allocator, &m_memory);
     if ( res != VK_SUCCESS)
         return false;
 
@@ -298,24 +298,24 @@ bool crVKTexture::Create(const uint32_t width, const uint32_t height, const uint
 
 void crVKTexture::Destroy(void)
 {
-    VkDevice device = tr.vulkan->GetDevice();
-    VkAllocationCallbacks* allccbk = tr.vulkan->GetAllocator();
+    auto device = tr.vulkan->GetDevice();
+    auto allocator = tr.vulkan->GetAllocator();
 
     if( m_view != VK_NULL_HANDLE )
     {
-        vkDestroyImageView( device, m_view, allccbk );
+        vkDestroyImageView( device, m_view, &allocator );
         m_view = VK_NULL_HANDLE;
     }
 
     if( m_memory != VK_NULL_HANDLE )
     {
-        vkFreeMemory( device, m_memory, allccbk );
+        vkFreeMemory( device, m_memory, &allocator );
         m_memory = VK_NULL_HANDLE;
     }
 
     if( m_texture != VK_NULL_HANDLE )
     {
-        vkDestroyImage( device, m_texture, allccbk );
+        vkDestroyImage( device, m_texture, &allocator );
         m_texture = VK_NULL_HANDLE;
     }    
 }
@@ -387,6 +387,8 @@ crVKTextureSampler::~crVKTextureSampler(void)
 bool crVKTextureSampler::Create(const uint32_t minFilter, const uint32_t magFilter, const uint32_t wrapS, const uint32_t wrapT, const float anisotropicLevel, const float LODBias )
 {
     VkResult res = VK_SUCCESS;
+    auto device = tr.vulkan->GetDevice();
+    auto allocator = tr.vulkan->GetAllocator(); 
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 
@@ -394,7 +396,11 @@ bool crVKTextureSampler::Create(const uint32_t minFilter, const uint32_t magFilt
     samplerInfo.magFilter = static_cast<VkFilter>( minFilter );
     samplerInfo.minFilter = static_cast<VkFilter>( magFilter );
 
-    // Endereçamento (como tratar UV fora de [0,1])
+    // Anisostropic filtering 
+    samplerInfo.anisotropyEnable = anisotropicLevel > 0.0f ? VK_TRUE : VK_FALSE;
+    samplerInfo.maxAnisotropy = std::min( 16.0f, anisotropicLevel ); //
+    
+    // Repeating
     samplerInfo.addressModeU = static_cast<VkSamplerAddressMode>( wrapS );
     samplerInfo.addressModeV = static_cast<VkSamplerAddressMode>( wrapT );
     samplerInfo.addressModeW = static_cast<VkSamplerAddressMode>( wrapS );
@@ -405,28 +411,28 @@ bool crVKTextureSampler::Create(const uint32_t minFilter, const uint32_t magFilt
     samplerInfo.minLod = 0.0f;
     samplerInfo.maxLod = 1.0f; // static_cast<float>(m_mipLevels); // ou 0.0f se sem mipmap
 
-    // Anisotropia (se suportado)
-    samplerInfo.anisotropyEnable = VK_TRUE;
-    samplerInfo.maxAnisotropy = 16.0f; // Limite seguro, mas ideal verificar com o device
-
-    // Comparação (para shadow mapping)
+    // texture compare ( shadow mapping )
     samplerInfo.compareEnable = VK_FALSE;
     samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
 
     // Coord norm vs absolute texel
     samplerInfo.unnormalizedCoordinates = VK_FALSE;
 
-    res = vkCreateSampler( tr.vulkan->GetDevice(), &samplerInfo, tr.vulkan->GetAllocator(), &m_sampler );
+    // Create Sampler
+    res = vkCreateSampler( device, &samplerInfo, &allocator, &m_sampler );
     if ( res != VK_SUCCESS)
         return false;
 
+    return true;
 }
 
 void crVKTextureSampler::Destroy(void)
 {
+    auto device = tr.vulkan->GetDevice();
+    auto allocator = tr.vulkan->GetAllocator(); 
     if( m_sampler != VK_NULL_HANDLE )
     {
-        vkDestroySampler( tr.vulkan->GetDevice(), m_sampler, tr.vulkan->GetAllocator() );
+        vkDestroySampler( device, m_sampler, &allocator );
         m_sampler = VK_NULL_HANDLE;
     }
 }
