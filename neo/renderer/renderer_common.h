@@ -419,6 +419,10 @@ public:
 	// Vulkan Context ( instance, device, memmory and surface management )
 	crAutoPointer<crVulkanContext>	vulkan;
 
+	// openGL context ( command buffer, dispach tread )
+	crAutoPointer<crGLContext>		opengl;
+
+
 	crAutoPointer<crDraw>			drawQueue;	// draw queue interface
 	crAutoPointer<crFrontend>		frontEnd;	// frontend interface
 	crAutoPointer<crBackend>		backEnd;	// backend interface
@@ -437,7 +441,8 @@ extern idCVar r_ext_vertex_array_range;
 #if CR_USE_VULKAN
 extern idCVar r_vkDriver;
 extern idCVar r_rendererDevice;
-#elif CR_USE_OPENGL
+#endif CR_USE_VULKAN
+#if CR_USE_OPENGL
 extern idCVar r_glDriver;				// "opengl32", etc
 #endif // CR_USE_OPENGL
 // BEATO End

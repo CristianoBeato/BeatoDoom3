@@ -40,7 +40,8 @@ static void GfxInfo_f( void );
 #if CR_USE_VULKAN
 idCVar r_vkDriver( "r_vkDriver", "", CVAR_RENDERER, "\"libvulkan_intel\", \"libvulkan_radeon\", etc." );
 idCVar r_rendererDevice( "r_rendererDevice", "-1", CVAR_RENDERER | CVAR_INTEGER | CVAR_ARCHIVE, "hardware specific renderer to use, -1 use the best" );
-#elif CR_USE_OPENGL
+#endif // CR_USE_VULKAN
+#if CR_USE_OPENGL
 idCVar r_glDriver( "r_glDriver", "", CVAR_RENDERER, "\"opengl32\", etc." );
 #endif // CR_USE_OPENGL
 

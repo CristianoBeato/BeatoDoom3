@@ -28,221 +28,238 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 
 #include <SDL3/SDL_thread.h>
 
+
 /*
 ================================================================================================
-	crSysThread
+
+	idSysThread
+
 ================================================================================================
 */
 
 /*
 ========================
-crSysThread::crSysThread
+idSysThread::idSysThread
 ========================
 */
-crSysThread::crSysThread(void) : 
-	m_name(),
-	m_threadHandle( nullptr ),
-	m_priority( 0 ),
-	m_isRunning( false ),
-	m_isTerminating( false ),
-	m_isWorker( false ),
-	m_moreWorkToDo( false ),
-	m_signalWorkerDone( nullptr ),
-	m_signalMoreWorkToDo( nullptr ),
-	m_signalMutex( nullptr )
+idSysThread::idSysThread( void ) :
+	threadProperty( 0 ),
+	threadHandle( 0 ),
+	isWorker( false ),
+	isRunning( false ),
+	isTerminating( false ),
+	moreWorkToDo( false ),
+	signalWorkerDone( true ),
+	forceStop( false )
 {
-	m_signalMutex = new crMutex();
-	m_signalMoreWorkToDo = new crEvent( true );
-	m_signalWorkerDone = new crEvent( true );
 }
 
 /*
 ========================
-crSysThread::~crSysThread
+idSysThread::~idSysThread
 ========================
 */
-crSysThread::~crSysThread(void)
+idSysThread::~idSysThread( void )
 {
-	StopThread( true );
-	SAFE_DELETE( m_signalWorkerDone );
-	SAFE_DELETE( m_signalMoreWorkToDo );
-	SAFE_DELETE( m_signalMutex );
+	StopThread( !forceStop );
+	SDL_DestroyProperties( threadProperty );
+	threadProperty = 0;
+	threadHandle = nullptr;
 }
 
 /*
 ========================
-crSysThread::StartThread
+idSysThread::StartThread
 ========================
 */
-bool crSysThread::StartThread( const char *name, bool worker, int priority, uint32_t stackSize )
+bool idSysThread::StartThread( const char* name_, int stackSize )
 {
-	// alreay running TODO: use assert instead ?
-	if ( m_isRunning )
+	if( isRunning )
 		return false;
-
-	m_name = name;
-	m_isTerminating = false;
-	m_priority = priority;
-	m_isWorker = worker;
-
-	//m_threadHandle = SDL_CreateThreadWithStackSize( ThreadProc, name, stackSize, this );
-	// Creathe thread
-	SDL_PropertiesID thrprop = SDL_CreateProperties();
-	SDL_SetStringProperty( thrprop, SDL_PROP_THREAD_CREATE_NAME_STRING, name );
-	SDL_SetNumberProperty( thrprop, SDL_PROP_THREAD_CREATE_STACKSIZE_NUMBER, stackSize );
-	SDL_SetPointerProperty( thrprop, SDL_PROP_THREAD_CREATE_USERDATA_POINTER, reinterpret_cast<void*>( this ) );
-	SDL_SetPointerProperty( thrprop, SDL_PROP_THREAD_CREATE_ENTRY_FUNCTION_POINTER, (void*)&ThreadProc );
-	m_threadHandle = SDL_CreateThreadWithProperties( thrprop );
-	if ( !m_threadHandle )
-	{
-		throw idException( "Failed to create Thread: %s", SDL_GetError() );
-	}
-
-	SDL_DestroyProperties( thrprop );
-
-	//
-	if (worker)
-		m_signalWorkerDone->Wait( 0xFFFFFF );
 	
-	m_isRunning = true;
+	this->name = name_;
+
+	isTerminating = false;
+	
+
+	//if( threadHandle )
+	//	Sys_DestroyThread( threadHandle );
+	//threadHandle = Sys_CreateThread( ( xthread_t )ThreadProc, this, priority, name, core, stackSize, false );
+
+	assert( threadHandle == nullptr );
+
+	// set thread properties
+	threadProperty = SDL_CreateProperties();
+	SDL_SetStringProperty( threadProperty, SDL_PROP_THREAD_CREATE_NAME_STRING, name_ );
+    SDL_SetNumberProperty( threadProperty, SDL_PROP_THREAD_CREATE_STACKSIZE_NUMBER, stackSize );
+    SDL_SetPointerProperty( threadProperty, SDL_PROP_THREAD_CREATE_ENTRY_FUNCTION_POINTER, (void*)ThreadProc );
+    SDL_SetPointerProperty( threadProperty, SDL_PROP_THREAD_CREATE_USERDATA_POINTER, static_cast<void*>( this ) );
+
+	// Create thread object and run
+	threadHandle = SDL_CreateThreadWithProperties( threadProperty );
+	if ( !threadHandle )
+		idLib::Error( "idSysThread::StartThread( %s )::Error: %s\n", name_, SDL_GetError() );
+	
+	isRunning = true;
 	return true;
 }
 
 /*
 ========================
-crSysThread::StopThread
+idSysThread::StartWorkerThread
 ========================
 */
-void crSysThread::StopThread( const bool wait )
+bool idSysThread::StartWorkerThread( const char* name_, int stackSize )
 {
-	if ( !m_isRunning ) 
+	if( isRunning )
+		return false;
+	
+	isWorker = true;
+	
+	bool result = StartThread( name_, stackSize );
+	
+	signalWorkerDone.Wait( idSysSignal::WAIT_INFINITE );
+	
+	return result;
+}
+
+/*
+========================
+idSysThread::StopThread
+========================
+*/
+void idSysThread::StopThread( bool wait )
+{
+	if( !isRunning )
 		return;
 	
-	if ( m_isWorker ) 
+	if( isWorker )
 	{
-		m_signalMutex->Lock();
-		m_moreWorkToDo = true;
-		m_signalWorkerDone->Clear();
-		m_isTerminating = true;
-		m_signalMoreWorkToDo->Raise();
-		m_signalMutex->Unlock();
-	} 
-	else 
-	{
-		m_isTerminating = true;
+		signalMutex.Lock();
+		moreWorkToDo = true;
+		signalWorkerDone.Clear();
+		isTerminating = true;
+		signalMoreWorkToDo.Raise();
+		signalMutex.Unlock();
 	}
+	else
+		isTerminating = true;
 	
-	if ( wait )
+	if( wait )
 		WaitForThread();
 }
 
 /*
 ========================
-crSysThread::WaitForThread
+idSysThread::WaitForThread
 ========================
 */
-void crSysThread::WaitForThread(void)
+void idSysThread::WaitForThread( void )
 {
-	if ( m_isWorker ) 
-		m_signalWorkerDone->Wait( 0xFFFFFF );
-	else if ( m_isRunning ) 
-		m_threadHandle = nullptr; //Sys_DestroyThread( threadHandle ); // not needed for SDL2, thread clear it own handler
+	if( isWorker )
+		signalWorkerDone.Wait( idSysSignal::WAIT_INFINITE );
+	else if( isRunning )
+		SDL_WaitThread( threadHandle, nullptr );
+	
+	threadHandle = nullptr;
 }
 
 /*
 ========================
-crSysThread::SignalWork
+idSysThread::SignalWork
 ========================
 */
-void crSysThread::SignalWork(void)
+void idSysThread::SignalWork( void )
 {
-	if ( m_isWorker ) 
+	if( isWorker )
 	{
-		m_signalMutex->Lock();
-		m_moreWorkToDo = true;
-		m_signalWorkerDone->Clear();
-		m_signalMoreWorkToDo->Raise();
-		m_signalMutex->Unlock();
+		signalMutex.Lock();
+		moreWorkToDo = true;
+		signalWorkerDone.Clear();
+		signalMoreWorkToDo.Raise();
+		signalMutex.Unlock();
 	}
 }
 
 /*
 ========================
-crSysThread::IsWorkDone
+idSysThread::IsWorkDone
 ========================
 */
-bool crSysThread::IsWorkDone(void)
+bool idSysThread::IsWorkDone( void )
 {
-	if ( m_isWorker ) 
+	if( isWorker )
 	{
 		// a timeout of 0 will return immediately with true if signaled
-		if ( m_signalWorkerDone->Wait( 0 ) ) 
+		if( signalWorkerDone.Wait( 0 ) )
+		{
 			return true;
+		}
 	}
-	
 	return false;
 }
 
 /*
 ========================
-crSysThread::ThreadProc
+idSysThread::ThreadProc
 ========================
 */
-int crSysThread::ThreadProc( void* threadPtr ) 
+int idSysThread::ThreadProc( idSysThread* thread )
 {
 	int retVal = 0;
-	crSysThread* thread = static_cast<crSysThread*>( threadPtr );
-	try 
+
+	try
 	{
-		if ( thread->m_isWorker ) 
+		if( thread->isWorker )
 		{
-			for( ; ; ) 
+			for( ; ; )
 			{
-				thread->m_signalMutex->Lock();
-				if ( thread->m_moreWorkToDo ) 
+				thread->signalMutex.Lock();
+				if( thread->moreWorkToDo )
 				{
-					thread->m_moreWorkToDo = false;
-					thread->m_signalMoreWorkToDo->Clear();
-					thread->m_signalMutex->Unlock();
-				} 
-				else 
+					thread->moreWorkToDo = false;
+					thread->signalMoreWorkToDo.Clear();
+					thread->signalMutex.Unlock();
+				}
+				else
 				{
-					thread->m_signalWorkerDone->Raise();
-					thread->m_signalMutex->Unlock();
-					thread->m_signalMoreWorkToDo->Wait( 0xFFFFFF );
+					thread->signalWorkerDone.Raise();
+					thread->signalMutex.Unlock();
+					thread->signalMoreWorkToDo.Wait( idSysSignal::WAIT_INFINITE );
 					continue;
 				}
-
-				if ( thread->m_isTerminating ) 
+				
+				if( thread->isTerminating )
 					break;
 
 				retVal = thread->Run();
 			}
-			thread->m_signalWorkerDone->Raise();
-		} 
-		else 
+			thread->signalWorkerDone.Raise();
+		}
+		else
 		{
 			retVal = thread->Run();
 		}
-	} 
-	catch ( idException &ex ) 
+	}
+	catch( idException& ex )
 	{
 		idLib::Warning( "Fatal error in thread %s: %s", thread->GetName(), ex.What() );
+		
 		// We don't handle threads terminating unexpectedly very well, so just terminate the whole process
-		exit( -1 );
+		exit( 0 );
 	}
-
-	thread->m_isRunning = false;
-
+	
+	thread->isRunning = false;
+	
 	return retVal;
 }
 
 /*
 ========================
-crSysThread::Run
+idSysThread::Run
 ========================
 */
-int crSysThread::Run( void ) 
+int idSysThread::Run( void )
 {
 	// The Run() is not pure virtual because on destruction of a derived class
 	// the virtual function pointer will be set to NULL before the idSysThread

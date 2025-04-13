@@ -41,184 +41,115 @@ c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 #	include <GL/glcorearb.h>
 #endif
 
-typedef struct 
-{
-	int			width;
-	int			height;
-	bool		fullScreen;
-	bool		stereo;
-	int			displayHz;
-	int			multiSamples;
-} glimpParms_t;
-
-extern void         LoadOpenGLFunctions( void );
-extern void			InitOpenGLDebugOutput( void );
-extern void         Sys_StartUpOpenGLAPI( void );
-extern void         Sys_ShutDownOpenGLAPI( void );
-extern const bool   Sys_InitOpenGLContext( glimpParms_t parms );
-extern void			Sys_SwapBuffersGL( void );
-extern void         Sys_ShutDownOpenGLContext( void ); 
-extern void         GL_CheckErrors( void );
-extern void         GL_SelectTexture( int unit );
-extern void         GL_ClearStateDelta( void );
-extern void         GL_State( int stateVector );
-extern void         GL_TexEnv( int env );
-extern void         GL_Cull( int cullType );
-
-#ifndef GL_MAX_TEXTURE_COORDS
-#define GL_MAX_TEXTURE_COORDS             0x8871
-#endif //!GL_MAX_TEXTURE_COORDS
-
-#ifndef GL_MAX_TEXTURE_UNITS
-#define GL_MAX_TEXTURE_UNITS              0x84E2
-#endif //!GL_MAX_TEXTURE_UNITS
-
-#ifndef GL_DEPTH_BOUNDS_TEST_EXT
-#define GL_DEPTH_BOUNDS_TEST_EXT			0x8890
-#endif //!GL_DEPTH_BOUNDS_TEST_EXT
-
-// theise are not core and need to be deprecated
-#if 1
-typedef void (APIENTRYP PFNGLMULTITEXCOORD2FARBPROC) (GLenum target, GLfloat s, GLfloat t);
-typedef void (APIENTRYP PFNGLMULTITEXCOORD2FVARBPROC) (GLenum target, const GLfloat *v);
-typedef void (APIENTRYP PFNGLCLIENTACTIVETEXTUREARBPROC) (GLenum texture);
-typedef void (APIENTRYP PFNGLACTIVESTENCILFACEEXTPROC) (GLenum face);
-typedef void (APIENTRYP PFNGLPROGRAMSTRINGARBPROC) (GLenum target, GLenum format, GLsizei len, const GLvoid *string);
-typedef void (APIENTRYP PFNGLBINDPROGRAMARBPROC) (GLenum target, GLuint program);
-typedef void (APIENTRYP PFNGLGENPROGRAMSARBPROC) (GLsizei n, GLuint *programs);
-typedef void (APIENTRYP PFNGLPROGRAMENVPARAMETER4FVARBPROC) (GLenum target, GLuint index, const GLfloat *params);
-typedef void (APIENTRYP PFNGLPROGRAMLOCALPARAMETER4FVARBPROC) (GLenum target, GLuint index, const GLfloat *params);
-typedef void (APIENTRYP PFNGLDEPTHBOUNDSEXTPROC) (GLclampd zmin, GLclampd zmax);
-#endif 
-
 ///
 /// OpenGL utilities
 ///
-extern GLint 			glGetInteger( const GLenum pname );
-extern GLboolean		glSetState( const GLenum flag, const GLboolean enable );
+extern GLint 		glGetInteger( const GLenum pname );
+extern GLboolean	glSetState( const GLenum flag, const GLboolean enable );
 extern GLenum 		glGetActiveTexture( void );
 extern const GLuint	glGetBuferBinding( const GLenum target );
 extern const GLuint	glGetTextureBinding( const GLenum target );
 
-extern PFNGLGETERRORPROC					glGetError;
-extern PFNGLGETSTRINGPROC					glGetString;
-extern PFNGLGETFLOATVPROC					glGetFloatv;
-extern PFNGLGETINTEGERVPROC					glGetIntegerv;
-extern PFNGLENABLEPROC						glEnable;
-extern PFNGLDISABLEPROC						glDisable;
-extern PFNGLISENABLEDPROC					glIsEnabled;
-extern PFNGLCLEARPROC						glClear;
-extern PFNGLFLUSHPROC						glFlush;
-extern PFNGLFINISHPROC						glFinish;
-extern PFNGLVIEWPORTPROC					glViewport;
+extern PFNGLGETERRORPROC						glGetError;
+extern PFNGLGETSTRINGPROC						glGetString;
+extern PFNGLGETFLOATVPROC						glGetFloatv;
+extern PFNGLGETINTEGERVPROC						glGetIntegerv;
+extern PFNGLENABLEPROC							glEnable;
+extern PFNGLDISABLEPROC							glDisable;
+extern PFNGLISENABLEDPROC						glIsEnabled;
+extern PFNGLCLEARPROC							glClear;
+extern PFNGLFLUSHPROC							glFlush;
+extern PFNGLFINISHPROC							glFinish;
+extern PFNGLVIEWPORTPROC						glViewport;
 
-extern PFNGLCLEARCOLORPROC					glClearColor;
-extern PFNGLCOLORMASKPROC					glColorMask;
+extern PFNGLCLEARCOLORPROC						glClearColor;
+extern PFNGLCOLORMASKPROC						glColorMask;
 
 // blend
-extern PFNGLBLENDFUNCPROC					glBlendFunc;
+extern PFNGLBLENDFUNCPROC						glBlendFunc;
 
 // depth
-extern PFNGLCLEARDEPTHPROC					glClearDepth;
-extern PFNGLDEPTHMASKPROC					glDepthMask;
-extern PFNGLDEPTHFUNCPROC					glDepthFunc;
-extern PFNGLDEPTHRANGEPROC					glDepthRange;
+extern PFNGLCLEARDEPTHPROC						glClearDepth;
+extern PFNGLDEPTHMASKPROC						glDepthMask;
+extern PFNGLDEPTHFUNCPROC						glDepthFunc;
+extern PFNGLDEPTHRANGEPROC						glDepthRange;
 
 // stencil
-extern PFNGLSCISSORPROC                     glScissor;
-extern PFNGLSTENCILOPPROC					glStencilOp;
-extern PFNGLSTENCILFUNCPROC					glStencilFunc;
-extern PFNGLSTENCILMASKPROC					glStencilMask;
-extern PFNGLCLEARSTENCILPROC				glClearStencil;
-extern PFNGLSTENCILOPSEPARATEPROC			glStencilOpSeparate;
-extern PFNGLSTENCILFUNCSEPARATEPROC			glStencilFuncSeparate;
+extern PFNGLSCISSORPROC                     	glScissor;
+extern PFNGLSTENCILOPPROC						glStencilOp;
+extern PFNGLSTENCILFUNCPROC						glStencilFunc;
+extern PFNGLSTENCILMASKPROC						glStencilMask;
+extern PFNGLCLEARSTENCILPROC					glClearStencil;
+extern PFNGLSTENCILOPSEPARATEPROC				glStencilOpSeparate;
+extern PFNGLSTENCILFUNCSEPARATEPROC				glStencilFuncSeparate;
 
 // poligon 
-extern PFNGLCULLFACEPROC					glCullFace;
-extern PFNGLPOLYGONMODEPROC					glPolygonMode;
-extern PFNGLPOLYGONOFFSETPROC				glPolygonOffset;
-extern PFNGLLINEWIDTHPROC					glLineWidth;
-extern PFNGLPOINTSIZEPROC					glPointSize;
+extern PFNGLCULLFACEPROC						glCullFace;
+extern PFNGLPOLYGONMODEPROC						glPolygonMode;
+extern PFNGLPOLYGONOFFSETPROC					glPolygonOffset;
+extern PFNGLLINEWIDTHPROC						glLineWidth;
+extern PFNGLPOINTSIZEPROC						glPointSize;
 
 // draw buffers 
-extern PFNGLDRAWBUFFERPROC					glDrawBuffer;
-extern PFNGLREADBUFFERPROC					glReadBuffer;
-extern PFNGLREADPIXELSPROC					glReadPixels;
-extern PFNGLPIXELSTOREIPROC					glPixelStorei;
+extern PFNGLDRAWBUFFERPROC						glDrawBuffer;
+extern PFNGLREADBUFFERPROC						glReadBuffer;
+extern PFNGLREADPIXELSPROC						glReadPixels;
+extern PFNGLPIXELSTOREIPROC						glPixelStorei;
 
-// ARB_vertex_buffer_object
-extern PFNGLBINDBUFFERPROC					glBindBuffer;
-extern PFNGLDELETEBUFFERSPROC	 			glDeleteBuffers;
-extern PFNGLGENBUFFERSPROC	 				glGenBuffers;
-extern PFNGLISBUFFERPROC	 				glIsBuffer;
-extern PFNGLBUFFERDATAPROC	 				glBufferData;
-extern PFNGLBUFFERSUBDATAPROC	 			glBufferSubData;
-extern PFNGLGETBUFFERSUBDATAPROC	 		glGetBufferSubData;
-extern PFNGLCOPYBUFFERSUBDATAPROC			glCopyBufferSubData;
+// ARB_vertex_buffer_object, ARB_direct_state_access ARB_buffer_storage, ARB_uniform_buffer_object ARB_map_buffer_range GL_ARB_multi_bind
+extern PFNGLBINDBUFFERPROC						glBindBuffer;
+extern PFNGLBINDBUFFERRANGEPROC            		glBindBufferRange;
+extern PFNGLBINDBUFFERSRANGEPROC            	glBindBuffersRange;
+extern PFNGLCREATEBUFFERSPROC					glCreateBuffers;
+extern PFNGLDELETEBUFFERSPROC	 				glDeleteBuffers;
+extern PFNGLISBUFFERPROC	 					glIsBuffer;
+extern PFNGLNAMEDBUFFERSTORAGEPROC				glNamedBufferStorage;
+extern PFNGLNAMEDBUFFERDATAPROC					glNamedBufferData;
+extern PFNGLNAMEDBUFFERSUBDATAPROC				glNamedBufferSubData;
+extern PFNGLCOPYNAMEDBUFFERSUBDATAPROC			glCopyNamedBufferSubData;
+extern PFNGLCLEARNAMEDBUFFERDATAPROC			glClearNamedBufferData;
+extern PFNGLMAPNAMEDBUFFERRANGEPROC				glMapNamedBufferRange;
+extern PFNGLUNMAPNAMEDBUFFERPROC				glUnmapNamedBuffer;
+extern PFNGLGETBUFFERPARAMETERIVPROC 			glGetBufferParameteriv;
+extern PFNGLGETBUFFERPOINTERVPROC 				glGetBufferPointerv;
 
-// GL_ARB_direct_state_access GL_ARB_buffer_storage  GL_ARB_uniform_buffer_object  GL_ARB_map_buffer_range
-extern PFNGLCREATEBUFFERSPROC				glCreateBuffers;
-extern PFNGLNAMEDBUFFERSTORAGEPROC			glNamedBufferStorage;
-extern PFNGLNAMEDBUFFERSUBDATAPROC			glNamedBufferSubData;
-extern PFNGLCOPYNAMEDBUFFERSUBDATAPROC		glCopyNamedBufferSubData;
-extern PFNGLCLEARNAMEDBUFFERDATAPROC		glClearNamedBufferData;
-extern PFNGLMAPNAMEDBUFFERRANGEPROC			glMapNamedBufferRange;
-extern PFNGLUNMAPNAMEDBUFFERPROC			glUnmapNamedBuffer;
-
-extern PFNGLBINDBUFFERRANGEPROC            	glBindBufferRange;
-
-// GL_ARB_multi_bind
-extern PFNGLBINDBUFFERSRANGEPROC            glBindBuffersRange;
-
-// ARB_vertex_array_object
-extern PFNGLBINDVERTEXARRAYPROC				glBindVertexArray;
-extern PFNGLCREATEVERTEXARRAYSPROC			glCreateVertexArrays;
-extern PFNGLDELETEVERTEXARRAYSPROC			glDeleteVertexArrays;
-extern PFNGLISVERTEXARRAYPROC				glIsVertexArray;
-extern PFNGLENABLEVERTEXARRAYATTRIBPROC		glEnableVertexArrayAttrib;
-extern PFNGLDISABLEVERTEXARRAYATTRIBPROC	glDisableVertexArrayAttrib;
-extern PFNGLVERTEXARRAYATTRIBBINDINGPROC	glVertexArrayAttribBinding;
-extern PFNGLVERTEXARRAYATTRIBFORMATPROC		glVertexArrayAttribFormat;
-extern PFNGLVERTEXARRAYVERTEXBUFFERPROC		glVertexArrayVertexBuffer;
-extern PFNGLVERTEXARRAYELEMENTBUFFERPROC	glVertexArrayElementBuffer;
-
-// BEATO Begin
-extern PFNGLCREATEBUFFERSPROC				glCreateBuffers;
-extern PFNGLNAMEDBUFFERSTORAGEPROC			glNamedBufferStorage;
-extern PFNGLNAMEDBUFFERSUBDATAPROC			glNamedBufferSubData;
-extern PFNGLCOPYNAMEDBUFFERSUBDATAPROC		glCopyNamedBufferSubData;
-extern PFNGLCLEARNAMEDBUFFERDATAPROC		glClearNamedBufferData;
-extern PFNGLMAPNAMEDBUFFERRANGEPROC			glMapNamedBufferRange;
-extern PFNGLUNMAPNAMEDBUFFERPROC			glUnmapNamedBuffer;
-// BEATO End
-
-extern PFNGLMAPBUFFERPROC	 				glMapBuffer;
-extern PFNGLUNMAPBUFFERPROC 				glUnmapBuffer;
-extern PFNGLGETBUFFERPARAMETERIVPROC 		glGetBufferParameteriv;
-extern PFNGLGETBUFFERPOINTERVPROC 			glGetBufferPointerv;
+// ARB_vertex_array_object, ARB_direct_state_access
+extern PFNGLBINDVERTEXARRAYPROC					glBindVertexArray;
+extern PFNGLCREATEVERTEXARRAYSPROC				glCreateVertexArrays;
+extern PFNGLDELETEVERTEXARRAYSPROC				glDeleteVertexArrays;
+extern PFNGLISVERTEXARRAYPROC					glIsVertexArray;
+extern PFNGLENABLEVERTEXARRAYATTRIBPROC			glEnableVertexArrayAttrib;
+extern PFNGLDISABLEVERTEXARRAYATTRIBPROC		glDisableVertexArrayAttrib;
+extern PFNGLVERTEXARRAYATTRIBBINDINGPROC		glVertexArrayAttribBinding;
+extern PFNGLVERTEXARRAYATTRIBFORMATPROC			glVertexArrayAttribFormat;
+extern PFNGLVERTEXARRAYVERTEXBUFFERPROC			glVertexArrayVertexBuffer;
+extern PFNGLVERTEXARRAYELEMENTBUFFERPROC		glVertexArrayElementBuffer;
 
 // Draw Command
-extern PFNGLDRAWELEMENTSPROC				glDrawElements;
-extern PFNGLDRAWELEMENTSBASEVERTEXPROC		glDrawElementsBaseVertex;
-extern PFNGLDRAWELEMENTSINDIRECTPROC		glDrawElementsIndirect;
+extern PFNGLDRAWELEMENTSPROC					glDrawElements;
+// ARB_draw_elements_base_vertex
+extern PFNGLDRAWELEMENTSBASEVERTEXPROC			glDrawElementsBaseVertex;
+// ARB_draw_indirect
+extern PFNGLDRAWELEMENTSINDIRECTPROC			glDrawElementsIndirect;
+
 
 // Textures
-extern PFNGLACTIVETEXTUREPROC				glActiveTexture;
-extern PFNGLGENTEXTURESPROC					glGenTextures;
-extern PFNGLDELETETEXTURESPROC				glDeleteTextures;
-extern PFNGLBINDTEXTUREPROC					glBindTexture;
-extern PFNGLTEXIMAGE2DPROC					glTexImage2D;
-extern PFNGLTEXIMAGE3DPROC					glTexImage3D;
-extern PFNGLTEXSUBIMAGE2DPROC				glTexSubImage2D;
-extern PFNGLTEXSUBIMAGE3DPROC				glTexSubImage3D;
-extern PFNGLTEXPARAMETERIPROC				glTexParameteri;
-extern PFNGLTEXPARAMETERFPROC				glTexParameterf;
-extern PFNGLTEXPARAMETERFVPROC				glTexParameterfv;
-extern PFNGLGETTEXIMAGEPROC					glGetTexImage;
-extern PFNGLCOPYTEXIMAGE2DPROC				glCopyTexImage2D;
-//extern PFNGLCOPYTEXIMAGE3DPROC				glCopyTexImage3D;
-extern PFNGLCOPYTEXSUBIMAGE2DPROC			glCopyTexSubImage2D;
-extern PFNGLCOPYTEXSUBIMAGE3DPROC			glCopyTexSubImage3D;
+// ARB_texture_storage, ARB_direct_state_access, ARB_multi_bind, ARB_texture_compression, ARB_texture_storage_multisample
+extern PFNGLBINDTEXTUREPROC						glBindTexture;
+extern PFNGLBINDTEXTURESPROC					glBindTextures;
+extern PFNGLCREATETEXTURESPROC					glCreateTextures;
+extern PFNGLDELETETEXTURESPROC					glDeleteTextures;
+extern PFNGLTEXTURESTORAGE1DPROC				glTextureStorage1D;
+extern PFNGLTEXTURESTORAGE2DPROC				glTextureStorage2D;
+extern PFNGLTEXTURESTORAGE3DPROC				glTextureStorage3D;
+extern PFNGLTEXTURESTORAGE2DMULTISAMPLEPROC		glTextureStorage2DMultisample;
+extern PFNGLTEXTURESTORAGE3DMULTISAMPLEPROC		glTextureStorage3DMultisample;
+extern PFNGLTEXTURESUBIMAGE1DPROC				glTextureSubImage1D;
+extern PFNGLTEXTURESUBIMAGE2DPROC				glTextureSubImage2D;
+extern PFNGLTEXTURESUBIMAGE3DPROC				glTextureSubImage3D;
+extern PFNGLTEXTUREPARAMETERIPROC				glTextureParameteri;
+extern PFNGLTEXTUREPARAMETERFPROC				glTextureParameterf;
+extern PFNGLGETTEXTUREIMAGEPROC					glGetTextureImage;
 
 // texture handler
 extern PFNGLGETTEXTUREHANDLEARBPROC				glGetTextureHandleARB;
@@ -235,63 +166,43 @@ extern PFNGLISTEXTUREHANDLERESIDENTARBPROC		glIsTextureHandleResidentARB;
 extern PFNGLISIMAGEHANDLERESIDENTARBPROC		glIsImageHandleResidentARB;
 
 // GLSL and Progrma Pipelines
-extern PFNGLCREATESHADERPROC				glCreateShader;
-extern PFNGLDELETESHADERPROC				glDeleteShader;
-extern PFNGLSHADERSOURCEPROC				glShaderSource;
-extern PFNGLSHADERBINARYPROC				glShaderBinary;
-extern PFNGLSPECIALIZESHADERPROC			glSpecializeShader;
-extern PFNGLCOMPILESHADERPROC				glCompileShader;
-extern PFNGLGETSHADERIVPROC					glGetShaderiv;
-extern PFNGLGETSHADERINFOLOGPROC			glGetShaderInfoLog;
-extern PFNGLCREATEPROGRAMPROC				glCreateProgram;
-extern PFNGLDELETEPROGRAMPROC				glDeleteProgram;
-extern PFNGLPROGRAMPARAMETERIPROC			glProgramParameteri;
-extern PFNGLATTACHSHADERPROC				glAttachShader;
-extern PFNGLDETACHSHADERPROC				glDetachShader;
-extern PFNGLLINKPROGRAMPROC					glLinkProgram;
-extern PFNGLUSEPROGRAMPROC					glUseProgram;
-extern PFNGLGETPROGRAMIVPROC				glGetProgramiv;
-extern PFNGLGETPROGRAMINFOLOGPROC			glGetProgramInfoLog;
-extern PFNGLGETACTIVEATTRIBPROC				glGetActiveAttrib;
-extern PFNGLGETACTIVEUNIFORMPROC			glGetActiveUniform;
-extern PFNGLGETATTRIBLOCATIONPROC			glGetAttribLocation;
-extern PFNGLGETUNIFORMLOCATIONPROC			glGetUniformLocation;
+extern PFNGLCREATESHADERPROC					glCreateShader;
+extern PFNGLDELETESHADERPROC					glDeleteShader;
+extern PFNGLSHADERSOURCEPROC					glShaderSource;
+extern PFNGLSHADERBINARYPROC					glShaderBinary;
+extern PFNGLSPECIALIZESHADERPROC				glSpecializeShader;
+extern PFNGLCOMPILESHADERPROC					glCompileShader;
+extern PFNGLGETSHADERIVPROC						glGetShaderiv;
+extern PFNGLGETSHADERINFOLOGPROC				glGetShaderInfoLog;
+extern PFNGLCREATEPROGRAMPROC					glCreateProgram;
+extern PFNGLDELETEPROGRAMPROC					glDeleteProgram;
+extern PFNGLPROGRAMPARAMETERIPROC				glProgramParameteri;
+extern PFNGLATTACHSHADERPROC					glAttachShader;
+extern PFNGLDETACHSHADERPROC					glDetachShader;
+extern PFNGLLINKPROGRAMPROC						glLinkProgram;
+extern PFNGLUSEPROGRAMPROC						glUseProgram;
+extern PFNGLGETPROGRAMIVPROC					glGetProgramiv;
+extern PFNGLGETPROGRAMINFOLOGPROC				glGetProgramInfoLog;
+extern PFNGLGETACTIVEATTRIBPROC					glGetActiveAttrib;
+extern PFNGLGETACTIVEUNIFORMPROC				glGetActiveUniform;
+extern PFNGLGETATTRIBLOCATIONPROC				glGetAttribLocation;
+extern PFNGLGETUNIFORMLOCATIONPROC				glGetUniformLocation;
 
 // GL_ARB_separate_shader_objects
-extern PFNGLGENPROGRAMPIPELINESPROC			glGenProgramPipelines;
-extern PFNGLUSEPROGRAMSTAGESPROC			glUseProgramStages;
-extern PFNGLACTIVESHADERPROGRAMPROC			glActiveShaderProgram;
-extern PFNGLBINDPROGRAMPIPELINEPROC			glBindProgramPipeline;
-extern PFNGLDELETEPROGRAMPIPELINESPROC		glDeleteProgramPipelines;
-extern PFNGLISPROGRAMPIPELINEPROC			glIsProgramPipeline;
-extern PFNGLPROGRAMUNIFORM1FPROC			glProgramUniform1f;
-extern PFNGLPROGRAMUNIFORM1FVPROC			glProgramUniform1fv;
-extern PFNGLPROGRAMUNIFORM1IPROC			glProgramUniform1i;
-extern PFNGLPROGRAMUNIFORM1IVPROC			glProgramUniform1iv;
-extern PFNGLPROGRAMUNIFORM2FPROC			glProgramUniform2f;
-extern PFNGLPROGRAMUNIFORM2FVPROC			glProgramUniform2fv;
-extern PFNGLPROGRAMUNIFORM2IPROC			glProgramUniform2i;
-extern PFNGLPROGRAMUNIFORM2IVPROC			glProgramUniform2iv;	
-
-// ARB_texture_compression
-extern PFNGLCOMPRESSEDTEXIMAGE2DPROC		glCompressedTexImage2D;
-extern PFNGLCOMPRESSEDTEXIMAGE3DPROC		glCompressedTexImage3D;
-extern PFNGLGETCOMPRESSEDTEXIMAGEPROC		glGetCompressedTexImage;
-
-// texture object GL_ARB_direct_state_access && GL_ARB_texture_storage
-extern PFNGLCREATETEXTURESPROC				glCreateTextures;
-extern PFNGLTEXTURESTORAGE1DPROC			glTextureStorage1D;
-extern PFNGLTEXTURESTORAGE2DPROC			glTextureStorage2D;
-extern PFNGLTEXTURESTORAGE3DPROC			glTextureStorage3D;
-extern PFNGLTEXTURESUBIMAGE1DPROC			glTextureSubImage1D;
-extern PFNGLTEXTURESUBIMAGE2DPROC			glTextureSubImage2D;
-extern PFNGLTEXTURESUBIMAGE3DPROC			glTextureSubImage3D;
-extern PFNGLTEXTUREPARAMETERIPROC			glTextureParameteri;
-extern PFNGLTEXTUREPARAMETERFPROC			glTextureParameterf;
-
-// GL_ARB_texture_storage_multisample
-extern PFNGLTEXTURESTORAGE2DMULTISAMPLEPROC	glTextureStorage2DMultisample;
-extern PFNGLTEXTURESTORAGE3DMULTISAMPLEPROC	glTextureStorage3DMultisample;
+extern PFNGLGENPROGRAMPIPELINESPROC				glGenProgramPipelines;
+extern PFNGLUSEPROGRAMSTAGESPROC				glUseProgramStages;
+extern PFNGLACTIVESHADERPROGRAMPROC				glActiveShaderProgram;
+extern PFNGLBINDPROGRAMPIPELINEPROC				glBindProgramPipeline;
+extern PFNGLDELETEPROGRAMPIPELINESPROC			glDeleteProgramPipelines;
+extern PFNGLISPROGRAMPIPELINEPROC				glIsProgramPipeline;
+extern PFNGLPROGRAMUNIFORM1FPROC				glProgramUniform1f;
+extern PFNGLPROGRAMUNIFORM1FVPROC				glProgramUniform1fv;
+extern PFNGLPROGRAMUNIFORM1IPROC				glProgramUniform1i;
+extern PFNGLPROGRAMUNIFORM1IVPROC				glProgramUniform1iv;
+extern PFNGLPROGRAMUNIFORM2FPROC				glProgramUniform2f;
+extern PFNGLPROGRAMUNIFORM2FVPROC				glProgramUniform2fv;
+extern PFNGLPROGRAMUNIFORM2IPROC				glProgramUniform2i;
+extern PFNGLPROGRAMUNIFORM2IVPROC				glProgramUniform2iv;	
 
 // GL_ARB_sampler_objects
 extern PFNGLDELETESAMPLERSPROC					glDeleteSamplers;
@@ -337,122 +248,12 @@ extern PFNGLSCISSORINDEXEDVPROC					glScissorIndexedv;
 extern PFNGLDEPTHRANGEARRAYVPROC				glDepthRangeArrayv;
 extern PFNGLDEPTHRANGEINDEXEDPROC				glDepthRangeIndexed;
 
-//===========================================================================
-// DEPRECATE TO REMOVE and WORK ARROUND
-//===========================================================================
-// GL_EXT_depth_bounds_test
-extern PFNGLDEPTHBOUNDSEXTPROC              glDepthBoundsEXT;
-
-// EXT_stencil_two_side
-extern PFNGLACTIVESTENCILFACEEXTPROC		glActiveStencilFaceEXT;
-
-// ARB_vertex_program / ARB_fragment_program
-extern PFNGLVERTEXATTRIBPOINTERPROC			glVertexAttribPointer;
-extern PFNGLENABLEVERTEXATTRIBARRAYPROC		glEnableVertexAttribArray;
-extern PFNGLDISABLEVERTEXATTRIBARRAYPROC	glDisableVertexAttribArray;
-extern PFNGLPROGRAMSTRINGARBPROC			glProgramStringARB;
-extern PFNGLBINDPROGRAMARBPROC				glBindProgramARB;
-extern PFNGLGENPROGRAMSARBPROC				glGenProgramsARB;
-extern PFNGLPROGRAMENVPARAMETER4FVARBPROC	glProgramEnvParameter4fvARB;
-extern PFNGLPROGRAMLOCALPARAMETER4FVARBPROC	glProgramLocalParameter4fvARB;
-
-extern PFNGLMULTITEXCOORD2FARBPROC			glMultiTexCoord2fARB;
-extern PFNGLMULTITEXCOORD2FVARBPROC			glMultiTexCoord2fvARB;
-extern PFNGLCLIENTACTIVETEXTUREARBPROC		glClientActiveTextureARB;
-
-extern void (*glEnd)(void);
-extern void (*glBegin)(GLenum mode);
-extern void (*glArrayElement)(GLint i);
-extern void (*glPopMatrix)(void);
-extern void (*glPushMatrix)(void);
-extern void (*glPopAttrib)(void);
-extern void (*glPushAttrib)(GLbitfield mask);
-extern void (*glColor3f)(GLfloat red, GLfloat green, GLfloat blue);
-extern void (*glColor3fv)(const GLfloat *v);
-extern void (*glColor3ubv)(const GLubyte *v);
-extern void (*glColor4f)(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
-extern void (*glColor4fv)(const GLfloat *v);
-extern void (*glColor4ubv)(const GLubyte *v);
-extern void (*glVertex2f)(GLfloat x, GLfloat y);
-extern void (*glVertex3f)(GLfloat x, GLfloat y, GLfloat z);
-extern void (*glVertex3fv)(const GLfloat *v);
-extern void (*glTexCoord2f)(GLfloat s, GLfloat t);
-extern void (*glTexCoord2fv)(const GLfloat *v);
-extern void (*glMatrixMode)(GLenum mode);
-extern void (*glLoadMatrixf)(const GLfloat *m);
-extern void (*glLoadIdentity)(void);
-extern void (*glTexEnvi)(GLenum target, GLenum pname, GLint param);
-extern void (*glTexEnvfv)(GLenum target, GLenum pname, const GLfloat *params);
-extern void (*glTexGenfv)(GLenum coord, GLenum pname, const GLfloat *params);
-extern void (*glTexGenf)(GLenum coord, GLenum pname, GLfloat param);
-extern void (*glPrioritizeTextures)(GLsizei n, const GLuint *textures, const GLclampf *priorities);
-extern void (*glAlphaFunc)(GLenum func, GLclampf ref);
-extern void (*glOrtho)(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar);
-extern void (*glDrawPixels)(GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels);
-extern void (*glRasterPos2f)(GLfloat x, GLfloat y);
-extern void (*glPixelZoom)(GLfloat xfactor, GLfloat yfactor);
-extern void (*glShadeModel)(GLenum mode);
-
-#define GL_ALPHA_TEST						0x0BC0
-#define GL_VERTEX_PROGRAM_ARB             	0x8620
-#define GL_FRAGMENT_PROGRAM_ARB           	0x8804
-#define GL_PROGRAM_FORMAT_ASCII_ARB       	0x8875
-#define GL_PROGRAM_ERROR_POSITION_ARB     	0x864B
-#define GL_PROGRAM_ERROR_STRING_ARB       	0x8874
-#define GL_TEXTURE_ENV						0x2300
-#define GL_COMBINE_ARB                    	0x8570
-#define GL_COMBINE_RGB_ARB                	0x8571
-#define GL_SOURCE0_RGB_ARB                	0x8580
-#define GL_SOURCE1_RGB_ARB                	0x8581
-#define GL_OPERAND0_RGB_ARB               	0x8590
-#define GL_OPERAND1_RGB_ARB               	0x8591
-#define GL_RGB_SCALE_ARB                  	0x8573
-#define GL_MODULATE							0x2100
-#define GL_VERTEX_ARRAY						0x8074
-#define GL_NORMAL_ARRAY						0x8075
-#define GL_COLOR_ARRAY						0x8076
-#define GL_INDEX_ARRAY						0x8077
-#define GL_TEXTURE_COORD_ARRAY				0x8078
-#define GL_TEXTURE_ENV_COLOR				0x2201
-#define GL_PRIMARY_COLOR_ARB              	0x8577
-#define GL_TEXTURE_ENV_MODE					0x2200
-#define GL_S								0x2000
-#define GL_T								0x2001
-#define GL_R								0x2002
-#define GL_Q								0x2003
-#define GL_DOT3_RGBA_ARB                  	0x86AF
-#define GL_TEXTURE_GEN_S					0x0C60
-#define GL_TEXTURE_GEN_T					0x0C61
-#define GL_TEXTURE_GEN_R					0x0C62
-#define GL_TEXTURE_GEN_Q					0x0C63
-#define GL_TEXTURE_GEN_MODE					0x2500
-#define GL_REFLECTION_MAP_EXT             	0x8512
-#define GL_OBJECT_LINEAR					0x2401
-#define GL_OBJECT_PLANE						0x2501
-#define GL_MATRIX_MODE						0x0BA0
-#define GL_MODELVIEW						0x1700
-#define GL_PROJECTION						0x1701
-#define GL_TEXTURE							0x1702
-#define GL_PREVIOUS_ARB                   	0x8578
-#define GL_CONSTANT_ARB                   	0x8576
-#define GL_COMBINE_ALPHA_ARB              	0x8572
-#define GL_SOURCE0_ALPHA_ARB              	0x8588
-#define GL_SOURCE1_ALPHA_ARB              	0x8589
-#define GL_OPERAND0_ALPHA_ARB             	0x8598
-#define GL_OPERAND1_ALPHA_ARB             	0x8599
-#define GL_ALPHA_SCALE						0x0D1C
-#define GL_COMBINE_EXT                    	0x8570
-#define GL_DECAL							0x2101
-#define GL_ADD								0x0104
-#define GL_ALL_ATTRIB_BITS					0xFFFFFFFF
-#define GL_POLYGON							0x0009
-#define GL_INTENSITY8				        0x804B
-#define GL_LUMINANCE_ALPHA			        0x190A
-#define GL_LUMINANCE8_ALPHA8		        0x8045
-#define GL_LUMINANCE				        0x1909
-#define GL_LUMINANCE8				        0x8040
-#define GL_ALPHA8					        0x803C
-#define GL_SMOOTH				            0x1D01
-#define GL_LINE_STIPPLE				        0x0B24
+// GL_ARB_debug_output
+extern PFNGLDEBUGMESSAGECONTROLPROC				glDebugMessageControl;
+extern PFNGLDEBUGMESSAGEINSERTARBPROC			glDebugMessageInsert;
+extern PFNGLDEBUGMESSAGECALLBACKPROC			glDebugMessageCallback;
+extern PFNGLGETDEBUGMESSAGELOGPROC				glGetDebugMessageLog;
+extern PFNGLPUSHDEBUGGROUPPROC					glPushDebugGroup;
+extern PFNGLPOPDEBUGGROUPPROC					glPopDebugGroup;
 
 #endif // !__QGL_H__

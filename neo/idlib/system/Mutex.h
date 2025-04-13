@@ -50,8 +50,8 @@ private:
 	struct SDL_Mutex*	m_mtxhnd;
 
 	// prevent object copy
-	crMutex( const crMutex & s ) {}
-	void			operator=( const crMutex & s ) {}
+	crMutex( const crMutex & s ){};
+	void			operator=( const crMutex & s ) {};
 };
 
 class crScopeLock
@@ -94,8 +94,8 @@ private:
 	struct SDL_Condition*	m_cndhnd;
 
 	// prevent object copy
-	crCondition( const crCondition & s ) {}
-	void			operator=( const crCondition & s ) {}
+	crCondition( const crCondition & s ) {};
+	void			operator=( const crCondition & s ) {};
 };
 
 class crSemaphore
@@ -110,23 +110,62 @@ private:
 	struct SDL_Semaphore*	m_sem;
 };
 
-//
-class	crEvent : 
-	public crMutex,
-	public crCondition
+/*
+================================================
+idSysSignal is a C++ wrapper for the low level system signal functions.  A signal is an object
+that a thread can wait on for it to be raised.  It's used to indicate data is available or that
+a thread has reached a specific point.
+================================================
+*/
+class idSysSignal
 {
-public: 
-	crEvent( const bool manualReset );
-	~crEvent( void );
-
+public:
+	static const int	WAIT_INFINITE = -1;
+	
+	idSysSignal( bool manualReset = false );
+	~idSysSignal( void );
 	void	Raise( void );
 	void	Clear( void );
-	bool	Wait( unsigned int timeout );
+	
+	// Wait returns true if the object is in a signalled state and
+	// returns false if the wait timed out. Wait also clears the signalled
+	// state when the signalled state is reached within the time out period.
+	bool	Wait( int timeout = WAIT_INFINITE );
+	
+private:
+	// DG: all this stuff is needed to emulate Window's Event API
+	//     (CreateEvent(), SetEvent(), WaitForSingleObject(), ...)
+	bool 						m_manualReset;
+	SDL_AtomicInt				m_signaled; 		    // is it signaled right now?
+	SDL_AtomicInt				m_waiting;            // number of threads waiting for a signal
+	struct SDL_Condition*		m_cond;
+	struct SDL_Mutex* 			m_mutex;
+	
+	idSysSignal( const idSysSignal& s ) {};
+	void				operator=( const idSysSignal& s ) {};
+};
+
+/*
+================================================
+idSysInterlockedInteger is a C++ wrapper for the low level system interlocked integer
+routines to atomically increment or decrement an integer.
+================================================
+*/
+class idSysInterlockedInteger
+{
+public:
+	idSysInterlockedInteger( void );
+	idSysInterlockedInteger( const idSysInterlockedInteger &ref );
+	~idSysInterlockedInteger( void );
+	int					Increment( void ); 		// atomically increments the integer and returns the new value
+	int					Decrement( void );		// atomically decrements the integer and returns the new value
+	int					Add( int v );			// atomically adds a value to the integer and returns the new value
+	int					Sub( int v );			// atomically subtracts a value from the integer and returns the new value
+	int					GetValue( void ) const;	// returns the current value of the integer
+	void				SetValue( int v );		// sets a new value, Note: this operation is not atomic
 
 private:
-	std::atomic<uint32_t>	m_waiting; 		// number of threads waiting for a signal
-	std::atomic<bool>		m_signaled; 	// is it signaled right now?
-	bool					m_manualReset;	//
+	struct SDL_AtomicInt*	m_value;
 };
 
 #endif // !_MUTEX_H_

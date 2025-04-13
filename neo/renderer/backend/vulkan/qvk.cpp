@@ -195,7 +195,7 @@ PFN_vkCmdResetQueryPool                          vkCmdResetQueryPool = nullptr;
 template< typename _t >
 inline void vkGetInstaProc( const VkInstance instance, _t &proc, const char* name )
 {
-    return ( ( proc = reinterpret_cast<_t>( vkGetInstanceProcAddr( instance, name ) ) ) != nullptr ) ? VK_TRUE : VK_FALSE;
+    assert( ( proc = reinterpret_cast<_t>( vkGetInstanceProcAddr( instance, name ) ) ) != nullptr );
 }
 #define VK_LOAD_PROC( X , I ) vkGetInstaProc( I, X, #X )
 

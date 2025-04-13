@@ -262,6 +262,7 @@ template<typename _t> ID_INLINE constexpr const _t& clamp( const _t& v, const _t
 #include "system/Atomic.h"
 #include "system/Mutex.h"
 #include "system/paths.h"
+#include "system/Thread.h"
 #include "SmartPointer.h"
 // BEATO End
 

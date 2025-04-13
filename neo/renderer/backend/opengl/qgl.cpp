@@ -1,438 +1,430 @@
 #include "idlib/precompiled.h"
 #include "qgl.h"
-
+#include "glContext.h"
 #include <SDL3/SDL_video.h>
 
 //===========================================================================
 
-PFNGLGETERRORPROC					    glGetError = nullptr;
-PFNGLGETSTRINGPROC					    glGetString = nullptr;
-PFNGLGETFLOATVPROC					    glGetFloatv = nullptr;
-PFNGLGETINTEGERVPROC					glGetIntegerv = nullptr;
-PFNGLENABLEPROC						    glEnable = nullptr;
-PFNGLDISABLEPROC						glDisable = nullptr;
-PFNGLISENABLEDPROC                      glIsEnabled = nullptr;
-PFNGLCLEARPROC						    glClear = nullptr;
-PFNGLFLUSHPROC						    glFlush = nullptr;
-PFNGLFINISHPROC						    glFinish = nullptr;
-PFNGLVIEWPORTPROC					    glViewport = nullptr;
+PFNGLGETERRORPROC						    glGetError = nullptr;
+PFNGLGETSTRINGPROC						    glGetString = nullptr;
+PFNGLGETFLOATVPROC						    glGetFloatv = nullptr;
+PFNGLGETINTEGERVPROC					    glGetIntegerv = nullptr;
+PFNGLENABLEPROC							    glEnable = nullptr;
+PFNGLDISABLEPROC						    glDisable = nullptr;
+PFNGLISENABLEDPROC						    glIsEnabled = nullptr;
+PFNGLCLEARPROC							    glClear = nullptr;
+PFNGLFLUSHPROC							    glFlush = nullptr;
+PFNGLFINISHPROC							    glFinish = nullptr;
+PFNGLVIEWPORTPROC						    glViewport = nullptr;
 
-PFNGLCLEARCOLORPROC					    glClearColor = nullptr;
-PFNGLCOLORMASKPROC					    glColorMask = nullptr;
+PFNGLCLEARCOLORPROC						    glClearColor = nullptr;
+PFNGLCOLORMASKPROC						    glColorMask = nullptr;
 
 // blend
-PFNGLBLENDFUNCPROC					    glBlendFunc = nullptr;
+PFNGLBLENDFUNCPROC						    glBlendFunc = nullptr;
 
 // depth
-PFNGLCLEARDEPTHPROC					    glClearDepth = nullptr;
-PFNGLDEPTHMASKPROC					    glDepthMask = nullptr;
-PFNGLDEPTHFUNCPROC					    glDepthFunc = nullptr;
-PFNGLDEPTHRANGEPROC					    glDepthRange = nullptr;
+PFNGLCLEARDEPTHPROC						    glClearDepth = nullptr;
+PFNGLDEPTHMASKPROC						    glDepthMask = nullptr;
+PFNGLDEPTHFUNCPROC						    glDepthFunc = nullptr;
+PFNGLDEPTHRANGEPROC						    glDepthRange = nullptr;
 
 // stencil
-PFNGLSCISSORPROC                        glScissor = nullptr;
-PFNGLSTENCILOPPROC					    glStencilOp = nullptr;
-PFNGLSTENCILFUNCPROC					glStencilFunc = nullptr;
-PFNGLSTENCILMASKPROC					glStencilMask = nullptr;
-PFNGLCLEARSTENCILPROC				    glClearStencil = nullptr;
-PFNGLSTENCILOPSEPARATEPROC			    glStencilOpSeparate = nullptr;
-PFNGLSTENCILFUNCSEPARATEPROC			glStencilFuncSeparate = nullptr;
+PFNGLSCISSORPROC                     	    glScissor = nullptr;
+PFNGLSTENCILOPPROC						    glStencilOp = nullptr;
+PFNGLSTENCILFUNCPROC                        glStencilFunc = nullptr;
+PFNGLSTENCILMASKPROC                        glStencilMask = nullptr;
+PFNGLCLEARSTENCILPROC					    glClearStencil = nullptr;
+PFNGLSTENCILOPSEPARATEPROC				    glStencilOpSeparate = nullptr;
+PFNGLSTENCILFUNCSEPARATEPROC                glStencilFuncSeparate = nullptr;
 
 // poligon 
-PFNGLCULLFACEPROC					    glCullFace = nullptr;
-PFNGLPOLYGONMODEPROC					glPolygonMode = nullptr;
-PFNGLPOLYGONOFFSETPROC				    glPolygonOffset = nullptr;
-PFNGLLINEWIDTHPROC					    glLineWidth = nullptr;
-PFNGLPOINTSIZEPROC					    glPointSize = nullptr;
+PFNGLCULLFACEPROC						    glCullFace = nullptr;
+PFNGLPOLYGONMODEPROC                        glPolygonMode = nullptr;
+PFNGLPOLYGONOFFSETPROC					    glPolygonOffset = nullptr;
+PFNGLLINEWIDTHPROC						    glLineWidth = nullptr;
+PFNGLPOINTSIZEPROC						    glPointSize = nullptr;
 
 // draw buffers 
-PFNGLDRAWBUFFERPROC					    glDrawBuffer = nullptr;
-PFNGLREADBUFFERPROC					    glReadBuffer = nullptr;
-PFNGLREADPIXELSPROC					    glReadPixels = nullptr;
-PFNGLPIXELSTOREIPROC					glPixelStorei = nullptr;
+PFNGLDRAWBUFFERPROC						    glDrawBuffer = nullptr;
+PFNGLREADBUFFERPROC						    glReadBuffer = nullptr;
+PFNGLREADPIXELSPROC						    glReadPixels = nullptr;
+PFNGLPIXELSTOREIPROC					    glPixelStorei = nullptr;
 
-// ARB_vertex_buffer_object
-PFNGLBINDBUFFERPROC					    glBindBuffer = nullptr;
-PFNGLDELETEBUFFERSPROC	 			    glDeleteBuffers = nullptr;
-PFNGLGENBUFFERSPROC	 				    glGenBuffers = nullptr;
-PFNGLISBUFFERPROC	 				    glIsBuffer = nullptr;
-PFNGLBUFFERDATAPROC	 				    glBufferData = nullptr;
-PFNGLBUFFERSUBDATAPROC	 			    glBufferSubData = nullptr;
-PFNGLGETBUFFERSUBDATAPROC	 		    glGetBufferSubData = nullptr;
-PFNGLMAPBUFFERPROC	 				    glMapBuffer = nullptr;
-PFNGLUNMAPBUFFERPROC 				    glUnmapBuffer = nullptr;
-PFNGLGETBUFFERPARAMETERIVPROC 		    glGetBufferParameteriv = nullptr;
-PFNGLGETBUFFERPOINTERVPROC 			    glGetBufferPointerv = nullptr;
-PFNGLCOPYBUFFERSUBDATAPROC			    glCopyBufferSubData = nullptr;
+// ARB_vertex_buffer_object, ARB_direct_state_access ARB_buffer_storage, ARB_uniform_buffer_object ARB_map_buffer_range GL_ARB_multi_bind
+PFNGLBINDBUFFERPROC						    glBindBuffer = nullptr;
+PFNGLBINDBUFFERRANGEPROC            	    glBindBufferRange = nullptr;
+PFNGLBINDBUFFERSRANGEPROC            	    glBindBuffersRange = nullptr;
+PFNGLCREATEBUFFERSPROC					    glCreateBuffers = nullptr;
+PFNGLDELETEBUFFERSPROC	 				    glDeleteBuffers = nullptr;
+PFNGLISBUFFERPROC	 					    glIsBuffer = nullptr;
+PFNGLNAMEDBUFFERSTORAGEPROC				    glNamedBufferStorage = nullptr;
+PFNGLNAMEDBUFFERDATAPROC				    glNamedBufferData = nullptr;
+PFNGLNAMEDBUFFERSUBDATAPROC				    glNamedBufferSubData = nullptr;
+PFNGLCOPYNAMEDBUFFERSUBDATAPROC			    glCopyNamedBufferSubData = nullptr;
+PFNGLCLEARNAMEDBUFFERDATAPROC			    glClearNamedBufferData = nullptr;
+PFNGLMAPNAMEDBUFFERRANGEPROC			    glMapNamedBufferRange = nullptr;
+PFNGLUNMAPNAMEDBUFFERPROC				    glUnmapNamedBuffer = nullptr;
+PFNGLGETBUFFERPARAMETERIVPROC 			    glGetBufferParameteriv = nullptr;
+PFNGLGETBUFFERPOINTERVPROC 				    glGetBufferPointerv = nullptr;
 
-
-// GL_ARB_direct_state_access GL_ARB_buffer_storage  GL_ARB_uniform_buffer_object  GL_ARB_map_buffer_range
-PFNGLCREATEBUFFERSPROC				    glCreateBuffers = nullptr;
-PFNGLNAMEDBUFFERSTORAGEPROC			    glNamedBufferStorage = nullptr;
-PFNGLNAMEDBUFFERSUBDATAPROC			    glNamedBufferSubData = nullptr;
-PFNGLCOPYNAMEDBUFFERSUBDATAPROC		    glCopyNamedBufferSubData = nullptr;
-PFNGLCLEARNAMEDBUFFERDATAPROC		    glClearNamedBufferData = nullptr;
-PFNGLUNMAPNAMEDBUFFERPROC			    glUnmapNamedBuffer = nullptr;
-
-// GL_ARB_map_buffer_range
-PFNGLMAPNAMEDBUFFERRANGEPROC			glMapNamedBufferRange = nullptr;
-
-// GL_ARB_multi_bind
-PFNGLBINDBUFFERSRANGEPROC               glBindBuffersRange = nullptr;
+// ARB_vertex_array_object, ARB_direct_state_access
+PFNGLBINDVERTEXARRAYPROC                    glBindVertexArray = nullptr;
+PFNGLCREATEVERTEXARRAYSPROC				    glCreateVertexArrays = nullptr;
+PFNGLDELETEVERTEXARRAYSPROC				    glDeleteVertexArrays = nullptr;
+PFNGLISVERTEXARRAYPROC					    glIsVertexArray = nullptr;
+PFNGLENABLEVERTEXARRAYATTRIBPROC            glEnableVertexArrayAttrib = nullptr;
+PFNGLDISABLEVERTEXARRAYATTRIBPROC		    glDisableVertexArrayAttrib = nullptr;
+PFNGLVERTEXARRAYATTRIBBINDINGPROC		    glVertexArrayAttribBinding = nullptr;
+PFNGLVERTEXARRAYATTRIBFORMATPROC            glVertexArrayAttribFormat = nullptr;
+PFNGLVERTEXARRAYVERTEXBUFFERPROC            glVertexArrayVertexBuffer = nullptr;
+PFNGLVERTEXARRAYELEMENTBUFFERPROC		    glVertexArrayElementBuffer = nullptr;
 
 // Draw Command
-PFNGLDRAWELEMENTSPROC				    glDrawElements = nullptr;
+PFNGLDRAWELEMENTSPROC					    glDrawElements = nullptr;
+PFNGLDRAWELEMENTSBASEVERTEXPROC			    glDrawElementsBaseVertex = nullptr;
+PFNGLDRAWELEMENTSINDIRECTPROC			    glDrawElementsIndirect = nullptr;
+
 
 // Textures
-PFNGLACTIVETEXTUREPROC				    glActiveTexture = nullptr;
-PFNGLGENTEXTURESPROC					glGenTextures = nullptr;
-PFNGLDELETETEXTURESPROC				    glDeleteTextures = nullptr;
-PFNGLBINDTEXTUREPROC					glBindTexture = nullptr;
-PFNGLTEXIMAGE2DPROC					    glTexImage2D = nullptr;
-PFNGLTEXIMAGE3DPROC					    glTexImage3D = nullptr;
-PFNGLTEXSUBIMAGE2DPROC				    glTexSubImage2D = nullptr;
-PFNGLTEXSUBIMAGE3DPROC				    glTexSubImage3D = nullptr;
-PFNGLTEXPARAMETERIPROC				    glTexParameteri = nullptr;
-PFNGLTEXPARAMETERFPROC				    glTexParameterf = nullptr;
-PFNGLTEXPARAMETERFVPROC				    glTexParameterfv = nullptr;
-PFNGLGETTEXIMAGEPROC					glGetTexImage = nullptr;
-PFNGLCOPYTEXIMAGE2DPROC				    glCopyTexImage2D = nullptr;
-PFNGLCOPYTEXSUBIMAGE2DPROC			    glCopyTexSubImage2D = nullptr;
-PFNGLCOPYTEXSUBIMAGE3DPROC			    glCopyTexSubImage3D = nullptr;
+// ARB_texture_storage, ARB_direct_state_access, ARB_multi_bind, ARB_texture_compression, ARB_texture_storage_multisample
+PFNGLBINDTEXTUREPROC                        glBindTexture = nullptr;
+PFNGLBINDTEXTURESPROC					    glBindTextures = nullptr;
+PFNGLCREATETEXTURESPROC					    glCreateTextures = nullptr;
+PFNGLDELETETEXTURESPROC					    glDeleteTextures = nullptr;
+PFNGLTEXTURESTORAGE1DPROC				    glTextureStorage1D = nullptr;
+PFNGLTEXTURESTORAGE2DPROC				    glTextureStorage2D = nullptr;
+PFNGLTEXTURESTORAGE3DPROC				    glTextureStorage3D = nullptr;
+PFNGLTEXTURESTORAGE2DMULTISAMPLEPROC        glTextureStorage2DMultisample = nullptr;
+PFNGLTEXTURESTORAGE3DMULTISAMPLEPROC        glTextureStorage3DMultisample = nullptr;
+PFNGLTEXTURESUBIMAGE1DPROC				    glTextureSubImage1D = nullptr;
+PFNGLTEXTURESUBIMAGE2DPROC				    glTextureSubImage2D = nullptr;
+PFNGLTEXTURESUBIMAGE3DPROC				    glTextureSubImage3D = nullptr;
+PFNGLTEXTUREPARAMETERIPROC				    glTextureParameteri = nullptr;
+PFNGLTEXTUREPARAMETERFPROC				    glTextureParameterf = nullptr;
+PFNGLGETTEXTUREIMAGEPROC                    glGetTextureImage = nullptr;
 
-// ARB_texture_compression
-PFNGLCOMPRESSEDTEXIMAGE2DPROC		    glCompressedTexImage2D = nullptr;
-PFNGLCOMPRESSEDTEXIMAGE3DPROC		    glCompressedTexImage3D = nullptr;
-PFNGLGETCOMPRESSEDTEXIMAGEPROC		    glGetCompressedTexImage = nullptr;
+// texture handler
+PFNGLGETTEXTUREHANDLEARBPROC                glGetTextureHandleARB = nullptr;
+PFNGLGETTEXTURESAMPLERHANDLEARBPROC		    glGetTextureSamplerHandleARB = nullptr;
+PFNGLMAKETEXTUREHANDLERESIDENTARBPROC	    glMakeTextureHandleResidentARB = nullptr;
+PFNGLMAKETEXTUREHANDLENONRESIDENTARBPROC	glMakeTextureHandleNonResidentARB = nullptr;
+PFNGLMAKEIMAGEHANDLERESIDENTARBPROC 		glMakeImageHandleResidentARB = nullptr;
+PFNGLMAKEIMAGEHANDLENONRESIDENTARBPROC 	    glMakeImageHandleNonResidentARB = nullptr;
+PFNGLUNIFORMHANDLEUI64ARBPROC 			    glUniformHandleui64ARB = nullptr;
+PFNGLUNIFORMHANDLEUI64VARBPROC 			    glUniformHandleui64vARB = nullptr;
+PFNGLPROGRAMUNIFORMHANDLEUI64ARBPROC 	    glProgramUniformHandleui64ARB = nullptr;
+PFNGLPROGRAMUNIFORMHANDLEUI64VARBPROC 	    glProgramUniformHandleui64vARB = nullptr;
+PFNGLISTEXTUREHANDLERESIDENTARBPROC		    glIsTextureHandleResidentARB = nullptr;
+PFNGLISIMAGEHANDLERESIDENTARBPROC		    glIsImageHandleResidentARB = nullptr;
 
-// GL_EXT_depth_bounds_test
-PFNGLDEPTHBOUNDSEXTPROC                 glDepthBoundsEXT = nullptr;
+// GLSL and Progrma Pipelines
+PFNGLCREATESHADERPROC					    glCreateShader = nullptr;
+PFNGLDELETESHADERPROC					    glDeleteShader = nullptr;
+PFNGLSHADERSOURCEPROC					    glShaderSource = nullptr;
+PFNGLSHADERBINARYPROC					    glShaderBinary = nullptr;
+PFNGLSPECIALIZESHADERPROC				    glSpecializeShader = nullptr;
+PFNGLCOMPILESHADERPROC					    glCompileShader = nullptr;
+PFNGLGETSHADERIVPROC					    glGetShaderiv = nullptr;
+PFNGLGETSHADERINFOLOGPROC				    glGetShaderInfoLog = nullptr;
+PFNGLCREATEPROGRAMPROC					    glCreateProgram = nullptr;
+PFNGLDELETEPROGRAMPROC					    glDeleteProgram = nullptr;
+PFNGLPROGRAMPARAMETERIPROC				    glProgramParameteri = nullptr;
+PFNGLATTACHSHADERPROC					    glAttachShader = nullptr;
+PFNGLDETACHSHADERPROC					    glDetachShader = nullptr;
+PFNGLLINKPROGRAMPROC					    glLinkProgram = nullptr;
+PFNGLUSEPROGRAMPROC						    glUseProgram = nullptr;
+PFNGLGETPROGRAMIVPROC					    glGetProgramiv = nullptr;
+PFNGLGETPROGRAMINFOLOGPROC				    glGetProgramInfoLog = nullptr;
+PFNGLGETACTIVEATTRIBPROC				    glGetActiveAttrib = nullptr;
+PFNGLGETACTIVEUNIFORMPROC				    glGetActiveUniform = nullptr;
+PFNGLGETATTRIBLOCATIONPROC				    glGetAttribLocation = nullptr;
+PFNGLGETUNIFORMLOCATIONPROC				    glGetUniformLocation = nullptr;
 
-// EXT_stencil_two_side
-PFNGLACTIVESTENCILFACEEXTPROC		    glActiveStencilFaceEXT = nullptr;
+// GL_ARB_separate_shader_objects
+PFNGLGENPROGRAMPIPELINESPROC			    glGenProgramPipelines = nullptr;
+PFNGLUSEPROGRAMSTAGESPROC				    glUseProgramStages = nullptr;
+PFNGLACTIVESHADERPROGRAMPROC			    glActiveShaderProgram = nullptr;
+PFNGLBINDPROGRAMPIPELINEPROC			    glBindProgramPipeline = nullptr;
+PFNGLDELETEPROGRAMPIPELINESPROC			    glDeleteProgramPipelines = nullptr;
+PFNGLISPROGRAMPIPELINEPROC				    glIsProgramPipeline = nullptr;
+PFNGLPROGRAMUNIFORM1FPROC				    glProgramUniform1f = nullptr;
+PFNGLPROGRAMUNIFORM1FVPROC				    glProgramUniform1fv = nullptr;
+PFNGLPROGRAMUNIFORM1IPROC				    glProgramUniform1i = nullptr;
+PFNGLPROGRAMUNIFORM1IVPROC				    glProgramUniform1iv = nullptr;
+PFNGLPROGRAMUNIFORM2FPROC				    glProgramUniform2f = nullptr;
+PFNGLPROGRAMUNIFORM2FVPROC				    glProgramUniform2fv = nullptr;
+PFNGLPROGRAMUNIFORM2IPROC				    glProgramUniform2i = nullptr;
+PFNGLPROGRAMUNIFORM2IVPROC				    glProgramUniform2iv = nullptr;	
+
+// GL_ARB_sampler_objects
+PFNGLDELETESAMPLERSPROC			            glDeleteSamplers = nullptr;
+PFNGLCREATESAMPLERSPROC			            glCreateSamplers = nullptr;
+PFNGLSAMPLERPARAMETERIPROC		            glSamplerParameteri = nullptr;
+PFNGLSAMPLERPARAMETERIVPROC		            glSamplerParameteriv = nullptr;
+PFNGLSAMPLERPARAMETERFPROC		            glSamplerParameterf = nullptr;
+PFNGLSAMPLERPARAMETERFVPROC		            glSamplerParameterfv = nullptr;
+PFNGLGETSAMPLERPARAMETERIVPROC	            glGetSamplerParameteriv = nullptr;
+
+// GL_ARB_framebuffer_object
+PFNGLBINDFRAMEBUFFERPROC				    glBindFramebuffer = nullptr;
+PFNGLDELETEFRAMEBUFFERSPROC				    glDeleteFramebuffers = nullptr;
+PFNGLCREATEFRAMEBUFFERSPROC				    glCreateFramebuffers = nullptr;
+PFNGLNAMEDFRAMEBUFFERTEXTUREPROC		    glNamedFramebufferTexture = nullptr;
+PFNGLNAMEDFRAMEBUFFERRENDERBUFFERPROC	    glNamedFramebufferRenderbuffer = nullptr;
+PFNGLNAMEDFRAMEBUFFERDRAWBUFFERPROC		    glNamedFramebufferDrawBuffer = nullptr;
+PFNGLNAMEDFRAMEBUFFERDRAWBUFFERSPROC	    glNamedFramebufferDrawBuffers = nullptr;
+PFNGLNAMEDFRAMEBUFFERREADBUFFERPROC		    glNamedFramebufferReadBuffer = nullptr;
+PFNGLFRAMEBUFFERRENDERBUFFERPROC		    glFramebufferRenderbuffer = nullptr;
+PFNGLFRAMEBUFFERTEXTURE1DPROC			    glFramebufferTexture1D = nullptr;
+PFNGLFRAMEBUFFERTEXTURE2DPROC			    glFramebufferTexture2D = nullptr;
+PFNGLFRAMEBUFFERTEXTURE3DPROC			    glFramebufferTexture3D = nullptr;
+PFNGLFRAMEBUFFERTEXTURELAYERPROC		    glFramebufferTextureLayer = nullptr;
+PFNGLFRAMEBUFFERTEXTUREPROC				    glFramebufferTexture = nullptr;
+PFNGLCHECKNAMEDFRAMEBUFFERSTATUSPROC	    glCheckNamedFramebufferStatus = nullptr;
+
+// ARB_sync
+PFNGLFENCESYNCPROC						    glFenceSync = nullptr;
+PFNGLISSYNCPROC 						    glIsSync = nullptr;
+PFNGLDELETESYNCPROC 					    glDeleteSync = nullptr;
+PFNGLCLIENTWAITSYNCPROC 				    glClientWaitSync = nullptr;
+PFNGLWAITSYNCPROC 						    glWaitSync = nullptr;
+PFNGLGETSYNCIVPROC						    glGetSynciv = nullptr;
+
+// ARB_viewport_array
+PFNGLVIEWPORTARRAYVPROC					    glViewportArrayv = nullptr;
+PFNGLVIEWPORTINDEXEDFPROC				    glViewportIndexedf = nullptr;
+PFNGLVIEWPORTINDEXEDFVPROC				    glViewportIndexedfv = nullptr;
+PFNGLSCISSORARRAYVPROC					    glScissorArrayv = nullptr;
+PFNGLSCISSORINDEXEDPROC					    glScissorIndexed = nullptr;
+PFNGLSCISSORINDEXEDVPROC				    glScissorIndexedv = nullptr;
+PFNGLDEPTHRANGEARRAYVPROC				    glDepthRangeArrayv = nullptr;
+PFNGLDEPTHRANGEINDEXEDPROC				    glDepthRangeIndexed = nullptr;
 
 // GL_ARB_debug_output
-static PFNGLDEBUGMESSAGECONTROLPROC     glDebugMessageControl = nullptr;
-static PFNGLDEBUGMESSAGECALLBACKPROC    glDebugMessageCallback = nullptr;
-
-
-//===========================================================================
-// DEPRECATE TO REMOVE and WORK ARROUND
-//===========================================================================
-
-// ARB_vertex_program / ARB_fragment_program
-PFNGLVERTEXATTRIBPOINTERPROC			glVertexAttribPointer = nullptr;
-PFNGLENABLEVERTEXATTRIBARRAYPROC		glEnableVertexAttribArray = nullptr;
-PFNGLDISABLEVERTEXATTRIBARRAYPROC	    glDisableVertexAttribArray = nullptr;
-PFNGLPROGRAMSTRINGARBPROC			    glProgramStringARB = nullptr;
-PFNGLBINDPROGRAMARBPROC				    glBindProgramARB = nullptr;
-PFNGLGENPROGRAMSARBPROC				    glGenProgramsARB = nullptr;
-PFNGLPROGRAMENVPARAMETER4FVARBPROC	    glProgramEnvParameter4fvARB = nullptr;
-PFNGLPROGRAMLOCALPARAMETER4FVARBPROC	glProgramLocalParameter4fvARB = nullptr;
-
-PFNGLMULTITEXCOORD2FARBPROC			    glMultiTexCoord2fARB = nullptr;
-PFNGLMULTITEXCOORD2FVARBPROC			glMultiTexCoord2fvARB = nullptr;
-PFNGLCLIENTACTIVETEXTUREARBPROC		    glClientActiveTextureARB = nullptr;
-
-void (*glEnd)(void);
-void (*glBegin)(GLenum mode);
-void (*glArrayElement)(GLint i);
-void (*glPopMatrix)(void);
-void (*glPushMatrix)(void);
-void (*glPopAttrib)(void);
-void (*glPushAttrib)(GLbitfield mask);
-void (*glColor3f)(GLfloat red, GLfloat green, GLfloat blue);
-void (*glColor3fv)(const GLfloat *v);
-void (*glColor3ubv)(const GLubyte *v);
-void (*glColor4f)(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
-void (*glColor4fv)(const GLfloat *v);
-void (*glColor4ubv)(const GLubyte *v);
-void (*glVertex2f)(GLfloat x, GLfloat y);
-void (*glVertex3f)(GLfloat x, GLfloat y, GLfloat z);
-void (*glVertex3fv)(const GLfloat *v);
-void (*glTexCoord2f)(GLfloat s, GLfloat t);
-void (*glTexCoord2fv)(const GLfloat *v);
-void (*glMatrixMode)(GLenum mode);
-void (*glLoadMatrixf)(const GLfloat *m);
-void (*glLoadIdentity)(void);
-void (*glTexEnvi)(GLenum target, GLenum pname, GLint param);
-void (*glTexEnvfv)(GLenum target, GLenum pname, const GLfloat *params);
-void (*glTexGenfv)(GLenum coord, GLenum pname, const GLfloat *params);
-void (*glTexGenf)(GLenum coord, GLenum pname, GLfloat param);
-void (*glPrioritizeTextures)(GLsizei n, const GLuint *textures, const GLclampf *priorities);
-void (*glAlphaFunc)(GLenum func, GLclampf ref);
-void (*glOrtho)(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar);
-void (*glDrawPixels)(GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid *pixels);
-void (*glRasterPos2f)(GLfloat x, GLfloat y);
-void (*glPixelZoom)(GLfloat xfactor, GLfloat yfactor);
-
+PFNGLDEBUGMESSAGECONTROLPROC			    glDebugMessageControl = nullptr;
+PFNGLDEBUGMESSAGEINSERTARBPROC			    glDebugMessageInsert = nullptr;
+PFNGLDEBUGMESSAGECALLBACKPROC			    glDebugMessageCallback = nullptr;
+PFNGLGETDEBUGMESSAGELOGPROC				    glGetDebugMessageLog = nullptr;
+PFNGLPUSHDEBUGGROUPPROC					    glPushDebugGroup = nullptr;
+PFNGLPOPDEBUGGROUPPROC					    glPopDebugGroup = nullptr;
 
 //===========================================================================
 
 template< typename _t >
-inline bool GL_GetExtensionPointer( _t &func, const char* name )
+inline void GL_GetExtensionPointer( _t &func, const char* name )
 {
-    return ( func = reinterpret_cast<_t>( SDL_GL_GetProcAddress( name ) ) ) != nullptr;
+    func = reinterpret_cast<_t>( SDL_GL_GetProcAddress( name ) );
 }
 
-// OpenGL debug output messages
-static void APIENTRY DebugOutput( GLenum source,GLenum type,GLuint id,GLenum severity,GLsizei length,const GLchar *message,const void *userParam );
+#define GL_LOAD_PROC( X ) GL_GetExtensionPointer( X, #X )
 
-void	InitOpenGLDebugOutput( void )
+void crGLContext::LoadOpenGLFunctions( void )
 {
-    GLint flags = 0; 
-    glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
-    if (flags & GL_CONTEXT_FLAG_DEBUG_BIT)
-    {
-        glEnable( GL_DEBUG_OUTPUT );
+    GL_LOAD_PROC( glGetError );
+    GL_LOAD_PROC( glGetString );
+    GL_LOAD_PROC( glGetFloatv );
+    GL_LOAD_PROC( glGetIntegerv );
+    GL_LOAD_PROC( glEnable );
+    GL_LOAD_PROC( glDisable );
+    GL_LOAD_PROC( glIsEnabled );
+    GL_LOAD_PROC( glClear );
+    GL_LOAD_PROC( glFlush );
+    GL_LOAD_PROC( glFinish );
+    GL_LOAD_PROC( glViewport );
 
-        glEnable( GL_DEBUG_OUTPUT_SYNCHRONOUS );    // to block the current context
+    GL_LOAD_PROC( glClearColor );
+    GL_LOAD_PROC( glColorMask );
 
-        // TODO: add a debug level Cvar
-        glDebugMessageControl( GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
-        
-        glDebugMessageCallback( DebugOutput, nullptr );
-    }
+    // blend
+    GL_LOAD_PROC( glBlendFunc );
+
+    // depth
+    GL_LOAD_PROC( glClearDepth );
+    GL_LOAD_PROC( glDepthMask );
+    GL_LOAD_PROC( glDepthFunc );
+    GL_LOAD_PROC( glDepthRange );
+
+    // stencil
+    GL_LOAD_PROC( glScissor );
+    GL_LOAD_PROC( glStencilOp );
+    GL_LOAD_PROC( glStencilFunc );
+    GL_LOAD_PROC( glStencilMask );
+    GL_LOAD_PROC( glClearStencil );
+    GL_LOAD_PROC( glStencilOpSeparate );
+    GL_LOAD_PROC( glStencilFuncSeparate );
+
+    // poligon 
+    GL_LOAD_PROC( glCullFace );
+    GL_LOAD_PROC( glPolygonMode );
+    GL_LOAD_PROC( glPolygonOffset );
+    GL_LOAD_PROC( glLineWidth );
+    GL_LOAD_PROC( glPointSize );
+
+    // draw buffers 
+    GL_LOAD_PROC( glDrawBuffer );
+    GL_LOAD_PROC( glReadBuffer );
+    GL_LOAD_PROC( glReadPixels );
+    GL_LOAD_PROC( glPixelStorei );
+
+    // ARB_vertex_buffer_object, ARB_direct_state_access ARB_buffer_storage, ARB_uniform_buffer_object ARB_map_buffer_range GL_ARB_multi_bind
+    GL_LOAD_PROC( glBindBuffer );
+    GL_LOAD_PROC( glBindBufferRange );
+    GL_LOAD_PROC( glBindBuffersRange );
+    GL_LOAD_PROC( glCreateBuffers );
+    GL_LOAD_PROC( glDeleteBuffers );
+    GL_LOAD_PROC( glIsBuffer );
+    GL_LOAD_PROC( glNamedBufferStorage );
+    GL_LOAD_PROC( glNamedBufferData );
+    GL_LOAD_PROC( glNamedBufferSubData );
+    GL_LOAD_PROC( glCopyNamedBufferSubData );
+    GL_LOAD_PROC( glClearNamedBufferData );
+    GL_LOAD_PROC( glMapNamedBufferRange );
+    GL_LOAD_PROC( glUnmapNamedBuffer );
+    GL_LOAD_PROC( glGetBufferParameteriv );
+    GL_LOAD_PROC( glGetBufferPointerv );
+
+    // ARB_vertex_array_object, ARB_direct_state_access
+    GL_LOAD_PROC( glBindVertexArray );
+    GL_LOAD_PROC( glCreateVertexArrays );
+    GL_LOAD_PROC( glDeleteVertexArrays );
+    GL_LOAD_PROC( glIsVertexArray );
+    GL_LOAD_PROC( glEnableVertexArrayAttrib );
+    GL_LOAD_PROC( glDisableVertexArrayAttrib );
+    GL_LOAD_PROC( glVertexArrayAttribBinding );
+    GL_LOAD_PROC( glVertexArrayAttribFormat );
+    GL_LOAD_PROC( glVertexArrayVertexBuffer );
+    GL_LOAD_PROC( glVertexArrayElementBuffer );
+
+    // Draw Command
+    GL_LOAD_PROC( glDrawElements );
+    GL_LOAD_PROC( glDrawElementsBaseVertex );
+    GL_LOAD_PROC( glDrawElementsIndirect );
+
+
+    // Textures
+    // ARB_texture_storage, ARB_direct_state_access, ARB_multi_bind, ARB_texture_compression, ARB_texture_storage_multisample
+    GL_LOAD_PROC( glBindTexture );
+    GL_LOAD_PROC( glBindTextures );
+    GL_LOAD_PROC( glCreateTextures );
+    GL_LOAD_PROC( glDeleteTextures );
+    GL_LOAD_PROC( glTextureStorage1D );
+    GL_LOAD_PROC( glTextureStorage2D );
+    GL_LOAD_PROC( glTextureStorage3D );
+    GL_LOAD_PROC( glTextureStorage2DMultisample );
+    GL_LOAD_PROC( glTextureStorage3DMultisample );
+    GL_LOAD_PROC( glTextureSubImage1D );
+    GL_LOAD_PROC( glTextureSubImage2D );
+    GL_LOAD_PROC( glTextureSubImage3D );
+    GL_LOAD_PROC( glTextureParameteri );
+    GL_LOAD_PROC( glTextureParameterf );
+    GL_LOAD_PROC( glGetTextureImage );
+
+    // texture handler
+    GL_LOAD_PROC( glGetTextureHandleARB );
+    GL_LOAD_PROC( glGetTextureSamplerHandleARB );
+    GL_LOAD_PROC( glMakeTextureHandleResidentARB );
+    GL_LOAD_PROC( glMakeTextureHandleNonResidentARB );
+    GL_LOAD_PROC( glMakeImageHandleResidentARB );
+    GL_LOAD_PROC( glMakeImageHandleNonResidentARB );
+    GL_LOAD_PROC( glUniformHandleui64ARB );
+    GL_LOAD_PROC( glUniformHandleui64vARB );
+    GL_LOAD_PROC( glProgramUniformHandleui64ARB );
+    GL_LOAD_PROC( glProgramUniformHandleui64vARB );
+    GL_LOAD_PROC( glIsTextureHandleResidentARB );
+    GL_LOAD_PROC( glIsImageHandleResidentARB );
+
+    // GLSL and Progrma Pipelines
+    GL_LOAD_PROC( glCreateShader );
+    GL_LOAD_PROC( glDeleteShader );
+    GL_LOAD_PROC( glShaderSource );
+    GL_LOAD_PROC( glShaderBinary );
+    GL_LOAD_PROC( glSpecializeShader );
+    GL_LOAD_PROC( glCompileShader );
+    GL_LOAD_PROC( glGetShaderiv );
+    GL_LOAD_PROC( glGetShaderInfoLog );
+    GL_LOAD_PROC( glCreateProgram );
+    GL_LOAD_PROC( glDeleteProgram );
+    GL_LOAD_PROC( glProgramParameteri );
+    GL_LOAD_PROC( glAttachShader );
+    GL_LOAD_PROC( glDetachShader );
+    GL_LOAD_PROC( glLinkProgram );
+    GL_LOAD_PROC( glUseProgram );
+    GL_LOAD_PROC( glGetProgramiv );
+    GL_LOAD_PROC( glGetProgramInfoLog );
+    GL_LOAD_PROC( glGetActiveAttrib );
+    GL_LOAD_PROC( glGetActiveUniform );
+    GL_LOAD_PROC( glGetAttribLocation );
+    GL_LOAD_PROC( glGetUniformLocation );
+
+    // GL_ARB_separate_shader_objects
+    GL_LOAD_PROC( glGenProgramPipelines );
+    GL_LOAD_PROC( glUseProgramStages );
+    GL_LOAD_PROC( glActiveShaderProgram );
+    GL_LOAD_PROC( glBindProgramPipeline );
+    GL_LOAD_PROC( glDeleteProgramPipelines );
+    GL_LOAD_PROC( glIsProgramPipeline );
+    GL_LOAD_PROC( glProgramUniform1f );
+    GL_LOAD_PROC( glProgramUniform1fv );
+    GL_LOAD_PROC( glProgramUniform1i );
+    GL_LOAD_PROC( glProgramUniform1iv );
+    GL_LOAD_PROC( glProgramUniform2f );
+    GL_LOAD_PROC( glProgramUniform2fv );
+    GL_LOAD_PROC( glProgramUniform2i );
+    GL_LOAD_PROC( glProgramUniform2iv );	
+
+    // GL_ARB_sampler_objects
+    GL_LOAD_PROC( glDeleteSamplers );
+    GL_LOAD_PROC( glCreateSamplers );
+    GL_LOAD_PROC( glSamplerParameteri );
+    GL_LOAD_PROC( glSamplerParameteriv );
+    GL_LOAD_PROC( glSamplerParameterf );
+    GL_LOAD_PROC( glSamplerParameterfv );
+    GL_LOAD_PROC( glGetSamplerParameteriv );
+
+    // GL_ARB_framebuffer_object
+    GL_LOAD_PROC( glBindFramebuffer );
+    GL_LOAD_PROC( glDeleteFramebuffers );
+    GL_LOAD_PROC( glCreateFramebuffers );
+    GL_LOAD_PROC( glNamedFramebufferTexture );
+    GL_LOAD_PROC( glNamedFramebufferRenderbuffer );
+    GL_LOAD_PROC( glNamedFramebufferDrawBuffer );
+    GL_LOAD_PROC( glNamedFramebufferDrawBuffers );
+    GL_LOAD_PROC( glNamedFramebufferReadBuffer );
+    GL_LOAD_PROC( glFramebufferRenderbuffer );
+    GL_LOAD_PROC( glFramebufferTexture1D );
+    GL_LOAD_PROC( glFramebufferTexture2D );
+    GL_LOAD_PROC( glFramebufferTexture3D );
+    GL_LOAD_PROC( glFramebufferTextureLayer );
+    GL_LOAD_PROC( glFramebufferTexture );
+    GL_LOAD_PROC( glCheckNamedFramebufferStatus );
+
+    // ARB_sync
+    GL_LOAD_PROC( glFenceSync );
+    GL_LOAD_PROC( glIsSync );
+    GL_LOAD_PROC( glDeleteSync );
+    GL_LOAD_PROC( glClientWaitSync );
+    GL_LOAD_PROC( glWaitSync );
+    GL_LOAD_PROC( glGetSynciv );
+
+    // ARB_viewport_array
+    GL_LOAD_PROC( glViewportArrayv );
+    GL_LOAD_PROC( glViewportIndexedf );
+    GL_LOAD_PROC( glViewportIndexedfv );
+    GL_LOAD_PROC( glScissorArrayv );
+    GL_LOAD_PROC( glScissorIndexed );
+    GL_LOAD_PROC( glScissorIndexedv );
+    GL_LOAD_PROC( glDepthRangeArrayv );
+    GL_LOAD_PROC( glDepthRangeIndexed );
+
+    // GL_ARB_debug_output
+    GL_LOAD_PROC( glDebugMessageControl );
+    GL_LOAD_PROC( glDebugMessageInsert );
+    GL_LOAD_PROC( glDebugMessageCallback );
+    GL_LOAD_PROC( glGetDebugMessageLog );
+    GL_LOAD_PROC( glPushDebugGroup );
+    GL_LOAD_PROC( glPopDebugGroup );
 }
-
-void LoadOpenGLFunctions( void )
-{
-    assert( GL_GetExtensionPointer( glGetError, "glGetError") );
-    assert( GL_GetExtensionPointer( glGetString, "glGetString") );
-    assert( GL_GetExtensionPointer( glGetFloatv, "glGetFloatv") );
-    assert( GL_GetExtensionPointer( glGetIntegerv, "glGetIntegerv") );
-    assert( GL_GetExtensionPointer( glEnable, "glEnable") );
-    assert( GL_GetExtensionPointer( glDisable, "glDisable") );
-    assert( GL_GetExtensionPointer( glIsEnabled, "glIsEnabled") );
-    assert( GL_GetExtensionPointer( glClear, "glClear") );
-    assert( GL_GetExtensionPointer( glFlush, "glFlush") );
-    assert( GL_GetExtensionPointer( glFinish, "glFinish") );
-    assert( GL_GetExtensionPointer( glViewport, "glViewport") );
-
-    assert( GL_GetExtensionPointer( glClearColor, "glClearColor" ) );
-    assert( GL_GetExtensionPointer( glColorMask, "glColorMask" ) );
-
-    assert( GL_GetExtensionPointer( glBlendFunc, "glBlendFunc" ) );
-
-    assert( GL_GetExtensionPointer( glClearDepth, "glClearDepth" ) );
-    assert( GL_GetExtensionPointer( glDepthMask, "glDepthMask" ) );
-    assert( GL_GetExtensionPointer( glDepthFunc, "glDepthFunc" ) );
-    assert( GL_GetExtensionPointer( glDepthRange, "glDepthRange" ) );
-
-    assert( GL_GetExtensionPointer( glScissor, "glScissor" ) );
-    assert( GL_GetExtensionPointer( glStencilOp, "glStencilOp" ) );
-    assert( GL_GetExtensionPointer( glStencilFunc, "glStencilFunc" ) );
-    assert( GL_GetExtensionPointer( glStencilMask, "glStencilMask" ) );
-    assert( GL_GetExtensionPointer( glClearStencil, "glClearStencil" ) );
-    assert( GL_GetExtensionPointer( glStencilOpSeparate, "glStencilOpSeparate" ) );
-    assert( GL_GetExtensionPointer( glStencilFuncSeparate, "glStencilFuncSeparate" ) );
-
-    assert( GL_GetExtensionPointer( glCullFace, "glCullFace" ) );
-    assert( GL_GetExtensionPointer( glPolygonMode, "glPolygonMode" ) );
-    assert( GL_GetExtensionPointer( glPolygonOffset, "glPolygonOffset" ) );
-    assert( GL_GetExtensionPointer( glLineWidth, "glLineWidth" ) );
-    assert( GL_GetExtensionPointer( glPointSize, "glPointSize" ) );
-
-    assert( GL_GetExtensionPointer( glDrawBuffer, "glDrawBuffer" ) );
-    assert( GL_GetExtensionPointer( glReadBuffer, "glReadBuffer" ) );
-    assert( GL_GetExtensionPointer( glReadPixels, "glReadPixels" ) );
-    assert( GL_GetExtensionPointer( glPixelStorei, "glPixelStorei" ) );
-
-    assert( GL_GetExtensionPointer( glBindBuffer, "glBindBuffer") );
-    assert( GL_GetExtensionPointer( glDeleteBuffers, "glDeleteBuffers") );
-    assert( GL_GetExtensionPointer( glGenBuffers, "glGenBuffers") );
-    assert( GL_GetExtensionPointer( glIsBuffer, "glIsBuffer") );
-    assert( GL_GetExtensionPointer( glBufferData, "glBufferData") );
-    assert( GL_GetExtensionPointer( glBufferSubData, "glBufferSubData") );
-    assert( GL_GetExtensionPointer( glGetBufferSubData, "glGetBufferSubData") );
-    assert( GL_GetExtensionPointer( glMapBuffer, "glMapBuffer") );
-    assert( GL_GetExtensionPointer( glUnmapBuffer, "glUnmapBuffer") );
-    assert( GL_GetExtensionPointer( glGetBufferParameteriv, "glGetBufferParameteriv") );
-    assert( GL_GetExtensionPointer( glGetBufferPointerv, "glGetBufferPointerv") );
-
-    assert( GL_GetExtensionPointer( glCreateBuffers, "glCreateBuffers" ) );
-    assert( GL_GetExtensionPointer( glNamedBufferStorage, "glNamedBufferStorage" ) );
-    assert( GL_GetExtensionPointer( glNamedBufferSubData, "glNamedBufferSubData" ) );
-    assert( GL_GetExtensionPointer( glCopyNamedBufferSubData, "glCopyNamedBufferSubData" ) );
-    assert( GL_GetExtensionPointer( glClearNamedBufferData, "glClearNamedBufferData" ) );
-    assert( GL_GetExtensionPointer( glMapNamedBufferRange, "glMapNamedBufferRange" ) );
-    assert( GL_GetExtensionPointer( glUnmapNamedBuffer, "glUnmapNamedBuffer" ) );
-
-    assert( GL_GetExtensionPointer( glDrawElements, "glDrawElements" ) );
-
-    assert( GL_GetExtensionPointer( glActiveTexture, "glActiveTexture" ) );
-    assert( GL_GetExtensionPointer( glGenTextures, "glGenTextures" ) );
-    assert( GL_GetExtensionPointer( glDeleteTextures, "glDeleteTextures" ) );
-    assert( GL_GetExtensionPointer( glBindTexture, "glBindTexture" ) );
-    assert( GL_GetExtensionPointer( glTexImage2D, "glTexImage2D" ) );
-    assert( GL_GetExtensionPointer( glTexImage3D, "glTexImage3D" ) );
-    assert( GL_GetExtensionPointer( glTexSubImage2D, "glTexSubImage2D" ) );
-    assert( GL_GetExtensionPointer( glTexSubImage3D, "glTexSubImage3D" ) );
-    assert( GL_GetExtensionPointer( glTexParameteri, "glTexParameteri" ) );
-    assert( GL_GetExtensionPointer( glTexParameterf, "glTexParameterf" ) );
-    assert( GL_GetExtensionPointer( glTexParameterfv, "glTexParameterfv" ) );
-    assert( GL_GetExtensionPointer( glGetTexImage, "glGetTexImage" ) );
-    assert( GL_GetExtensionPointer( glCopyTexImage2D, "glCopyTexImage2D" ) );
-    assert( GL_GetExtensionPointer( glCopyTexSubImage2D, "glCopyTexSubImage2D" ) );
-    assert( GL_GetExtensionPointer( glCopyTexSubImage3D, "glCopyTexSubImage3D" ) );
-
-    assert( GL_GetExtensionPointer( glCompressedTexImage2D, "glCompressedTexImage2D" ) );
-    assert( GL_GetExtensionPointer( glCompressedTexImage3D, "glCompressedTexImage3D" ) );
-    assert( GL_GetExtensionPointer( glGetCompressedTexImage, "glGetCompressedTexImage" ) );
-
-    //
-    assert( GL_GetExtensionPointer( glDebugMessageControl, "glDebugMessageControl" ) );
-    assert( GL_GetExtensionPointer( glDebugMessageCallback, "glDebugMessageCallback" ) );
-
-    //
-    assert( GL_GetExtensionPointer( glDepthBoundsEXT, "glDepthBoundsEXT" ) );
-//  assert( GL_GetExtensionPointer( glActiveStencilFaceEXT, "glActiveStencilFaceEXT" ) );
-    assert( GL_GetExtensionPointer( glVertexAttribPointer, "glVertexAttribPointer" ) );
-    assert( GL_GetExtensionPointer( glDisableVertexAttribArray, "glDisableVertexAttribArray" ) );
-    assert( GL_GetExtensionPointer( glProgramStringARB, "glProgramStringARB" ) );
-    assert( GL_GetExtensionPointer( glBindProgramARB, "glBindProgramARB" ) );
-    assert( GL_GetExtensionPointer( glGenProgramsARB, "glGenProgramsARB" ) );
-    assert( GL_GetExtensionPointer( glProgramEnvParameter4fvARB, "glProgramEnvParameter4fvARB" ) );
-    assert( GL_GetExtensionPointer( glProgramLocalParameter4fvARB, "glProgramLocalParameter4fvARB" ) );
-    assert( GL_GetExtensionPointer( glMultiTexCoord2fARB, "glMultiTexCoord2fARB" ) );
-    assert( GL_GetExtensionPointer( glMultiTexCoord2fvARB, "glMultiTexCoord2fvARB" ) );
-    assert( GL_GetExtensionPointer( glClientActiveTextureARB, "glClientActiveTextureARB" ) );
-
-    assert( GL_GetExtensionPointer( glEnableClientState, "glEnableClientState" ) );
-    assert( GL_GetExtensionPointer( glDisableClientState, "glDisableClientState" ) );
-    assert( GL_GetExtensionPointer( glPrioritizeTextures, "glPrioritizeTextures" ) );
-    assert( GL_GetExtensionPointer( glColorPointer, "glColorPointer" ) );
-    assert( GL_GetExtensionPointer( glAlphaFunc, "glAlphaFunc" ) );
-    assert( GL_GetExtensionPointer( glOrtho, "glOrtho" ) );
-    assert( GL_GetExtensionPointer( glDrawPixels, "glDrawPixels" ) );
-    assert( GL_GetExtensionPointer( glRasterPos2f, "glRasterPos2f" ) );
-    assert( GL_GetExtensionPointer( glPixelZoom, "glPixelZoom" ) );
-
-    assert( GL_GetExtensionPointer( glEnd, "glEnd" ) );
-    assert( GL_GetExtensionPointer( glBegin, "glBegin" ) );
-    assert( GL_GetExtensionPointer( glArrayElement, "glArrayElement" ) );
-    assert( GL_GetExtensionPointer( glPopMatrix, "glPopMatrix" ) );
-    assert( GL_GetExtensionPointer( glPushMatrix, "glPushMatrix" ) );
-    assert( GL_GetExtensionPointer( glPopAttrib, "glPopAttrib" ) );
-    assert( GL_GetExtensionPointer( glPushAttrib, "glPushAttrib" ) );
-    assert( GL_GetExtensionPointer( glColor3f, "glColor3f" ) );
-    assert( GL_GetExtensionPointer( glColor3fv, "glColor3fv" ) );
-    assert( GL_GetExtensionPointer( glColor3ubv, "glColor3ubv" ) );
-    assert( GL_GetExtensionPointer( glColor4f, "glColor4f" ) );
-    assert( GL_GetExtensionPointer( glColor4fv, "glColor4fv" ) );
-    assert( GL_GetExtensionPointer( glColor4ubv, "glColor4ubv" ) );
-    assert( GL_GetExtensionPointer( glVertex2f, "glVertex2f" ) );
-    assert( GL_GetExtensionPointer( glVertex3f, "glVertex3f" ) );
-    assert( GL_GetExtensionPointer( glVertex3fv, "glVertex3fv" ) );
-    assert( GL_GetExtensionPointer( glTexCoord2f, "glTexCoord2f" ) );
-    assert( GL_GetExtensionPointer( glTexCoord2fv, "glTexCoord2fv" ) );
-    assert( GL_GetExtensionPointer( glMatrixMode, "glMatrixMode" ) );
-    assert( GL_GetExtensionPointer( glLoadMatrixf, "glLoadMatrixf" ) );
-    assert( GL_GetExtensionPointer( glLoadIdentity, "glLoadIdentity" ) );
-    assert( GL_GetExtensionPointer( glTexEnvi, "glTexEnvi" ) );
-    assert( GL_GetExtensionPointer( glTexEnvfv, "glTexEnvfv" ) );
-    assert( GL_GetExtensionPointer( glTexGenfv, "glTexGenfv" ) );
-    assert( GL_GetExtensionPointer( glTexGenf, "glTexGenf" ) );
-    assert( GL_GetExtensionPointer( glVertexPointer, "glVertexPointer" ) );
-    assert( GL_GetExtensionPointer( glTexCoordPointer, "glTexCoordPointer" ) );
-    assert( GL_GetExtensionPointer( glNormalPointer, "glNormalPointer" ) );
-    assert( GL_GetExtensionPointer( glEnableClientState, "glEnableClientState" ) );
-    assert( GL_GetExtensionPointer( glDisableClientState, "glDisableClientState" ) );
-    assert( GL_GetExtensionPointer( glPrioritizeTextures, "glPrioritizeTextures" ) );
-    assert( GL_GetExtensionPointer( glColorPointer, "glColorPointer" ) );
-    assert( GL_GetExtensionPointer( glAlphaFunc, "glAlphaFunc" ) );
-    assert( GL_GetExtensionPointer( glOrtho, "glOrtho" ) );
-    assert( GL_GetExtensionPointer( glDrawPixels, "glDrawPixels" ) );
-    assert( GL_GetExtensionPointer( glRasterPos2f, "glRasterPos2f" ) );
-    assert( GL_GetExtensionPointer( glPixelZoom, "glPixelZoom" ) );
-}
-
-#include <iostream>
-#include <sstream>
-
-static void APIENTRY DebugOutput( GLenum source,GLenum type,GLuint id,GLenum severity,GLsizei length,const GLchar *message, const void *userParam )
-{
-    std::stringstream glLog;
-
-    // ignore non-significant error/warning codes
-    if( id == 131169 || id == 131185 || id == 131218 || id == 131204 )
-        return;
-
-    glLog << "---------------" << std::endl;
-    glLog << "Debug message (" << id << "): " << message << std::endl;
-
-    switch (source)
-    {
-    case GL_DEBUG_SOURCE_API:
-        glLog << "Source: API" << std::endl;
-        break;
-    case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
-        glLog << "Source: Window System" << std::endl;
-        break;
-    case GL_DEBUG_SOURCE_SHADER_COMPILER:
-        glLog << "Source: Shader Compiler" << std::endl;
-        break;
-    case GL_DEBUG_SOURCE_THIRD_PARTY:
-        glLog << "Source: Third Party" << std::endl;
-        break;
-    case GL_DEBUG_SOURCE_APPLICATION:
-        glLog << "Source: Application" << std::endl;
-        break;
-    case GL_DEBUG_SOURCE_OTHER:
-        glLog << "Source: Other" << std::endl;
-        break;
-    } 
-
-    switch (type)
-    {
-    case GL_DEBUG_TYPE_ERROR:
-        glLog << "Type: Error" << std::endl; 
-        break;
-    case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
-        glLog << "Type: Deprecated Behaviour" << std::endl; 
-        break;
-    case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
-        glLog << "Type: Undefined Behaviour" << std::endl;
-        break;
-    case GL_DEBUG_TYPE_PORTABILITY:
-        glLog << "Type: Portability" << std::endl; 
-        break;
-    case GL_DEBUG_TYPE_PERFORMANCE:
-        glLog << "Type: Performance" << std::endl;
-        break;
-    case GL_DEBUG_TYPE_MARKER:
-        glLog << "Type: Marker" << std::endl;
-        break;
-    case GL_DEBUG_TYPE_PUSH_GROUP:
-        glLog << "Type: Push Group" << std::endl;
-        break;
-    case GL_DEBUG_TYPE_POP_GROUP:
-        glLog << "Type: Pop Group" << std::endl;
-        break;
-    case GL_DEBUG_TYPE_OTHER:
-        glLog << "Type: Other" << std::endl;
-        break;
-    };
-
-    switch (severity)
-    {
-    case GL_DEBUG_SEVERITY_HIGH:
-        glLog << "Severity: high" << std::endl;
-        break;
-    case GL_DEBUG_SEVERITY_MEDIUM:
-        glLog << "Severity: medium" << std::endl;
-        break;
-    case GL_DEBUG_SEVERITY_LOW:
-        glLog << "Severity: low" << std::endl;
-        break;
-    case GL_DEBUG_SEVERITY_NOTIFICATION:
-        glLog << "Severity: notification"<< std::endl; 
-        break;
-    };
-
-    std::cerr << glLog.rdbuf();
-}
-
 
 GLint glGetInteger( const GLenum pname )
 {

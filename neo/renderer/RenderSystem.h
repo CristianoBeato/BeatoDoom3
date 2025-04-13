@@ -41,7 +41,8 @@ If you have questions concerning this license or the applicable additional terms
 
 // Contains variables specific to the OpenGL configuration being run right now.
 // These are constant once the OpenGL subsystem is initialized.
-typedef struct glconfig_s {
+typedef struct glconfig_s 
+{
 	const char			*renderer_string;
 	const char			*vendor_string;
 	const char			*version_string;
@@ -59,43 +60,12 @@ typedef struct glconfig_s {
 
 	int					colorBits, depthBits, stencilBits;
 
-	bool				multitextureAvailable;
-	bool				textureCompressionAvailable;
-	bool				anisotropicAvailable;
-	bool				textureLODBiasAvailable;
-	bool				textureEnvAddAvailable;
-	bool				textureEnvCombineAvailable;
-//	bool				registerCombinersAvailable;
-	bool				cubeMapAvailable;
-	bool				envDot3Available;
-	bool				texture3DAvailable;
-	bool				sharedTexturePaletteAvailable;
-	bool				ARBVertexBufferObjectAvailable;
-	bool				ARBVertexProgramAvailable;
-	bool				ARBFragmentProgramAvailable;
-	bool				twoSidedStencilAvailable;
-	bool				textureNonPowerOfTwoAvailable;
-	bool				depthBoundsTestAvailable;
-
-	// ati r200 extensions
-	bool				atiFragmentShaderAvailable;
-
-	// ati r300
-	bool				atiTwoSidedStencilAvailable;
-
 	int					vidWidth, vidHeight;	// passed to R_BeginFrame
-
 	int					displayFrequency;
-
 	bool				isFullscreen;
-
-	bool				allowARB2Path;
-
 	bool				isInitialized;
 
-// BEATO Begin:
-	bool				debugOutputAvailable;
-// BEATO End
+
 } glconfig_t;
 
 

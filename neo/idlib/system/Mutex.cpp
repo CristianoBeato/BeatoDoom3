@@ -28,6 +28,24 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 
 #include <SDL3/SDL_mutex.h>
 
+// RAII helper for SDL mutex 
+class SDLMutexLock
+{
+private:
+    SDL_Mutex*  mutex;
+
+public:
+    explicit SDLMutexLock( SDL_Mutex* mtx ) : mutex( mtx )
+    {
+        SDL_LockMutex( mutex );
+    }
+
+    ~SDLMutexLock( void )
+    {
+        SDL_UnlockMutex( mutex );
+    }
+};
+
 const int32_t k_MAX_TIMEOUT = -1;
 
 crMutex::crMutex( void ) : m_mtxhnd( nullptr )
@@ -122,81 +140,222 @@ void crSemaphore::Trigger( void )
 	SDL_SignalSemaphore( const_cast<SDL_Semaphore*>( m_sem ) );
 }
 
-crEvent::crEvent( const bool manualReset ) :
-	m_manualReset( manualReset ),
-	crMutex(),
-	crCondition(),
-	m_signaled( false ),
-	m_waiting( 0 )
+/*
+================================================================================================
+idSysSignal
+================================================================================================
+*/
+
+#define SIGNALED 1
+#define NOT_SIGNALED 0
+
+/*
+========================
+idSysSignal::idSysSignal
+========================
+*/
+idSysSignal::idSysSignal( bool manualReset ) : 
+	m_manualReset( false ),
+	m_cond( nullptr ),
+	m_mutex( nullptr )
 {
+	// if this is true, the signal is only set to nonsignaled when Clear() is called,
+    // else it's "auto-reset" and the state is set to !signaled after a single waiting
+	// thread has been released
+	m_manualReset = manualReset;
+	
+	// the inital state is always "not signaled"
+    SDL_SetAtomicInt( &m_signaled, NOT_SIGNALED );
+    SDL_SetAtomicInt( &m_waiting, 0 ); 
+    m_mutex = SDL_CreateMutex();
+    m_cond = SDL_CreateCondition();	
 }
 
-crEvent::~crEvent( void )
+/*
+========================
+idSysSignal::~idSysSignal
+========================
+*/
+idSysSignal::~idSysSignal( void )
 {
-	m_signaled = false;
-	m_waiting = 0;
+	m_manualReset = false;
+	SDL_SetAtomicInt( &m_signaled, NOT_SIGNALED ); // handle.signaled = false;
+    SDL_SetAtomicInt( &m_waiting, 0 );
+    SDL_DestroyCondition( m_cond );
+    m_cond = nullptr;
+    SDL_DestroyMutex( m_mutex );
+    m_mutex = nullptr;
 }
 
-void crEvent::Raise( void )
+/*
+========================
+idSysSignal::Raise
+========================
+*/	
+void idSysSignal::Raise( void )
 {
-	// SetEvent( handle );
-	Lock();
-
+	SDLMutexLock lock( m_mutex );
 	if( m_manualReset )
 	{
 		// signaled until reset
-		m_signaled.exchange( true );
+		SDL_SetAtomicInt( &m_signaled, SIGNALED ); // m_signaled = true;
 		// wake *all* threads waiting on this cond
-		SignalAll();
+        SDL_BroadcastCondition(  m_cond );
 	}
 	else
 	{
-		
-		if( m_waiting > 0 ) // automode: signaled until first thread is released
-			Signal(); // there are waiting threads => release one
+		// automode: signaled until first thread is released
+		if( SDL_GetAtomicInt( &m_waiting ) > 0 )
+		{
+			// there are waiting threads => release one
+			SDL_SignalCondition( m_cond );
+		}
 		else
-			m_signaled.exchange( true ); // no waiting threads, save signal
+		{
 			// while the MSDN documentation is a bit unspecific about what happens
 			// when SetEvent() is called n times without a wait inbetween
 			// (will only one wait be successful afterwards or n waits?)
 			// it seems like the signaled state is a flag, not a counter.
 			// http://stackoverflow.com/a/13703585 claims the same.
+			
+            // no waiting threads, save signal
+			SDL_SetAtomicInt( &m_signaled, SIGNALED ); // m_signaled = true;
+		}
 	}
-	
-	Unlock();
 }
 
-void crEvent::Clear( void )
+/*
+========================
+idSysSignal::Clear
+========================
+*/
+void idSysSignal::Clear( void )
+{	
+	//SDLMutexLock lock( handle.mutex );
+    SDL_SetAtomicInt( &m_signaled, NOT_SIGNALED ); // m_signaled = false; 
+}
+
+/*
+========================
+idSysSignal::Wait
+========================
+*/	
+bool idSysSignal::Wait( int timeout )
 {
-	m_signaled.exchange( false );
+	bool status = true;
+
+	SDLMutexLock lock( m_mutex );
+
+    if( SDL_GetAtomicInt( &m_signaled ) == SIGNALED ) // there is a signal that hasn't been used yet
+    {
+    	if( !m_manualReset ) // for auto-mode only one thread may be released - this one.
+               SDL_SetAtomicInt( &m_signaled, NOT_SIGNALED ); // handle.signaled = false;
+   
+    	status = true; // success!
+    }
+    else // we'll have to wait for a signal
+    {
+           SDL_AtomicIncRef( &m_waiting );
+    	if( timeout == idSysSignal::WAIT_INFINITE )
+    		SDL_WaitCondition( m_cond, m_mutex );
+    	else
+    		status = SDL_WaitConditionTimeout( m_cond, m_mutex, timeout );
+           SDL_AtomicDecRef( &m_waiting );
+    }
+
+	return status;
 }
 
-bool crEvent::Wait( unsigned int timeout )
+
+/*
+================================================================================================
+idSysInterlockedInteger
+================================================================================================
+*/
+
+/*
+========================
+idSysInterlockedInteger::idSysInterlockedInteger
+========================
+*/
+idSysInterlockedInteger::idSysInterlockedInteger() : m_value( nullptr ) 
 {
-	int status = 0;
-	Lock();
-	
-	if( m_signaled ) // there is a signal that hasn't been used yet
-	{
-		if( ! m_manualReset ) // for auto-mode only one thread may be released - this one.
-			m_signaled.exchange( false );
-
-		status = 0; // success!
-	}
-	else // we'll have to wait for a signal
-	{
-		m_waiting.fetch_add( 1 );
-		if( timeout == 0xFFFFFF )
-			SDL_WaitCondition( m_cndhnd, m_mtxhnd );
-		else
-			SDL_WaitConditionTimeout( m_cndhnd, m_mtxhnd, timeout ); // todo: check return status
-
-		m_waiting.fetch_sub( 1 );
-	}
-
-	Unlock();
-
-	assert( status == 0 || ( timeout != 0xFFFFFF && status == -1 ) );
-
-	return ( status == 0 );
+	m_value = new SDL_AtomicInt();
+	m_value->value = 0;
 }
+
+/*
+========================
+idSysInterlockedInteger::idSysInterlockedInteger
+========================
+*/
+idSysInterlockedInteger::idSysInterlockedInteger(const idSysInterlockedInteger &ref) : m_value( ref.m_value )
+{
+}
+
+
+idSysInterlockedInteger::~idSysInterlockedInteger( void )
+{
+	SAFE_DELETE( m_value );
+}
+
+/*
+========================
+idSysInterlockedInteger::Increment
+========================
+*/	
+int idSysInterlockedInteger::Increment( void )
+{
+	return SDL_AddAtomicInt( m_value, 1 );
+}
+
+/*
+========================
+idSysInterlockedInteger::Decrement
+========================
+*/	
+int	idSysInterlockedInteger::Decrement( void )
+{
+	return SDL_AddAtomicInt( m_value, -1 );
+}
+
+/*
+========================
+idSysInterlockedInteger::Add
+========================
+*/	
+int idSysInterlockedInteger::Add( int v )
+{
+	return SDL_AddAtomicInt( m_value, v );
+}
+
+/*
+========================
+idSysInterlockedInteger::Sub
+========================
+*/	
+int idSysInterlockedInteger::Sub( int v )
+{
+	return SDL_AddAtomicInt( m_value, -v );
+}
+
+/*
+========================
+idSysInterlockedInteger::GetValue
+========================
+*/	
+int	idSysInterlockedInteger::GetValue( void ) const
+{
+	return SDL_GetAtomicInt( m_value );
+}
+
+/*
+========================
+idSysInterlockedInteger::SetValue
+========================
+*/	
+void idSysInterlockedInteger::SetValue( int v )
+{
+	SDL_SetAtomicInt( m_value, v );
+}
+

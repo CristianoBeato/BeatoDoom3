@@ -131,6 +131,10 @@ source_group("" FILES ${RENDERER_SOURCES} )
 SET ( RENDERER_BACKEND_OPENGL_SOURCES 
 	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glBuffer.cpp
 	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glBuffer.h
+	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glCommandQueue.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glCommandQueue.h
+	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glContext.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glContext.h
 	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glFence.cpp
 	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glFence.h
 	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glShaderStorage.cpp
@@ -147,6 +151,8 @@ SET ( RENDERER_BACKEND_OPENGL_SOURCES
 SET ( RENDERER_BACKEND_VULKAN_SOURCES
 	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkBuffer.cpp
 	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkBuffer.h
+	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkCommandQueue.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkCommandQueue.h
 	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkContext.cpp
 	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkContext.h
 	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkFence.cpp
@@ -383,12 +389,10 @@ SET( ENGINE_SOURCES
 	${CMAKE_SOURCE_DIR}/sys/sys_local.h
 	${CMAKE_SOURCE_DIR}/sys/sys_main.cpp
 	${CMAKE_SOURCE_DIR}/sys/sys_main.h
-	${CMAKE_SOURCE_DIR}/sys/sys_openGL.cpp
 	${CMAKE_SOURCE_DIR}/sys/sys_platform.h
 	${CMAKE_SOURCE_DIR}/sys/sys_process.cpp
 	${CMAKE_SOURCE_DIR}/sys/sys_public.h
 	${CMAKE_SOURCE_DIR}/sys/sys_video.cpp
-	${CMAKE_SOURCE_DIR}/sys/sys_vulkanContext.cpp
 	)
 
 source_group("" FILES ${ENGINE_SOURCES} )

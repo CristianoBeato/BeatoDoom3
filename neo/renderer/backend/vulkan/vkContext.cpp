@@ -39,8 +39,9 @@ static void VKAPI_CALL  vkInternalAllocation( void* pUserData, size_t size, VkIn
 static void VKAPI_CALL  vkInternalFree( void* pUserData, size_t size, VkInternalAllocationType allocationType, VkSystemAllocationScope allocationScope );
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback( VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData );
 
-
 crVulkanContext::crVulkanContext( void ) : 
+    m_enableValidationLayers( false ),
+    m_currentDevice( 0 ),
     m_instance( nullptr ),
     m_device( nullptr ),
     m_surface( nullptr ),
@@ -158,12 +159,15 @@ uint32_t crVulkanContext::FindMemoryType( uint32_t typeFilter, VkMemoryPropertyF
 
 void crVulkanContext::InitLibrary(void)
 {
-    // TODO: use a cvar to load a custom lib
-    const char* libname = nullptr;
+    const char* libname = r_vkDriver.GetString();    
 
     // Load vulkan library 
     if ( !SDL_Vulkan_LoadLibrary( libname ) )
-        throw idException( SDL_GetError() );
+    {
+        // if fail load the custom lib, try load the defalt, if fail, the we get a error 
+        if ( !SDL_Vulkan_LoadLibrary( nullptr ) )
+            throw idException( SDL_GetError() );
+    }
 
     // Get instance base functions
     vkGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr)SDL_Vulkan_GetVkGetInstanceProcAddr();

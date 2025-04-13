@@ -1,7 +1,7 @@
 /*
 ===========================================================================
 
-Beato idTech 4 Source Code
+Beato idTech 4 Source Code 
 Copyright (C) 2016-2024 Cristiano B. Santos <cristianobeato_dm@hotmail.com>.
 
 This file is part of the Beato idTech 4  GPL Source Code (?Beato idTech 4  Source Code?).
@@ -21,55 +21,8 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 
 ===========================================================================
 */
-
 #include "precompiled.h"
 #pragma hdrstop
 
-#include "renderer/renderer_common.h"
-#include "renderer/backend/Backend_apiwrapper.h"
-#include "qgl.h"
-#include "glCommandQueue.h"
-#include "glBuffer.h"
-
-crGLBuffer::crGLBuffer( void ) : 
-    crBuffer(), 
-    m_buffer( 0 )
-{
-}
-
-crGLBuffer::~crGLBuffer( void )
-{
-    Destroy();
-}
-
-bool crGLBuffer::Create( const size_t size, const bool write, const bool read )
-{
-    GLbitfield flags = GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
-
-    // create buffer object
-    glCreateBuffers(1, &m_buffer );
-
-    // reserve buffer memory 
-    glNamedBufferStorage( m_buffer, size, nullptr, flags );
-
-    if( write )
-        flags != GL_MAP_WRITE_BIT;
-
-    if( read )
-        flags != GL_MAP_READ_BIT;
-
-    // get buffer pointer 
-    m_map = glMapNamedBufferRange( m_buffer, 0, m_size, flags );
-
-    return true;
-}
-
-void crGLBuffer::Destroy(void)
-{
-    if( m_buffer != 0 )
-    {
-        glUnmapNamedBuffer( m_buffer );
-        glDeleteBuffers( 1, &m_buffer );
-        m_buffer = 0;
-    }
-}
+#include "qvk.h"
+#include "vkCommandQueue.h"
