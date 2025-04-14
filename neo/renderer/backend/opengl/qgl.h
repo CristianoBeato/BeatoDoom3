@@ -41,6 +41,13 @@ c/o ZeniMax Media Inc., Suite 120, Rockville, Maryland 20850 USA.
 #	include <GL/glcorearb.h>
 #endif
 
+// BEATO: type helpers
+typedef GLuint* GLvertexArrayHandler_t;
+typedef GLuint* GLtextureHandler_t;
+typedef GLuint* GLbufferHandler_t;
+typedef GLuint* GLprogramHandler_t;
+typedef GLuint* GLframebufferHandler_t;
+
 ///
 /// OpenGL utilities
 ///

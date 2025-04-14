@@ -31,7 +31,10 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #include "vulkan/vkFence.h"
 #include "vulkan/vkBuffer.h"
 #include "vulkan/vkTexture.h"
+#include "vulkan/vkFrameBuffer.h"
 #include "vulkan/vkShaderStorage.h"
+#include "vulkan/vkPipeline.h"
+#include "vulkan/vkCommandQueue.h"
 #endif // CR_USE_VULKAN
 
 #if CR_USE_OPENGL
@@ -40,6 +43,8 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #include "opengl/glBuffer.h"
 #include "opengl/glTexture.h"
 #include "opengl/glShaderStorage.h"
+#include "opengl/glPipeline.h"
+#include "opengl/glCommandQueue.h"
 #endif // CR_USE_OPENGL
 
 // all state modified by the back end is separated
@@ -91,6 +96,7 @@ public:
     // Backend.cpp
     void        SetBuffer( const void *data );
     void        SwapBuffers( const void *data ); 
+    uint32_t    SwapChainImages( void ) const { return m_swapChain->GetImageCount(); }
 
 private:
     bool				            currentRenderCopied;	// true if any material has already referenced _currentRender
@@ -110,6 +116,7 @@ private:
 	const viewEntity_t*             currentSpace;		    // for detecting when a matrix must change
 	viewLight_t*		            viewLight;
 	backEndCounters_t	            pc;
+    crAutoPointer<crSwapChain>      m_swapChain;
     crAutoPointer<crPipeline>       m_currentPipeline; 
     crAutoPointer<crShaderStorage>  m_uniforms;
 	crAutoPointer<viewDef_t>	    viewDef;

@@ -35,7 +35,11 @@ If you have questions concerning this license or the applicable additional terms
 
 #if CR_USE_VULKAN
 #	include "backend/vulkan/vkContext.h"
-#endif
+#endif //CR_USE_VULKAN
+
+#if CR_USE_OPENGL
+#	include "backend/opengl/glContext.h"
+#endif //CR_USE_OPENGL
 
 #include "images/Image.h"
 #include "MegaTexture.h"
@@ -421,8 +425,6 @@ public:
 
 	// openGL context ( command buffer, dispach tread )
 	crAutoPointer<crGLContext>		opengl;
-
-
 	crAutoPointer<crDraw>			drawQueue;	// draw queue interface
 	crAutoPointer<crFrontend>		frontEnd;	// frontend interface
 	crAutoPointer<crBackend>		backEnd;	// backend interface

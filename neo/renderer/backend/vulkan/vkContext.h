@@ -162,7 +162,8 @@ public:
     ID_INLINE VkDevice                              GetDevice( void ) const { return m_device; }
     ID_INLINE VkSurfaceKHR                          GetSurface( void ) const { return m_surface; }
     ID_INLINE crAutoPointer<VkAllocationCallbacks>  GetAllocator( void ) const { return m_allocationCallbacks; }
-
+    ID_INLINE uint32_t                              GetGraphicsQueueFamilyIndex( void ) { return m_graphicsQueueFamilyIndex; }
+    
 private:
     bool                                    m_enableValidationLayers;
     uint32_t                                m_currentDevice;
@@ -176,6 +177,7 @@ private:
     crAutoPointer<VkAllocationCallbacks>    m_allocationCallbacks;
     idList<deviceProperties_t>              m_devicesProperties;
     idList<VkPhysicalDevice>                m_physicalDevices;
+    uint32_t                                m_graphicsQueueFamilyIndex;
 
     void        InitLibrary( void );
     void        ShutDownLibrary( void );

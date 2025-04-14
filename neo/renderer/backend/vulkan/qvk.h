@@ -152,6 +152,11 @@ extern PFN_vkWaitForFences                              vkWaitForFences;
 extern PFN_vkResetFences                                vkResetFences;
 extern PFN_vkGetFenceStatus                             vkGetFenceStatus;
 
+// command pool 
+extern PFN_vkCreateCommandPool                          vkCreateCommandPool;
+extern PFN_vkDestroyCommandPool                         vkDestroyCommandPool;
+extern PFN_vkResetCommandPool                           vkResetCommandPool;
+
 // Comand Buffers
 extern PFN_vkAllocateCommandBuffers                     vkAllocateCommandBuffers;
 extern PFN_vkFreeCommandBuffers                         vkFreeCommandBuffers;

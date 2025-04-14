@@ -147,6 +147,10 @@ PFN_vkResetFences                                vkResetFences = nullptr;
 PFN_vkGetFenceStatus                             vkGetFenceStatus = nullptr;
 
 
+PFN_vkCreateCommandPool                          vkCreateCommandPool = nullptr;
+PFN_vkDestroyCommandPool                         vkDestroyCommandPool = nullptr;
+PFN_vkResetCommandPool                           vkResetCommandPool = nullptr;
+
 // Comand Buffers
 PFN_vkAllocateCommandBuffers                     vkAllocateCommandBuffers = nullptr;
 PFN_vkFreeCommandBuffers                         vkFreeCommandBuffers = nullptr;
@@ -307,6 +311,7 @@ void crVulkanContext::LoadVulkanFunctions( void )
     VK_LOAD_PROC( vkFreeDescriptorSets, m_instance );
     VK_LOAD_PROC( vkUpdateDescriptorSets, m_instance );
 
+    //
     VK_LOAD_PROC( vkCreateFence, m_instance );
     VK_LOAD_PROC( vkDestroyFence, m_instance );
     VK_LOAD_PROC( vkWaitForFences, m_instance );
@@ -314,6 +319,13 @@ void crVulkanContext::LoadVulkanFunctions( void )
     VK_LOAD_PROC( vkGetFenceStatus, m_instance );
 
     // Command buffer 
+    VK_LOAD_PROC( vkAllocateCommandBuffers, m_instance );
+    VK_LOAD_PROC( vkFreeCommandBuffers, m_instance );
+    VK_LOAD_PROC( vkBeginCommandBuffer, m_instance );
+    VK_LOAD_PROC( vkEndCommandBuffer, m_instance );
+    VK_LOAD_PROC( vkResetCommandBuffer, m_instance );
+
+    //
     VK_LOAD_PROC( vkAllocateCommandBuffers, m_instance );
     VK_LOAD_PROC( vkFreeCommandBuffers, m_instance );
     VK_LOAD_PROC( vkBeginCommandBuffer, m_instance );

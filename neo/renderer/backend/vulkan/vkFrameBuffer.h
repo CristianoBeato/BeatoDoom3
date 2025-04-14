@@ -22,23 +22,19 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 ===========================================================================
 */
 
-#ifndef __VK_COMMAND_QUEUE_H__
-#define __VK_COMMAND_QUEUE_H__
+#ifndef __VK_FRAMEBUFFER_H__
+#define __VK_FRAMEBUFFER_H__
 
-class vkCommandQueue : public crCommandQueue
+class crVKFrameBuffer : public crFramebuffer
 {
 public:
-    vkCommandQueue( void );
-    ~vkCommandQueue( void );
-
-    virtual void    Create( void ) override;
-    virtual void    Destroy( void ) override;
-    virtual void    Begin( void ) override;
-    virtual void    End( void ) override;
-
+    crVKFrameBuffer( void );
+    ~crVKFrameBuffer( void );
+    virtual void Create( const frameBuffer_t* frameBufferCreateInfo );
+    virtual void Delete( void );
+    
 private:
-    VkCommandPool   m_commandPool;
-    VkCommandBuffer m_commandBuffer;
+    VkFramebuffer    m_framebuffers;
 };
 
-#endif //__VK_COMMAND_QUEUE_H__
+#endif //__VK_FRAMEBUFFER_H__

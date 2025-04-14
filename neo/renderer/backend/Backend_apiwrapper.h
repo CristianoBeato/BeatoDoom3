@@ -415,4 +415,153 @@ protected:
     crAutoPointer<crTexture>    m_bindTextures[32768];          // chage the number if the FRAME_TEXTURE_HANDLE_SIZE has changed 
 };
 
+enum
+{
+    SHADER_STAGE_VERTEX = 0,
+    SHADER_STAGE_FRAGMENT,
+    SHADER_STAGE_GEOMETRY,
+    SHADER_STAGE_COMPUTE,
+    SHADER_STAGE_TESS_CONTROL,
+    SHADER_STAGE_TESS_EVALUATION,
+    SHADER_STAGE_MAX
+};
+
+struct shaderProgram_t
+{
+    uint32_t        stage = 0;
+    uint32_t        count = 0;
+    size_t*         sizes = 0;
+    uint32_t**      sources = 0;
+};
+
+struct vertexAttribute_t
+{
+    uint32_t        binding = 0;    // buffer binding index
+    uint32_t        location = 0;   // location in the shader
+    uint32_t        elements = 0;   // elements per vertex
+    uint32_t        format = 0;     // data format
+    uint32_t        offset = 0;     // offset in the vertex
+    uint32_t        normalized = 0; // normalized flag
+};
+
+class crPipeline
+{
+public:
+    virtual ~crPipeline( void ) = default;
+
+    /// @brief Create render pipeline objects
+    /// @param program 
+    /// @param frameBuffer 
+    /// @param attributes 
+    /// @param numAttributes 
+    virtual void    Create( const shaderProgram_t* program, const vertexAttribute_t* attributes, const size_t numAttributes ) = 0;
+    
+    // release pipeline objects 
+    virtual void    Destroy( void ) = 0;
+
+    /// @brief Begin pileline, binding the needed states
+    /// @param  
+    virtual void    Begin( void ) = 0;
+
+    /// @brief Finish and flush the pipeline
+    /// @param  
+    virtual void    End( void ) = 0;
+
+    /// @brief attach a vertex buffer to the pipeline
+    /// @param buffer the buffer to attach
+    /// @param offset the offset in the buffer
+    /// @param size the size of the buffer
+    virtual void    AttachVertexBuffer( crBuffer* buffer, uintptr_t offset, const size_t size ) = 0;
+    
+    /// @brief attach an index buffer to the pipeline
+    /// @param buffer the buffer to attach
+    /// @param offset the offset in the buffer
+    /// @param size the size of the buffer
+    virtual void AttachIndexBuffer( crBuffer* buffer, uintptr_t offset, const size_t size ) = 0;
+    
+    /// @brief attach a uniform buffer to the pipeline
+    /// @param buffer the buffer to attach
+    /// @param bindingID the binding id of the buffer
+    /// @param offset the offset in the buffer
+    /// @param size the size of the buffer
+    /// @note the offset and size are in bytes
+    virtual void    AttachUniformBuffer( crBuffer* buffer, const uint32_t bindingID, uintptr_t offset, const size_t size ) = 0;
+
+    /// @brief append a new viewport to the list
+    /// @param x position on the x axis
+    /// @param y position on the y axis
+    /// @param width viewport width
+    /// @param height viewport height
+    virtual void    SetViewport( int x, int y, int width, int height ) = 0;
+
+    /// @brief append a new scissor to the list
+    /// @param x position on the x axis
+    /// @param y position on the y axis
+    /// @param width scissor width
+    /// @param height scissor height
+    virtual void    SetScissor( int x, int y, int width, int height ) = 0; 
+
+    /// @brief set the buffer clear color
+    /// @param red 
+    /// @param green 
+    /// @param blue 
+    /// @param alpha 
+    virtual void ClearColor( const float red, const float green, const float blue, const float alpha ) = 0;
+
+    /// @brief Clear the pipeline state and buffers
+    virtual void    Clear( void ) = 0;
+};
+
+/*
+===========================================================================
+crCommandQueue
+===========================================================================
+*/
+class crCommandQueue
+{
+public:
+    virtual ~crCommandQueue( void ) = default;
+    virtual void    Create( void ) = 0;
+    virtual void    Destroy( void ) = 0;
+    virtual void    Begin( void ) = 0;
+    virtual void    End( void ) = 0;
+};
+
+/*
+===========================================================================
+crFramebuffer
+===========================================================================
+*/
+struct frameBuffer_t
+{
+    uint32_t        width;
+    uint32_t        height;
+    uint32_t        samples;
+    uint32_t        layers;
+    uint32_t        attachmentCount;
+    crTexture**     colorAttachament = nullptr;
+};
+
+class crFramebuffer
+{
+public:
+    ~crFramebuffer( void ) = default;
+    virtual void    Create( const frameBuffer_t* frameBufferCreateInfo ) = 0;
+    virtual void    Destroy( void ) = 0;
+};
+
+/*
+===========================================================================
+crSwapChain
+===========================================================================
+*/
+class crSwapChain
+{
+public:
+    ~crSwapChain( void ) = default;
+    virtual void            Create( void ) = 0;
+    virtual void            Destroy( void ) = 0;
+    virtual const uint32_t  GetImageCount( void ) const = 0;
+};
+
 #endif //__BACKEND_API_WRAPER_H__

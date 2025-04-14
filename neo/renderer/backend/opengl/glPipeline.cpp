@@ -30,57 +30,54 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "renderer/renderer_common.h"
-#include "Pipeline.h"
+#include "renderer/backend/Backend_apiwrapper.h"
+#include "qgl.h"
+#include "glPipeline.h"
 
-crPipeline::crPipeline( void )
+crGLPipeline::crGLPipeline( void ) : 
+    m_programPipeline( 0 ),
+    m_vertexArrayObject( 0 )
 {
-#if CR_USE_VULKAN
-#else
     m_shaderStages[0] = 0;
     m_shaderStages[1] = 0;
     m_shaderStages[2] = 0;
     m_shaderStages[3] = 0;
     m_shaderStages[4] = 0;
     m_shaderStages[5] = 0;
-    m_programPipeline = 0;
-    m_vertexArrayObject = 0;
-#endif
 }
 
-crPipeline::~crPipeline( void )
+crGLPipeline::~crGLPipeline( void )
 {
 }
 
-void crPipeline::Create(const shaderProgram_t *program, const frameBuffer_t *frameBuffer, const vertexAttribute_t *attributes, const size_t numAttributes)
+void crGLPipeline::Create(const shaderProgram_t *program, const vertexAttribute_t *attributes, const size_t numAttributes)
 {
     CreateShaderProgram( program );
     CreateVertexPipeline( attributes, numAttributes );
-    CreateFrameBuffer( frameBuffer );
 }
 
-void crPipeline::Destroy(void)
+void crGLPipeline::Destroy(void)
 {
-    DestroyFrameBuffer();
     DestroyVertexPipeline();
     DestroyShaderProgram();
 }
 
-void crPipeline::Begin(void)
+void crGLPipeline::Begin(void)
 {
-#if CR_USE_VULKAN
-#elif CR_USE_OPENGL
-    // bind the frame buffer to draw
-    glBindFramebuffer( GL_DRAW_FRAMEBUFFER, m_frameBuffer );
-
     // bind vertex array
     glBindVertexArray( m_vertexArrayObject );
 
     // bind shder pipeline 
     glBindProgramPipeline( m_programPipeline );
-#endif
+
+     // Clear the color, depth and stencil buffers
+     // glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
+     // glClearDepth( 1.0f );
+     // glClearStencil( 0 );
+     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 }
 
-void crPipeline::End(void)
+void crGLPipeline::End(void)
 {
     // release program pipeline
     glBindProgramPipeline( 0 );
@@ -92,146 +89,35 @@ void crPipeline::End(void)
     glBindFramebuffer( GL_DRAW_FRAMEBUFFER, 0 ); 
 }
 
-void crPipeline::AttachVertexBuffer(crBuffer *buffer, uintptr_t offset, const size_t size)
+void crGLPipeline::AttachVertexBuffer(crBuffer *buffer, uintptr_t offset, const size_t size)
 {
-#if CR_USE_VULKAN
-#elif CR_USE_OPENGL
-    glVertexArrayVertexBuffer( m_vertexArrayObject, 0, buffer->GetHandler(), offset, sizeof(idDrawVert) );
-#endif //CR_USE_OPENGL
+    auto glBuffer = dynamic_cast<crGLBuffer*>( buffer );
+    glVertexArrayVertexBuffer( m_vertexArrayObject, 0, glBuffer->GetHandler(), offset, sizeof(idDrawVert) );
 }
 
-void crPipeline::AttachIndexBuffer(crBuffer *buffer, uintptr_t offset, const size_t size)
+void crGLPipeline::AttachIndexBuffer(crBuffer *buffer, uintptr_t offset, const size_t size)
 {
-#if CR_USE_VULKAN
-#elif CR_USE_OPENGL
-    glVertexArrayElementBuffer( m_vertexArrayObject, buffer->GetHandler() );
-#endif //CR_USE_OPENGL
-
+    auto glBuffer = dynamic_cast<crGLBuffer*>( buffer );
+    glVertexArrayElementBuffer( m_vertexArrayObject, glBuffer->GetHandler() );
 }
 
-void crPipeline::SetViewport(int x, int y, int width, int height)
+void crGLPipeline::SetViewport(int x, int y, int width, int height)
 {
-#if CR_USE_VULKAN
-    // Vulkan specific code to set the viewport
-#elif CR_USE_OPENGL
     glViewport(x, y, width, height);
-#endif // CR_USE_OPENGL
 }
 
-void crPipeline::SetScissor(int x, int y, int width, int height)
+void crGLPipeline::SetScissor(int x, int y, int width, int height)
 {
-#if CR_USE_VULKAN
-    // Vulkan specific code to set the scissor
-#elif CR_USE_OPENGL
     glScissor(x, y, width, height);
-#endif // CR_USE_OPENGL
 }
 
-void crPipeline::ClearColor(const float red, const float green, const float blue, const float alpha)
+void crGLPipeline::ClearColor(const float red, const float green, const float blue, const float alpha)
 {
-#if CR_USE_VULKAN
-    m_clearColor.color = { { red, green, blue, alpha } }; // RGBA
-#elif CR_USE_OPENGL
     glClearColor( red, green, blue, alpha );
-#endif //CR_USE_OPENGL
 }
 
-void crPipeline::Clear(void)
+void crGLPipeline::CreateVertexPipeline(const vertexAttribute_t *attributes, const size_t numAttributes)
 {
-#if CR_USE_VULKAN
-    VkRenderPassBeginInfo renderPassInfo{};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = m_renderPass;
-    renderPassInfo.framebuffer = m_framebuffer;
-    renderPassInfo.renderArea.offset = { 0, 0 };
-    renderPassInfo.renderArea.extent = swapchainExtent;
-
-    renderPassInfo.clearValueCount = 1;
-    renderPassInfo.pClearValues = &m_clearColor;
-
-    // Inicia o render pass com o clear
-    vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-#elif CR_USE_OPENGL
-    // get current bind to draw framebuffer
-    GLint currentFrameBuffer = 0;
-    glGetIntegerv( GL_DRAW_FRAMEBUFFER_BINDING, &currentFrameBuffer );
-
-    // if are not current frame buffer bind 
-    if ( currentFrameBuffer != m_frameBuffer )
-        glBindFramebuffer( GL_DRAW_FRAMEBUFFER, m_frameBuffer );
-
-    // Clear the color, depth and stencil buffers
-    glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
-    glClearDepth( 1.0f );
-    glClearStencil( 0 );
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-#endif // CR_USE_OPENGL
-}
-
-bool crPipeline::CreateFrameBuffer( const frameBuffer_t *frameBuffer )
-{
-#if CR_USE_VULKAN
-    // Vulkan specific code to create the framebuffer
-#elif CR_USE_OPENGL
-    GLenum* drawBuffers = nullptr;
-    
-    // create frame buffer handler
-    glCreateFramebuffers( 1, &m_frameBuffer );
-
-    drawBuffers = (GLenum*)Mem_Alloc( sizeof(GLenum) * frameBuffer->attachamentCount );
-
-    uint32_t colorAttac = 0;
-    for ( uint32_t i = 0; i < frameBuffer->attachamentCount; i++)
-    {
-        auto format = frameBuffer->colorAttachament[i]->GetFormat();
-        
-        // the attachament is chosem by the texture type
-        if ( format == GL_DEPTH )
-            glNamedFramebufferTexture( m_frameBuffer, GL_DEPTH_ATTACHMENT, frameBuffer->colorAttachament[i]->GetHandler(), 0 );
-        else if ( format == GL_DEPTH_STENCIL )
-            glNamedFramebufferTexture( m_frameBuffer, GL_DEPTH_STENCIL_ATTACHMENT, frameBuffer->colorAttachament[i]->GetHandler(), 0 );
-        else
-        {
-            GLenum attachament = GL_COLOR_ATTACHMENT0 + colorAttac++;
-            glNamedFramebufferTexture( m_frameBuffer, attachament, frameBuffer->colorAttachament[i]->GetHandler(), 0);
-            drawBuffers[i] = attachament;
-        }
-    }
-
-    // bind the attachametn 
-    glNamedFramebufferDrawBuffers( m_frameBuffer, colorAttac, drawBuffers );
-
-    Mem_Free( drawBuffers );
-
-    GLenum status = glCheckNamedFramebufferStatus( m_frameBuffer, GL_FRAMEBUFFER);
-    if (status != GL_FRAMEBUFFER_COMPLETE) 
-    {
-        common->Error( "Incomplete frame buffer" );
-        return false;
-    }
-#endif
-
-    return true;
-}
-
-void crPipeline::DestroyFrameBuffer(void)
-{
-#if CR_USE_VULKAN
-    // Vulkan specific code to destroy the framebuffer
-#elif CR_USE_OPENGL
-    if ( m_frameBuffer != 0 )
-    {
-        glDeleteFramebuffers( 1, &m_frameBuffer );
-        m_frameBuffer = 0;
-    }
-#endif // CR_USE_OPENGL
-}
-
-bool crPipeline::CreateVertexPipeline(const vertexAttribute_t *attributes, const size_t numAttributes)
-{
-#if CR_USE_VULKAN
-    // Vulkan specific code to create the vertex array
-#elif CR_USE_OPENGL
     glCreateVertexArrays( 1, &m_vertexArrayObject );
     glBindVertexArray( m_vertexArrayObject );
     for ( uint32_t i = 0; i < numAttributes; i++ )
@@ -241,28 +127,20 @@ bool crPipeline::CreateVertexPipeline(const vertexAttribute_t *attributes, const
         glVertexArrayAttribFormat( m_vertexArrayObject, attributes[i].location, attributes[i].elements, attributes[i].format, attributes[i].format, attributes[i].offset );
     }
     glBindVertexArray( 0 );
-#endif // CR_USE_OPENGL
-    return true;
 }
 
-void crPipeline::DestroyVertexPipeline(void)
+void crGLPipeline::DestroyVertexPipeline(void)
 {
-#if CR_USE_VULKAN
-    // Vulkan specific code to destroy the vertex array
-#elif CR_USE_OPENGL
+
     if ( m_vertexArrayObject != 0 )
     {
         glDeleteVertexArrays( 1, &m_vertexArrayObject );
         m_vertexArrayObject = 0;
     }
-#endif // CR_USE_OPENGL
 }
 
-bool crPipeline::CreateShaderProgram(const shaderProgram_t *program)
+void crGLPipeline::CreateShaderProgram(const shaderProgram_t *program)
 {
-#if CR_USE_VULKAN
-    // Vulkan specific code to create the shader program
-#elif CR_USE_OPENGL
     glGenProgramPipelines( 1, &m_programPipeline );
     glBindProgramPipeline( m_programPipeline );
     
@@ -320,10 +198,9 @@ bool crPipeline::CreateShaderProgram(const shaderProgram_t *program)
             glGetShaderiv( m_shaderStages[i], GL_INFO_LOG_LENGTH, &length );
             char *log = (char*)Mem_Alloc( length );
             glGetShaderInfoLog( m_shaderStages[i], length, nullptr, log );
-            common->Printf( "Shader compile error: %s\n", log );
+            common->Error( "Shader compile error: %s\n", log );
             Mem_Free( log );
             glDeleteShader( shader );
-            return false;
         }
 
         // create separeble program
@@ -344,24 +221,18 @@ bool crPipeline::CreateShaderProgram(const shaderProgram_t *program)
             glGetProgramiv( m_shaderStages[stage], GL_INFO_LOG_LENGTH, &length );
             char *log = (char*)Mem_Alloc( length );
             glGetProgramInfoLog( m_shaderStages[stage], length, nullptr, log );
-            common->Printf( "Shader link error: %s\n", log );
+            common->Error( "Shader link error: %s\n", log );
             Mem_Free( log );
             glDeleteProgram( m_shaderStages[stage] );
-            return false;
         }
 
         // bind program to pipeline
         glUseProgramStages( m_programPipeline, shaderBinding, m_shaderStages[stage] );
     }
-#endif // CR_USE_OPENGL
-    return true;
 }
 
-void crPipeline::DestroyShaderProgram(void)
+void crGLPipeline::DestroyShaderProgram(void)
 {
-#if CR_USE_VULKAN
-    // Vulkan specific code to destroy the shader program
-#elif CR_USE_OPENGL
     // release the shader stages
     for ( uint32_t i = 0; i < SHADER_STAGE_MAX; i++)
     {
@@ -378,5 +249,4 @@ void crPipeline::DestroyShaderProgram(void)
         glDeleteProgramPipelines( 1, &m_programPipeline );
         m_programPipeline = 0;
     }
-#endif // CR_USE_OPENGL
 }

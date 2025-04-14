@@ -40,6 +40,9 @@ public:
     /// @brief get the texture object handle
     VkImage      GetHandler( void ) const { return m_texture; }
 
+    /// @brief get the vulkan image view handler
+    VkImageView GetViewHandler( void ) const { return m_view; }
+
 private:
     VkImage         m_texture;
     VkImageView     m_view;
