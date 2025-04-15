@@ -40,6 +40,7 @@ static void VKAPI_CALL  vkInternalFree( void* pUserData, size_t size, VkInternal
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback( VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData );
 
 crVulkanContext::crVulkanContext( void ) : 
+    m_graphicsQueueFamilyIndex( 0 ),
     m_enableValidationLayers( false ),
     m_currentDevice( 0 ),
     m_instance( nullptr ),
@@ -157,7 +158,19 @@ uint32_t crVulkanContext::FindMemoryType( uint32_t typeFilter, VkMemoryPropertyF
     throw idException( "Failed to find suitable memory type" );
 }
 
-void crVulkanContext::InitLibrary(void)
+VkSurfaceTransformFlagBitsKHR crVulkanContext::GetDeviceSurfaceTransform(void) const
+{
+    return m_devicesProperties[m_currentDevice].surfaceCapabilities.currentTransform;
+}
+
+uint32_t crVulkanContext::GetDeviceSurfaceImagesCount(void) const
+{
+    uint32_t maxImageCount = m_devicesProperties[m_currentDevice].surfaceCapabilities.maxImageCount;
+    uint32_t minImageCount = m_devicesProperties[m_currentDevice].surfaceCapabilities.minImageCount;
+    return std::clamp( SMP_FRAMES, maxImageCount, minImageCount );
+}
+
+void crVulkanContext::InitLibrary( void )
 {
     const char* libname = r_vkDriver.GetString();    
 
@@ -210,9 +223,9 @@ void crVulkanContext::StartInstance(void)
     VkInstanceCreateInfo    instanceCI{};
     VkApplicationInfo       applicationI{};
     applicationI.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    applicationI.pApplicationName = "VkSDL3Test";
+    applicationI.pApplicationName = GAME_NAME;
     applicationI.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    applicationI.pEngineName = "Btech1";
+    applicationI.pEngineName = ENGINE_VERSION;
     applicationI.engineVersion = VK_MAKE_VERSION(1, 0, 0);
     applicationI.apiVersion = VK_API_VERSION_1_0;
     
@@ -658,4 +671,37 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback( VkDebugUtilsMessageSeverityFlagBit
     printf( "%s %s\n %s\n", severityMSG, typeMSG, pCallbackData->pMessage );
 
     return VK_FALSE;
+}
+
+void* VKAPI_CALL vkAllocation( void* pUserData, size_t size, size_t alignment, VkSystemAllocationScope allocationScope)
+{
+    return SDL_aligned_alloc( alignment, size );
+}
+
+void* VKAPI_CALL vkReallocation( void* pUserData, void* pOriginal, size_t size, size_t alignment, VkSystemAllocationScope allocationScope )
+{
+    void* ptr = SDL_aligned_alloc( alignment, size );
+    if ( pOriginal )
+    {
+        SDL_memcpy( ptr, pOriginal, sizeof(pOriginal) );
+        SDL_aligned_free( pOriginal );
+    }
+    return ptr;    
+}
+
+void VKAPI_CALL  vkFree( void* pUserData, void* pMemory )
+{
+    SDL_aligned_free( pMemory );
+}
+
+void VKAPI_CALL  vkInternalAllocation( void* pUserData, size_t size, VkInternalAllocationType allocationType, VkSystemAllocationScope allocationScope)
+{
+    // vkCtx.allocedMemory += size;
+    //printf("[Vulkan] Internal allocation of %zu bytes, total %zu\n", size, vkCtx.allocedMemory );
+}
+
+void VKAPI_CALL  vkInternalFree( void* pUserData, size_t size, VkInternalAllocationType allocationType, VkSystemAllocationScope allocationScope )
+{
+    // vkCtx.allocedMemory -= size; 
+    //printf("[Vulkan] Internal free of %zu bytes, total %zu\n", size, vkCtx.allocedMemory );
 }

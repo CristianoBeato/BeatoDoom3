@@ -157,16 +157,28 @@ public:
     /// @return the device memmoey index 
     uint32_t FindMemoryType( uint32_t typeFilter, VkMemoryPropertyFlags props );
 
+    uint32_t                                        GetDeviceSurfaceImagesCount( void ) const;
+    VkSurfaceTransformFlagBitsKHR                   GetDeviceSurfaceTransform( void ) const;
     ID_INLINE VkInstance                            GetInstance( void ) const { return m_instance; }
     ID_INLINE VkPhysicalDevice                      GetPhysicalDevice( void ) const { return m_physicalDevices[m_currentDevice]; }
     ID_INLINE VkDevice                              GetDevice( void ) const { return m_device; }
     ID_INLINE VkSurfaceKHR                          GetSurface( void ) const { return m_surface; }
     ID_INLINE crAutoPointer<VkAllocationCallbacks>  GetAllocator( void ) const { return m_allocationCallbacks; }
     ID_INLINE uint32_t                              GetGraphicsQueueFamilyIndex( void ) { return m_graphicsQueueFamilyIndex; }
-    
+    ID_INLINE VkExtent2D                            GetDeviceSurfaceExtent( void ) const { return m_devicesProperties[m_currentDevice].surfaceCapabilities.currentExtent; }
+    ID_INLINE VkExtent2D                            GetDeviceSurfaceMinExtent( void ) const { return m_devicesProperties[m_currentDevice].surfaceCapabilities.minImageExtent; }
+    ID_INLINE VkExtent2D                            GetDeviceSurfaceMaxExtent( void ) const { return m_devicesProperties[m_currentDevice].surfaceCapabilities.maxImageExtent; }
+    ID_INLINE idList<VkSurfaceFormatKHR>            GetDeviceSurfaceFormatList( void ) const { return m_devicesProperties[m_currentDevice].surfaceFormats; }
+    ID_INLINE uint32_t                              GetDeviceGraphicQueue( void ) const { return m_graficQueueID; }
+    ID_INLINE uint32_t                              GetDevicePresnetQueue( void ) const { return m_presentQueueID; }
+    ID_INLINE SuportedFeatures                      GetDeviceSuportedFeaturesFlags( void ) const { return m_devicesProperties[m_currentDevice].suportedFeatures; }
+
 private:
     bool                                    m_enableValidationLayers;
+    uint32_t                                m_graphicsQueueFamilyIndex;
     uint32_t                                m_currentDevice;
+    uint32_t                                m_graficQueueID;
+    uint32_t                                m_presentQueueID;
     VkInstance                              m_instance;
     VkDevice                                m_device;
     VkSurfaceKHR                            m_surface;
@@ -177,7 +189,6 @@ private:
     crAutoPointer<VkAllocationCallbacks>    m_allocationCallbacks;
     idList<deviceProperties_t>              m_devicesProperties;
     idList<VkPhysicalDevice>                m_physicalDevices;
-    uint32_t                                m_graphicsQueueFamilyIndex;
 
     void        InitLibrary( void );
     void        ShutDownLibrary( void );

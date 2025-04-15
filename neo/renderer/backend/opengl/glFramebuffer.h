@@ -41,5 +41,4 @@ private:
     GLuint    m_framebuffer;
 };
 
-
 #endif //__GL_FRAMEBUFFER_H__

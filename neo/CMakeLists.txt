@@ -137,6 +137,10 @@ SET ( RENDERER_BACKEND_OPENGL_SOURCES
 	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glContext.h
 	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glFence.cpp
 	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glFence.h
+	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glFramebuffer.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glFramebuffer.h
+	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glPipeline.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glPipeline.h
 	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glShaderStorage.cpp
 	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glShaderStorage.h
 	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glTexture.cpp
@@ -157,8 +161,14 @@ SET ( RENDERER_BACKEND_VULKAN_SOURCES
 	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkContext.h
 	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkFence.cpp
 	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkFence.h
+	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkFramebuffer.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkFramebuffer.h
+	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkPipeline.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkPipeline.h
 	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkShaderStorage.cpp
 	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkShaderStorage.h
+	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkSwapChain.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkSwapChain.h
 	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkTexture.cpp
 	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkTexture.h
 	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/qvk.cpp
@@ -174,8 +184,6 @@ SET( RENDERER_BACKEND_SOURCES
 	${CMAKE_SOURCE_DIR}/renderer/backend/draw_arb.cpp
 	${CMAKE_SOURCE_DIR}/renderer/backend/draw_arb2.cpp
 	${CMAKE_SOURCE_DIR}/renderer/backend/draw_common.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/Pipeline.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/Pipeline.h
 	)
 
 source_group("Backend" FILES ${RENDERER_BAKCEND_SOURCES} )

@@ -182,6 +182,15 @@ PFNGLFRAMEBUFFERTEXTURE3DPROC			    glFramebufferTexture3D = nullptr;
 PFNGLFRAMEBUFFERTEXTURELAYERPROC		    glFramebufferTextureLayer = nullptr;
 PFNGLFRAMEBUFFERTEXTUREPROC				    glFramebufferTexture = nullptr;
 PFNGLCHECKNAMEDFRAMEBUFFERSTATUSPROC	    glCheckNamedFramebufferStatus = nullptr;
+PFNGLBLITNAMEDFRAMEBUFFERPROC               glBlitNamedFramebuffer = nullptr;
+
+// rendebuffers 
+PFNGLISFRAMEBUFFERPROC                          glIsFramebuffer = nullptr;
+PFNGLCREATERENDERBUFFERSPROC                    glCreateRenderbuffers = nullptr;
+PFNGLDELETERENDERBUFFERSPROC                    glDeleteRenderbuffers = nullptr;
+PFNGLNAMEDRENDERBUFFERSTORAGEPROC               glNamedRenderbufferStorage = nullptr;
+PFNGLNAMEDRENDERBUFFERSTORAGEMULTISAMPLEPROC    glNamedRenderbufferStorageMultisample = nullptr;
+PFNGLGETNAMEDRENDERBUFFERPARAMETERIVPROC        glGetNamedRenderbufferParameteriv = nullptr;
 
 // ARB_sync
 PFNGLFENCESYNCPROC						    glFenceSync = nullptr;
@@ -398,6 +407,15 @@ void crGLContext::LoadOpenGLFunctions( void )
     GL_LOAD_PROC( glFramebufferTextureLayer );
     GL_LOAD_PROC( glFramebufferTexture );
     GL_LOAD_PROC( glCheckNamedFramebufferStatus );
+    GL_LOAD_PROC( glBlitNamedFramebuffer );
+
+    //
+    GL_LOAD_PROC( glIsFramebuffer );
+    GL_LOAD_PROC( glCreateRenderbuffers );
+    GL_LOAD_PROC( glDeleteRenderbuffers );
+    GL_LOAD_PROC( glNamedRenderbufferStorage );
+    GL_LOAD_PROC( glNamedRenderbufferStorageMultisample );
+    GL_LOAD_PROC( glGetNamedRenderbufferParameteriv );
 
     // ARB_sync
     GL_LOAD_PROC( glFenceSync );

@@ -226,3 +226,16 @@ void crShaderStorage::Submit(void)
     m_unformOffsetFragment += SHADER_FRAGMENT_BLOCK_SIZE;
     m_unformOffsetLight += SHADER_LIGHT_BLOCK_SIZE;    
 }
+
+/*
+===========================================================================
+crSwapChain
+===========================================================================
+*/
+crSwapChain::crSwapChain( void ) : 
+    m_imageCount( 0 ),
+    m_currentFrame( 0 ),
+    m_width( 0 ),
+    m_height( 0 )
+{
+}

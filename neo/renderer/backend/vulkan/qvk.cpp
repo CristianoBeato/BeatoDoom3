@@ -68,6 +68,7 @@ PFN_vkCreateSwapchainKHR                         vkCreateSwapchainKHR = nullptr;
 PFN_vkDestroySwapchainKHR                        vkDestroySwapchainKHR = nullptr;
 PFN_vkGetSwapchainImagesKHR                      vkGetSwapchainImagesKHR = nullptr;
 PFN_vkQueuePresentKHR                            vkQueuePresentKHR = nullptr;
+PFN_vkAcquireNextImageKHR                        vkAcquireNextImageKHR = nullptr;
 
 //  Image
 PFN_vkCreateImage                                vkCreateImage = nullptr;
@@ -242,6 +243,7 @@ void crVulkanContext::LoadVulkanFunctions( void )
     VK_LOAD_PROC( vkDestroySwapchainKHR, m_instance );
     VK_LOAD_PROC( vkGetSwapchainImagesKHR, m_instance );
     VK_LOAD_PROC( vkQueuePresentKHR, m_instance );
+    VK_LOAD_PROC( vkAcquireNextImageKHR, m_instance );
 
     //
     VK_LOAD_PROC( vkCreateImage, m_instance );

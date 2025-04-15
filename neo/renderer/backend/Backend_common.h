@@ -31,10 +31,11 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #include "vulkan/vkFence.h"
 #include "vulkan/vkBuffer.h"
 #include "vulkan/vkTexture.h"
-#include "vulkan/vkFrameBuffer.h"
+#include "vulkan/vkFramebuffer.h"
 #include "vulkan/vkShaderStorage.h"
 #include "vulkan/vkPipeline.h"
 #include "vulkan/vkCommandQueue.h"
+#include "vulkan/vkSwapChain.h"
 #endif // CR_USE_VULKAN
 
 #if CR_USE_OPENGL
@@ -42,6 +43,7 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #include "opengl/glFence.h"
 #include "opengl/glBuffer.h"
 #include "opengl/glTexture.h"
+#include "opengl/glFramebuffer.h"
 #include "opengl/glShaderStorage.h"
 #include "opengl/glPipeline.h"
 #include "opengl/glCommandQueue.h"
@@ -94,9 +96,9 @@ public:
     void        CreateSingleDrawInteractions( const drawSurf_t *surf, void (*DrawInteraction)(const drawInteraction_t *) );
     
     // Backend.cpp
-    void        SetBuffer( const void *data );
-    void        SwapBuffers( const void *data ); 
-    uint32_t    SwapChainImages( void ) const { return m_swapChain->GetImageCount(); }
+    void                            SetBuffer( const void *data );
+    void                            SwapBuffers( const void *data ); 
+    uint32_t                        SwapChainImages( void ) const { return m_swapChain->GetImageCount(); }
 
 private:
     bool				            currentRenderCopied;	// true if any material has already referenced _currentRender
@@ -114,12 +116,13 @@ private:
     glstate_t			            glState;                // our OpenGL state deltas
 	idScreenRect		            currentScissor;         // for scissor clipping, local inside renderView viewport
 	const viewEntity_t*             currentSpace;		    // for detecting when a matrix must change
-	viewLight_t*		            viewLight;
 	backEndCounters_t	            pc;
-    crAutoPointer<crSwapChain>      m_swapChain;
-    crAutoPointer<crPipeline>       m_currentPipeline; 
-    crAutoPointer<crShaderStorage>  m_uniforms;
+	crAutoPointer<viewLight_t>      viewLight;
 	crAutoPointer<viewDef_t>	    viewDef;
+    crAutoPointer<crSwapChain>      m_swapChain;            //
+    crAutoPointer<crCommandQueue>   m_graphicQueue;         //
+    crAutoPointer<crPipeline>       m_currentPipeline;      //
+    crAutoPointer<crShaderStorage>  m_uniforms;             //
 };
 
 #endif //!__BACKEND_COMMON_H__

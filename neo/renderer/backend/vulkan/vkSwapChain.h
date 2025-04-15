@@ -22,19 +22,31 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 ===========================================================================
 */
 
-#ifndef __VK_FRAMEBUFFER_H__
-#define __VK_FRAMEBUFFER_H__
+#ifndef __VK_SWAP_CHAIN_H__
+#define __VK_SWAP_CHAIN_H__
 
-class crVKFrameBuffer : public crFramebuffer
+class crVKSwapChain : public crSwapChain
 {
 public:
-    crVKFrameBuffer( void );
-    ~crVKFrameBuffer( void );
-    virtual void Create( const frameBuffer_t* frameBufferCreateInfo );
-    virtual void Delete( void );
-    
+    crVKSwapChain( void );
+    ~crVKSwapChain( void );
+    virtual void            Create( const uint32_t width, const uint32_t height, const uint32_t vsync, const uint32_t samples ) override;
+    virtual void            Destroy( void ) override;
+    virtual void            Begin( void );
+    virtual void            End( void );
+    virtual void            SwapBuffers( void );
+
 private:
-    VkFramebuffer    m_framebuffers;
+    VkExtent2D                  m_swapChainExtent;
+    VkSurfaceFormatKHR          m_surfaceFormat;
+    VkSwapchainKHR              m_swapChain;
+    VkRenderPass                m_renderPass;
+    VkQueue                     m_presentQueue;
+    VkSemaphore                 m_semaphore;
+    VkFence                     m_fence;
+    idList<VkImage>             m_images;      // SwapChain Image chain
+    idList<VkImageView>         m_imagesView;
+    idList<VkFramebuffer>       m_frameBuffers;
 };
 
-#endif //__VK_FRAMEBUFFER_H__
+#endif //__VK_SWAP_CHAIN_H__

@@ -74,6 +74,7 @@ extern PFN_vkCreateSwapchainKHR                         vkCreateSwapchainKHR;
 extern PFN_vkDestroySwapchainKHR                        vkDestroySwapchainKHR;
 extern PFN_vkGetSwapchainImagesKHR                      vkGetSwapchainImagesKHR;
 extern PFN_vkQueuePresentKHR                            vkQueuePresentKHR;
+extern PFN_vkAcquireNextImageKHR                        vkAcquireNextImageKHR;
 
 //  Image
 extern PFN_vkCreateImage                                vkCreateImage;

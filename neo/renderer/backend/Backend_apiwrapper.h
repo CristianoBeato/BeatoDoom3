@@ -532,21 +532,11 @@ public:
 crFramebuffer
 ===========================================================================
 */
-struct frameBuffer_t
-{
-    uint32_t        width;
-    uint32_t        height;
-    uint32_t        samples;
-    uint32_t        layers;
-    uint32_t        attachmentCount;
-    crTexture**     colorAttachament = nullptr;
-};
-
 class crFramebuffer
 {
 public:
     ~crFramebuffer( void ) = default;
-    virtual void    Create( const frameBuffer_t* frameBufferCreateInfo ) = 0;
+    virtual void    Create( const uint32_t width, const uint32_t height, const uint32_t samples, const uint32_t layers, const uint32_t attachmentCount, crTexture** colorAttachament ) = 0;
     virtual void    Destroy( void ) = 0;
 };
 
@@ -558,10 +548,20 @@ crSwapChain
 class crSwapChain
 {
 public:
+    crSwapChain();
     ~crSwapChain( void ) = default;
-    virtual void            Create( void ) = 0;
+    virtual void            Create( const uint32_t width, const uint32_t height, const uint32_t vsync, const uint32_t samples ) = 0;
     virtual void            Destroy( void ) = 0;
-    virtual const uint32_t  GetImageCount( void ) const = 0;
+    virtual void            Begin( void ) = 0 ;
+    virtual void            End( void ) = 0;
+    virtual void            SwapBuffers( void ) = 0;
+    virtual const uint32_t  GetImageCount( void ) const { return m_imageCount; };
+
+protected:
+    uint32_t    m_imageCount;
+    uint32_t    m_currentFrame;
+    uint32_t    m_width;
+    uint32_t    m_height;
 };
 
 #endif //__BACKEND_API_WRAPER_H__

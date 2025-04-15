@@ -236,6 +236,15 @@ extern PFNGLFRAMEBUFFERTEXTURE3DPROC			glFramebufferTexture3D;
 extern PFNGLFRAMEBUFFERTEXTURELAYERPROC			glFramebufferTextureLayer;
 extern PFNGLFRAMEBUFFERTEXTUREPROC				glFramebufferTexture;
 extern PFNGLCHECKNAMEDFRAMEBUFFERSTATUSPROC		glCheckNamedFramebufferStatus;
+extern PFNGLBLITNAMEDFRAMEBUFFERPROC            glBlitNamedFramebuffer;
+
+// renderbuffers 
+extern PFNGLISFRAMEBUFFERPROC                          glIsFramebuffer;
+extern PFNGLCREATERENDERBUFFERSPROC                    glCreateRenderbuffers;
+extern PFNGLDELETERENDERBUFFERSPROC                    glDeleteRenderbuffers;
+extern PFNGLNAMEDRENDERBUFFERSTORAGEPROC               glNamedRenderbufferStorage;
+extern PFNGLNAMEDRENDERBUFFERSTORAGEMULTISAMPLEPROC    glNamedRenderbufferStorageMultisample;
+extern PFNGLGETNAMEDRENDERBUFFERPARAMETERIVPROC        glGetNamedRenderbufferParameteriv;
 
 // ARB_sync
 extern PFNGLFENCESYNCPROC						glFenceSync;
