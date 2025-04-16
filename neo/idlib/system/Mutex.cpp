@@ -26,23 +26,23 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #include "idlib/precompiled.h"
 #include "Mutex.h"
 
-#include <SDL3/SDL_mutex.h>
+#include <SDL3/SDL_mutex.hpp>
 
 // RAII helper for SDL mutex 
 class SDLMutexLock
 {
 private:
-    SDL_Mutex*  mutex;
+    SDLMutex*  mutex;
 
 public:
-    explicit SDLMutexLock( SDL_Mutex* mtx ) : mutex( mtx )
+    explicit SDLMutexLock( SDLMutex* mtx ) : mutex( mtx )
     {
-        SDL_LockMutex( mutex );
+		mutex->Lock();
     }
 
     ~SDLMutexLock( void )
     {
-        SDL_UnlockMutex( mutex );
+		mutex->Unlock();
     }
 };
 
@@ -50,38 +50,42 @@ const int32_t k_MAX_TIMEOUT = -1;
 
 crMutex::crMutex( void ) : m_mtxhnd( nullptr )
 {
-		m_mtxhnd = SDL_CreateMutex();
+	m_mtxhnd = new SDLMutex();
+	m_mtxhnd->Create();
 }
 
 crMutex::~crMutex( void )
 {
-	if (m_mtxhnd != nullptr)
+	if ( m_mtxhnd != nullptr )
 	{
-		SDL_DestroyMutex( m_mtxhnd );
+		m_mtxhnd->Destroy();
+		delete m_mtxhnd;
 		m_mtxhnd = nullptr;
 	}
 }
 
 void crMutex::Lock( void ) const
 {
-	SDL_LockMutex( const_cast<SDL_Mutex*>( m_mtxhnd ) );
+	m_mtxhnd->Lock();
 }
 
 void crMutex::Unlock( void ) const
 {	
-	SDL_UnlockMutex( const_cast<SDL_Mutex*>( m_mtxhnd ) );
+	m_mtxhnd->Unlock();
 }
 
 crCondition::crCondition( void ) : m_cndhnd( nullptr )
 {
-	m_cndhnd = SDL_CreateCondition();
+	m_cndhnd = new SDLCondition();
+	m_cndhnd->Create();
 }
 
 crCondition::~crCondition( void )
 {
-	if (m_cndhnd != nullptr)
+	if ( m_cndhnd != nullptr )
 	{
-		SDL_DestroyCondition( m_cndhnd );
+		m_cndhnd->Destroy();
+		delete m_cndhnd;
 		m_cndhnd = nullptr;
 	}
 }
@@ -89,38 +93,40 @@ crCondition::~crCondition( void )
 // Unlock one thread
 void crCondition::Signal( void ) const
 {
-	SDL_SignalCondition( const_cast<SDL_Condition*>( m_cndhnd ) );
+	m_cndhnd->Signal();
 }
 
 // Unlock all thread waiting for the signal
 void crCondition::SignalAll( void ) const
 {
-	SDL_BroadcastCondition( const_cast<SDL_Condition*>( m_cndhnd ) );
+	m_cndhnd->Broadcast();
 }
 
 // Lock the current thread execution
 void crCondition::Wait( const crMutex * lock, const uint32_t timeout ) const
 {
 	assert( lock );
-	// Precisa estar travado antes
+	
 	// Must be locked before
 	lock->Lock();
 	if (timeout > 0)
-		SDL_WaitConditionTimeout( const_cast<SDL_Condition*>( m_cndhnd ), lock->m_mtxhnd, timeout );
+		m_cndhnd->WaitTimeout( *lock->m_mtxhnd, timeout );
 	else
-		SDL_WaitCondition( const_cast<SDL_Condition*>( m_cndhnd ), lock->m_mtxhnd );
+		m_cndhnd->Wait( *lock->m_mtxhnd );
 }
 
 crSemaphore::crSemaphore( void ) : m_sem(nullptr)
 {
-	m_sem = SDL_CreateSemaphore( 1 );
+	m_sem = new SDLSemaphore();
+	m_sem->Create( 1 );
 }
 
 crSemaphore::~crSemaphore( void )
 {
 	if (m_sem != nullptr)
 	{
-		SDL_DestroySemaphore( m_sem );
+		m_sem->Destroy();
+		delete m_sem;
 		m_sem = nullptr;
 	}
 }
@@ -129,15 +135,15 @@ void crSemaphore::Wait( const uint32_t timeout ) const
 {
 	assert( m_sem );
 	if (timeout > 0)
-		SDL_WaitSemaphoreTimeout( const_cast<SDL_Semaphore*>( m_sem ), timeout );
+		m_sem->WaitTimeout( timeout );
 	else
-		SDL_WaitSemaphore( const_cast<SDL_Semaphore*>( m_sem ) );
+		m_sem->Wait();
 }
 
 void crSemaphore::Trigger( void )
 {
 	assert( m_sem );
-	SDL_SignalSemaphore( const_cast<SDL_Semaphore*>( m_sem ) );
+	m_sem->Signal();
 }
 
 /*
@@ -167,8 +173,11 @@ idSysSignal::idSysSignal( bool manualReset ) :
 	// the inital state is always "not signaled"
     SDL_SetAtomicInt( &m_signaled, NOT_SIGNALED );
     SDL_SetAtomicInt( &m_waiting, 0 ); 
-    m_mutex = SDL_CreateMutex();
-    m_cond = SDL_CreateCondition();	
+    m_mutex = new SDLMutex();
+	m_mutex->Create();
+	
+    m_cond = new SDLCondition();
+	m_cond->Create();
 }
 
 /*
@@ -181,10 +190,19 @@ idSysSignal::~idSysSignal( void )
 	m_manualReset = false;
 	SDL_SetAtomicInt( &m_signaled, NOT_SIGNALED ); // handle.signaled = false;
     SDL_SetAtomicInt( &m_waiting, 0 );
-    SDL_DestroyCondition( m_cond );
-    m_cond = nullptr;
-    SDL_DestroyMutex( m_mutex );
-    m_mutex = nullptr;
+    
+	if( m_cond != nullptr )
+	{
+		m_cond->Destroy();
+		m_cond = nullptr;
+	}
+
+	if ( m_mutex )
+	{
+		m_mutex->Destroy();
+		delete m_mutex;
+		m_mutex = nullptr;
+	}
 }
 
 /*
@@ -200,7 +218,7 @@ void idSysSignal::Raise( void )
 		// signaled until reset
 		SDL_SetAtomicInt( &m_signaled, SIGNALED ); // m_signaled = true;
 		// wake *all* threads waiting on this cond
-        SDL_BroadcastCondition(  m_cond );
+		m_cond->Broadcast();
 	}
 	else
 	{
@@ -208,7 +226,7 @@ void idSysSignal::Raise( void )
 		if( SDL_GetAtomicInt( &m_waiting ) > 0 )
 		{
 			// there are waiting threads => release one
-			SDL_SignalCondition( m_cond );
+			m_cond->Signal();
 		}
 		else
 		{
@@ -255,12 +273,12 @@ bool idSysSignal::Wait( int timeout )
     }
     else // we'll have to wait for a signal
     {
-           SDL_AtomicIncRef( &m_waiting );
+        SDL_AtomicIncRef( &m_waiting );
     	if( timeout == idSysSignal::WAIT_INFINITE )
-    		SDL_WaitCondition( m_cond, m_mutex );
+			m_cond->Wait( *m_mutex );
     	else
-    		status = SDL_WaitConditionTimeout( m_cond, m_mutex, timeout );
-           SDL_AtomicDecRef( &m_waiting );
+			m_cond->WaitTimeout( *m_mutex, timeout );
+        SDL_AtomicDecRef( &m_waiting );
     }
 
 	return status;

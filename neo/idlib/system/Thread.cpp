@@ -26,8 +26,7 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #include "idlib/precompiled.h"
 #include "Thread.h"
 
-#include <SDL3/SDL_thread.h>
-
+#include <SDL3/SDL_properties.hpp>
 
 /*
 ================================================================================================
@@ -43,8 +42,7 @@ idSysThread::idSysThread
 ========================
 */
 idSysThread::idSysThread( void ) :
-	threadProperty( 0 ),
-	threadHandle( 0 ),
+	threadHandle( nullptr ),
 	isWorker( false ),
 	isRunning( false ),
 	isTerminating( false ),
@@ -62,8 +60,6 @@ idSysThread::~idSysThread
 idSysThread::~idSysThread( void )
 {
 	StopThread( !forceStop );
-	SDL_DestroyProperties( threadProperty );
-	threadProperty = 0;
 	threadHandle = nullptr;
 }
 
@@ -74,32 +70,31 @@ idSysThread::StartThread
 */
 bool idSysThread::StartThread( const char* name_, int stackSize )
 {
+	SDLProperties threadProperties;
 	if( isRunning )
 		return false;
 	
 	this->name = name_;
-
 	isTerminating = false;
+	assert( threadHandle == true ); // thread already running
 	
+#if 1
+	//Create tread using properties
+	threadProperties.CreateProperties();
+	threadProperties.SetStringProperty( SDL_PROP_THREAD_CREATE_NAME_STRING, name_ );
+    threadProperties.SetNumberProperty( SDL_PROP_THREAD_CREATE_STACKSIZE_NUMBER, stackSize );
+    threadProperties.SetPointerProperty( SDL_PROP_THREAD_CREATE_ENTRY_FUNCTION_POINTER, (void*)ThreadProc );
+    threadProperties.SetPointerProperty( SDL_PROP_THREAD_CREATE_USERDATA_POINTER, static_cast<void*>( this ) );
 
-	//if( threadHandle )
-	//	Sys_DestroyThread( threadHandle );
-	//threadHandle = Sys_CreateThread( ( xthread_t )ThreadProc, this, priority, name, core, stackSize, false );
-
-	assert( threadHandle == nullptr );
-
-	// set thread properties
-	threadProperty = SDL_CreateProperties();
-	SDL_SetStringProperty( threadProperty, SDL_PROP_THREAD_CREATE_NAME_STRING, name_ );
-    SDL_SetNumberProperty( threadProperty, SDL_PROP_THREAD_CREATE_STACKSIZE_NUMBER, stackSize );
-    SDL_SetPointerProperty( threadProperty, SDL_PROP_THREAD_CREATE_ENTRY_FUNCTION_POINTER, (void*)ThreadProc );
-    SDL_SetPointerProperty( threadProperty, SDL_PROP_THREAD_CREATE_USERDATA_POINTER, static_cast<void*>( this ) );
-
-	// Create thread object and run
-	threadHandle = SDL_CreateThreadWithProperties( threadProperty );
-	if ( !threadHandle )
+	if( !threadHandle.CreateWithProperties( threadProperties ) ) 
 		idLib::Error( "idSysThread::StartThread( %s )::Error: %s\n", name_, SDL_GetError() );
 	
+	threadProperties.DestroyProperties();
+#else
+	// Create thread object and run
+	threadHandle.Create( static_cast<SDL_FunctionPointer>( ThreadProc ), name, static_cast<void*>( this ) );
+#endif
+
 	isRunning = true;
 	return true;
 }
@@ -159,9 +154,7 @@ void idSysThread::WaitForThread( void )
 	if( isWorker )
 		signalWorkerDone.Wait( idSysSignal::WAIT_INFINITE );
 	else if( isRunning )
-		SDL_WaitThread( threadHandle, nullptr );
-	
-	threadHandle = nullptr;
+		threadHandle.Wait( nullptr );
 }
 
 /*

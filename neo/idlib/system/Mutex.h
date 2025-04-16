@@ -43,15 +43,14 @@ public:
 	void Unlock( void ) const;
 
 private:
-
 	// Mutex pointer acess, for condition lock
-	friend class crCondition;
-	friend class crEvent;
-	struct SDL_Mutex*	m_mtxhnd;
+	friend class 	crCondition;
+	friend class 	crEvent;
+	class SDLMutex*	m_mtxhnd;
 
 	// prevent object copy
-	crMutex( const crMutex & s ){};
-	void			operator=( const crMutex & s ) {};
+	crMutex( const crMutex & s ) = delete;
+	void			operator=( const crMutex & s ) = delete;
 };
 
 class crScopeLock
@@ -90,12 +89,11 @@ public:
 
 private:
 	friend class crEvent;
-
-	struct SDL_Condition*	m_cndhnd;
+	class SDLCondition*		m_cndhnd;
 
 	// prevent object copy
-	crCondition( const crCondition & s ) {};
-	void			operator=( const crCondition & s ) {};
+	crCondition( const crCondition & s ) = delete;
+	void			operator=( const crCondition & s ) = delete;
 };
 
 class crSemaphore
@@ -107,7 +105,7 @@ public:
 	void	Trigger( void );
 
 private:
-	struct SDL_Semaphore*	m_sem;
+	class SDLSemaphore*	m_sem;
 };
 
 /*
@@ -138,11 +136,11 @@ private:
 	bool 						m_manualReset;
 	SDL_AtomicInt				m_signaled; 		    // is it signaled right now?
 	SDL_AtomicInt				m_waiting;            // number of threads waiting for a signal
-	struct SDL_Condition*		m_cond;
-	struct SDL_Mutex* 			m_mutex;
+	struct SDLCondition*		m_cond;
+	struct SDLMutex* 			m_mutex;
 	
-	idSysSignal( const idSysSignal& s ) {};
-	void				operator=( const idSysSignal& s ) {};
+	idSysSignal( const idSysSignal& s ) = delete;
+	void				operator=( const idSysSignal& s ) = delete;
 };
 
 /*

@@ -158,8 +158,7 @@ private:
 	idSysSignal			signalMoreWorkToDo;
 	crMutex				signalMutex;
 // BEATO Begin:
-	unsigned int		threadProperty;
-	struct SDL_Thread*	threadHandle;
+	SDLThread			threadHandle;
 // BEATO End
 
 	static int		ThreadProc( idSysThread* thread );
