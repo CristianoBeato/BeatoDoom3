@@ -181,9 +181,8 @@ SET( RENDERER_BACKEND_SOURCES
 	${CMAKE_SOURCE_DIR}/renderer/backend/Backend.cpp
 	${CMAKE_SOURCE_DIR}/renderer/backend/Backend_common.h
 	${CMAKE_SOURCE_DIR}/renderer/backend/Backend_render.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/draw_arb.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/draw_arb2.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/draw_common.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/Backend_draw.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/Backend_draw_interactions.cpp
 	)
 
 source_group("Backend" FILES ${RENDERER_BAKCEND_SOURCES} )
