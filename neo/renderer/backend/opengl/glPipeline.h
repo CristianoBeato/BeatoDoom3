@@ -47,9 +47,26 @@ public:
     virtual void    ClearColor( const float red, const float green, const float blue, const float alpha );
 
 private:
-    GLuint            m_programPipeline;
-    GLuint            m_vertexArrayObject;
-    GLuint            m_shaderStages[SHADER_STAGE_MAX];
+    GLboolean           m_depthTest;            // enable/disable depth testing 
+    GLboolean           m_blend;                // enable/disable color blending 
+    GLboolean           m_stencil;              // enable/disable stencil 
+    GLboolean           m_scissor;              // enable/disable scissor 
+    GLboolean           m_faceCulling;          // enable/disable face culling 
+    GLboolean           m_depthMask;            // the depth mask
+    GLboolean           m_colorMask[4];         // color masking 
+    GLushort            m_clearStencil;         // clear stencil valur 
+    GLenum              m_depthFunc;            // the depth test function
+    GLenum              m_cullFace;             // face culling mode 
+    GLenum              m_poligonMode;          // poligon mode  
+    GLenum              m_poligonModeFace;      // poligon face
+    GLenum              m_blendSRCFactor;       // blend source factor
+    GLenum              m_blendDSTFactor;       // blend destine factor
+    GLenum              m_clipping;
+    GLuint              m_programPipeline;      // program pipeline handle 
+    GLuint              m_vertexArrayObject;    // 
+    GLfloat             m_clearDepth;           //
+    GLfloat             m_clearColor[4];        // 
+    GLuint              m_shaderStages[SHADER_STAGE_MAX];
 
     void    CreateVertexPipeline( const vertexAttribute_t* attributes, const size_t numAttributes );
     void    DestroyVertexPipeline( void );

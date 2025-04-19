@@ -114,7 +114,7 @@ ARB_vertex_buffer_object
 The ARB_vertex_buffer_object will be bound
 ==============
 */
-void *idVertexCache::Position( vertCache_t *buffer ) 
+uint32_t idVertexCache::Position( vertCache_t *buffer ) 
 {
 	if ( !buffer || buffer->tag == TAG_FREE ) 
 	{

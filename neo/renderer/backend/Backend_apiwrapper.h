@@ -379,9 +379,13 @@ public:
     /// @param texture texture object handler 
     /// @param sampler texture sampling object handler 
     virtual void        BindTexture( const uint32_t binding, crAutoPointer<crTexture> texture, crAutoPointer<crTextureSampler> sampler ) = 0;
-        
+    
+    /// @brief Release texture handle id
+    /// @param binding the handler to set null
+    virtual void        Unbind( const uint32_t binding ) = 0;
+    
     ///@brief Begin frame, bind buffers    
-    virtual void    Begin( void ) = 0;
+    virtual void        Begin( uint32_t frame ) = 0;
    
     /// @brief swap buffer offsets 
     void    End( void );
@@ -391,7 +395,7 @@ public:
     /// @param location uniform block location enum
     void    SetUniform( const void* uniform, const uint32_t location );
        
-    /// @brief flush ou temp uniform memry to the buffer  
+    /// @brief flush the temp uniform memory to the buffer  
     void    Submit( void );
 
 protected:
@@ -487,6 +491,11 @@ public:
     /// @note the offset and size are in bytes
     virtual void    AttachUniformBuffer( crBuffer* buffer, const uint32_t bindingID, uintptr_t offset, const size_t size ) = 0;
 
+    /// @brief 
+    /// @param factor 
+    /// @param units 
+    virtual void    DepthBias( const float factor, float units ) = 0;
+
     /// @brief append a new viewport to the list
     /// @param x position on the x axis
     /// @param y position on the y axis
@@ -525,6 +534,7 @@ public:
     virtual void    Destroy( void ) = 0;
     virtual void    Begin( void ) = 0;
     virtual void    End( void ) = 0;
+    virtual void    SubmitDrawCommand( const uint32_t elemenCount, uint32_t firstElement );
 };
 
 /*
@@ -536,8 +546,22 @@ class crFramebuffer
 {
 public:
     ~crFramebuffer( void ) = default;
+
+    /// @brief create frame buffer, attach texture layers 
+    /// @param width frame buffer width 
+    /// @param height frame buffer height 
+    /// @param samples multi sample frame buffer sample count 
+    /// @param layers  framme buffer image layer count 
+    /// @param attachmentCount num frame buffer texture attachaments 
+    /// @param colorAttachament // the texture attachament array 
     virtual void    Create( const uint32_t width, const uint32_t height, const uint32_t samples, const uint32_t layers, const uint32_t attachmentCount, crTexture** colorAttachament ) = 0;
+    
+    /// @brief Destroy frame buffer and release memory 
     virtual void    Destroy( void ) = 0;
+
+    /// @brief Copy frame buffer content to the image 
+    /// @param  
+    virtual void    CopyToImage( crTexture* textureDST, const int32_t x, const int32_t y, const uint32_t width, const uint32_t height, const uint32_t layers ) = 0;
 };
 
 /*
@@ -548,14 +572,15 @@ crSwapChain
 class crSwapChain
 {
 public:
-    crSwapChain();
+    crSwapChain( void );
     ~crSwapChain( void ) = default;
     virtual void            Create( const uint32_t width, const uint32_t height, const uint32_t vsync, const uint32_t samples ) = 0;
     virtual void            Destroy( void ) = 0;
-    virtual void            Begin( void ) = 0 ;
+    virtual void            Begin( const uint32_t frame ) = 0 ;
     virtual void            End( void ) = 0;
+    virtual void            Flush( void ) = 0;
     virtual void            SwapBuffers( void ) = 0;
-    virtual const uint32_t  GetImageCount( void ) const { return m_imageCount; };
+    virtual uint32_t        GetImageCount( void ) const { return m_imageCount; }
 
 protected:
     uint32_t    m_imageCount;

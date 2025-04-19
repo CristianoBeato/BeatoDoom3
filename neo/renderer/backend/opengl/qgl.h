@@ -154,9 +154,14 @@ extern PFNGLTEXTURESTORAGE3DMULTISAMPLEPROC		glTextureStorage3DMultisample;
 extern PFNGLTEXTURESUBIMAGE1DPROC				glTextureSubImage1D;
 extern PFNGLTEXTURESUBIMAGE2DPROC				glTextureSubImage2D;
 extern PFNGLTEXTURESUBIMAGE3DPROC				glTextureSubImage3D;
+extern PFNGLCOPYTEXTURESUBIMAGE1DPROC           glCopyTextureSubImage1D;
+extern PFNGLCOPYTEXTURESUBIMAGE2DPROC           glCopyTextureSubImage2D;
+extern PFNGLCOPYTEXTURESUBIMAGE3DPROC           glCopyTextureSubImage3D;
 extern PFNGLTEXTUREPARAMETERIPROC				glTextureParameteri;
 extern PFNGLTEXTUREPARAMETERFPROC				glTextureParameterf;
 extern PFNGLGETTEXTUREIMAGEPROC					glGetTextureImage;
+
+extern PFNGLCOPYIMAGESUBDATAPROC                glCopyImageSubData;
 
 // texture handler
 extern PFNGLGETTEXTUREHANDLEARBPROC				glGetTextureHandleARB;

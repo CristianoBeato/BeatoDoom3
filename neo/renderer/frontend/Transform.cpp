@@ -28,12 +28,6 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #include "renderer/renderer_common.h"
 #include "Transform.h"
 
-// BEATO Begin:
-// TODO: move to a common header 
-#include <smmintrin.h> // SSSE 3 header  
-#include <immintrin.h> // for FMA 
-// BEATO End
-
 void crTransform::AxisToModelMatrix( const idMat3 &axis, const idVec3 &origin, float modelMatrix[16] ) 
 {
 #if ID_USE_INSTRINSEC
@@ -69,7 +63,6 @@ void crTransform::AxisToModelMatrix( const idMat3 &axis, const idVec3 &origin, f
 #endif
 }
 
-
 // FIXME: these assume no skewing or scaling transforms
 void crTransform::LocalPointToGlobal( const float modelMatrix[16], const idVec3 &in, idVec3 &out ) 
 {
@@ -100,14 +93,13 @@ void crTransform::LocalPointToGlobal( const float modelMatrix[16], const idVec3 
 
 void crTransform::PointTimesMatrix( const float modelMatrix[16], const idVec4 &in, idVec4 &out ) 
 {
-#if 0 //ID_USE_INSTRINSEC
+#if ID_USE_INSTRINSEC
 	__m128 matCol1 = _mm_loadu_ps( &modelMatrix[0] );
 	__m128 matCol2 = _mm_loadu_ps( &modelMatrix[4] );
 	__m128 matCol3 = _mm_loadu_ps( &modelMatrix[8] );
 	__m128 matCol4 = _mm_loadu_ps( &modelMatrix[12] );
 
 	__m128 inVec = _mm_set_ps(in[3], in[2], in[1], in[0]);
-
 
 	// todo: option to FMA 
 	__m128 res = _mm_fmadd_ps(_mm_set1_ps(in[0]), matCol1, _mm_fmadd_ps(_mm_set1_ps(in[1]), matCol2, _mm_fmadd_ps(_mm_set1_ps(in[2]), matCol3, _mm_mul_ps(_mm_set1_ps(in[3]), matCol4))));

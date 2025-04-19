@@ -32,10 +32,10 @@ If you have questions concerning this license or the applicable additional terms
 
 /*
 =====================
-RB_BakeTextureMatrixIntoTexgen
+BakeTextureMatrixIntoTexgen
 =====================
 */
-void RB_BakeTextureMatrixIntoTexgen( idPlane lightProject[3], const float *textureMatrix ) 
+void crBackend::BakeTextureMatrixIntoTexgen( idPlane lightProject[3], const float *textureMatrix ) 
 {
 	float	genMatrix[16];
 	float	final[16];
@@ -60,7 +60,7 @@ void RB_BakeTextureMatrixIntoTexgen( idPlane lightProject[3], const float *textu
 	genMatrix[11] = lightProject[2][2];
 	genMatrix[15] = lightProject[2][3];
 
-	crTransform::GlMultMatrix( genMatrix, backEnd.lightTextureMatrix, final );
+	crTransform::GlMultMatrix( genMatrix, lightTextureMatrix, final );
 
 	lightProject[0][0] = final[0];
 	lightProject[0][1] = final[4];
@@ -78,273 +78,131 @@ void RB_BakeTextureMatrixIntoTexgen( idPlane lightProject[3], const float *textu
 RB_PrepareStageTexturing
 ================
 */
-void RB_PrepareStageTexturing( const shaderStage_t *pStage,  const drawSurf_t *surf, idDrawVert *ac ) 
+void crBackend::PrepareStageTexturing( const shaderStage_t *pStage,  const drawSurf_t *surf, idDrawVert *ac ) 
 {
 	// set privatePolygonOffset if necessary
 	if ( pStage->privatePolygonOffset ) 
-	{
-		glEnable( GL_POLYGON_OFFSET_FILL );
-		glPolygonOffset( r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * pStage->privatePolygonOffset );
-	}
+		m_currentPipeline->DepthBias( r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * pStage->privatePolygonOffset );
 
 	// set the texture matrix if needed
 	if ( pStage->texture.hasMatrix ) 
+		LoadShaderTextureMatrix( surf->shaderRegisters, &pStage->texture );
+
+	switch ( pStage->texture.texgen )
 	{
-		RB_LoadShaderTextureMatrix( surf->shaderRegisters, &pStage->texture );
+	case TG_DIFFUSE_CUBE:
+	{
+	} break;
+	case TG_SKYBOX_CUBE:
+	{
+		//TODO: set texture matrixes 
+	} break;
+	case TG_WOBBLESKY_CUBE:
+	{
+		//TODO: set texture matrixes 
 	}
-
-	// texgens
-	if ( pStage->texture.texgen == TG_DIFFUSE_CUBE ) 
+	case TG_SCREEN:
+	case TG_SCREEN2:
 	{
-		glTexCoordPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
-	}
-	
-	if ( pStage->texture.texgen == TG_SKYBOX_CUBE || pStage->texture.texgen == TG_WOBBLESKY_CUBE ) 
+		crRenderMatrix textureMatrix = surf->space->modelViewMatrix * viewDef->projectionMatrix;
+		m_uniforms->SetUniform( &textureMatrix, VERTEX_UNIFORM_LOCATION_TEXTURE_MATRIX );
+	} break;
+	case TG_GLASSWARP:
 	{
-		glTexCoordPointer( 3, GL_FLOAT, 0, vertexCache.Position( surf->dynamicTexCoords ) );
-	}
-	
-	if ( pStage->texture.texgen == TG_SCREEN ) 
+		crRenderMatrix textureMatrix;
+		SelectTexture( 2 );
+		globalImages->scratchImage->Bind();
+
+		SelectTexture( 1 );
+		globalImages->scratchImage2->Bind();
+
+		textureMatrix = surf->space->modelViewMatrix * viewDef->projectionMatrix; 
+		m_uniforms->SetUniform( &textureMatrix, VERTEX_UNIFORM_LOCATION_TEXTURE_MATRIX );
+
+		SelectTexture( 0 );
+	} break;
+	case TG_REFLECT_CUBE:
 	{
-		glEnable( GL_TEXTURE_GEN_S );
-		glEnable( GL_TEXTURE_GEN_T );
-		glEnable( GL_TEXTURE_GEN_Q );
-
-		float	mat[16], plane[4];
-		crTransform::GlMultMatrix( surf->space->modelViewMatrix, backEnd.viewDef->projectionMatrix, mat );
-
-		plane[0] = mat[0];
-		plane[1] = mat[4];
-		plane[2] = mat[8];
-		plane[3] = mat[12];
-		glTexGenfv( GL_S, GL_OBJECT_PLANE, plane );
-
-		plane[0] = mat[1];
-		plane[1] = mat[5];
-		plane[2] = mat[9];
-		plane[3] = mat[13];
-		glTexGenfv( GL_T, GL_OBJECT_PLANE, plane );
-
-		plane[0] = mat[3];
-		plane[1] = mat[7];
-		plane[2] = mat[11];
-		plane[3] = mat[15];
-		glTexGenfv( GL_Q, GL_OBJECT_PLANE, plane );
-	}
-
-	if ( pStage->texture.texgen == TG_SCREEN2 ) 
-	{
-		glEnable( GL_TEXTURE_GEN_S );
-		glEnable( GL_TEXTURE_GEN_T );
-		glEnable( GL_TEXTURE_GEN_Q );
-
-		float	mat[16], plane[4];
-		crTransform::GlMultMatrix( surf->space->modelViewMatrix, backEnd.viewDef->projectionMatrix, mat );
-
-		plane[0] = mat[0];
-		plane[1] = mat[4];
-		plane[2] = mat[8];
-		plane[3] = mat[12];
-		glTexGenfv( GL_S, GL_OBJECT_PLANE, plane );
-
-		plane[0] = mat[1];
-		plane[1] = mat[5];
-		plane[2] = mat[9];
-		plane[3] = mat[13];
-		glTexGenfv( GL_T, GL_OBJECT_PLANE, plane );
-
-		plane[0] = mat[3];
-		plane[1] = mat[7];
-		plane[2] = mat[11];
-		plane[3] = mat[15];
-		glTexGenfv( GL_Q, GL_OBJECT_PLANE, plane );
-	}
-
-	if ( pStage->texture.texgen == TG_GLASSWARP ) 
-	{
-		if ( tr.backEndRenderer == BE_ARB2 /*|| tr.backEndRenderer == BE_NV30*/ ) 
+		// see if there is also a bump map specified
+		const shaderStage_t *bumpStage = surf->material->GetBumpStage();
+		if ( bumpStage ) 
 		{
-			glBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_GLASSWARP );
-			glEnable( GL_FRAGMENT_PROGRAM_ARB );
-
-			GL_SelectTexture( 2 );
-			globalImages->scratchImage->Bind();
-
-			GL_SelectTexture( 1 );
-			globalImages->scratchImage2->Bind();
-
-			glEnable( GL_TEXTURE_GEN_S );
-			glEnable( GL_TEXTURE_GEN_T );
-			glEnable( GL_TEXTURE_GEN_Q );
-
-			float	mat[16], plane[4];
-			crTransform::GlMultMatrix( surf->space->modelViewMatrix, backEnd.viewDef->projectionMatrix, mat );
-
-			plane[0] = mat[0];
-			plane[1] = mat[4];
-			plane[2] = mat[8];
-			plane[3] = mat[12];
-			glTexGenfv( GL_S, GL_OBJECT_PLANE, plane );
-
-			plane[0] = mat[1];
-			plane[1] = mat[5];
-			plane[2] = mat[9];
-			plane[3] = mat[13];
-			glTexGenfv( GL_T, GL_OBJECT_PLANE, plane );
-
-			plane[0] = mat[3];
-			plane[1] = mat[7];
-			plane[2] = mat[11];
-			plane[3] = mat[15];
-			glTexGenfv( GL_Q, GL_OBJECT_PLANE, plane );
-
-			GL_SelectTexture( 0 );
-		}
-	}
-
-	if ( pStage->texture.texgen == TG_REFLECT_CUBE ) {
-		if ( tr.backEndRenderer == BE_ARB2 ) {
-			// see if there is also a bump map specified
-			const shaderStage_t *bumpStage = surf->material->GetBumpStage();
-			if ( bumpStage ) {
-				// per-pixel reflection mapping with bump mapping
-				GL_SelectTexture( 1 );
-				bumpStage->texture.image->Bind();
-				GL_SelectTexture( 0 );
-
-				glNormalPointer( GL_FLOAT, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
-				glVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
-				glVertexAttribPointer( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
-
-				glEnableVertexAttribArray( 9 );
-				glEnableVertexAttribArray( 10 );
-				glEnableClientState( GL_NORMAL_ARRAY );
-
-				// Program env 5, 6, 7, 8 have been set in RB_SetProgramEnvironmentSpace
-
-				glBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_BUMPY_ENVIRONMENT );
-				glEnable( GL_FRAGMENT_PROGRAM_ARB );
-				glBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_BUMPY_ENVIRONMENT );
-				glEnable( GL_VERTEX_PROGRAM_ARB );
-			} else {
-				// per-pixel reflection mapping without a normal map
-				glNormalPointer( GL_FLOAT, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
-				glEnableClientState( GL_NORMAL_ARRAY );
-
-				glBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, FPROG_ENVIRONMENT );
-				glEnable( GL_FRAGMENT_PROGRAM_ARB );
-				glBindProgramARB( GL_VERTEX_PROGRAM_ARB, VPROG_ENVIRONMENT );
-				glEnable( GL_VERTEX_PROGRAM_ARB );
-			}
+			// per-pixel reflection mapping with bump mapping
+			SelectTexture( 1 );
+			bumpStage->texture.image->Bind();
+			SelectTexture( 0 );
+			// Program env 5, 6, 7, 8 have been set in RB_SetProgramEnvironmentSpace
 		} 
-		else 
-		{
-			glEnable( GL_TEXTURE_GEN_S );
-			glEnable( GL_TEXTURE_GEN_T );
-			glEnable( GL_TEXTURE_GEN_R );
-			glTexGenf( GL_S, GL_TEXTURE_GEN_MODE, GL_REFLECTION_MAP_EXT );
-			glTexGenf( GL_T, GL_TEXTURE_GEN_MODE, GL_REFLECTION_MAP_EXT );
-			glTexGenf( GL_R, GL_TEXTURE_GEN_MODE, GL_REFLECTION_MAP_EXT );
-			glEnableClientState( GL_NORMAL_ARRAY );
-			glNormalPointer( GL_FLOAT, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
-
-			glMatrixMode( GL_TEXTURE );
-			float	mat[16];
-
-			crTransform::TransposeGLMatrix( backEnd.viewDef->worldSpace.modelViewMatrix, mat );
-
-			glLoadMatrixf( mat );
-			glMatrixMode( GL_MODELVIEW );
-		}
+	} 
+	default:
+		break;
 	}
 }
 
 /*
 ================
-RB_FinishStageTexturing
+crBackend::FinishStageTexturing
 ================
 */
-void RB_FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *surf, idDrawVert *ac ) {
+void crBackend::FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *surf, idDrawVert *ac ) 
+{
 	// unset privatePolygonOffset if necessary
-	if ( pStage->privatePolygonOffset && !surf->material->TestMaterialFlag(MF_POLYGONOFFSET) ) {
-		glDisable( GL_POLYGON_OFFSET_FILL );
-	}
-
-	if ( pStage->texture.texgen == TG_DIFFUSE_CUBE || pStage->texture.texgen == TG_SKYBOX_CUBE
-		|| pStage->texture.texgen == TG_WOBBLESKY_CUBE ) {
-		glTexCoordPointer( 2, GL_FLOAT, sizeof( idDrawVert ), (void *)&ac->st );
-	}
-
-	if ( pStage->texture.texgen == TG_SCREEN ) {
-		glDisable( GL_TEXTURE_GEN_S );
-		glDisable( GL_TEXTURE_GEN_T );
-		glDisable( GL_TEXTURE_GEN_Q );
-	}
-	if ( pStage->texture.texgen == TG_SCREEN2 ) {
-		glDisable( GL_TEXTURE_GEN_S );
-		glDisable( GL_TEXTURE_GEN_T );
-		glDisable( GL_TEXTURE_GEN_Q );
-	}
-
-	if ( pStage->texture.texgen == TG_GLASSWARP ) {
-		if ( tr.backEndRenderer == BE_ARB2 /*|| tr.backEndRenderer == BE_NV30*/ ) {
-			GL_SelectTexture( 2 );
-			globalImages->BindNull();
-
-			GL_SelectTexture( 1 );
-			if ( pStage->texture.hasMatrix ) {
-				RB_LoadShaderTextureMatrix( surf->shaderRegisters, &pStage->texture );
-			}
-			glDisable( GL_TEXTURE_GEN_S );
-			glDisable( GL_TEXTURE_GEN_T );
-			glDisable( GL_TEXTURE_GEN_Q );
-			glDisable( GL_FRAGMENT_PROGRAM_ARB );
-			globalImages->BindNull();
-			GL_SelectTexture( 0 );
-		}
-	}
-
-	if ( pStage->texture.texgen == TG_REFLECT_CUBE ) 
+	if ( pStage->privatePolygonOffset && !surf->material->TestMaterialFlag(MF_POLYGONOFFSET) ) 
 	{
-		if ( tr.backEndRenderer == BE_ARB2 ) {
-			// see if there is also a bump map specified
-			const shaderStage_t *bumpStage = surf->material->GetBumpStage();
-			if ( bumpStage ) {
-				// per-pixel reflection mapping with bump mapping
-				GL_SelectTexture( 1 );
-				globalImages->BindNull();
-				GL_SelectTexture( 0 );
 
-				glDisableVertexAttribArray( 9 );
-				glDisableVertexAttribArray( 10 );
-			} else {
-				// per-pixel reflection mapping without bump mapping
-			}
-
-			glDisableClientState( GL_NORMAL_ARRAY );
-			glDisable( GL_FRAGMENT_PROGRAM_ARB );
-			glDisable( GL_VERTEX_PROGRAM_ARB );
-			// Fixme: Hack to get around an apparent bug in ATI drivers.  Should remove as soon as it gets fixed.
-			glBindProgramARB( GL_VERTEX_PROGRAM_ARB, 0 );
-		} else {
-			glDisable( GL_TEXTURE_GEN_S );
-			glDisable( GL_TEXTURE_GEN_T );
-			glDisable( GL_TEXTURE_GEN_R );
-			glTexGenf( GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR );
-			glTexGenf( GL_T, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR );
-			glTexGenf( GL_R, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR );
-			glDisableClientState( GL_NORMAL_ARRAY );
-
-			glMatrixMode( GL_TEXTURE );
-			glLoadIdentity();
-			glMatrixMode( GL_MODELVIEW );
-		}
 	}
 
-	if ( pStage->texture.hasMatrix ) {
-		glMatrixMode( GL_TEXTURE );
-		glLoadIdentity();
-		glMatrixMode( GL_MODELVIEW );
+	switch ( pStage->texture.texgen )
+	{
+	case TG_DIFFUSE_CUBE:
+	{
+	} break;
+	case TG_WOBBLESKY_CUBE:
+	{
+	} break;
+
+	case TG_SCREEN:
+	{
+	} break;
+
+	case TG_SCREEN2:
+	{
+	} break;
+	case TG_GLASSWARP:
+	{
+		SelectTexture( 2 );
+		globalImages->BindNull();
+
+		SelectTexture( 1 );
+		if ( pStage->texture.hasMatrix ) 
+			LoadShaderTextureMatrix( surf->shaderRegisters, &pStage->texture );
+		
+		globalImages->BindNull();
+		SelectTexture( 0 );
+	} break;
+	case TG_REFLECT_CUBE:
+	{
+		// see if there is also a bump map specified
+		const shaderStage_t *bumpStage = surf->material->GetBumpStage();
+		if ( bumpStage ) 
+		{
+			// per-pixel reflection mapping with bump mapping
+			SelectTexture( 1 );
+			globalImages->BindNull();
+			SelectTexture( 0 );
+		}
+	} break;
+	default:
+		break;
+	}
+
+
+	if ( pStage->texture.hasMatrix ) 
+	{
+		// TODO:
+		// glMatrixMode( GL_TEXTURE );
+		// glLoadIdentity();
+		// glMatrixMode( GL_MODELVIEW );
 	}
 }
 
@@ -356,13 +214,13 @@ FILL DEPTH BUFFER
 =============================================================================================
 */
 
-
 /*
 ==================
 RB_T_FillDepthBuffer
 ==================
 */
-void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
+void crBackend::FillDepthBuffer( const drawSurf_t *surf ) 
+{
 	int			stage;
 	const idMaterial	*shader;
 	const shaderStage_t *pStage;
@@ -374,33 +232,32 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 	shader = surf->material;
 
 	// update the clip plane if needed
-	if ( backEnd.viewDef->numClipPlanes && surf->space != backEnd.currentSpace ) {
-		GL_SelectTexture( 1 );
+	if ( viewDef->numClipPlanes && surf->space != currentSpace ) 
+	{
+		SelectTexture( 1 );
 		
-		idPlane	plane;
+		idPlane	plane = surf->space->modelMatrix.GlobalPlaneToLocal( viewDef->clipPlanes[0] );
 
-		crTransform::GlobalPlaneToLocal( surf->space->modelMatrix, backEnd.viewDef->clipPlanes[0], plane );
+		crTransform::GlobalPlaneToLocal( surf->space->modelMatrix, viewDef->clipPlanes[0], plane );
 		plane[3] += 0.5;	// the notch is in the middle
-		glTexGenfv( GL_S, GL_OBJECT_PLANE, plane.ToFloatPtr() );
-		GL_SelectTexture( 0 );
+		// glTexGenfv( GL_S, GL_OBJECT_PLANE, plane.ToFloatPtr() );
+		SelectTexture( 0 );
 	}
 
-	if ( !shader->IsDrawn() ) {
+	if ( !shader->IsDrawn() ) 
 		return;
-	}
 
 	// some deforms may disable themselves by setting numIndexes = 0
-	if ( !tri->numIndexes ) {
+	if ( !tri->numIndexes ) 
 		return;
-	}
 
 	// translucent surfaces don't put anything in the depth buffer and don't
 	// test against it, which makes them fail the mirror clip plane operation
-	if ( shader->Coverage() == MC_TRANSLUCENT ) {
+	if ( shader->Coverage() == MC_TRANSLUCENT )
 		return;
-	}
 
-	if ( !tri->ambientCache ) {
+	if ( !tri->ambientCache ) 
+	{
 		common->Printf( "RB_T_FillDepthBuffer: !tri->ambientCache\n" );
 		return;
 	}
@@ -409,67 +266,57 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 	regs = surf->shaderRegisters;
 
 	// if all stages of a material have been conditioned off, don't do anything
-	for ( stage = 0; stage < shader->GetNumStages() ; stage++ ) {		
+	for ( stage = 0; stage < shader->GetNumStages() ; stage++ ) 
+	{		
 		pStage = shader->GetStage(stage);
 		// check the stage enable condition
-		if ( regs[ pStage->conditionRegister ] != 0 ) {
+		if ( regs[ pStage->conditionRegister ] != 0 )
 			break;
-		}
 	}
-	if ( stage == shader->GetNumStages() ) {
+
+	if ( stage == shader->GetNumStages() ) 
 		return;
-	}
 
 	// set polygon offset if necessary
-	if ( shader->TestMaterialFlag(MF_POLYGONOFFSET) ) {
-		glEnable( GL_POLYGON_OFFSET_FILL );
-		glPolygonOffset( r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * shader->GetPolygonOffset() );
-	}
+	if ( shader->TestMaterialFlag(MF_POLYGONOFFSET) ) 
+		m_currentPipeline->DepthBias( r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * shader->GetPolygonOffset() );
 
 	// subviews will just down-modulate the color buffer by overbright
-	if ( shader->GetSort() == SS_SUBVIEW ) {
-		GL_State( GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO | GLS_DEPTHFUNC_LESS );
-		color[0] =
-		color[1] = 
-		color[2] = ( 1.0 / backEnd.overBright );
+	if ( shader->GetSort() == SS_SUBVIEW ) 
+	{
+		color[0] = color[1] = color[2] = ( 1.0 / overBright );
 		color[3] = 1;
-	} else {
+	} 
+	else 
+	{
 		// others just draw black
-		color[0] = 0;
-		color[1] = 0;
-		color[2] = 0;
+		color[0] = color[1] = color[2] = 0;
 		color[3] = 1;
 	}
-
-	idDrawVert *ac = (idDrawVert *)vertexCache.Position( tri->ambientCache );
-	glVertexPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
-	glTexCoordPointer( 2, GL_FLOAT, sizeof( idDrawVert ), reinterpret_cast<void *>(&ac->st) );
 
 	bool drawSolid = false;
 
-	if ( shader->Coverage() == MC_OPAQUE ) {
+	if ( shader->Coverage() == MC_OPAQUE ) 
 		drawSolid = true;
-	}
-
+	
 	// we may have multiple alpha tested stages
-	if ( shader->Coverage() == MC_PERFORATED ) {
+	if ( shader->Coverage() == MC_PERFORATED ) 
+	{
 		// if the only alpha tested stages are condition register omitted,
 		// draw a normal opaque surface
 		bool	didDraw = false;
 
-		glEnable( GL_ALPHA_TEST );
 		// perforated surfaces may have multiple alpha tested stages
-		for ( stage = 0; stage < shader->GetNumStages() ; stage++ ) {		
+		for ( stage = 0; stage < shader->GetNumStages() ; stage++ ) 
+		{		
 			pStage = shader->GetStage(stage);
 
-			if ( !pStage->hasAlphaTest ) {
+			if ( !pStage->hasAlphaTest )
 				continue;
-			}
 
 			// check the stage enable condition
-			if ( regs[ pStage->conditionRegister ] == 0 ) {
+			if ( regs[ pStage->conditionRegister ] == 0 ) 
 				continue;
-			}
 
 			// if we at least tried to draw an alpha tested stage,
 			// we won't draw the opaque surface
@@ -479,99 +326,88 @@ void RB_T_FillDepthBuffer( const drawSurf_t *surf ) {
 			color[3] = regs[ pStage->color.registers[3] ];
 
 			// skip the entire stage if alpha would be black
-			if ( color[3] <= 0 ) {
+			if ( color[3] <= 0 )
 				continue;
-			}
-			glColor4fv( color );
 
-			glAlphaFunc( GL_GREATER, regs[ pStage->alphaTestRegister ] );
+			m_uniforms->SetUniform( color, FRAGMENT_UNIFORM_LOCATION_DIFUSE_COLOR );
+
+			// TODO: shader unifrorm alphaRef "if( color.a <= alphaRef ) discard"
+			//glAlphaFunc( GL_GREATER, regs[ pStage->alphaTestRegister ] );
 
 			// bind the texture
 			pStage->texture.image->Bind();
 
 			// set texture matrix and texGens
-			RB_PrepareStageTexturing( pStage, surf, ac );
+			PrepareStageTexturing( pStage, surf, ac );
 
 			// draw it
-			RB_DrawElementsWithCounters( tri );
+			DrawElementsWithCounters( tri );
 
-			RB_FinishStageTexturing( pStage, surf, ac );
+			FinishStageTexturing( pStage, surf, ac );
 		}
-		glDisable( GL_ALPHA_TEST );
-		if ( !didDraw ) {
+
+		if ( !didDraw ) 
 			drawSolid = true;
-		}
 	}
 
 	// draw the entire surface solid
-	if ( drawSolid ) {
-		glColor4fv( color );
+	if ( drawSolid ) 
+	{
+		m_uniforms->SetUniform(	color, FRAGMENT_UNIFORM_LOCATION_DIFUSE_COLOR );
 		globalImages->whiteImage->Bind();
 
 		// draw it
-		RB_DrawElementsWithCounters( tri );
+		DrawElementsWithCounters( tri );
 	}
 
 
 	// reset polygon offset
-	if ( shader->TestMaterialFlag(MF_POLYGONOFFSET) ) {
-		glDisable( GL_POLYGON_OFFSET_FILL );
-	}
+	//if ( shader->TestMaterialFlag(MF_POLYGONOFFSET) ) 
+	//	continue;
 
 	// reset blending
-	if ( shader->GetSort() == SS_SUBVIEW ) {
-		GL_State( GLS_DEPTHFUNC_LESS );
-	}
-
+	// if ( shader->GetSort() == SS_SUBVIEW )
+	// 	GL_State( GLS_DEPTHFUNC_LESS );
 }
 
 /*
 =====================
-RB_STD_FillDepthBuffer
+crBackend::STD_FillDepthBuffer
 
 If we are rendering a subview with a near clip plane, use a second texture
 to force the alpha test to fail when behind that clip plane
 =====================
 */
-void RB_STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) {
+void crBackend::STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs ) 
+{
 	// if we are just doing 2D rendering, no need to fill the depth buffer
-	if ( !backEnd.viewDef->viewEntitys ) {
+	if ( !viewDef->viewEntitys ) 
 		return;
-	}
 
 	RB_LogComment( "---------- RB_STD_FillDepthBuffer ----------\n" );
 
+// BEATO Begin:
+	Pipeline( PIPE_DEPTH_BUFFER );
+	Framebuffer( FRAMEBUFFER_DEPTH_PASS );
+// BEATO End
+
 	// enable the second texture for mirror plane clipping if needed
-	if ( backEnd.viewDef->numClipPlanes ) {
-		GL_SelectTexture( 1 );
+	if ( viewDef->numClipPlanes ) 
+	{
+		SelectTexture( 1 );
 		globalImages->alphaNotchImage->Bind();
-		glDisableClientState( GL_TEXTURE_COORD_ARRAY );
-		glEnable( GL_TEXTURE_GEN_S );
-		glTexCoord2f( 1, 0.5 );
 	}
 
 	// the first texture will be used for alpha tested surfaces
-	GL_SelectTexture( 0 );
-	glEnableClientState( GL_TEXTURE_COORD_ARRAY );
+	SelectTexture( 0 );
+	
+	RenderDrawSurfListWithFunction( drawSurfs, numDrawSurfs, FillDepthBuffer );
 
-	// decal surfaces may enable polygon offset
-	glPolygonOffset( r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() );
-
-	GL_State( GLS_DEPTHFUNC_LESS );
-
-	// Enable stencil test if we are going to be using it for shadows.
-	// If we didn't do this, it would be legal behavior to get z fighting
-	// from the ambient pass and the light passes.
-	glEnable( GL_STENCIL_TEST );
-	glStencilFunc( GL_ALWAYS, 1, 255 );
-
-	RB_RenderDrawSurfListWithFunction( drawSurfs, numDrawSurfs, RB_T_FillDepthBuffer );
-
-	if ( backEnd.viewDef->numClipPlanes ) {
-		GL_SelectTexture( 1 );
+	if ( viewDef->numClipPlanes ) 
+	{
+		SelectTexture( 1 );
 		globalImages->BindNull();
-		glDisable( GL_TEXTURE_GEN_S );
-		GL_SelectTexture( 0 );
+		SelectTexture( 0 );
 	}
 
 }
@@ -1717,8 +1553,6 @@ void crBackend::STD_DrawView( void )
 
 	RB_LogComment( "---------- RB_STD_DrawView ----------\n" );
 
-	backEnd.depthFunc = GLS_DEPTHFUNC_EQUAL;
-
 	drawSurfs = (drawSurf_t **)&backEnd.viewDef->drawSurfs[0];
 	numDrawSurfs = backEnd.viewDef->numDrawSurfs;
 
@@ -1733,27 +1567,19 @@ void crBackend::STD_DrawView( void )
 	STD_FillDepthBuffer( drawSurfs, numDrawSurfs );
 
 	// main light renderer
-	switch( tr.backEndRenderer ) 
-	{
-	case BE_ARB:
-		RB_ARB_DrawInteractions();
-		break;
-	case BE_ARB2:
-		RB_ARB2_DrawInteractions();
-		break;
-	}
-
+	DrawInteractions();
+	
 	// disable stencil shadow test
 	glStencilFunc( GL_ALWAYS, 128, 255 );
 
 	// uplight the entire screen to crutch up not having better blending range
-	RB_STD_LightScale();
+	STD_LightScale();
 
 	// now draw any non-light dependent shading passes
 	int	processed = RB_STD_DrawShaderPasses( drawSurfs, numDrawSurfs );
 
 	// fob and blend lights
-	RB_STD_FogAllLights();
+	STD_FogAllLights();
 
 	// now draw any post-processing effects using _currentRender
 	if ( processed < numDrawSurfs ) {

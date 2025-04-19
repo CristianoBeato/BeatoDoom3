@@ -31,7 +31,7 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 class idScreenRect 
 {
 public:
-	short		x1, y1, x2, y2;							// inclusive pixel bounds inside viewport
+	int16_t		x1, y1, x2, y2;							// inclusive pixel bounds inside viewport
     float       zmin, zmax;								// for depth bounds test
 
 	void		Clear();								// clear to backwards values

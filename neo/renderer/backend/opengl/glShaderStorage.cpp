@@ -179,5 +179,7 @@ void crGLShaderStorage::BindTexture(const uint32_t binding, crAutoPointer<crText
     // set the texture as binded 
     texture->SetBinding( index );
 
+    SetUniform( &index, FRAGMENT_UNIFORM_LOCATION_SAMPLERS0 + binding );
+
     m_bindTextures[m_textureCount++] = texture;
 }

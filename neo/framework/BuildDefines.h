@@ -148,4 +148,9 @@ If you have questions concerning this license or the applicable additional terms
 #	define CR_USE_OPENGL 1
 #	define CR_USE_VULKAN 1
 #endif
+
+#ifndef CR_USE_CLIP_AS_SCISSOR
+#define CR_USE_CLIP_AS_SCISSOR 1
+#endif //!CR_USE_CLIP_AS_SCISSOR
+
 // BEATO End

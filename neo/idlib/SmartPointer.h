@@ -681,7 +681,7 @@ public:
 	{
 		return crAutoPointer<u_, a_>( dynamic_cast<u_*>( crPointerBase<t_>::m_object ) );
 	}
-
+	
 private:
 	// DANGER: 
 	crAutoPointer( const t_ &ref )

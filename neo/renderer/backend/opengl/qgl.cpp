@@ -100,9 +100,14 @@ PFNGLTEXTURESTORAGE3DMULTISAMPLEPROC        glTextureStorage3DMultisample = null
 PFNGLTEXTURESUBIMAGE1DPROC				    glTextureSubImage1D = nullptr;
 PFNGLTEXTURESUBIMAGE2DPROC				    glTextureSubImage2D = nullptr;
 PFNGLTEXTURESUBIMAGE3DPROC				    glTextureSubImage3D = nullptr;
+PFNGLCOPYTEXTURESUBIMAGE1DPROC              glCopyTextureSubImage1D = nullptr;
+PFNGLCOPYTEXTURESUBIMAGE2DPROC              glCopyTextureSubImage2D = nullptr;
+PFNGLCOPYTEXTURESUBIMAGE3DPROC              glCopyTextureSubImage3D = nullptr;
 PFNGLTEXTUREPARAMETERIPROC				    glTextureParameteri = nullptr;
 PFNGLTEXTUREPARAMETERFPROC				    glTextureParameterf = nullptr;
 PFNGLGETTEXTUREIMAGEPROC                    glGetTextureImage = nullptr;
+
+PFNGLCOPYIMAGESUBDATAPROC                   glCopyImageSubData = nullptr;
 
 // texture handler
 PFNGLGETTEXTUREHANDLEARBPROC                glGetTextureHandleARB = nullptr;
@@ -325,9 +330,14 @@ void crGLContext::LoadOpenGLFunctions( void )
     GL_LOAD_PROC( glTextureSubImage1D );
     GL_LOAD_PROC( glTextureSubImage2D );
     GL_LOAD_PROC( glTextureSubImage3D );
+    GL_LOAD_PROC( glCopyTextureSubImage1D );
+    GL_LOAD_PROC( glCopyTextureSubImage2D );
+    GL_LOAD_PROC( glCopyTextureSubImage3D );
     GL_LOAD_PROC( glTextureParameteri );
     GL_LOAD_PROC( glTextureParameterf );
     GL_LOAD_PROC( glGetTextureImage );
+
+    GL_LOAD_PROC( glCopyImageSubData );
 
     // texture handler
     GL_LOAD_PROC( glGetTextureHandleARB );

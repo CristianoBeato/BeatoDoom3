@@ -33,3 +33,30 @@ If you have questions concerning this license or the applicable additional terms
 #include "renderer/backend/Backend_apiwrapper.h"
 #include "qvk.h"
 #include "vkPipeline.h"
+
+void crVKPipeline::DepthBias( const float factor, const float units )
+{
+    vkCmdSetDepthBias( m_commandBuffer, units, 0.0f, factor );
+}
+
+void crVKPipeline::SetViewport( const int x, const int y, const uint32_t width, const uint32_t height )
+{
+    VkViewport viewport{};
+    viewport.x = static_cast<float>( x ); 
+    viewport.y = static_cast<float>( y ); 
+    viewport.width = static_cast<float>( width ); 
+    viewport.height = static_cast<float>( height );
+    viewport.minDepth = -1.0f;
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport( m_commandBuffer, 0, 1, &viewport );
+}
+
+void crVKPipeline::SetScissor( const int x, const int y, const uint32_t width, const uint32_t height )
+{
+    VkRect2D scissor{};
+    scissor.offset.x = x;
+    scissor.offset.y = y;
+    scissor.extent.width = width;
+    scissor.extent.height = height;
+    vkCmdSetScissor( m_commandBuffer, 0, 1, &scissor );
+}

@@ -34,6 +34,11 @@ If you have questions concerning this license or the applicable additional terms
 #include "qgl.h"
 #include "glFramebuffer.h"
 
+#if CR_USE_OPENGL
+idCVar gl_useImageCopy( "gl_useImageCopy", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "use \"glCopyImageSubData\" instead of \"glCopyTextureSubImageXD\" for frame Buffer copy" );
+#endif //CR_USE_OPENGL
+
+
 //// bind the frame buffer to draw
 //glBindFramebuffer( GL_DRAW_FRAMEBUFFER, m_frameBuffer );
 //
@@ -45,7 +50,7 @@ If you have questions concerning this license or the applicable additional terms
 //if ( currentFrameBuffer != m_frameBuffer )
 //    glBindFramebuffer( GL_DRAW_FRAMEBUFFER, m_frameBuffer );
 
-static GLenum colorAttachaments[8] = 
+static GLenum colorAttachaments[MAX_COLOR_ATTACHMENS] = 
 { 
     GL_COLOR_ATTACHMENT0, 
     GL_COLOR_ATTACHMENT1, 
@@ -66,23 +71,33 @@ crGLFrameBuffer::~crGLFrameBuffer(void)
     Delete();
 }
 
-void crGLFrameBuffer::Create( const frameBuffer_t* frameBuffer )
+void crGLFrameBuffer::Create( const uint32_t width, const uint32_t height, const uint32_t samples, const uint32_t layers, const uint32_t attachmentCount, crTexture** colorAttachament )
 {
     uint32_t colorAttachCount = 0;
 
     // create frame buffer handler
     glCreateFramebuffers( 1, &m_framebuffer );
 
-    for ( uint32_t i = 0; i < frameBuffer->attachmentCount; i++)
+    for ( uint32_t i = 0; i < attachmentCount; i++)
     {
-        auto attachment = dynamic_cast<crGLTexture*>( frameBuffer->colorAttachament[i] ); 
+        auto attachment = dynamic_cast<crGLTexture*>( colorAttachament[i] ); 
         // the attachament is chosem by the texture type
         if ( attachment->GetFormat() == GL_DEPTH )
-            glNamedFramebufferTexture( m_framebuffer, GL_DEPTH_ATTACHMENT, attachment->GetHandler(), 0 );
+        {
+            m_depthStencilAttachment = attachment->GetHandler();
+            glNamedFramebufferTexture( m_framebuffer, GL_DEPTH_ATTACHMENT, m_depthStencilAttachment, 0 );
+        }
         else if ( attachment->GetFormat() == GL_DEPTH_STENCIL )
-            glNamedFramebufferTexture( m_framebuffer, GL_DEPTH_STENCIL_ATTACHMENT, attachment->GetHandler(), 0 );
+        {
+            m_depthStencilAttachment = attachment->GetHandler();
+            glNamedFramebufferTexture( m_framebuffer, GL_DEPTH_STENCIL_ATTACHMENT, m_depthStencilAttachment, 0 );
+        }
         else
-            glNamedFramebufferTexture( m_framebuffer, colorAttachaments[colorAttachCount++], attachment->GetHandler(), 0);
+        {
+            m_attachments[colorAttachCount] =  attachment->GetHandler();
+            glNamedFramebufferTexture( m_framebuffer, colorAttachaments[colorAttachCount], m_attachments[colorAttachCount], 0 );
+            colorAttachCount++;
+        }
     }
 
     // bind the attachametn 
@@ -99,5 +114,47 @@ void crGLFrameBuffer::Delete(void)
     {
         glDeleteFramebuffers( 1, &m_framebuffer );
         m_framebuffer = 0;
+    }
+}
+
+void crGLFrameBuffer::CopyToImage(crTexture *textureDST, const int32_t x, const int32_t y, const uint32_t width, const uint32_t height, const uint32_t layers)
+{
+    uint32_t    imageWidth = width;
+    uint32_t    imageHeight = height;
+    uint32_t	potWidth = 0;
+    uint32_t    potHeight = 0;
+
+    crGLTexture* texture = dynamic_cast<crGLTexture*>( textureDST );
+
+    if ( cvarSystem->GetCVarBool( "g_lowresFullscreenFX" ) ) 
+    {
+		imageWidth = 512;
+		imageHeight = 512;
+	}
+
+	// if the size isn't a power of 2, the image must be increased in size
+
+	potWidth = MakePowerOfTwo( imageWidth );
+	potHeight = MakePowerOfTwo( imageHeight );
+
+	// GetDownsize( imageWidth, imageHeight );
+	// GetDownsize( potWidth, potHeight );
+
+    if( gl_useImageCopy.GetBool() )
+        glCopyImageSubData( m_attachments[0], GL_TEXTURE_2D, 0, x, y, 0, texture->GetHandler(), GL_TEXTURE_2D, 0, x, y, 0, potWidth, potHeight, 0 );
+    else
+    {
+        // if not bind, bind to copy  
+        GLint current = 0;
+        glGetIntegerv( GL_READ_FRAMEBUFFER_BINDING, &current );
+        if ( current != m_framebuffer )
+            glBindFramebuffer( GL_READ_FRAMEBUFFER, m_framebuffer );
+        
+        // copy frame buffer content 
+        glCopyTextureSubImage2D( texture->GetHandler(), 0, x, y, x, y, width, height );  
+        
+        // restaure the frame buffer 
+        if ( current != m_framebuffer )
+            glBindFramebuffer( GL_READ_FRAMEBUFFER, current );
     }
 }

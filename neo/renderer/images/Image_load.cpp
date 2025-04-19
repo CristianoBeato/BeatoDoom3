@@ -1790,14 +1790,16 @@ Bind
 Automatically enables 2D mapping, cube mapping, or 3D texturing if needed
 ==============
 */
-void idImage::Bind() {
-	if ( tr.logFile ) {
+void idImage::Bind( void ) 
+{
+	if ( tr.logFile ) 
 		RB_LogComment( "idImage::Bind( %s )\n", imgName.c_str() );
-	}
 
 	// if this is an image that we are caching, move it to the front of the LRU chain
-	if ( partialImage ) {
-		if ( cacheUsageNext ) {
+	if ( partialImage ) 
+	{
+		if ( cacheUsageNext ) 
+		{
 			// unlink from old position
 			cacheUsageNext->cacheUsagePrev = cacheUsagePrev;
 			cacheUsagePrev->cacheUsageNext = cacheUsageNext;
@@ -1811,13 +1813,16 @@ void idImage::Bind() {
 	}
 
 	// load the image if necessary (FIXME: not SMP safe!)
-	if ( texnum == TEXTURE_NOT_LOADED ) {
-		if ( partialImage ) {
+	if ( texnum == TEXTURE_NOT_LOADED ) 
+	{
+		if ( partialImage ) 
+		{
 			// if we have a partial image, go ahead and use that
 			this->partialImage->Bind();
 
 			// start a background load of the full thing if it isn't already in the queue
-			if ( !backgroundLoadInProgress ) {
+			if ( !backgroundLoadInProgress ) 
+			{
 				StartBackgroundImageLoad();
 			}
 			return;
@@ -1827,58 +1832,11 @@ void idImage::Bind() {
 		ActuallyLoadImage( true, true );	// check for precompressed, load is from back end
 	}
 
-
 	// bump our statistic counters
-	frameUsed = backEnd.frameCount;
+	frameUsed = tr.backEnd->GetFrameCount();
 	bindCount++;
 
-	tmu_t			*tmu = &backEnd.glState.tmu[backEnd.glState.currenttmu];
-
-	// enable or disable apropriate texture modes
-	if ( tmu->textureType != type && ( backEnd.glState.currenttmu <	glConfig.maxTextureUnits ) ) {
-		if ( tmu->textureType == TT_CUBIC )
-			glDisable( GL_TEXTURE_CUBE_MAP );
-		else if ( tmu->textureType == TT_3D ) 
-			glDisable( GL_TEXTURE_3D );
-		else if ( tmu->textureType == TT_2D ) 
-			glDisable( GL_TEXTURE_2D );
-
-		if ( type == TT_CUBIC ) 
-			glEnable( GL_TEXTURE_CUBE_MAP );
-		else if ( type == TT_3D ) 
-			glEnable( GL_TEXTURE_3D );
-		else if ( type == TT_2D ) 
-			glEnable( GL_TEXTURE_2D );
-		
-		tmu->textureType = type;
-	}
-
-	// bind the texture
-	if ( type == TT_2D ) 
-	{
-		if ( tmu->current2DMap != texnum ) 
-		{
-			tmu->current2DMap = texnum;
-			glBindTexture( GL_TEXTURE_2D, texnum );
-		}
-	} 
-	else if ( type == TT_CUBIC ) 
-	{
-		if ( tmu->currentCubeMap != texnum ) {
-			tmu->currentCubeMap = texnum;
-			glBindTexture( GL_TEXTURE_CUBE_MAP, texnum );
-		}
-	} else if ( type == TT_3D ) {
-		if ( tmu->current3DMap != texnum ) {
-			tmu->current3DMap = texnum;
-			glBindTexture( GL_TEXTURE_3D, texnum );
-		}
-	}
-
-	if ( com_purgeAll.GetBool() ) {
-		GLclampf priority = 1.0f;
-		glPrioritizeTextures( 1, &texnum, &priority );
-	}
+	tr.backEnd->GetShaderStorage()->BindTexture( tr.backEnd->GetCurrentTextureUnit(), m_handler, m_sampler );
 }
 
 /*
@@ -1889,8 +1847,10 @@ Fragment programs explicitly say which type of map they want, so we don't need t
 do any enable / disable changes
 ==============
 */
-void idImage::BindFragment() {
-	if ( tr.logFile ) {
+void idImage::BindFragment( void ) 
+{
+	if ( tr.logFile ) 
+	{
 		RB_LogComment( "idImage::BindFragment %s )\n", imgName.c_str() );
 	}
 

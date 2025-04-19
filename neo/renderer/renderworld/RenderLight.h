@@ -72,9 +72,9 @@ typedef struct viewLight_s
 	const float	*			shaderRegisters;			// shader registers used by backend
 	idImage *				falloffImage;				// falloff image used by backend
 
-	const struct drawSurf_s	*globalShadows;				// shadow everything
+//	const struct drawSurf_s	*globalShadows;				// shadow everything
+//	const struct drawSurf_s	*localShadows;				// don't shadow local Surfaces
 	const struct drawSurf_s	*localInteractions;			// don't get local shadows
-	const struct drawSurf_s	*localShadows;				// don't shadow local Surfaces
 	const struct drawSurf_s	*globalInteractions;		// get shadows from everything
 	const struct drawSurf_s	*translucentInteractions;	// get shadows from everything
 } viewLight_t;

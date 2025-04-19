@@ -29,16 +29,21 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __GL_FRAMEBUFFER_H__
 #define __GL_FRAMEBUFFER_H__
 
+static const uint32_t MAX_COLOR_ATTACHMENS = 8;
+
 class crGLFrameBuffer : public crFramebuffer
 {
 public:
     crGLFrameBuffer( void );
     ~crGLFrameBuffer( void );
-    virtual void Create( const frameBuffer_t* frameBufferCreateInfo );
-    virtual void Delete( void );
-    
+    virtual void    Create( const uint32_t width, const uint32_t height, const uint32_t samples, const uint32_t layers, const uint32_t attachmentCount, crTexture** colorAttachament );
+    virtual void    Delete( void );
+    virtual void    CopyToImage( crTexture* textureDST, const int32_t x, const int32_t y, const uint32_t width, const uint32_t height, const uint32_t layers );
+
 private:
-    GLuint    m_framebuffer;
+    GLuint      m_framebuffer;
+    GLuint      m_depthStencilAttachment;
+    GLuint      m_attachments[MAX_COLOR_ATTACHMENS];
 };
 
 #endif //__GL_FRAMEBUFFER_H__

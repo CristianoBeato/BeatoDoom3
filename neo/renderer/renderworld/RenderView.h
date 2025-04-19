@@ -81,8 +81,8 @@ typedef struct viewEntity_s
 	bool				weaponDepthHack;
 	float				modelDepthHack;
 
-	float				modelMatrix[16];		// local coords to global coords
-	float				modelViewMatrix[16];	// local coords to eye coords
+	crRenderMatrix		modelMatrix;		// local coords to global coords
+	crRenderMatrix		modelViewMatrix;	// local coords to eye coords
 } viewEntity_t;
 
 // viewDefs are allocated on the frame temporary stack memory
@@ -91,7 +91,7 @@ typedef struct viewDef_s
 	// specified in the call to DrawScene()
 	renderView_t		renderView;
 
-	float				projectionMatrix[16];
+	crRenderMatrix		projectionMatrix;
 	viewEntity_t		worldSpace;
 
 	idRenderWorldLocal *renderWorld;

@@ -40,6 +40,7 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #include <cstring>
 #include <typeinfo>
 #include <algorithm>
+#include <functional>
 
 // SDL3 common
 #include <SDL3/SDL_stdinc.h>	
@@ -48,6 +49,10 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #include <SDL3/SDL_cpuinfo.h>
 #include <SDL3/SDL_loadso.h>
 #include <SDL3/SDL_cpuinfo.h>
+
+#include <pmmintrin.h> // prefetch
+#include <smmintrin.h> // SSSE 3 header  
+#include <immintrin.h> // for FMA 
 
 /*
 #define _ARCH_x86_32_

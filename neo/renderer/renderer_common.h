@@ -31,7 +31,6 @@ If you have questions concerning this license or the applicable additional terms
 
 // BEATO Begin: pipeline implementation
 #include "backend/Backend_common.h"
-// BEATO End
 
 #if CR_USE_VULKAN
 #	include "backend/vulkan/vkContext.h"
@@ -40,11 +39,14 @@ If you have questions concerning this license or the applicable additional terms
 #if CR_USE_OPENGL
 #	include "backend/opengl/glContext.h"
 #endif //CR_USE_OPENGL
+// BEATO End
 
 #include "images/Image.h"
+#include "images/Image_manager.h"
 #include "MegaTexture.h"
 
 class idRenderWorldLocal;
+#include "RenderMatrix.h"
 #include "frontend/Transform.h"
 #include "ScreenRect.h"
 
@@ -116,10 +118,7 @@ typedef struct drawSurf_s
 	const struct drawSurf_s	*nextOnLight;	// viewLight chains
 	idScreenRect			scissorRect;	// for scissor clipping, local inside renderView viewport
 	int						dsFlags;			// DSF_VIEW_INSIDE_SHADOW, etc
-	struct vertCache_s		*dynamicTexCoords;	// float * in vertex cache memory
-	// specular directions for non vertex program cards, skybox texcoords, etc
 } drawSurf_t;
-
 
 typedef struct {
 	int		numPlanes;		// this is always 6 for now
@@ -247,14 +246,6 @@ typedef struct
 } tmu_t;
 
 const int MAX_MULTITEXTURE_UNITS =	8;
-typedef struct 
-{
-	tmu_t		tmu[MAX_MULTITEXTURE_UNITS];
-
-	int			faceCulling;
-	int			glStateBits;
-	bool		forceGlState;		// the next GL_State will ignore glStateBits and set everything
-} glstate_t;
 
 typedef struct 
 {
@@ -286,14 +277,6 @@ typedef struct viewLight_s viewLight_t;
 
 const int MAX_GUI_SURFACES	= 1024;		// default size of the drawSurfs list for guis, will
 										// be automatically expanded as needed
-
-typedef enum 
-{
-	BE_ARB,
-	BE_ARB2,
-	BE_BAD
-} backEndName_t;
-
 typedef struct 
 {
 	int		x, y, width, height;	// these are in physical, OpenGL Y-at-bottom pixels
@@ -376,8 +359,6 @@ public:
 	int						tiledViewport[2];
 
 	// determines which back end to use, and if vertex programs are in use
-	backEndName_t			backEndRenderer;
-	bool					backEndRendererHasVertexPrograms;
 	float					backEndRendererMaxLight;	// 1.0 for standard, unlimited for floats
 														// determines how much overbrighting needs
 														// to be done post-process
@@ -497,7 +478,7 @@ extern idCVar r_usePreciseTriangleInteractions;	// 1 = do winding clipping to de
 extern idCVar r_useTurboShadow;			// 1 = use the infinite projection with W technique for dynamic shadows
 extern idCVar r_useExternalShadows;		// 1 = skip drawing caps when outside the light volume
 extern idCVar r_useOptimizedShadows;	// 1 = use the dmap generated static shadow volumes
-extern idCVar r_useShadowVertexProgram;	// 1 = do the shadow projection in the vertex program on capable cards
+//extern idCVar r_useShadowVertexProgram;	// 1 = do the shadow projection in the vertex program on capable cards
 extern idCVar r_useShadowProjectedCull;	// 1 = discard triangles outside light volume before shadowing
 extern idCVar r_useDeferredTangents;	// 1 = don't always calc tangents after deform
 extern idCVar r_useCachedDynamicModels;	// 1 = cache snapshots of dynamic models
@@ -716,45 +697,28 @@ DRAW_*
 
 ============================================================
 */
-
-void	RB_ARB_DrawInteractions( void );
-
-void	R_R200_Init( void );
-void	RB_R200_DrawInteractions( void );
-
-void	R_NV10_Init( void );
-void	RB_NV10_DrawInteractions( void );
-
-void	R_NV20_Init( void );
-void	RB_NV20_DrawInteractions( void );
-
-void	R_ARB2_Init( void );
-void	RB_ARB2_DrawInteractions( void );
-void	R_ReloadARBPrograms_f( const idCmdArgs &args );
-int		R_FindARBProgram( GLenum target, const char *program );
-
-typedef enum {
-	PROG_INVALID,
-	VPROG_INTERACTION,
-	VPROG_ENVIRONMENT,
-	VPROG_BUMPY_ENVIRONMENT,
-	VPROG_R200_INTERACTION,
-	VPROG_STENCIL_SHADOW,
-	VPROG_NV20_BUMP_AND_LIGHT,
-	VPROG_NV20_DIFFUSE_COLOR,
-	VPROG_NV20_SPECULAR_COLOR,
-	VPROG_NV20_DIFFUSE_AND_SPECULAR_COLOR,
-	VPROG_TEST,
-	FPROG_INTERACTION,
-	FPROG_ENVIRONMENT,
-	FPROG_BUMPY_ENVIRONMENT,
-	FPROG_TEST,
-	VPROG_AMBIENT,
-	FPROG_AMBIENT,
-	VPROG_GLASSWARP,
-	FPROG_GLASSWARP,
-	PROG_USER
+typedef enum 
+{
+	PIPE_INVALID = -1,
+	PIPE_DEFAULT,
+	PIPE_DEPTH_BUFFER,
+	PIPE_INTERACTION,
+	PIPE_ENVIRONMENT,
+	PIPE_STENCIL_SHADOW,
+	PIPE_TEST,
+	PIPE_AMBIENT,
+	PIPE_GLASSWARP,
+	PIPE_COUNT
 } program_t;
+
+typedef enum
+{
+	FRAMEBUFFER_INVALID = -1,
+	FRAMEBUFFER_DEFAULT,
+	FRAMEBUFFER_DEPTH_PASS,
+	FRAMEBUFFER_LIGHT_PASS,
+	FRAMEBUFFER_COUNT
+} framebuffer_t
 
 /*
 
@@ -785,26 +749,6 @@ c[20]	light falloff tq constant
 // texture 6 is the specular half angle cube map
 
 */
-
-typedef enum {
-	PP_LIGHT_ORIGIN = 4,
-	PP_VIEW_ORIGIN,
-	PP_LIGHT_PROJECT_S,
-	PP_LIGHT_PROJECT_T,
-	PP_LIGHT_PROJECT_Q,
-	PP_LIGHT_FALLOFF_S,
-	PP_BUMP_MATRIX_S,
-	PP_BUMP_MATRIX_T,
-	PP_DIFFUSE_MATRIX_S,
-	PP_DIFFUSE_MATRIX_T,
-	PP_SPECULAR_MATRIX_S,
-	PP_SPECULAR_MATRIX_T,
-	PP_COLOR_MODULATE,
-	PP_COLOR_ADD,
-
-	PP_LIGHT_FALLOFF_TQ = 20	// only for NV programs
-} programParameter_t;
-
 
 /*
 ============================================================
@@ -991,7 +935,6 @@ void RB_ShowLightCount( drawSurf_t **drawSurfs, int numDrawSurfs );
 void RB_PolygonClear( void );
 void RB_ScanStencilBuffer( void );
 void RB_ShowDestinationAlpha( void );
-void RB_ShowOverdraw( void );
 void RB_RenderDebugTools( drawSurf_t **drawSurfs, int numDrawSurfs );
 void RB_ShutdownDebugTools( void );
 

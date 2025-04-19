@@ -57,7 +57,6 @@ void RB_SetDefaultGLState( void )
 	RB_LogComment( "--- R_SetDefaultGLState ---\n" );
 
 	glClearDepth( 1.0f );
-	glColor4f (1,1,1,1);
 
 	//
 	// make sure our GL state vector is set correctly
@@ -67,13 +66,6 @@ void RB_SetDefaultGLState( void )
 
 	glColorMask( 1, 1, 1, 1 );
 
-// BEATO Begin: enable our fake scissor by shader 
-	glEnable( GL_CLIP_DISTANCE0 );
-	glEnable( GL_CLIP_DISTANCE1 );
-	glEnable( GL_CLIP_DISTANCE2 );
-	glEnable( GL_CLIP_DISTANCE3 );
-// BEATO End
-
 	glEnable( GL_DEPTH_TEST );
 	glEnable( GL_BLEND );
 	glEnable( GL_SCISSOR_TEST );
@@ -81,14 +73,15 @@ void RB_SetDefaultGLState( void )
 	glDisable( GL_LINE_STIPPLE );
 	glDisable( GL_STENCIL_TEST );
 
-	glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
 	glDepthMask( GL_TRUE );
 	glDepthFunc( GL_ALWAYS );
- 
+	
 	glCullFace( GL_FRONT_AND_BACK );
+	glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
 //	glShadeModel( GL_SMOOTH ); // FIXED FUNCTION PIPELINE
 
-	if ( r_useScissor.GetBool() ) {
+	if ( r_useScissor.GetBool() ) 
+	{
 		glScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
 	}
 
@@ -122,7 +115,8 @@ void RB_SetDefaultGLState( void )
 RB_LogComment
 ====================
 */
-void RB_LogComment( const char *comment, ... ) {
+void RB_LogComment( const char *comment, ... ) 
+{
    va_list marker;
 
 	if ( !tr.logFile ) {
@@ -135,337 +129,7 @@ void RB_LogComment( const char *comment, ... ) {
 	va_end( marker );
 }
 
-
 //=============================================================================
-
-/*
-====================
-GL_Cull
-
-This handles the flipping needed when the view being
-rendered is a mirored view.
-====================
-*/
-void GL_Cull( int cullType ) 
-{
-	if ( backEnd.glState.faceCulling == cullType ) 
-	{
-		return;
-	}
-
-	if ( cullType == CT_TWO_SIDED ) 
-	{
-		glSetState( GL_CULL_FACE, GL_FALSE );
-	} 
-	else  
-	{
-		GLenum mode = GL_NONE;
-		if ( backEnd.glState.faceCulling == CT_TWO_SIDED ) 
-			glSetState( GL_CULL_FACE, GL_TRUE );
-
-		if ( cullType == CT_BACK_SIDED ) 
-		{
-			if ( backEnd.viewDef->isMirror )
-				mode = GL_FRONT;
-			else
-				mode = GL_BACK;
-		} 
-		else 
-		{
-			if ( backEnd.viewDef->isMirror ) 
-				mode = GL_BACK;
-			else 
-				mode = GL_FRONT;
-
-			glCullFace( mode );
-		}
-	}
-
-	backEnd.glState.faceCulling = cullType;
-}
-
-/*
-====================
-GL_TexEnv
-====================
-*/
-void GL_TexEnv( int env ) 
-{
-	tmu_t	*tmu;
-
-	tmu = &backEnd.glState.tmu[backEnd.glState.currenttmu];
-	if ( env == tmu->texEnv ) 
-		return;
-
-	tmu->texEnv = env;
-
-	switch ( env ) 
-	{
-	case GL_COMBINE_EXT:
-	case GL_MODULATE:
-	case GL_REPLACE:
-	case GL_DECAL:
-	case GL_ADD:
-		glTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, env );
-		break;
-	default:
-		common->Error( "GL_TexEnv: invalid env '%d' passed\n", env );
-		break;
-	}
-}
-
-/*
-=================
-GL_ClearStateDelta
-
-Clears the state delta bits, so the next GL_State
-will set every item
-=================
-*/
-void GL_ClearStateDelta( void ) 
-{
-	backEnd.glState.forceGlState = true;
-}
-
-/*
-====================
-GL_State
-
-This routine is responsible for setting the most commonly changed state
-====================
-*/
-void GL_State( int stateBits )
-{
-	int	diff;
-	
-	if ( !r_useStateCaching.GetBool() || backEnd.glState.forceGlState ) 
-	{
-		// make sure everything is set all the time, so we
-		// can see if our delta checking is screwing up
-		diff = -1;
-		backEnd.glState.forceGlState = false;
-	}
-	else 
-	{
-		diff = stateBits ^ backEnd.glState.glStateBits;
-		if ( !diff ) 
-			return;
-	}
-
-	//
-	// check depthFunc bits
-	//
-	if ( diff & ( GLS_DEPTHFUNC_EQUAL | GLS_DEPTHFUNC_LESS | GLS_DEPTHFUNC_ALWAYS ) )
-	{
-// BEATO Begin
-		GLenum depthFunc = GL_EQUAL;
-
-		if ( stateBits & GLS_DEPTHFUNC_EQUAL )
-			depthFunc = GL_EQUAL;
-		else if ( stateBits & GLS_DEPTHFUNC_ALWAYS )
-			depthFunc =  GL_ALWAYS;
-		else 
-			depthFunc = GL_LEQUAL;
-
-		glDepthFunc( depthFunc );
-// BEATO End
-	}
-
-
-	//
-	// check blend bits
-	//
-	if ( diff & ( GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS ) )
-	{
-		GLenum srcFactor, dstFactor;
-
-		switch ( stateBits & GLS_SRCBLEND_BITS ) {
-		case GLS_SRCBLEND_ZERO:
-			srcFactor = GL_ZERO;
-			break;
-		case GLS_SRCBLEND_ONE:
-			srcFactor = GL_ONE;
-			break;
-		case GLS_SRCBLEND_DST_COLOR:
-			srcFactor = GL_DST_COLOR;
-			break;
-		case GLS_SRCBLEND_ONE_MINUS_DST_COLOR:
-			srcFactor = GL_ONE_MINUS_DST_COLOR;
-			break;
-		case GLS_SRCBLEND_SRC_ALPHA:
-			srcFactor = GL_SRC_ALPHA;
-			break;
-		case GLS_SRCBLEND_ONE_MINUS_SRC_ALPHA:
-			srcFactor = GL_ONE_MINUS_SRC_ALPHA;
-			break;
-		case GLS_SRCBLEND_DST_ALPHA:
-			srcFactor = GL_DST_ALPHA;
-			break;
-		case GLS_SRCBLEND_ONE_MINUS_DST_ALPHA:
-			srcFactor = GL_ONE_MINUS_DST_ALPHA;
-			break;
-		case GLS_SRCBLEND_ALPHA_SATURATE:
-			srcFactor = GL_SRC_ALPHA_SATURATE;
-			break;
-		default:
-			srcFactor = GL_ONE;		// to get warning to shut up
-			common->Error( "GL_State: invalid src blend state bits\n" );
-			break;
-		}
-
-		switch ( stateBits & GLS_DSTBLEND_BITS ) 
-		{
-		case GLS_DSTBLEND_ZERO:
-			dstFactor = GL_ZERO;
-			break;
-		case GLS_DSTBLEND_ONE:
-			dstFactor = GL_ONE;
-			break;
-		case GLS_DSTBLEND_SRC_COLOR:
-			dstFactor = GL_SRC_COLOR;
-			break;
-		case GLS_DSTBLEND_ONE_MINUS_SRC_COLOR:
-			dstFactor = GL_ONE_MINUS_SRC_COLOR;
-			break;
-		case GLS_DSTBLEND_SRC_ALPHA:
-			dstFactor = GL_SRC_ALPHA;
-			break;
-		case GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA:
-			dstFactor = GL_ONE_MINUS_SRC_ALPHA;
-			break;
-		case GLS_DSTBLEND_DST_ALPHA:
-			dstFactor = GL_DST_ALPHA;
-			break;
-		case GLS_DSTBLEND_ONE_MINUS_DST_ALPHA:
-			dstFactor = GL_ONE_MINUS_DST_ALPHA;
-			break;
-		default:
-			dstFactor = GL_ONE;		// to get warning to shut up
-			common->Error( "GL_State: invalid dst blend state bits\n" );
-			break;
-		}
-
-		glBlendFunc( srcFactor, dstFactor );
-	}
-
-	//
-	// check depthmask
-	//
-	if ( diff & GLS_DEPTHMASK ) 
-	{
-		if ( stateBits & GLS_DEPTHMASK ) 
-			glDepthMask( GL_FALSE );
-		else
-			glDepthMask( GL_TRUE );
-	}
-
-	//
-	// check colormask
-	//
-	if ( diff & (GLS_REDMASK|GLS_GREENMASK|GLS_BLUEMASK|GLS_ALPHAMASK) ) {
-		GLboolean		r, g, b, a;
-		r = ( stateBits & GLS_REDMASK ) ? 0 : 1;
-		g = ( stateBits & GLS_GREENMASK ) ? 0 : 1;
-		b = ( stateBits & GLS_BLUEMASK ) ? 0 : 1;
-		a = ( stateBits & GLS_ALPHAMASK ) ? 0 : 1;
-		glColorMask( r, g, b, a );
-	}
-
-	//
-	// fill/line mode
-	//
-	if (diff & GLS_POLYMODE_LINE)
-	{
-		if (stateBits & GLS_POLYMODE_LINE)
-			glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
-		else
-			glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
-	}
-
-	//
-	// alpha test
-	//
-	if ( diff & GLS_ATEST_BITS )
-	{
-		GLboolean enable = GL_FALSE;
-		GLenum function = GL_EQUAL;
-		GLclampf val = 0.0f;
-
-		switch ( stateBits & GLS_ATEST_BITS )
-		{
-		case 0:
-			enable = GL_FALSE;
-			break;
-		case GLS_ATEST_EQ_255:
-			enable = GL_TRUE;
-			val = 1.0f;
-			function = GL_EQUAL;
-			break;
-		case GLS_ATEST_LT_128:
-			enable = GL_TRUE;
-			val = 0.5f;
-			function = GL_LESS;
-			break;
-		case GLS_ATEST_GE_128:
-			enable = GL_TRUE;
-			val = 0.5f;
-			function = GL_GEQUAL;
-			break;
-		default:
-			assert( 0 );
-			break;
-		}
-
-		glSetState( GL_ALPHA_TEST, enable );
-		if (enable)
-			glAlphaFunc( function, 0.5 );
-	}
-
-	backEnd.glState.glStateBits = stateBits;
-}
-
-
-
-
-/*
-============================================================================
-
-RENDER BACK END THREAD FUNCTIONS
-
-============================================================================
-*/
-
-/*
-=============
-RB_SetGL2D
-
-This is not used by the normal game paths, just by some tools
-=============
-*/
-void RB_SetGL2D( void )
-{
-	// set 2D virtual screen size
-	glViewport( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
-	if ( r_useScissor.GetBool() ) 
-		glScissor( 0, 0, glConfig.vidWidth, glConfig.vidHeight );
-
-	glMatrixMode( GL_PROJECTION );
-    glLoadIdentity();
-	glOrtho( 0, 640, 480, 0, 0, 1 );		// always assume 640x480 virtual coordinates
-	glMatrixMode( GL_MODELVIEW );
-    glLoadIdentity();
-
-	GL_State( GLS_DEPTHFUNC_ALWAYS |
-			  GLS_SRCBLEND_SRC_ALPHA |
-			  GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA );
-
-	GL_Cull( CT_TWO_SIDED );
-
-	glDisable( GL_DEPTH_TEST );
-	glDisable( GL_STENCIL_TEST );
-}
-
-
 
 /*
 =============
@@ -474,16 +138,14 @@ crBackend::SetBuffer
 */
 void crBackend::SetBuffer( const void *data ) 
 {
-	const setBufferCommand_t	*cmd;
-
 	// see which draw buffer we want to render the frame to
-
-	cmd = (const setBufferCommand_t *)data;
+	const setBufferCommand_t	*cmd = static_cast<const setBufferCommand_t*>( data );
 
 	frameCount = cmd->frameCount;
 
-	// glDrawBuffer( cmd->buffer );
-	m_uniforms->Begin(); // swap uniform buffer, and prepare for a new frame
+	// swap uniform buffer, and swap chain and prepare for a new frame
+	m_uniforms->Begin( frameCount ); 
+	m_swapChain->Begin( frameCount );
 
 	// clear screen for debugging
 	// automatically enable this with several other debug tools
@@ -505,6 +167,7 @@ void crBackend::SetBuffer( const void *data )
 	}
 }
 
+#if 0
 /*
 ===============
 RB_ShowImages
@@ -565,7 +228,7 @@ static void RB_ShowImages( void )
 	end = Sys_Milliseconds();
 	common->Printf( "%i msec to draw all images\n", end - start );
 }
-
+#endif
 
 /*
 =============
@@ -574,29 +237,21 @@ crBackend::SwapBuffers
 */
 void crBackend::SwapBuffers( const void *data ) 
 {
+#if 0 // TODO:
 	// texture swapping test
 	if ( r_showImages.GetInteger() != 0 ) 
-	{
 		RB_ShowImages();
-	}
+#endif 
 
-	// force a gl sync if requested
-	if ( r_finish.GetBool() ) 
-	{
-		glFinish();
-	}
+	// force a sync if requested
+	if ( r_finish.GetBool() )
+		m_swapChain->Flush();
 
     RB_LogComment( "***************** RB_SwapBuffers *****************\n\n\n" );
 
 	// don't flip if drawing to front buffer
-	if ( !r_frontBuffer.GetBool() ) 
-	{
-#if CR_USE_VULKAN
-		Sys_SwapBuffersVK();
-#else
-		Sys_SwapBuffersGL();
-#endif
-	}
+	if ( !r_frontBuffer.GetBool() )
+		m_swapChain->SwapBuffers(); 
 }
 
 /*
@@ -606,20 +261,17 @@ RB_CopyRender
 Copy part of the current framebuffer to an image
 =============
 */
-const void	RB_CopyRender( const void *data ) {
-	const copyRenderCommand_t	*cmd;
+void crBackend::CopyRender( const void *data ) 
+{
+	const copyRenderCommand_t	*cmd = static_cast<const copyRenderCommand_t *>( data );
 
-	cmd = (const copyRenderCommand_t *)data;
-
-	if ( r_skipCopyTexture.GetBool() ) {
+	if ( r_skipCopyTexture.GetBool() )
 		return;
-	}
 
     RB_LogComment( "***************** RB_CopyRender *****************\n" );
 
-	if (cmd->image) {
-		cmd->image->CopyFramebuffer( cmd->x, cmd->y, cmd->imageWidth, cmd->imageHeight, false );
-	}
+	m_currentFrameBuffer->CopyToImage( &cmd->image->GetTextureHandler(), cmd->x, cmd->y, cmd->imageWidth, cmd->imageHeight, 0 );
+	c_copyFrameBuffer++;
 }
 
 /*
@@ -630,46 +282,48 @@ This function will be called syncronously if running without
 smp extensions, or asyncronously by another thread.
 ====================
 */
-int		backEndStartTime, backEndFinishTime;
-void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
+void crBackend::ExecuteBackEndCommands( const emptyCommand_t *cmds ) 
+{
+	static int backEndStartTime = 0; 
+	static int backEndFinishTime = 0;
+
 	// r_debugRenderToTexture
 	int	c_draw3d = 0, c_draw2d = 0, c_setBuffers = 0, c_swapBuffers = 0, c_copyRenders = 0;
 
-	if ( cmds->commandId == RC_NOP && !cmds->next ) {
+	if ( cmds->commandId == RC_NOP && !cmds->next ) 
 		return;
-	}
 
 	backEndStartTime = Sys_Milliseconds();
 
 	// needed for editor rendering
-	RB_SetDefaultGLState();
+	Pipeline( PIPE_DEFAULT );
 
 	// upload any image loads that have completed
 	globalImages->CompleteBackgroundImageLoads();
 
-	for ( ; cmds ; cmds = (const emptyCommand_t *)cmds->next ) {
-		switch ( cmds->commandId ) {
+	for ( ; cmds ; cmds = (const emptyCommand_t *)cmds->next ) 
+	{
+		switch ( cmds->commandId ) 
+		{
 		case RC_NOP:
 			break;
 		case RC_DRAW_VIEW:
-			RB_DrawView( cmds );
-			if ( ((const drawSurfsCommand_t *)cmds)->viewDef->viewEntitys ) {
+			DrawView( cmds );
+			if ( ((const drawSurfsCommand_t *)cmds)->viewDef->viewEntitys ) 
 				c_draw3d++;
-			}
-			else {
+			else 
 				c_draw2d++;
-			}
 			break;
 		case RC_SET_BUFFER:
-			RB_SetBuffer( cmds );
+			SetBuffer( cmds );
 			c_setBuffers++;
 			break;
 		case RC_SWAP_BUFFERS:
-			RB_SwapBuffers( cmds );
+			SwapBuffers( cmds );
 			c_swapBuffers++;
 			break;
 		case RC_COPY_RENDER:
-			RB_CopyRender( cmds );
+			CopyRender( cmds );
 			c_copyRenders++;
 			break;
 		default:
@@ -678,16 +332,44 @@ void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds ) {
 		}
 	}
 
-	// go back to the default texture so the editor doesn't mess up a bound image
-	glBindTexture( GL_TEXTURE_2D, 0 );
-	backEnd.glState.tmu[0].current2DMap = -1;
-
 	// stop rendering on this thread
 	backEndFinishTime = Sys_Milliseconds();
-	backEnd.pc.msec = backEndFinishTime - backEndStartTime;
+	pc.msec = backEndFinishTime - backEndStartTime;
 
-	if ( r_debugRenderToTexture.GetInteger() == 1 ) {
+	if ( r_debugRenderToTexture.GetInteger() == 1 ) 
+	{
 		common->Printf( "3d: %i, 2d: %i, SetBuf: %i, SwpBuf: %i, CpyRenders: %i, CpyFrameBuf: %i\n", c_draw3d, c_draw2d, c_setBuffers, c_swapBuffers, c_copyRenders, backEnd.c_copyFrameBuffer );
-		backEnd.c_copyFrameBuffer = 0;
+		c_copyFrameBuffer = 0;
 	}
+}
+
+void crBackend::Pipeline( const uint32_t pipelineID )
+{
+	if ( pipelineID > PIPE_INVALID && pipelineID < PIPE_COUNT )
+		m_currentPipeline = m_pipelines[pipelineID];
+	else
+		m_currentPipeline = nullptr;
+}
+
+void crBackend::Framebuffer(const uint32_t framebufferID)
+{
+	if ( framebufferID > FRAMEBUFFER_INVALID && framebufferID < FRAMEBUFFER_COUNT )
+		m_currentFrameBuffer = m_framebuffers[framebufferID];
+	else
+		m_currentFrameBuffer = nullptr;
+}
+
+void crBackend::Viewport( const int x, const int y, const int width, const int height )
+{
+	m_currentPipeline->SetViewport( x, y, width, height );
+}
+
+void crBackend::Scissor( const int x, const int y, const int width, const int height )
+{
+#if CR_USE_CLIP_AS_SCISSOR
+	float scissor[4] = { static_cast<float>(x), static_cast<float>(y), static_cast<float>(width), static_cast<float>(height) };
+	m_uniforms->SetUniform( scissor, VERTEX_UNIFORM_LOCATION_CLIP_BOUDS );
+#else
+	m_currentPipeline->SetScissor( x, y, width, height );
+#endif
 }

@@ -255,7 +255,7 @@ void crVKSwapChain::Destroy(void)
     m_images.Clear();
 }
 
-void crVKSwapChain::Begin(void)
+void crVKSwapChain::Begin( const uint32_t frame )
 {
     VkResult res = VK_SUCCESS;
     auto device = tr.vulkan->GetDevice();

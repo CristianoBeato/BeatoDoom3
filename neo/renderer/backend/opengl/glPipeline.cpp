@@ -70,11 +70,39 @@ void crGLPipeline::Begin(void)
     // bind shder pipeline 
     glBindProgramPipeline( m_programPipeline );
 
-     // Clear the color, depth and stencil buffers
-     // glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
-     // glClearDepth( 1.0f );
-     // glClearStencil( 0 );
-     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
+    // color config
+    glColorMask( m_colorMask[0], m_colorMask[1], m_colorMask[2], m_colorMask[3] );
+    glClearColor( m_clearColor[0], m_clearColor[1], m_clearColor[2], m_clearColor[3] );
+
+    // blending
+    glSetState( GL_BLEND, m_blend );
+    glBlendFunc( m_blendSRCFactor, m_blendDSTFactor );
+
+    // depth config
+    glClearDepth( m_clearDepth );
+    glSetState( GL_DEPTH_TEST, m_depthTest );
+    glDepthFunc( m_depthFunc );
+    glDepthMask( m_depthMask );
+
+    // Clear the color, depth and stencil buffers
+    glClearStencil( m_clearStencil );
+    glSetState( GL_STENCIL_TEST, m_stencil );
+    glSetState( GL_SCISSOR_TEST, m_scissor );
+
+    // poligon
+    glSetState( GL_CULL_FACE, m_faceCulling );
+    glCullFace( m_cullFace );
+	glPolygonMode ( m_poligonModeFace, m_poligonMode );
+    
+#if CR_USE_CLIP_AS_SCISSOR
+	glSetState( GL_CLIP_DISTANCE0, m_clipping );
+	glSetState( GL_CLIP_DISTANCE1, m_clipping );
+	glSetState( GL_CLIP_DISTANCE2, m_clipping );
+	glSetState( GL_CLIP_DISTANCE3, m_clipping );
+#endif
+    
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
+    
 }
 
 void crGLPipeline::End(void)

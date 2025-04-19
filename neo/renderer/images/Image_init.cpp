@@ -1931,9 +1931,11 @@ int idImageManager::SumOfUsedImages() {
 	idImage	*image;
 
 	total = 0;
-	for ( i = 0; i < images.Num(); i++ ) {
+	for ( i = 0; i < images.Num(); i++ ) 
+	{
 		image = images[i];
-		if ( image->frameUsed == backEnd.frameCount ) {
+		if ( image->frameUsed == tr.backEnd->GetFrameCount() ) 
+		{
 			total += image->StorageSize();
 		}
 	}
@@ -1948,24 +1950,8 @@ BindNull
 */
 void idImageManager::BindNull( void ) 
 {
-	tmu_t			*tmu;
-
-	tmu = &backEnd.glState.tmu[backEnd.glState.currenttmu];
-
 	RB_LogComment( "BindNull()\n" );
-	if ( tmu->textureType == TT_CUBIC ) 
-	{
-		glDisable( GL_TEXTURE_CUBE_MAP );
-	} 
-	else if ( tmu->textureType == TT_3D ) 
-	{
-		glDisable( GL_TEXTURE_3D );
-	} 
-	else if ( tmu->textureType == TT_2D ) 
-	{
-		glDisable( GL_TEXTURE_2D );
-	}
-	tmu->textureType = TT_DISABLED;
+	//TODO: clear texture bindings
 }
 
 /*
@@ -1973,8 +1959,8 @@ void idImageManager::BindNull( void )
 Init
 ===============
 */
-void idImageManager::Init() {
-
+void idImageManager::Init( void ) 
+{
 	memset(imageHashTable, 0, sizeof(imageHashTable));
 
 	images.Resize( 1024, 1024 );

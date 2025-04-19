@@ -263,7 +263,8 @@ stencil buffer.  Stencil of 0 = black, 1 = red, 2 = green,
 3 = blue, ..., 7+ = white
 ===================
 */
-static void R_ColorByStencilBuffer( void ) {
+static void R_ColorByStencilBuffer( void ) 
+{
 	int		i;
 	static float	colors[8][3] = {
 		{0,0,0},
@@ -293,80 +294,6 @@ static void R_ColorByStencilBuffer( void ) {
 }
 
 //======================================================================
-
-/*
-==================
-RB_ShowOverdraw
-==================
-*/
-void RB_ShowOverdraw( void ) {
-	const idMaterial *	material;
-	int					i;
-	drawSurf_t * *		drawSurfs;
-	const drawSurf_t *	surf;
-	int					numDrawSurfs;
-	viewLight_t *		vLight;
-
-	if ( r_showOverDraw.GetInteger() == 0 ) {
-		return;
-	}
-
-	material = declManager->FindMaterial( "textures/common/overdrawtest", false );
-	if ( material == NULL ) {
-		return;
-	}
-
-	drawSurfs = backEnd.viewDef->drawSurfs;
-	numDrawSurfs = backEnd.viewDef->numDrawSurfs;
-
-	int interactions = 0;
-	for ( vLight = backEnd.viewDef->viewLights; vLight; vLight = vLight->next ) {
-		for ( surf = vLight->localInteractions; surf; surf = surf->nextOnLight ) {
-			interactions++;
-		}
-		for ( surf = vLight->globalInteractions; surf; surf = surf->nextOnLight ) {
-			interactions++;
-		}
-	}
-
-	drawSurf_t **newDrawSurfs = (drawSurf_t **)R_FrameAlloc( numDrawSurfs + interactions * sizeof( newDrawSurfs[0] ) );
-
-	for ( i = 0; i < numDrawSurfs; i++ ) {
-		surf = drawSurfs[i];
-		if ( surf->material ) {
-			const_cast<drawSurf_t *>(surf)->material = material;
-		}
-		newDrawSurfs[i] = const_cast<drawSurf_t *>(surf);
-	}
-
-	for ( vLight = backEnd.viewDef->viewLights; vLight; vLight = vLight->next ) {
-		for ( surf = vLight->localInteractions; surf; surf = surf->nextOnLight ) {
-			const_cast<drawSurf_t *>(surf)->material = material;
-			newDrawSurfs[i++] = const_cast<drawSurf_t *>(surf);
-		}
-		for ( surf = vLight->globalInteractions; surf; surf = surf->nextOnLight ) {
-			const_cast<drawSurf_t *>(surf)->material = material;
-			newDrawSurfs[i++] = const_cast<drawSurf_t *>(surf);
-		}
-		vLight->localInteractions = NULL;
-		vLight->globalInteractions = NULL;
-	}
-
-	switch( r_showOverDraw.GetInteger() ) {
-		case 1: // geometry overdraw
-			const_cast<viewDef_t *>(backEnd.viewDef)->drawSurfs = newDrawSurfs;
-			const_cast<viewDef_t *>(backEnd.viewDef)->numDrawSurfs = numDrawSurfs;
-			break;
-		case 2: // light interaction overdraw
-			const_cast<viewDef_t *>(backEnd.viewDef)->drawSurfs = &newDrawSurfs[numDrawSurfs];
-			const_cast<viewDef_t *>(backEnd.viewDef)->numDrawSurfs = interactions;
-			break;
-		case 3: // geometry + light interaction overdraw
-			const_cast<viewDef_t *>(backEnd.viewDef)->drawSurfs = newDrawSurfs;
-			const_cast<viewDef_t *>(backEnd.viewDef)->numDrawSurfs += interactions;
-			break;
-	}
-}
 
 /*
 ===================

@@ -8,15 +8,16 @@ public:
     crVKPipeline( void );
     ~crVKPipeline( void );
 
-    virtual void    Create( const shaderProgram_t* program, const frameBuffer_t* frameBuffer, const vertexAttribute_t* attributes, const size_t numAttributes );
+    virtual void    Create( const shaderProgram_t* program, const vertexAttribute_t* attributes, const size_t numAttributes );
     virtual void    Destroy( void );
     virtual void    Begin( void );
     virtual void    End( void );
     virtual void    AttachVertexBuffer( crBuffer* buffer, uintptr_t offset, const size_t size );
     virtual void    AttachIndexBuffer( crBuffer* buffer, uintptr_t offset, const size_t size );
     virtual void    AttachUniformBuffer( crBuffer* buffer, const uint32_t bindingID, uintptr_t offset, const size_t size );
-    virtual void    SetViewport( int x, int y, int width, int height );
-    virtual void    SetScissor( int x, int y, int width, int height );
+    virtual void    DepthBias( const float factor, const float units );
+    virtual void    SetViewport( const int x, const int y, const uint32_t width, const uint32_t height );
+    virtual void    SetScissor( const int x, const int y, const uint32_t width, const uint32_t height );
     virtual void    ClearColor( const float red, const float green, const float blue, const float alpha );
     virtual void    Clear( void );
 

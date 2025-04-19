@@ -32,7 +32,7 @@ public:
     ~crVKSwapChain( void );
     virtual void            Create( const uint32_t width, const uint32_t height, const uint32_t vsync, const uint32_t samples ) override;
     virtual void            Destroy( void ) override;
-    virtual void            Begin( void );
+    virtual void            Begin( const uint32_t frame );
     virtual void            End( void );
     virtual void            SwapBuffers( void );
 

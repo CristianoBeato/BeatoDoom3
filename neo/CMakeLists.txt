@@ -115,6 +115,8 @@ SET( RENDERER_SOURCES
 	${CMAKE_SOURCE_DIR}/renderer/Material.h
 	${CMAKE_SOURCE_DIR}/renderer/MegaTexture.cpp
 	${CMAKE_SOURCE_DIR}/renderer/MegaTexture.h
+	${CMAKE_SOURCE_DIR}/renderer/RenderMatrix.cpp
+	${CMAKE_SOURCE_DIR}/renderer/RenderMatrix.h
 	${CMAKE_SOURCE_DIR}/renderer/RenderSystem.cpp
 	${CMAKE_SOURCE_DIR}/renderer/RenderSystem_init.cpp
 	${CMAKE_SOURCE_DIR}/renderer/RenderSystem.h
@@ -178,11 +180,13 @@ SET ( RENDERER_BACKEND_VULKAN_SOURCES
 ## Backend
 ## 
 SET( RENDERER_BACKEND_SOURCES
-	${CMAKE_SOURCE_DIR}/renderer/backend/Backend.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/Backend_apiwrapper.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/Backend_apiwrapper.h
 	${CMAKE_SOURCE_DIR}/renderer/backend/Backend_common.h
-	${CMAKE_SOURCE_DIR}/renderer/backend/Backend_render.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/Backend.cpp
 	${CMAKE_SOURCE_DIR}/renderer/backend/Backend_draw.cpp
 	${CMAKE_SOURCE_DIR}/renderer/backend/Backend_draw_interactions.cpp
+	${CMAKE_SOURCE_DIR}/renderer/backend/Backend_render.cpp
 	)
 
 source_group("Backend" FILES ${RENDERER_BAKCEND_SOURCES} )

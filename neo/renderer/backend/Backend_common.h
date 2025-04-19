@@ -60,16 +60,69 @@ public:
     void        StartUp( void );
     void        ShutDown( void );
 
-    void        DrawView( const void *data );
+    // Backend.cpp
+    void                            ExecuteBackEndCommands( const emptyCommand_t *cmds ); 
     
-    void        STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs );
-    void        StencilShadowPass( const drawSurf_t *drawSurfs );
-    void        STD_FogAllLights( void );
-    void        BakeTextureMatrixIntoTexgen( idPlane lightProject[3], const float textureMatrix[16] );
-    void        LeaveDepthHack( void );
-    void        RenderTriangleSurface( const srfTriangles_t *tri );
-    void        RenderTriangleSurface( const drawSurf_t *surf );
-    void        DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs );
+    //
+    void                            SelectTexture( const uint32_t unit ) { currentTextureUnit = unit; }
+    uint32_t                        SwapChainImages( void ) const { return m_swapChain->GetImageCount(); }
+    uint32_t                        GetFrameCount( void ) const { return frameCount; }
+
+protected:
+    friend class idImage;
+    uint32_t                        GetCurrentTextureUnit( void ) { return currentTextureUnit; }
+    crAutoPointer<crShaderStorage>  GetShaderStorage( void );
+
+private:
+    bool				            currentRenderCopied;	    // true if any material has already referenced _currentRender
+    uint32_t                        currentTextureUnit;
+    uint32_t                        frameCount;		            // used to track all images used in a frame
+    backEndCounters_t	            pc;
+    int					            c_copyFrameBuffer;
+//	int					            depthFunc;			        // GLS_DEPTHFUNC_EQUAL, or GLS_DEPTHFUNC_LESS for translucent
+    float				            lightScale;			        // Every light color calaculation will be multiplied by this,
+                                                                // which will guarantee that the result is < tr.backEndRendererMaxLight
+                                                                // A card with high dynamic range will have this set to 1.0
+    float				            overBright;			        // The amount that all light interactions must be multiplied by
+                                                                // with post processing to get the desired total light level.
+                                                                // A high dynamic range card will have this set to 1.0.
+    float				            lightTextureMatrix[16];	    // only if lightStage->texture.hasMatrix
+	float				            lightColor[4];		        // evaluation of current light's color stage
+	idScreenRect		            currentScissor;             // for scissor clipping, local inside renderView viewport
+	const viewEntity_t*             currentSpace;		        // for detecting when a matrix must change
+	crAutoPointer<viewLight_t>      viewLight;                  //
+	crAutoPointer<viewDef_t>	    viewDef;                    //
+    crAutoPointer<crSwapChain>      m_swapChain;                //
+    crAutoPointer<crCommandQueue>   m_graphicQueue;             //
+    crAutoPointer<crShaderStorage>  m_uniforms;                 //
+    crAutoPointer<crFramebuffer>    m_currentFrameBuffer;       //
+    crAutoPointer<crPipeline>       m_currentPipeline;          //
+    crAutoPointer<crFramebuffer>    m_framebuffers[FRAMEBUFFER_COUNT];
+    crAutoPointer<crPipeline>       m_pipelines[PIPE_COUNT];      // the render pipelines 
+
+    void    CreatePipelines( void );
+    void    DestroyPipelines( void );
+    void    CreateFrameBuffers( void );
+    void    DestroyFrameBuffers( void );
+
+    void    Pipeline( const uint32_t pipelineID );
+    void    Framebuffer( const uint32_t framebufferID );
+    void    Viewport( const int x, const int y, const int width, const int height );
+    void    Scissor( const int x, const int y, const int width, const int height );
+
+    //  Backend_render.cpp
+    void    DrawView( const void *data );
+    void    ShowOverdraw( void );
+
+    void    FillDepthBuffer( const drawSurf_t *surf ); 
+    void    STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs );
+    void    StencilShadowPass( const drawSurf_t *drawSurfs );
+    void    STD_FogAllLights( void );
+    void    BakeTextureMatrixIntoTexgen( idPlane lightProject[3], const float textureMatrix[16] );
+    void    LeaveDepthHack( void );
+    void    RenderTriangleSurface( const srfTriangles_t *tri );
+    void    RenderTriangleSurface( const drawSurf_t *surf );
+    void    DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs );
     
     const shaderStage_t *RB_SetLightTexture( const idRenderLightLocal *light );
     
@@ -84,7 +137,6 @@ public:
     void        DrawShadowElementsWithCounters( const srfTriangles_t *tri, int numIndexes );
     void        EnterWeaponDepthHack( void );
     void        EnterModelDepthHack( float depth );
-    void        RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs, void (*triFunc_)( const drawSurf_t *) );
     void        RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs, void (*triFunc_)( const drawSurf_t *) );
     void        GetShaderTextureMatrix( const float *shaderRegisters, const textureStage_t *texture, float matrix[16] );
     void        LoadShaderTextureMatrix( const float *shaderRegisters, const textureStage_t *texture );
@@ -93,36 +145,23 @@ public:
     void        FinishStageTexture( const textureStage_t *texture, const drawSurf_t *surf );
     void        DetermineLightScale( void );
     void        BeginDrawingView (void);
-    void        CreateSingleDrawInteractions( const drawSurf_t *surf, void (*DrawInteraction)(const drawInteraction_t *) );
+    void        RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs, std::function<void( const drawSurf_t *)> triFunc_ );
+    void        CreateSingleDrawInteractions( const drawSurf_t *surf,  std::function<void(const drawInteraction_t *)> DrawInteraction );
+  
+    // Backend_draw.cpp
+    void        BakeTextureMatrixIntoTexgen( idPlane lightProject[3], const float *textureMatrix ); 
+    void        PrepareStageTexturing( const shaderStage_t *pStage,  const drawSurf_t *surf, idDrawVert *ac );
+    void        FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *surf, idDrawVert *ac );
     
-    // Backend.cpp
-    void                            SetBuffer( const void *data );
-    void                            SwapBuffers( const void *data ); 
-    uint32_t                        SwapChainImages( void ) const { return m_swapChain->GetImageCount(); }
+    // Backend_draw_interactions.cpp
+    void        DrawInteraction( const drawInteraction_t *din );
+    void        CreateDrawInteractions( const drawSurf_t *surf );
+    void        DrawInteractions( void );
 
-private:
-    bool				            currentRenderCopied;	// true if any material has already referenced _currentRender
-    int					            c_copyFrameBuffer;
-    int								frameCount;		        // used to track all images used in a frame
-	int					            depthFunc;			    // GLS_DEPTHFUNC_EQUAL, or GLS_DEPTHFUNC_LESS for translucent
-    float				            lightScale;			    // Every light color calaculation will be multiplied by this,
-                                                            // which will guarantee that the result is < tr.backEndRendererMaxLight
-                                                            // A card with high dynamic range will have this set to 1.0
-    float				            overBright;			    // The amount that all light interactions must be multiplied by
-                                                            // with post processing to get the desired total light level.
-                                                            // A high dynamic range card will have this set to 1.0.
-    float				            lightTextureMatrix[16];	// only if lightStage->texture.hasMatrix
-	float				            lightColor[4];		    // evaluation of current light's color stage
-    glstate_t			            glState;                // our OpenGL state deltas
-	idScreenRect		            currentScissor;         // for scissor clipping, local inside renderView viewport
-	const viewEntity_t*             currentSpace;		    // for detecting when a matrix must change
-	backEndCounters_t	            pc;
-	crAutoPointer<viewLight_t>      viewLight;
-	crAutoPointer<viewDef_t>	    viewDef;
-    crAutoPointer<crSwapChain>      m_swapChain;            //
-    crAutoPointer<crCommandQueue>   m_graphicQueue;         //
-    crAutoPointer<crPipeline>       m_currentPipeline;      //
-    crAutoPointer<crShaderStorage>  m_uniforms;             //
+    // Backend
+    void                            SetBuffer( const void *data );
+    void                            SwapBuffers( const void *data );
+    void                            CopyRender( const void *data ); 
 };
 
 #endif //!__BACKEND_COMMON_H__

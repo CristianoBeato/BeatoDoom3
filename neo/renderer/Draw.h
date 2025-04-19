@@ -44,8 +44,8 @@ typedef struct
 typedef struct 
 {
 	renderCommand_t		commandId, *next;
-	GLenum	buffer;
-	int		frameCount;
+	GLenum				buffer;
+	uint32_t			frameCount;
 } setBufferCommand_t;
 
 typedef struct 

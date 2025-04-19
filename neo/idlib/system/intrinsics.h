@@ -3,8 +3,6 @@
 #ifndef __INTRIN_H__
 #define __INTRIN_H__
 
-#include <pmmintrin.h>
-
 extern __always_inline void _mm_fldcw( unsigned short controlWord )
 {
 #if defined( __GNUC__ )

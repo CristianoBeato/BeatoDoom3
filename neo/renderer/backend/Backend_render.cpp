@@ -64,8 +64,12 @@ void crBackend::DrawElementsImmediate( const srfTriangles_t *tri )
 			pc.c_drawRefVertexes += tri->numVerts;
 	}
 
-	//
-	glDrawElementsBaseVertex( GL_TRIANGLES, tri->numIndexes, GL_INDEX_TYPE, (int *)vertexCache.Position( tri->indexCache ), (GLint *)vertexCache.Position( tri->ambientCache ) );
+	// send uniforms to buffer
+	m_uniforms->Submit();
+
+	// TODO: draw on this thread ? of flush commands 
+	m_graphicQueue->SubmitDrawCommand( r_singleTriangle.GetBool() ? 3 : tri->numIndexes, vertexCache.Position( tri->indexCache ) );
+	//glDrawElementsBaseVertex( GL_TRIANGLES, tri->numIndexes, GL_INDEX_TYPE, (int *)vertexCache.Position( tri->indexCache ), (GLint *)vertexCache.Position( tri->ambientCache ) );
 }
 
 /*
@@ -75,9 +79,6 @@ crBackend::DrawElementsWithCounters
 */
 void crBackend::DrawElementsWithCounters( const srfTriangles_t *tri )
 {
-	// Submit uniforms to draw
-	m_uniforms->Submit();
-
 	pc.c_drawElements++;
 	pc.c_drawIndexes += tri->numIndexes;
 	pc.c_drawVertexes += tri->numVerts;
@@ -91,18 +92,11 @@ void crBackend::DrawElementsWithCounters( const srfTriangles_t *tri )
 			pc.c_drawRefVertexes += tri->numVerts;
 	}
 
-	if ( tri->indexCache && r_useIndexBuffers.GetBool() ) 
-	{
-		glDrawElements( GL_TRIANGLES, r_singleTriangle.GetBool() ? 3 : tri->numIndexes, GL_INDEX_TYPE, (int *)vertexCache.Position( tri->indexCache ) );
-		pc.c_vboIndexes += tri->numIndexes;
-	} 
-	else 
-	{
-		if ( r_useIndexBuffers.GetBool() ) 
-			vertexCache.UnbindIndex();
+	// Submit uniforms to draw
+	m_uniforms->Submit();
 
-		glDrawElements( GL_TRIANGLES, r_singleTriangle.GetBool() ? 3 : tri->numIndexes, GL_INDEX_TYPE, tri->indexes );
-	}
+	m_graphicQueue->SubmitDrawCommand( r_singleTriangle.GetBool() ? 3 : tri->numIndexes, vertexCache.Position( tri->indexCache ) );
+	pc.c_vboIndexes += tri->numIndexes;
 }
 
 /*
@@ -114,27 +108,17 @@ May not use all the indexes in the surface if caps are skipped
 */
 void crBackend::DrawShadowElementsWithCounters( const srfTriangles_t *tri, int numIndexes ) 
 {
-	// Submit uniforms 
-	m_uniforms->Submit();
-
 	pc.c_shadowElements++;
 	pc.c_shadowIndexes += numIndexes;
 	pc.c_shadowVertexes += tri->numVerts;
 
-	if ( tri->indexCache && r_useIndexBuffers.GetBool() ) 
-	{
-		glDrawElements( GL_TRIANGLES, r_singleTriangle.GetBool() ? 3 : numIndexes, GL_INDEX_TYPE, (int *)vertexCache.Position( tri->indexCache ) );
-		pc.c_vboIndexes += numIndexes;
-	} 
-	else 
-	{
-		if ( r_useIndexBuffers.GetBool() ) 
-			vertexCache.UnbindIndex();
+	// Submit uniforms 
+	m_uniforms->Submit();
 
-		glDrawElements( GL_TRIANGLES, r_singleTriangle.GetBool() ? 3 : numIndexes, GL_INDEX_TYPE, tri->indexes );
-	}
+	assert( tri->indexCache );
+	m_graphicQueue->SubmitDrawCommand( r_singleTriangle.GetBool() ? 3 : numIndexes, vertexCache.Position( tri->indexCache ) );
+	pc.c_vboIndexes += numIndexes;
 }
-
 
 /*
 ===============
@@ -165,7 +149,7 @@ void crBackend::EnterWeaponDepthHack( void )
 
 	float	matrix[16];
 
-	memcpy( matrix, viewDef->projectionMatrix, sizeof( matrix ) );
+	memcpy( matrix, &viewDef->projectionMatrix, sizeof( matrix ) );
 
 	matrix[14] *= 0.25;
 
@@ -183,7 +167,7 @@ void crBackend::EnterModelDepthHack( float depth )
 
 	float	matrix[16];
 
-	memcpy( matrix, viewDef->projectionMatrix, sizeof( matrix ) );
+	memcpy( matrix, &viewDef->projectionMatrix, sizeof( matrix ) );
 
 	matrix[14] -= depth;
 
@@ -198,8 +182,7 @@ crBackend::LeaveDepthHack
 void crBackend::LeaveDepthHack( void ) 
 {
 	glDepthRange( 0.0f, 1.0f );
-
-	m_uniforms->SetUniform( viewDef->projectionMatrix, VERTEX_UNIFORM_LOCATION_PROJECTION_MATRIX );
+	m_uniforms->SetUniform( &viewDef->projectionMatrix, VERTEX_UNIFORM_LOCATION_PROJECTION_MATRIX );
 }
 
 /*
@@ -212,10 +195,10 @@ matrix will already have been loaded, and backEnd.currentSpace will
 be updated after the triangle function completes.
 ====================
 */
-void crBackend::RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs, void (*triFunc_)( const drawSurf_t *) ) 
+void crBackend::RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs, std::function<void( const drawSurf_t *)>triFunc_ ) 
 {
-	int				i;
-	const drawSurf_t		*drawSurf;
+	int	i = 0;
+	const drawSurf_t* drawSurf = nullptr;
 
 	currentSpace = nullptr;
 
@@ -225,7 +208,7 @@ void crBackend::RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numD
 
 		// change the matrix if needed
 		if ( drawSurf->space != currentSpace )
-			m_uniforms->SetUniform( drawSurf->space->modelViewMatrix, VERTEX_UNIFORM_LOCATION_VIEW_MATRIX ); 
+			m_uniforms->SetUniform( &drawSurf->space->modelViewMatrix, VERTEX_UNIFORM_LOCATION_VIEW_MATRIX ); 
 		
 		if ( drawSurf->space->weaponDepthHack ) 
 			EnterWeaponDepthHack();
@@ -236,24 +219,8 @@ void crBackend::RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numD
 		// change the scissor if needed
 		if ( r_useScissor.GetBool() && !currentScissor.Equals( drawSurf->scissorRect ) ) 
 		{
-#if 0
 			currentScissor = drawSurf->scissorRect;
-			m_currentPipeline->SetScissor( 
-				viewDef->viewport.x1 + currentScissor.x1, 
-				viewDef->viewport.y1 + currentScissor.y1,
-				currentScissor.x2 + 1 - currentScissor.x1,
-				currentScissor.y2 + 1 - currentScissor.y1 );
-#else
-			float clipRect[4] =
-			{
-				(float)viewDef->viewport.x1 + currentScissor.x1,
-				(float)viewDef->viewport.y1 + currentScissor.y1,
-				(float)currentScissor.x2 + 1 - currentScissor.x1,
-				(float)currentScissor.y2 + 1 - currentScissor.y1 
-			};
-
-			m_uniforms->SetUniform( clipRect, VERTEX_UNIFORM_LOCATION_CLIP_BOUDS );
-#endif
+			Scissor( viewDef->viewport.x1 + currentScissor.x1, viewDef->viewport.y1 + currentScissor.y1, currentScissor.x2 + 1 - currentScissor.x1, currentScissor.y2 + 1 - currentScissor.y1 );
 		}
 
 		// render it
@@ -281,7 +248,7 @@ void crBackend::RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs, vo
 	{
 		// change the matrix if needed
 		if ( drawSurf->space != currentSpace )
-			m_uniforms->SetUniform( drawSurf->space->modelViewMatrix, VERTEX_UNIFORM_LOCATION_VIEW_MATRIX );
+			m_uniforms->SetUniform( &drawSurf->space->modelViewMatrix, VERTEX_UNIFORM_LOCATION_VIEW_MATRIX );
 
 		if ( drawSurf->space->weaponDepthHack ) 
 			EnterWeaponDepthHack();
@@ -293,23 +260,7 @@ void crBackend::RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs, vo
 		if ( r_useScissor.GetBool() && !currentScissor.Equals( drawSurf->scissorRect ) ) 
 		{
 			currentScissor = drawSurf->scissorRect;
-#if 0
-			m_currentPipeline->SetScissor( 
-				viewDef->viewport.x1 + currentScissor.x1, 
-				viewDef->viewport.y1 + currentScissor.y1,
-				currentScissor.x2 + 1 - currentScissor.x1,
-				currentScissor.y2 + 1 - currentScissor.y1 );
-#else
-				float clipRect[4] = 
-				{
-					(float)viewDef->viewport.x1 + currentScissor.x1, 
-					(float)viewDef->viewport.y1 + currentScissor.y1,
-					(float)currentScissor.x2 + 1 - currentScissor.x1,
-					(float)currentScissor.y2 + 1 - currentScissor.y1
-				};
-
-				m_uniforms->SetUniform( clipRect, VERTEX_UNIFORM_LOCATION_CLIP_BOUDS );
-#endif
+			Scissor( viewDef->viewport.x1 + currentScissor.x1, viewDef->viewport.y1 + currentScissor.y1,currentScissor.x2 + 1 - currentScissor.x1,currentScissor.y2 + 1 - currentScissor.y1 );
 		}
 
 		// render it
@@ -471,7 +422,7 @@ void crBackend::FinishStageTexture( const textureStage_t *texture, const drawSur
 		glMatrixMode( GL_MODELVIEW );
 	}
 #else
-	//TODO:
+	// TODO: set the texture matrix 
 #endif
 }
 
@@ -559,59 +510,36 @@ to actually render the visible surfaces for this view
 void crBackend::BeginDrawingView( void ) 
 {
 	// set the modelview matrix for the viewer
-	m_uniforms->SetUniform( viewDef->projectionMatrix, VERTEX_UNIFORM_LOCATION_PROJECTION_MATRIX );
+	m_uniforms->SetUniform( &viewDef->projectionMatrix, VERTEX_UNIFORM_LOCATION_PROJECTION_MATRIX );
 	
 	// set the window clipping
-	m_currentPipeline->SetViewport( 
-		tr.viewportOffset[0] + viewDef->viewport.x1, 
-		tr.viewportOffset[1] + viewDef->viewport.y1, 
-		viewDef->viewport.x2 + 1 - viewDef->viewport.x1,
-		viewDef->viewport.y2 + 1 - viewDef->viewport.y1 
-	);
+	Viewport( tr.viewportOffset[0] + viewDef->viewport.x1, tr.viewportOffset[1] + viewDef->viewport.y1, viewDef->viewport.x2 + 1 - viewDef->viewport.x1, viewDef->viewport.y2 + 1 - viewDef->viewport.y1 );
 
-#if 0
 	// the scissor may be smaller than the viewport for subviews
-	m_currentPipeline->SetScissor(
-		tr.viewportOffset[0] + viewDef->viewport.x1 + viewDef->scissor.x1, 
-		tr.viewportOffset[1] + viewDef->viewport.y1 + viewDef->scissor.y1, 
-		viewDef->scissor.x2 + 1 - viewDef->scissor.x1,
-		viewDef->scissor.y2 + 1 - viewDef->scissor.y1 
-	);
-#else
-	float clipRect[4] = 
-	{
-		(float)tr.viewportOffset[0] + viewDef->viewport.x1 + viewDef->scissor.x1, 
-		(float)tr.viewportOffset[1] + viewDef->viewport.y1 + viewDef->scissor.y1, 
-		(float)viewDef->scissor.x2 + 1 - viewDef->scissor.x1,
-		(float)viewDef->scissor.y2 + 1 - viewDef->scissor.y1 
-	};
-
-	m_uniforms->SetUniform( clipRect, VERTEX_UNIFORM_LOCATION_CLIP_BOUDS );
-#endif 
-	
+	Scissor( tr.viewportOffset[0] + viewDef->viewport.x1 + viewDef->scissor.x1, tr.viewportOffset[1] + viewDef->viewport.y1 + viewDef->scissor.y1, viewDef->scissor.x2 + 1 - viewDef->scissor.x1, viewDef->scissor.y2 + 1 - viewDef->scissor.y1 );
 	currentScissor = viewDef->scissor;
 
 	// ensures that depth writes are enabled for the depth clear
-	GL_State( GLS_DEFAULT );
+	// GL_State( GLS_DEFAULT );
 
-	// we don't have to clear the depth / stencil buffer for 2D rendering
-	if ( viewDef->viewEntitys ) 
-	{
-		glStencilMask( 0xff );
-		// some cards may have 7 bit stencil buffers, so don't assume this
-		// should be 128
-		glClearStencil( 1<<(glConfig.stencilBits-1) );
-		glClear( GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
-		glEnable( GL_DEPTH_TEST );
-	} 
-	else 
-	{
-		glDisable( GL_DEPTH_TEST );
-		glDisable( GL_STENCIL_TEST );
-	}
-
-	glState.faceCulling = -1;		// force face culling to set next time
-	GL_Cull( CT_FRONT_SIDED );
+	//// we don't have to clear the depth / stencil buffer for 2D rendering
+	//if ( viewDef->viewEntitys ) 
+	//{
+	//	glStencilMask( 0xff );
+	//	// some cards may have 7 bit stencil buffers, so don't assume this
+	//	// should be 128
+	//	glClearStencil( 1<<(glConfig.stencilBits-1) );
+	//	glClear( GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
+	//	glEnable( GL_DEPTH_TEST );
+	//} 
+	//else 
+	//{
+	//	glDisable( GL_DEPTH_TEST );
+	//	glDisable( GL_STENCIL_TEST );
+	//}
+//
+	//glState.faceCulling = -1;		// force face culling to set next time
+	//GL_Cull( CT_FRONT_SIDED );
 
 }
 
@@ -620,7 +548,7 @@ void crBackend::BeginDrawingView( void )
 R_SetDrawInteractions
 ==================
 */
-void R_SetDrawInteraction( const shaderStage_t *surfaceStage, const float *surfaceRegs, idImage **image, idVec4 matrix[2], float color[4] ) 
+static void R_SetDrawInteraction( const shaderStage_t *surfaceStage, const float *surfaceRegs, idImage **image, idVec4 matrix[2], float color[4] ) 
 {
 	*image = surfaceStage->texture.image;
 	if ( surfaceStage->texture.hasMatrix ) 
@@ -678,7 +606,7 @@ void R_SetDrawInteraction( const shaderStage_t *surfaceStage, const float *surfa
 RB_SubmittInteraction
 =================
 */
-static void RB_SubmittInteraction( drawInteraction_t *din, void (*DrawInteraction)(const drawInteraction_t *) ) 
+static void RB_SubmittInteraction( drawInteraction_t *din, std::function<void(const drawInteraction_t *)> DrawInteraction ) 
 {
 	if ( !din->bumpImage ) 
 		return;
@@ -693,8 +621,16 @@ static void RB_SubmittInteraction( drawInteraction_t *din, void (*DrawInteractio
 		din->bumpImage = globalImages->flatNormalMap;
 
 	// if we wouldn't draw anything, don't call the Draw function
-	if ( ( ( din->diffuseColor[0] > 0 || din->diffuseColor[1] > 0 || din->diffuseColor[2] > 0 ) && din->diffuseImage != globalImages->blackImage ) ||
-	 ( ( din->specularColor[0] > 0 || din->specularColor[1] > 0 || din->specularColor[2] > 0 ) && din->specularImage != globalImages->blackImage ) ) 
+	if ( ( ( 
+		din->diffuseColor[0] > 0 || 
+		din->diffuseColor[1] > 0 || 
+		din->diffuseColor[2] > 0 ) && 
+		din->diffuseImage != globalImages->blackImage ) ||
+	 ( ( 
+		din->specularColor[0] > 0 || 
+		din->specularColor[1] > 0 || 
+		din->specularColor[2] > 0 ) && 
+		din->specularImage != globalImages->blackImage ) ) 
 	{
 		DrawInteraction( din );
 	}
@@ -708,14 +644,14 @@ This can be used by different draw_* backends to decompose a complex light / sur
 interaction into primitive interactions
 =============
 */
-void crBackend::CreateSingleDrawInteractions( const drawSurf_t *surf, void (*DrawInteraction)(const drawInteraction_t *) ) 
+void crBackend::CreateSingleDrawInteractions( const drawSurf_t *surf, std::function<void(const drawInteraction_t *)> DrawInteraction ) 
 {
-	const idMaterial	*surfaceShader = surf->material;
-	const float			*surfaceRegs = surf->shaderRegisters;
-	const viewLight_t	*vLight = viewLight;
-	const idMaterial	*lightShader = vLight->lightShader;
-	const float			*lightRegs = vLight->shaderRegisters;
-	drawInteraction_t	inter;
+	const idMaterial*					surfaceShader = surf->material;
+	const float*						surfaceRegs = surf->shaderRegisters;
+	const crAutoPointer<viewLight_t>	vLight = viewLight;
+	const idMaterial*					lightShader = vLight->lightShader;
+	const float*						lightRegs = vLight->shaderRegisters;
+	drawInteraction_t					inter;
 
 	if ( r_skipInteractions.GetBool() || !surf->geo || !surf->geo->ambientCache )
 		return;
@@ -728,31 +664,14 @@ void crBackend::CreateSingleDrawInteractions( const drawSurf_t *surf, void (*Dra
 	if ( surf->space != currentSpace ) 
 	{
 		currentSpace = surf->space;
-		m_uniforms->SetUniform( surf->space->modelViewMatrix, VERTEX_UNIFORM_LOCATION_VIEW_MATRIX );
+		m_uniforms->SetUniform( &surf->space->modelViewMatrix, VERTEX_UNIFORM_LOCATION_VIEW_MATRIX );
 	}
 
 	// change the scissor if needed
 	if ( r_useScissor.GetBool() && !currentScissor.Equals( surf->scissorRect ) ) 
 	{
-#if 0
 		currentScissor = surf->scissorRect;
-		m_currentPipeline->SetViewport( 
-			backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1, 
-			backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
-			backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
-			backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 
-		);
-#else
-	float clipRect[4] = 
-	{
-		(float)tr.viewportOffset[0] + viewDef->viewport.x1 + viewDef->scissor.x1, 
-		(float)tr.viewportOffset[1] + viewDef->viewport.y1 + viewDef->scissor.y1, 
-		(float)viewDef->scissor.x2 + 1 - viewDef->scissor.x1,
-		(float)viewDef->scissor.y2 + 1 - viewDef->scissor.y1 
-	};
-
-	m_uniforms->SetUniform( clipRect, VERTEX_UNIFORM_LOCATION_CLIP_BOUDS );
-#endif
+		Scissor( viewDef->viewport.x1 + currentScissor.x1, viewDef->viewport.y1 + currentScissor.y1, currentScissor.x2 + 1 - currentScissor.x1, currentScissor.y2 + 1 - currentScissor.y1 );
 	}
 
 	// hack depth range if needed
@@ -775,7 +694,8 @@ void crBackend::CreateSingleDrawInteractions( const drawSurf_t *surf, void (*Dra
 	idPlane lightProject[4];
 	for ( int i = 0 ; i < 4 ; i++ ) 
 	{
-		crTransform::GlobalPlaneToLocal( surf->space->modelMatrix, viewLight->lightProject[i], lightProject[i] );
+		lightProject[i] = surf->space->modelMatrix.GlobalPlaneToLocal( viewLight->lightProject[i] );
+		//crTransform::GlobalPlaneToLocal( surf->space->modelMatrix, viewLight->lightProject[i], lightProject[i] );
 	}
 
 	for ( int lightStageNum = 0 ; lightStageNum < lightShader->GetNumStages() ; lightStageNum++ ) 
@@ -882,16 +802,99 @@ void crBackend::CreateSingleDrawInteractions( const drawSurf_t *surf, void (*Dra
 }
 
 /*
+==================
+crBackend::ShowOverdraw
+==================
+*/
+void crBackend::ShowOverdraw( void ) 
+{
+	int					i = 0;
+	int					numDrawSurfs = 0;
+	const idMaterial *	material = nullptr;
+	drawSurf_t * *		drawSurfs = nullptr;
+	const drawSurf_t *	surf = nullptr;
+	viewLight_t *		vLight = nullptr;
+
+	if ( r_showOverDraw.GetInteger() == 0 ) 
+		return;
+
+	material = declManager->FindMaterial( "textures/common/overdrawtest", false );
+	if ( material == nullptr ) 
+		return;
+
+	drawSurfs = viewDef->drawSurfs;
+	numDrawSurfs = viewDef->numDrawSurfs;
+
+	int interactions = 0;
+	for ( vLight = viewDef->viewLights; vLight; vLight = vLight->next ) 
+	{
+		for ( surf = vLight->localInteractions; surf; surf = surf->nextOnLight ) 
+		{
+			interactions++;
+		}
+		
+		for ( surf = vLight->globalInteractions; surf; surf = surf->nextOnLight ) 
+		{
+			interactions++;
+		}
+	}
+
+	drawSurf_t **newDrawSurfs = (drawSurf_t **)tr.drawQueue->StaticAlloc( numDrawSurfs + interactions * sizeof( newDrawSurfs[0] ) );
+
+	for ( i = 0; i < numDrawSurfs; i++ ) 
+	{
+		surf = drawSurfs[i];
+		if ( surf->material ) {
+			const_cast<drawSurf_t *>(surf)->material = material;
+		}
+		newDrawSurfs[i] = const_cast<drawSurf_t *>(surf);
+	}
+
+	for ( vLight = viewDef->viewLights; vLight; vLight = vLight->next ) 
+	{
+		for ( surf = vLight->localInteractions; surf; surf = surf->nextOnLight ) 
+		{
+			const_cast<drawSurf_t *>(surf)->material = material;
+			newDrawSurfs[i++] = const_cast<drawSurf_t *>(surf);
+		}
+		
+		for ( surf = vLight->globalInteractions; surf; surf = surf->nextOnLight ) 
+		{
+			const_cast<drawSurf_t *>(surf)->material = material;
+			newDrawSurfs[i++] = const_cast<drawSurf_t *>(surf);
+		}
+		
+		vLight->localInteractions = nullptr;
+		vLight->globalInteractions = nullptr;
+	}
+
+	switch( r_showOverDraw.GetInteger() ) 
+	{
+		case 1: // geometry overdraw
+			viewDef->drawSurfs = newDrawSurfs;
+			viewDef->numDrawSurfs = numDrawSurfs;
+			break;
+		case 2: // light interaction overdraw
+			viewDef->drawSurfs = &newDrawSurfs[numDrawSurfs];
+			viewDef->numDrawSurfs = interactions;
+			break;
+		case 3: // geometry + light interaction overdraw
+			viewDef->drawSurfs = newDrawSurfs;
+			viewDef->numDrawSurfs += interactions;
+			break;
+	}
+}
+
+/*
 =============
-RB_DrawView
+crBackend::DrawView
 =============
 */
 void crBackend::DrawView( const void *data ) 
 {
-	const drawSurfsCommand_t	*cmd;
+	const drawSurfsCommand_t	*cmd = static_cast<const drawSurfsCommand_t *>( data );
 
-	cmd = (const drawSurfsCommand_t *)data;
-
+	// copy current viewdef
 	viewDef = cmd->viewDef;
 	
 	// we will need to do a new copyTexSubImage of the screen
@@ -921,12 +924,12 @@ void crBackend::DrawView( const void *data )
 
 	pc.c_surfaces += viewDef->numDrawSurfs;
 
-	RB_ShowOverdraw();
+	ShowOverdraw();
 
 	// render the scene, jumping to the hardware specific interaction renderers
 	STD_DrawView();
 
 	// restore the context for 2D drawing if we were stubbing it out
-	if ( r_skipRenderContext.GetBool() && viewDef->viewEntitys ) 
-		RB_SetDefaultGLState();
+	if ( r_skipRenderContext.GetBool() && viewDef->viewEntitys )
+		Pipeline( PIPE_DEFAULT );
 }
