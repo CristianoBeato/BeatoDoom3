@@ -31,14 +31,20 @@ public:
     crVKBuffer( void );
     ~crVKBuffer( void );
 
-    virtual bool        Create( const size_t size, const bool write = true, const bool read = false );
+    virtual bool        Create( const bufferUsage_t usage, const size_t size, const bool write = true, const bool read = false );
     virtual void        Destroy( void );
+    virtual void        Flush( const uintptr_t offset,  const size_t size ) const;
     VkBuffer            GetHandler( void ) const { return m_buffer; }
     VkDeviceMemory      GetMemory( void ) const { return m_memory; }
     
 private:
     VkBuffer        m_buffer;
+    VkBuffer        m_stagingBuffer;
     VkDeviceMemory  m_memory;
+    VkDeviceMemory  m_stagingMemory;
+
+    VkResult    CreateBuffer( VkBuffer &buffer, VkDeviceMemory &memory, VkDeviceSize size, VkBufferUsageFlags usage,  VkMemoryPropertyFlags properties );
+    void        MapBuffer( void );
 };
 
 #endif //!__VK_BUFFER_H__

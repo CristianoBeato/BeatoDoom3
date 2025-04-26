@@ -117,6 +117,7 @@ extern PFNGLCOPYNAMEDBUFFERSUBDATAPROC			glCopyNamedBufferSubData;
 extern PFNGLCLEARNAMEDBUFFERDATAPROC			glClearNamedBufferData;
 extern PFNGLMAPNAMEDBUFFERRANGEPROC				glMapNamedBufferRange;
 extern PFNGLUNMAPNAMEDBUFFERPROC				glUnmapNamedBuffer;
+extern PFNGLFLUSHMAPPEDNAMEDBUFFERRANGEPROC     glFlushMappedNamedBufferRange;
 extern PFNGLGETBUFFERPARAMETERIVPROC 			glGetBufferParameteriv;
 extern PFNGLGETBUFFERPOINTERVPROC 				glGetBufferPointerv;
 

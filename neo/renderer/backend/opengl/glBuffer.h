@@ -31,8 +31,9 @@ public:
     crGLBuffer( void );
     ~crGLBuffer( void );
 
-    virtual bool        Create( const size_t size, const bool write = true, const bool read = false );
+    virtual bool        Create( const bufferUsage_t usage, const size_t size, const bool write = true, const bool read = false );
     virtual void        Destroy( void );
+    virtual void        Flush( const uintptr_t offset,  const size_t size ) const;
     GLuint              GetHandler( void ) const { return m_buffer; }
 
 private:

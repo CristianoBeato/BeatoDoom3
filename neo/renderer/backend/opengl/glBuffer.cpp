@@ -42,7 +42,7 @@ crGLBuffer::~crGLBuffer( void )
     Destroy();
 }
 
-bool crGLBuffer::Create( const size_t size, const bool write, const bool read )
+bool crGLBuffer::Create( const bufferUsage_t usage, const size_t size, const bool write, const bool read )
 {
     GLbitfield flags = GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
 
@@ -72,4 +72,10 @@ void crGLBuffer::Destroy(void)
         glDeleteBuffers( 1, &m_buffer );
         m_buffer = 0;
     }
+}
+
+void crGLBuffer::Flush(const uintptr_t offset, const size_t size) const
+{
+    // Note: this is not needed, test the time lost in this
+    glFlushMappedNamedBufferRange( m_buffer, offset, size ); 
 }

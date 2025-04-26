@@ -68,6 +68,9 @@ public:
     uint32_t                        SwapChainImages( void ) const { return m_swapChain->GetImageCount(); }
     uint32_t                        GetFrameCount( void ) const { return frameCount; }
 
+    crAutoPointer<crCommandQueue>   GetGraphicQueue( void ) const { return m_graphicQueue; }
+    crAutoPointer<crCommandQueue>   GetTransferQueue( void ) const { return m_transferQueue; }
+    
 protected:
     friend class idImage;
     uint32_t                        GetCurrentTextureUnit( void ) { return currentTextureUnit; }
@@ -94,6 +97,7 @@ private:
 	crAutoPointer<viewDef_t>	    viewDef;                    //
     crAutoPointer<crSwapChain>      m_swapChain;                //
     crAutoPointer<crCommandQueue>   m_graphicQueue;             //
+    crAutoPointer<crCommandQueue>   m_transferQueue;            //
     crAutoPointer<crShaderStorage>  m_uniforms;                 //
     crAutoPointer<crFramebuffer>    m_currentFrameBuffer;       //
     crAutoPointer<crPipeline>       m_currentPipeline;          //

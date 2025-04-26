@@ -35,7 +35,7 @@ public:
     virtual void    Destroy( void ) override;
     virtual void    Begin( void ) override;
     virtual void    End( void ) override;
-
+    
 private:
     VkCommandPool   m_commandPool;
     VkCommandBuffer m_commandBuffer;

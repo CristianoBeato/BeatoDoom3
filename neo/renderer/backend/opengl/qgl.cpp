@@ -65,6 +65,7 @@ PFNGLCOPYNAMEDBUFFERSUBDATAPROC			    glCopyNamedBufferSubData = nullptr;
 PFNGLCLEARNAMEDBUFFERDATAPROC			    glClearNamedBufferData = nullptr;
 PFNGLMAPNAMEDBUFFERRANGEPROC			    glMapNamedBufferRange = nullptr;
 PFNGLUNMAPNAMEDBUFFERPROC				    glUnmapNamedBuffer = nullptr;
+PFNGLFLUSHMAPPEDNAMEDBUFFERRANGEPROC        glFlushMappedNamedBufferRange = nullptr;
 PFNGLGETBUFFERPARAMETERIVPROC 			    glGetBufferParameteriv = nullptr;
 PFNGLGETBUFFERPOINTERVPROC 				    glGetBufferPointerv = nullptr;
 
@@ -295,6 +296,7 @@ void crGLContext::LoadOpenGLFunctions( void )
     GL_LOAD_PROC( glClearNamedBufferData );
     GL_LOAD_PROC( glMapNamedBufferRange );
     GL_LOAD_PROC( glUnmapNamedBuffer );
+    GL_LOAD_PROC( glFlushMappedNamedBufferRange );
     GL_LOAD_PROC( glGetBufferParameteriv );
     GL_LOAD_PROC( glGetBufferPointerv );
 
