@@ -217,7 +217,7 @@ public:
 	void			SignalWorkAndWait( void );
 	
 private:
-	idList<threadType*, TAG_THREAD>	threadList;
+	idList<threadType*>		threadList;
 	bool					runOneThreadInline;	// use the signalling thread as one of the threads
 	bool					singleThreaded;		// set to true for debugging
 };
@@ -235,8 +235,8 @@ ID_INLINE idSysWorkerThreadGroup<threadType>::idSysWorkerThreadGroup( const char
 	numThreads = abs( numThreads );
 	for( int i = 0; i < numThreads; i++ )
 	{
-		threadType* thread = new( TAG_THREAD ) threadType;
-		thread->StartWorkerThread( va( "%s_worker%i", name, i ), ( core_t ) i, priority, stackSize );
+		threadType* thread = new threadType();
+		thread->StartWorkerThread( va( "%s_worker%i", name, i ),  stackSize );
 		threadList.Append( thread );
 	}
 }

@@ -181,6 +181,7 @@ template<typename _t> ID_INLINE constexpr const _t& clamp( const _t& v, const _t
 #include "system/intrinsics.h"
 #include "Exception.h"
 #include "SmartPointer.h"
+#include "AutoReferencePointer.h"
 // BEATO End
 
 // math

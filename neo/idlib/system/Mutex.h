@@ -26,7 +26,7 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #ifndef _MUTEX_H_
 #define _MUTEX_H_
 
-#include <atomic>
+#include <SDL3/SDL_atomic.h>
 
 extern const int32_t k_MAX_TIMEOUT;
 
@@ -141,29 +141,6 @@ private:
 	
 	idSysSignal( const idSysSignal& s ) = delete;
 	void				operator=( const idSysSignal& s ) = delete;
-};
-
-/*
-================================================
-idSysInterlockedInteger is a C++ wrapper for the low level system interlocked integer
-routines to atomically increment or decrement an integer.
-================================================
-*/
-class idSysInterlockedInteger
-{
-public:
-	idSysInterlockedInteger( void );
-	idSysInterlockedInteger( const idSysInterlockedInteger &ref );
-	~idSysInterlockedInteger( void );
-	int					Increment( void ); 		// atomically increments the integer and returns the new value
-	int					Decrement( void );		// atomically decrements the integer and returns the new value
-	int					Add( int v );			// atomically adds a value to the integer and returns the new value
-	int					Sub( int v );			// atomically subtracts a value from the integer and returns the new value
-	int					GetValue( void ) const;	// returns the current value of the integer
-	void				SetValue( int v );		// sets a new value, Note: this operation is not atomic
-
-private:
-	struct SDL_AtomicInt*	m_value;
 };
 
 #endif // !_MUTEX_H_

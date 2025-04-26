@@ -9,6 +9,8 @@ add_definitions( -D__IDLIB__ )
 ## Common utils
 ##
 SET( IDLIB_SOURCES
+	${CMAKE_CURRENT_SOURCE_DIR}/AutoReferencePointer.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/AutoReferencePointer.h
 	${CMAKE_CURRENT_SOURCE_DIR}/BitMsg.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/BitMsg.h
 	${CMAKE_CURRENT_SOURCE_DIR}/Dict.cpp
