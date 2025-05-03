@@ -111,8 +111,8 @@ void btCanvas::Render( void )
 {
 	auto renderer = GetRenderer();
 
-	renderer->Draw( GL_TRIANGLE_STRIP, m_rectOffset, 6 );
+	// renderer->Draw( GL_TRIANGLE_STRIP, m_rectOffset, 6 );
 
-	if (m_border)
-		renderer->Draw( GL_LINE_LOOP, m_borderOffsets, 4 );
+	//if (m_border)
+	//	renderer->Draw( GL_LINE_LOOP, m_borderOffsets, 4 );
 }

@@ -620,7 +620,7 @@ void	idMegaTexture::GenerateMegaPreview( const char *fileName ) {
 		}
 	}
 
-	byte *pic = (byte *)tr.framedata->StaticAlloc( width * height * tileBytes );
+	byte *pic = (byte *)tr.frameData->StaticAlloc( width * height * tileBytes );
 	byte	*oldBlock = (byte *)_alloca( tileBytes );
 	for ( int y = 0 ; y < height ; y++ ) {
 		for ( int x = 0 ; x < width ; x++ ) {

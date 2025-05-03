@@ -29,8 +29,6 @@ btBaseGui::btBaseGui( const char * name, const btBaseGui_t parent ) :
 	m_name(name),
 	m_parent( parent )
 {
-	if (m_parent)
-		AddChild( crAutoPointer<btBaseGui>( this ) );
 }
 
 btBaseGui::btBaseGui( const char * name, const btBaseGui_t parent, const btRenderGui_t renderer ) :
@@ -38,16 +36,12 @@ btBaseGui::btBaseGui( const char * name, const btBaseGui_t parent, const btRende
 	m_parent( parent ),
 	m_renderer( renderer )
 {
-	if (m_parent)
-		AddChild( crAutoPointer<btBaseGui>( this ) );
 }
 
 
 btBaseGui::~btBaseGui( void )
 {
 	RemoveAllChildren();
-	if (m_parent)
-		m_parent->RemoveChild( crAutoPointer<btBaseGui>( this ) );
 }
 
 void btBaseGui::DoUpdate( void )

@@ -33,7 +33,7 @@ btRenderGui::~btRenderGui( void )
 {
 }
 
-void btRenderGui::Draw( GLenum mode, const Uint32 offset, const Uint32 Count )
+void btRenderGui::Draw( uint32_t mode, const uint32_t offset, const uint32_t Count )
 {
-	glDrawElements( mode, Count, GL_UNSIGNED_SHORT, reinterpret_cast<void*>( (Uint64)offset ) );
+	//glDrawElements( mode, Count, GL_UNSIGNED_SHORT, reinterpret_cast<void*>( (Uint64)offset ) );
 }

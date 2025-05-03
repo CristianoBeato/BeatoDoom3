@@ -81,13 +81,13 @@ public:
 	void	Init( void );
 	void	ShutDown( void );
 
-	const Uint32	Cache( const Uint32 size, const void* data );
+	const uint32_t	Cache( const uint32_t size, const void* data );
 
-	void	Draw( GLenum mode, const Uint32 offset, const Uint32 Count );
+	void	Draw(  uint32_t mode, const uint32_t offset, const uint32_t Count );
 
 private:
-	GLuint	m_vertexBuffer;
-	GLuint	m_vertexArray;
+	uint32_t	m_vertexBuffer;
+	uint32_t	m_vertexArray;
 };
 
 #endif // !_RENDER_GUI_H_

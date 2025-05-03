@@ -53,10 +53,10 @@ NSBitmapImageRep::NSBitmapImageRep( int wide, int high ) {
 	height = high;
 }
 
-void R_StaticFree( void *data );
+void tr.frameData->StaticFree( void *data );
 
 NSBitmapImageRep::~NSBitmapImageRep() {
-	R_StaticFree( bmap );
+	tr.frameData->StaticFree( bmap );
 	bmap = NULL;
 }
 

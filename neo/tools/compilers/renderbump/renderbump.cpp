@@ -1192,7 +1192,7 @@ void RenderBump_f( const idCmdArgs &args ) {
 		common->Error( "Can't load model %s", source.c_str() );
 	}
 
-	renderBumps = (renderBump_t *)R_StaticAlloc( lowPoly->NumSurfaces() * sizeof( *renderBumps ) );
+	renderBumps = (renderBump_t *)tr.frameData->StaticAlloc( lowPoly->NumSurfaces() * sizeof( *renderBumps ) );
 	numRenderBumps = 0;
 	for ( i = 0 ; i < lowPoly->NumSurfaces() ; i++ ) {
 		const modelSurface_t	*ms = lowPoly->Surface( i );
@@ -1315,7 +1315,7 @@ void RenderBump_f( const idCmdArgs &args ) {
 		WriteRenderBump( &renderBumps[i], opt.outline << opt.antiAlias );
 	}
 
-	R_StaticFree( renderBumps );
+	tr.frameData->StaticFree( renderBumps );
 
 	endTime = Sys_Milliseconds();
 	common->Printf( "%5.2f seconds for renderBump\n", ( endTime - startTime ) / 1000.0 );
