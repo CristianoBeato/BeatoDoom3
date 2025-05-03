@@ -58,74 +58,11 @@ bool crFrontend::CreateAmbientCache( srfTriangles_t *tri, bool needsLighting )
 	if ( needsLighting && !tri->tangentsCalculated ) 
 		R_DeriveTangents( tri );
 
-	vertexCache.Alloc( tri->verts, tri->numVerts * sizeof( tri->verts[0] ), &tri->ambientCache );
+	//vertexCache.Alloc( tri->verts, tri->numVerts * sizeof( tri->verts[0] ), &tri->ambientCache );
+	tri->ambientCache = vertexCache.AllocVertex( tri->numVerts * sizeof( tri->verts[0] ), tri->verts );
 	if ( !tri->ambientCache ) 
 		return false;
 	
-	return true;
-}
-
-/*
-==================
-crFrontend::CreateLightingCache
-
-Returns false if the cache couldn't be allocated, in which case the surface should be skipped.
-==================
-*/
-bool crFrontend::CreateLightingCache( const idRenderEntityLocal *ent, const idRenderLightLocal *light, srfTriangles_t *tri ) 
-{
-	idVec3		localLightOrigin;
-
-	// fogs and blends don't need light vectors
-	if ( light->lightShader->IsFogLight() || light->lightShader->IsBlendLight() )
-		return true;
-
-	// not needed if we have vertex programs
-	if ( tr.backEndRendererHasVertexPrograms )
-		return true;
-
-	crTransform::GlobalPointToLocal( ent->modelMatrix, light->globalLightOrigin, localLightOrigin );
-
-	int	size = tri->ambientSurface->numVerts * sizeof( lightingCache_t );
-	lightingCache_t *cache = static_cast<lightingCache_t *>( _alloca16( size ) );
-
-#if 1
-
-	SIMDProcessor->CreateTextureSpaceLightVectors( &cache[0].localLightVector, localLightOrigin,
-												tri->ambientSurface->verts, tri->ambientSurface->numVerts, tri->indexes, tri->numIndexes );
-
-#else
-
-	bool *used = (bool *)_alloca16( tri->ambientSurface->numVerts * sizeof( used[0] ) );
-	memset( used, 0, tri->ambientSurface->numVerts * sizeof( used[0] ) );
-
-	// because the interaction may be a very small subset of the full surface,
-	// it makes sense to only deal with the verts used
-	for ( int j = 0; j < tri->numIndexes; j++ ) {
-		int i = tri->indexes[j];
-		if ( used[i] ) {
-			continue;
-		}
-		used[i] = true;
-
-		idVec3 lightDir;
-		const idDrawVert *v;
-
-		v = &tri->ambientSurface->verts[i];
-
-		lightDir = localLightOrigin - v->xyz;
-
-		cache[i].localLightVector[0] = lightDir * v->tangents[0];
-		cache[i].localLightVector[1] = lightDir * v->tangents[1];
-		cache[i].localLightVector[2] = lightDir * v->normal;
-	}
-
-#endif
-
-	vertexCache.Alloc( cache, size, &tri->lightingCache );
-	if ( !tri->lightingCache ) 
-		return false;
-
 	return true;
 }
 
@@ -141,7 +78,8 @@ void crFrontend::CreatePrivateShadowCache( srfTriangles_t *tri )
 	if ( !tri->shadowVertexes ) 
 		return;
 
-	vertexCache.Alloc( tri->shadowVertexes, tri->numVerts * sizeof( *tri->shadowVertexes ), &tri->shadowCache );
+	// vertexCache.Alloc( tri->shadowVertexes, tri->numVerts * sizeof( *tri->shadowVertexes ), &tri->shadowCache );
+	tri->shadowCache = vertexCache.AllocVertex( tri->numVerts * sizeof( *tri->shadowVertexes ), tri->shadowVertexes );
 }
 
 /*
@@ -179,7 +117,8 @@ void crFrontend::CreateVertexProgramShadowCache( srfTriangles_t *tri )
 
 #endif
 
-	vertexCache.Alloc( temp, tri->numVerts * 2 * sizeof( shadowCache_t ), &tri->shadowCache );
+	// vertexCache.Alloc( temp, tri->numVerts * 2 * sizeof( shadowCache_t ), &tri->shadowCache );
+	tri->shadowCache = vertexCache.AllocVertex( tri->numVerts * 2 * sizeof( shadowCache_t ), temp );
 }
 
 // BEATO Begin: done via shader
@@ -386,7 +325,7 @@ viewEntity_t *crFrontend::SetEntityDefViewEntity( idRenderEntityLocal *def )
 	def->viewCount = viewCount;
 
 	// set the model and modelview matricies
-	vModel = static_cast<viewEntity_t*>( tr.drawQueue->ClearedFrameAlloc( sizeof( *vModel ) ) );
+	vModel = static_cast<viewEntity_t*>( tr.frameData->ClearedFrameAlloc( sizeof( *vModel ) ) );
 	vModel->entityDef = def;
 
 	// the scissorRect will be expanded as the model bounds is accepted into visible portal chains
@@ -396,13 +335,12 @@ viewEntity_t *crFrontend::SetEntityDefViewEntity( idRenderEntityLocal *def )
 	vModel->modelDepthHack = def->parms.modelDepthHack;
 	vModel->weaponDepthHack = def->parms.weaponDepthHack;
 
-	crTransform::AxisToModelMatrix( def->parms.axis, def->parms.origin, vModel->modelMatrix );
-
+	vModel->modelMatrix.FromAxist( def->parms.axis, def->parms.origin );
+	
 	// we may not have a viewDef if we are just creating shadows at entity creation time
 	if ( viewDef ) 
 	{
-		crTransform::GlMultMatrix( vModel->modelMatrix, viewDef->worldSpace.modelViewMatrix, vModel->modelViewMatrix );
-
+		vModel->modelViewMatrix = vModel->modelMatrix * viewDef->worldSpace.modelViewMatrix; 
 		vModel->next = viewDef->viewEntitys;
 		viewDef->viewEntitys = vModel;
 	}
@@ -572,8 +510,8 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef )
 			// most things
 
 			// if the entity isn't viewed
-			auto viewDef = tr.frontEnd->GetViewDef();
-			auto viewCount = tr.frontEnd->GetViewCount();
+			auto viewDef = tr.frontend->GetViewDef();
+			auto viewCount = tr.frontend->GetViewCount();
 			if ( viewDef && edef->viewCount != viewCount ) 
 			{
 				// if the light doesn't cast shadows, skip
@@ -609,7 +547,7 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef )
 					// if this entity wasn't in view already, the scissor rect will be empty,
 					// so it will only be used for shadow casting
 					if ( !inter->IsEmpty() ) 
-						tr.frontEnd->SetEntityDefViewEntity( edef );
+						tr.frontend->SetEntityDefViewEntity( edef );
 
 					continue;
 				}
@@ -633,7 +571,7 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef )
 					// if this entity wasn't in view already, the scissor rect will be empty,
 					// so it will only be used for shadow casting
 					if ( !inter->IsEmpty() ) 
-						tr.frontEnd->SetEntityDefViewEntity( edef );
+						tr.frontend->SetEntityDefViewEntity( edef );
 					
 					continue;
 				}
@@ -646,14 +584,14 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef )
 
 			// do a check of the entity reference bounds against the light frustum,
 			// trying to avoid creating a viewEntity if it hasn't been already
-			float	modelMatrix[16];
-			float	*m;
+			crRenderMatrix	modelMatrix;
+			crRenderMatrix	m;
 
 			if ( edef->viewCount == viewCount ) 
 				m = edef->viewEntity->modelMatrix;
 			else 
 			{
-				crTransform::AxisToModelMatrix( edef->parms.axis, edef->parms.origin, modelMatrix );
+				modelMatrix.FromAxist( edef->parms.axis, edef->parms.origin );
 				m = modelMatrix;
 			}
 
@@ -667,7 +605,7 @@ void idRenderWorldLocal::CreateLightDefInteractions( idRenderLightLocal *ldef )
 
 			// if this entity wasn't in view already, the scissor rect will be empty,
 			// so it will only be used for shadow casting
-			tr.frontEnd->SetEntityDefViewEntity( edef );
+			tr.frontend->SetEntityDefViewEntity( edef );
 		}
 	}
 }
@@ -743,7 +681,7 @@ idScreenRect R_ClippedLightScissorRectangle( viewLight_t *vLight )
 	const idRenderLightLocal *light = vLight->lightDef;
 	idScreenRect r;
 	idFixedWinding w;
-	auto viewDef = tr.frontEnd->GetViewDef();
+	auto viewDef = tr.frontend->GetViewDef();
 
 	r.Clear();
 
@@ -752,9 +690,8 @@ idScreenRect R_ClippedLightScissorRectangle( viewLight_t *vLight )
 		const idWinding *ow = light->frustumWindings[i];
 
 		// projected lights may have one of the frustums degenerated
-		if ( !ow ) {
+		if ( !ow ) 
 			continue;
-		}
 
 		// the light frustum planes face out from the light,
 		// so the planes that have the view origin on the negative
@@ -767,10 +704,10 @@ idScreenRect R_ClippedLightScissorRectangle( viewLight_t *vLight )
 		w = *ow;
 
 		// now check the winding against each of the frustum planes
-		for ( j = 0; j < 5; j++ ) {
-			if ( !w.ClipInPlace( -viewDef->frustum[j] ) ) {
+		for ( j = 0; j < 5; j++ ) 
+		{
+			if ( !w.ClipInPlace( -viewDef->frustum[j] ) )
 				break;
-			}
 		}
 
 		// project these points to the screen and add to bounds
@@ -779,7 +716,7 @@ idScreenRect R_ClippedLightScissorRectangle( viewLight_t *vLight )
 			idPlane		eye, clip;
 			idVec3		ndc;
 
-			crTransform::TransformModelToClip( w[j].ToVec3(), viewDef->worldSpace.modelViewMatrix, viewDef->projectionMatrix, eye, clip );
+			crTransform::TransformModelToClip( w[j].ToVec3(), &viewDef->worldSpace.modelViewMatrix, &viewDef->projectionMatrix, eye, clip );
 
 			if ( clip[3] <= 0.01f ) {
 				clip[3] = 0.01f;
@@ -844,8 +781,7 @@ idScreenRect crFrontend::CalcLightScissorRectangle( viewLight_t *vLight )
 	tri = vLight->lightDef->frustumTris;
 	for ( int i = 0 ; i < tri->numVerts ; i++ ) 
 	{
-		crTransform::TransformModelToClip( tri->verts[i].xyz, viewDef->worldSpace.modelViewMatrix,
-			viewDef->projectionMatrix, eye, clip );
+		crTransform::TransformModelToClip( tri->verts[i].xyz, &viewDef->worldSpace.modelViewMatrix, &viewDef->projectionMatrix, eye, clip );
 
 		// if it is near clipped, clip the winding polygons to the view frustum
 		if ( clip[3] <= 1 ) 
@@ -944,7 +880,7 @@ void crFrontend::AddLightSurfaces( void )
 		}
 
 		// evaluate the light shader registers
-		float *lightRegs = static_cast<float*>( tr.drawQueue->FrameAlloc( lightShader->GetNumRegisters() * sizeof( float ) ) );
+		float *lightRegs = static_cast<float*>( tr.frameData->FrameAlloc( lightShader->GetNumRegisters() * sizeof( float ) ) );
 		vLight->shaderRegisters = lightRegs;
 		lightShader->EvaluateRegisters( lightRegs, light->parms.shaderParms, viewDef, light->parms.referenceSound );
 
@@ -1035,7 +971,7 @@ void crFrontend::AddLightSurfaces( void )
 		// that may cast shadows, even if they aren't directly visible.  Any real work
 		// will be deferred until we walk through the viewEntities
 		viewDef->renderWorld->CreateLightDefInteractions( light );
-		tr.pc.c_viewLights++;
+		pc.c_viewLights++;
 
 		// fog lights will need to draw the light frustum triangles, so make sure they
 		// are in the vertex cache
@@ -1080,13 +1016,13 @@ void crFrontend::AddLightSurfaces( void )
 			// touch the shadow surface so it won't get purged
 			vertexCache.Touch( tri->shadowCache );
 
-			if ( !tri->indexCache && r_useIndexBuffers.GetBool() ) 
-				vertexCache.Alloc( tri->indexes, tri->numIndexes * sizeof( tri->indexes[0] ), &tri->indexCache, true );
+			if ( !tri->indexCache )
+				tri->indexCache = vertexCache.AllocElement( tri->numIndexes * sizeof( tri->indexes[0] ), tri->indexes );
 			
 			if ( tri->indexCache ) 
 				vertexCache.Touch( tri->indexCache );
 
-			LinkLightSurf( &vLight->globalShadows, tri, nullptr, light, nullptr, vLight->scissorRect, true /* FIXME? */ );
+			// LinkLightSurf( &vLight->globalShadows, tri, nullptr, light, nullptr, vLight->scissorRect, true /* FIXME? */ );
 		}
 	}
 }
@@ -1107,7 +1043,7 @@ bool crFrontend::IssueEntityDefCallback( idRenderEntityLocal *def )
 		oldBounds = def->referenceBounds;
 
 	def->archived = false;		// will need to be written to the demo file
-	tr.pc.c_entityDefCallbacks++;
+	pc.c_entityDefCallbacks++;
 	if ( viewDef ) 
 		update = def->parms.callback( &def->parms, &viewDef->renderView );
 	else 
@@ -1143,7 +1079,7 @@ it and any necessary overlays
 */
 idRenderModel* crFrontend::EntityDefDynamicModel( idRenderEntityLocal *def ) 
 {
-	bool callbackUpdate;
+	bool callbackUpdate = false;
 
 	// allow deferred entities to construct themselves
 	if ( def->parms.callback ) 
@@ -1168,21 +1104,22 @@ idRenderModel* crFrontend::EntityDefDynamicModel( idRenderEntityLocal *def )
 		ClearEntityDefDynamicModel( def );
 	
 	// if we don't have a snapshot of the dynamic model, generate it now
-	if ( !def->dynamicModel ) {
+	if ( !def->dynamicModel ) 
+	{
 
 		// instantiate the snapshot of the dynamic model, possibly reusing memory from the cached snapshot
 		def->cachedDynamicModel = model->InstantiateDynamicModel( &def->parms, viewDef, def->cachedDynamicModel );
 
-		if ( def->cachedDynamicModel ) {
-
+		if ( def->cachedDynamicModel ) 
+		{
 			// add any overlays to the snapshot of the dynamic model
-			if ( def->overlay && !r_skipOverlays.GetBool() ) {
+			if ( def->overlay && !r_skipOverlays.GetBool() ) 
 				def->overlay->AddOverlaySurfacesToModel( def->cachedDynamicModel );
-			} else {
+			else 
 				idRenderModelOverlay::RemoveOverlaySurfacesFromModel( def->cachedDynamicModel );
-			}
 
-			if ( r_checkBounds.GetBool() ) {
+			if ( r_checkBounds.GetBool() ) 
+			{
 				idBounds b = def->cachedDynamicModel->Bounds();
 				if (	b[0][0] < def->referenceBounds[0][0] - CHECK_BOUNDS_EPSILON ||
 						b[0][1] < def->referenceBounds[0][1] - CHECK_BOUNDS_EPSILON ||
@@ -1204,7 +1141,7 @@ idRenderModel* crFrontend::EntityDefDynamicModel( idRenderEntityLocal *def )
 	{
 		idPlane eye, clip;
 		idVec3 ndc;
-		crTransform::TransformModelToClip( def->parms.origin, viewDef->worldSpace.modelViewMatrix, viewDef->projectionMatrix, eye, clip );
+		crTransform::TransformModelToClip( def->parms.origin, &viewDef->worldSpace.modelViewMatrix, &viewDef->projectionMatrix, eye, clip );
 		crTransform::TransformClipToDevice( clip, ndc );
 		def->parms.modelDepthHack = model->DepthHack() * ( 1.0f - ndc.z );
 	}
@@ -1228,7 +1165,7 @@ void crFrontend::AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *spa
 	static float	refRegs[MAX_EXPRESSION_REGISTERS];	// don't put on stack, or VC++ will do a page touch
 	float			generatedShaderParms[MAX_ENTITY_SHADER_PARMS];
 
-	drawSurf = static_cast<drawSurf_t *>( tr.drawQueue->FrameAlloc( sizeof( *drawSurf ) ) );
+	drawSurf = static_cast<drawSurf_t *>( tr.frameData->FrameAlloc( sizeof( *drawSurf ) ) );
 	drawSurf->geo = tri;
 	drawSurf->space = space;
 	drawSurf->material = shader;
@@ -1273,7 +1210,7 @@ void crFrontend::AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *spa
 	} 
 	else 
 	{
-		float *regs = static_cast<float *>( tr.drawQueue->FrameAlloc( shader->GetNumRegisters() * sizeof( float ) ) );
+		float *regs = static_cast<float *>( tr.frameData->FrameAlloc( shader->GetNumRegisters() * sizeof( float ) ) );
 		drawSurf->shaderRegisters = regs;
 
 		// a reference shader will take the calculated stage color value from another shader
@@ -1480,8 +1417,8 @@ void crFrontend::AddAmbientDrawsurfs( viewEntity_t *vEntity )
 			// touch it so it won't get purged
 			vertexCache.Touch( tri->ambientCache );
 
-			if ( r_useIndexBuffers.GetBool() && !tri->indexCache ) 
-				vertexCache.Alloc( tri->indexes, tri->numIndexes * sizeof( tri->indexes[0] ), &tri->indexCache, true );
+			if ( !tri->indexCache ) 
+				tri->indexCache = vertexCache.AllocElement( tri->numIndexes * sizeof( tri->indexes[0] ), tri->indexes );
 
 			if ( tri->indexCache ) 
 				vertexCache.Touch( tri->indexCache );
@@ -1530,9 +1467,9 @@ two or more lights.
 */
 void crFrontend::AddModelSurfaces( void ) 
 {
-	viewEntity_t		*vEntity;
-	idInteraction		*inter, *next;
-	idRenderModel		*model;
+	viewEntity_t		*vEntity = nullptr;
+	idInteraction		*inter = nullptr, *next = nullptr;
+	idRenderModel		*model = nullptr;
 
 	// clear the ambient surface list
 	viewDef->numDrawSurfs = 0;
@@ -1550,7 +1487,7 @@ void crFrontend::AddModelSurfaces( void )
 			vEntity->scissorRect.Intersect( scissorRect );
 
 			if ( r_showEntityScissors.GetBool() ) 
-				tr.frontEnd->ShowColoredScreenRect( vEntity->scissorRect, vEntity->entityDef->index );
+				ShowColoredScreenRect( vEntity->scissorRect, vEntity->entityDef->index );
 		}
 
 		float oldFloatTime;
@@ -1601,10 +1538,10 @@ void crFrontend::AddModelSurfaces( void )
 			}
 
 			AddAmbientDrawsurfs( vEntity );
-			tr.pc.c_visibleViewEntities++;
+			pc.c_visibleViewEntities++;
 		} 
 		else
-			tr.pc.c_shadowViewEntities++;
+			pc.c_shadowViewEntities++;
 		
 
 		//
@@ -1666,11 +1603,11 @@ void crFrontend::RemoveUnecessaryViewLights( void )
 		// if the light didn't have any lit surfaces visible, there is no need to
 		// draw any of the shadows.  We still keep the vLight for debugging
 		// draws
-		if ( !vLight->localInteractions && !vLight->globalInteractions && !vLight->translucentInteractions ) 
-		{
-			vLight->localShadows = nullptr;
-			vLight->globalShadows = nullptr;
-		}
+		//if ( !vLight->localInteractions && !vLight->globalInteractions && !vLight->translucentInteractions ) 
+		//{
+		//	vLight->localShadows = nullptr;
+		//	vLight->globalShadows = nullptr;
+		//}
 	}
 
 	if ( r_useShadowSurfaceScissor.GetBool() ) 
@@ -1693,20 +1630,20 @@ void crFrontend::RemoveUnecessaryViewLights( void )
 				surfRect.Union( surf->scissorRect );
 			}
 
-			for ( surf = vLight->localShadows ; surf ; surf = surf->nextOnLight ) 
-			{
-				const_cast<drawSurf_t *>(surf)->scissorRect.Intersect( surfRect );
-			}
+			//for ( surf = vLight->localShadows ; surf ; surf = surf->nextOnLight ) 
+			//{
+			//	const_cast<drawSurf_t *>(surf)->scissorRect.Intersect( surfRect );
+			//}
 
 			for ( surf = vLight->localInteractions ; surf ; surf = surf->nextOnLight ) 
 			{
 				surfRect.Union( surf->scissorRect );
 			}
 			
-			for ( surf = vLight->globalShadows ; surf ; surf = surf->nextOnLight ) 
-			{
-				const_cast<drawSurf_t *>(surf)->scissorRect.Intersect( surfRect );
-			}
+			//for ( surf = vLight->globalShadows ; surf ; surf = surf->nextOnLight ) 
+			//{
+			//	const_cast<drawSurf_t *>(surf)->scissorRect.Intersect( surfRect );
+			//}
 
 			for ( surf = vLight->translucentInteractions ; surf ; surf = surf->nextOnLight ) 
 			{

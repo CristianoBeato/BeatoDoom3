@@ -283,10 +283,9 @@ void	idRenderWorldLocal::WriteLoadMap() {
 /*
 ================
 WriteVisibleDefs
-
 ================
 */
-void	idRenderWorldLocal::WriteVisibleDefs( const crAutoPointer<viewDef_t> viewDef ) 
+void	idRenderWorldLocal::WriteVisibleDefs( const viewDefptr_t viewDef ) 
 {
 	// only the main renderWorld writes stuff to demos, not the wipes or
 	// menu renders

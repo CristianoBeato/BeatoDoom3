@@ -174,25 +174,25 @@ void idMaterial::FreeData( void )
 			}
 		}
 
-		tr.drawQueue->StaticFree( stages );
+		tr.frameData->StaticFree( stages );
 		stages = nullptr;
 	}
 
 	if ( expressionRegisters != nullptr) 
 	{
-		tr.drawQueue->StaticFree( expressionRegisters );
+		tr.frameData->StaticFree( expressionRegisters );
 		expressionRegisters = nullptr;
 	}
 
 	if ( constantRegisters != nullptr ) 
 	{
-		tr.drawQueue->StaticFree( constantRegisters );
+		tr.frameData->StaticFree( constantRegisters );
 		constantRegisters = nullptr;
 	}
 
 	if ( ops != nullptr ) 
 	{
-		tr.drawQueue->StaticFree( ops );
+		tr.frameData->StaticFree( ops );
 		ops = nullptr;
 	}
 }
@@ -2328,19 +2328,19 @@ bool idMaterial::Parse( const char *text, const int textLength )
 
 	if (numStages) 
 	{
-		stages = static_cast<shaderStage_t*>( tr.drawQueue->StaticAlloc( numStages * sizeof( stages[0] ) ) );
+		stages = static_cast<shaderStage_t*>( tr.framedata->StaticAlloc( numStages * sizeof( stages[0] ) ) );
 		memcpy( stages, pd->parseStages, numStages * sizeof( stages[0] ) );
 	}
 
 	if ( numOps ) 
 	{
-		ops = static_cast<expOp_t *>( tr.drawQueue->StaticAlloc( numOps * sizeof( ops[0] ) ) );
+		ops = static_cast<expOp_t *>( tr.framedata->StaticAlloc( numOps * sizeof( ops[0] ) ) );
 		memcpy( ops, pd->shaderOps, numOps * sizeof( ops[0] ) );
 	}
 
 	if ( numRegisters ) 
 	{
-		expressionRegisters = static_cast<float *>( tr.drawQueue->StaticAlloc( numRegisters * sizeof( expressionRegisters[0] ) ) );
+		expressionRegisters = static_cast<float *>( tr.framedata->StaticAlloc( numRegisters * sizeof( expressionRegisters[0] ) ) );
 		memcpy( expressionRegisters, pd->shaderRegisters, numRegisters * sizeof( expressionRegisters[0] ) );
 	}
 
@@ -2435,7 +2435,7 @@ set to their apropriate values.
 ===============
 */
 void idMaterial::EvaluateRegisters( float *registers, const float shaderParms[MAX_ENTITY_SHADER_PARMS],
-									const crAutoPointer<viewDef_t> view, idSoundEmitter *soundEmitter ) const {
+									const viewDefptr_t view, idSoundEmitter *soundEmitter ) const {
 	int		i, b;
 	expOp_t	*op;
 
@@ -2648,7 +2648,7 @@ void idMaterial::CheckForConstantRegisters()
 		return;
 
 	// evaluate the registers once, and save them 
-	constantRegisters = (float *)tr.drawQueue->ClearedStaticAlloc( GetNumRegisters() * sizeof( float ) );
+	constantRegisters = (float *)tr.frameData->ClearedStaticAlloc( GetNumRegisters() * sizeof( float ) );
 
 	float shaderParms[MAX_ENTITY_SHADER_PARMS];
 	memset( shaderParms, 0, sizeof( shaderParms ) );

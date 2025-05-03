@@ -50,18 +50,17 @@ typedef struct
 
 typedef struct 
 {
-	renderCommand_t				commandId, *next;
-	crAutoPointer<viewDef_t> 	viewDef;
+	renderCommand_t commandId, *next;
+	viewDefptr_t	viewDef;
 } drawSurfsCommand_t;
 
 typedef struct 
 {
-	renderCommand_t		commandId, *next;
+	renderCommand_t commandId, *next;
 	int		x, y, imageWidth, imageHeight;
 	idImage	*image;
 	int		cubeFace;					// when copying to a cubeMap
 } copyRenderCommand_t;
-
 
 // a request for frame memory will never fail
 // (until malloc fails), but it may force the
@@ -76,59 +75,79 @@ typedef struct frameMemoryBlock_s
 	byte	base[4];	// dynamically allocated as [size]
 } frameMemoryBlock_t;
 
+typedef struct 
+{
+    // one or more blocks of memory for all frame
+	// temporary allocations
+	frameMemoryBlock_t* memory = nullptr;
+
+	// alloc will point somewhere into the memory chain
+	frameMemoryBlock_t* alloc = nullptr;
+
+	srfTriangles_t*	firstDeferredFreeTriSurf = nullptr;
+	srfTriangles_t*	lastDeferredFreeTriSurf = nullptr;
+} frameData_t;
+
 // all of the information needed by the back end must be
 // contained in a frameData_t.  This entire structure is
 // duplicated so the front and back end can run in parallel
-// on an SMP machine (OBSOLETE: this capability has been removed)
-typedef struct 
-{
-	size_t				memoryHighwater;	// max used on any frame
-
-    // one or more blocks of memory for all frame
-	// temporary allocations
-	frameMemoryBlock_t* memory;
-
-	// alloc will point somewhere into the memory chain
-	frameMemoryBlock_t* alloc;
-
-	srfTriangles_t *	firstDeferredFreeTriSurf;
-	srfTriangles_t *	lastDeferredFreeTriSurf;
-
-
-	// the currently building command list 
-	// commands can be inserted at the front if needed, as for required
-	// dynamically generated textures
-	emptyCommand_t	*cmdHead, *cmdTail;		// may be of other command type based on commandId
-} frameData_t;
-
-class crDraw
+// on an SMP machine
+class crDrawFrameData
 {    
 public:
-    crDraw( void );
-    ~crDraw( void );
+	crDrawFrameData( void );
+    ~crDrawFrameData( void );
 
     void    			InitFrameData( void ); 
     void    			ShutdownFrameData( void ); 
+	void				ToggleSmpFrame( void );
     int     			CountFrameData( void );
-    void    			ToggleSmpFrame( void );
     void*   			FrameAlloc( size_t bytes );
     void*   			ClearedFrameAlloc( size_t bytes );
     void    			FrameFree( void *data );
     void*   			StaticAlloc( size_t bytes );		// just malloc with error checking
     void*   			ClearedStaticAlloc( size_t bytes );	// with memset
-    void    			StaticFree( void *data );    
-    void    			ClearCommandChain( void );
-    void    			AddDrawViewCmd( crAutoPointer<viewDef_t> parms );
-    void*   			GetCommandBuffer( size_t bytes );
-    void    			IssueRenderCommands( void );
+    void    			StaticFree( void *data );
+	void				FreeStaticTriSurf( srfTriangles_t *tri );
+	void				FreeDeferredTriSurfs( void );
 
-    ID_INLINE size_t  	GetMemoryHighwater( void ) const { return frameData ? frameData->memoryHighwater : 0; }
+    ID_INLINE size_t  	GetMemoryHighwater( void ) const { return memoryHighwater; }
 	ID_INLINE intptr_t	GetStaticAllocCount( void ) const { return staticAllocCount; }
-	ID_INLINE void		SetStaticAllocCountZero( void );
+	ID_INLINE void		SetStaticAllocCountZero( void ){ staticAllocCount = 0; };
 
 private:
+	uint32_t		m_frame;
 	intptr_t		staticAllocCount;	// running total of bytes allocated
+	size_t			memoryHighwater;	// max used on any frame
     frameData_t*	frameData;
+	frameData_t*	smpFrameData[SMP_FRAMES];
+};
+
+class crDrawCommandQueue
+{
+public:
+	crDrawCommandQueue( void );
+	~crDrawCommandQueue( void );
+
+	void    			AddDrawViewCmd( viewDefptr_t parms );
+    void*   			GetCommandBuffer( size_t bytes );
+	void    			IssueRenderCommands( void );
+	void    			ToggleSmpFrame( void );
+	void    			ClearCommandChain( void );
+    
+private:
+	// the currently building command list 
+	// commands can be inserted at the front if needed, as for required
+	// dynamically generated textures
+	emptyCommand_t	*cmdHead, *cmdTail;		// may be of other command type based on commandId
+};
+
+class crRenderAllocator
+{
+public:
+    void*   Allocate( const size_t size );
+    void*   Reallocate( void* ptr, const size_t size );
+    void    Deallocate( void* ptr );
 };
 
 #endif //!__DRAW_H__

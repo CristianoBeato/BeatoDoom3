@@ -620,7 +620,7 @@ void	idMegaTexture::GenerateMegaPreview( const char *fileName ) {
 		}
 	}
 
-	byte *pic = (byte *)tr.drawQueue->StaticAlloc( width * height * tileBytes );
+	byte *pic = (byte *)tr.framedata->StaticAlloc( width * height * tileBytes );
 	byte	*oldBlock = (byte *)_alloca( tileBytes );
 	for ( int y = 0 ; y < height ; y++ ) {
 		for ( int x = 0 ; x < width ; x++ ) {
@@ -637,7 +637,7 @@ void	idMegaTexture::GenerateMegaPreview( const char *fileName ) {
 
 	R_WriteTGA( outName.c_str(), pic, width * tileSize, height * tileSize, false );
 
-	tr.drawQueue->StaticFree( pic );
+	tr.frameData->StaticFree( pic );
 
 	delete fileHandle;
 }
@@ -742,7 +742,7 @@ void idMegaTexture::MakeMegaTexture_f( const idCmdArgs &args ) {
 
 	// we will process this one row of tiles at a time, since the entire thing
 	// won't fit in memory
-	byte	*targa_rgba = (byte *)R_StaticAlloc( TILE_SIZE * targa_header.width * 4 );
+	byte	*targa_rgba = (byte *)tr.frameData->StaticAlloc( TILE_SIZE * targa_header.width * 4 );
 
 	int blockRowsRemaining = mtHeader.tilesHigh;
 	while ( blockRowsRemaining-- ) {
@@ -897,7 +897,7 @@ void idMegaTexture::MakeMegaTexture_f( const idCmdArgs &args ) {
 		}
 	}
 
-	tr.drawQueue->StaticFree( targa_rgba );
+	tr.frameData->StaticFree( targa_rgba );
 
 	GenerateMegaMipMaps( &mtHeader, out );
 

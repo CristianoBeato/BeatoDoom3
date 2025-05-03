@@ -158,29 +158,30 @@ void idGuiModel::ReadFromDemo( idDemoFile *demo ) {
 EmitSurface
 ================
 */
-void idGuiModel::EmitSurface( guiModelSurface_t *surf, float modelMatrix[16], float modelViewMatrix[16], bool depthHack ) {
+void idGuiModel::EmitSurface( guiModelSurface_t *surf, crRenderMatrix modelMatrix, crRenderMatrix modelViewMatrix, bool depthHack ) 
+{
 	srfTriangles_t	*tri;
 
-	if ( surf->numVerts == 0 ) {
+	if ( surf->numVerts == 0 )
 		return;		// nothing in the surface
-	}
 
 	// copy verts and indexes
-	tri = (srfTriangles_t *)R_ClearedFrameAlloc( sizeof( *tri ) );
+	tri = (srfTriangles_t *)tr.drawQueue->ClearedFrameAlloc( sizeof( *tri ) );
 
 	tri->numIndexes = surf->numIndexes;
 	tri->numVerts = surf->numVerts;
-	tri->indexes = (glIndex_t *)R_FrameAlloc( tri->numIndexes * sizeof( tri->indexes[0] ) );
+	tri->indexes = (glIndex_t *)tr.drawQueue->FrameAlloc( tri->numIndexes * sizeof( tri->indexes[0] ) );
 	memcpy( tri->indexes, &indexes[surf->firstIndex], tri->numIndexes * sizeof( tri->indexes[0] ) );
 
 	// we might be able to avoid copying these and just let them reference the list vars
 	// but some things, like deforms and recursive
 	// guis, need to access the verts in cpu space, not just through the vertex range
-	tri->verts = (idDrawVert *)R_FrameAlloc( tri->numVerts * sizeof( tri->verts[0] ) );
+	tri->verts = (idDrawVert *)tr.drawQueue->FrameAlloc( tri->numVerts * sizeof( tri->verts[0] ) );
 	memcpy( tri->verts, &verts[surf->firstVert], tri->numVerts * sizeof( tri->verts[0] ) );
 
 	// move the verts to the vertex cache
-	tri->ambientCache = vertexCache.AllocFrameTemp( tri->verts, tri->numVerts * sizeof( tri->verts[0] ) );
+	//tri->ambientCache = vertexCache.AllocFrameTemp( tri->verts, tri->numVerts * sizeof( tri->verts[0] ) );
+	vertexCache.AllocVertex( &tri->ambientCache, tri->numVerts * sizeof( tri->verts[0] ), tri->verts, true );
 
 	// if we are out of vertex cache, don't create the surface
 	if ( !tri->ambientCache ) {
@@ -191,13 +192,13 @@ void idGuiModel::EmitSurface( guiModelSurface_t *surf, float modelMatrix[16], fl
 	memset( &renderEntity, 0, sizeof( renderEntity ) );
 	memcpy( renderEntity.shaderParms, surf->color, sizeof( surf->color ) );
 
-	viewEntity_t *guiSpace = (viewEntity_t *)R_ClearedFrameAlloc( sizeof( *guiSpace ) );
-	memcpy( guiSpace->modelMatrix, modelMatrix, sizeof( guiSpace->modelMatrix ) );
-	memcpy( guiSpace->modelViewMatrix, modelViewMatrix, sizeof( guiSpace->modelViewMatrix ) );
+	viewEntity_t *guiSpace = (viewEntity_t *)tr.drawQueue->ClearedFrameAlloc( sizeof( *guiSpace ) );
+	guiSpace->modelMatrix = modelMatrix;//memcpy( guiSpace->modelMatrix, modelMatrix, sizeof( guiSpace->modelMatrix ) );
+	guiSpace->modelViewMatrix = modelViewMatrix;//memcpy( guiSpace->modelViewMatrix, modelViewMatrix, sizeof( guiSpace->modelViewMatrix ) );
 	guiSpace->weaponDepthHack = depthHack;
 
 	// add the surface, which might recursively create another gui
-	R_AddDrawSurf( tri, guiSpace, &renderEntity, surf->material, tr.viewDef->scissor );
+	tr.frontend->AddDrawSurf( tri, guiSpace, &renderEntity, surf->material, tr.frontend->GetViewDef()->scissor );
 }
 
 /*
@@ -205,13 +206,15 @@ void idGuiModel::EmitSurface( guiModelSurface_t *surf, float modelMatrix[16], fl
 EmitToCurrentView
 ====================
 */
-void idGuiModel::EmitToCurrentView( float modelMatrix[16], bool depthHack ) {
-	float	modelViewMatrix[16];
+void idGuiModel::EmitToCurrentView( crRenderMatrix modelMatrix, bool depthHack ) 
+{
+	crRenderMatrix	modelViewMatrix;
 
-	myGlMultMatrix( modelMatrix, tr.viewDef->worldSpace.modelViewMatrix, 
-			modelViewMatrix );
+	//myGlMultMatrix( modelMatrix, tr.viewDef->worldSpace.modelViewMatrix, modelViewMatrix );
+	modelViewMatrix = modelMatrix * tr.frontend->GetViewDef()->worldSpace.modelViewMatrix;
 
-	for ( int i = 0 ; i < surfaces.Num() ; i++ ) {
+	for ( int i = 0 ; i < surfaces.Num() ; i++ ) 
+	{
 		EmitSurface( &surfaces[i], modelMatrix, modelViewMatrix, depthHack );
 	}
 }
@@ -223,17 +226,17 @@ idGuiModel::EmitFullScreen
 Creates a view that covers the screen and emit the surfaces
 ================
 */
-void idGuiModel::EmitFullScreen( void ) {
-	viewDef_t	*viewDef;
+void idGuiModel::EmitFullScreen( void ) 
+{
+	viewDefptr_t viewDef = viewDefptr_t::New();
+	viewDef.Memset( 0x00, 0, 1 );
 
-	if ( surfaces[0].numVerts == 0 ) {
+	if ( surfaces[0].numVerts == 0 ) 
 		return;
-	}
-
-	viewDef = (viewDef_t *)R_ClearedFrameAlloc( sizeof( *viewDef ) );
 
 	// for gui editor
-	if ( !tr.viewDef || !tr.viewDef->isEditor ) {
+	if ( !tr.frontend->GetViewDef() || !tr.frontend->GetViewDef()->isEditor ) 
+	{
 		viewDef->renderView.x = 0;
 		viewDef->renderView.y = 0;
 		viewDef->renderView.width = SCREEN_WIDTH;
@@ -245,21 +248,24 @@ void idGuiModel::EmitFullScreen( void ) {
 		viewDef->scissor.y1 = 0;
 		viewDef->scissor.x2 = viewDef->viewport.x2 - viewDef->viewport.x1;
 		viewDef->scissor.y2 = viewDef->viewport.y2 - viewDef->viewport.y1;
-	} else {
-		viewDef->renderView.x = tr.viewDef->renderView.x;
-		viewDef->renderView.y = tr.viewDef->renderView.y;
-		viewDef->renderView.width = tr.viewDef->renderView.width;
-		viewDef->renderView.height = tr.viewDef->renderView.height;
+	} 
+	else 
+	{
+		auto viewDef = tr.frontend->GetViewDef();
+		viewDef->renderView.x = viewDef->renderView.x;
+		viewDef->renderView.y = viewDef->renderView.y;
+		viewDef->renderView.width = viewDef->renderView.width;
+		viewDef->renderView.height = viewDef->renderView.height;
 		
-		viewDef->viewport.x1 = tr.viewDef->renderView.x;
-		viewDef->viewport.x2 = tr.viewDef->renderView.x + tr.viewDef->renderView.width;
-		viewDef->viewport.y1 = tr.viewDef->renderView.y;
-		viewDef->viewport.y2 = tr.viewDef->renderView.y + tr.viewDef->renderView.height;
+		viewDef->viewport.x1 = viewDef->renderView.x;
+		viewDef->viewport.x2 = viewDef->renderView.x + viewDef->renderView.width;
+		viewDef->viewport.y1 = viewDef->renderView.y;
+		viewDef->viewport.y2 = viewDef->renderView.y + viewDef->renderView.height;
 
-		viewDef->scissor.x1 = tr.viewDef->scissor.x1;
-		viewDef->scissor.y1 = tr.viewDef->scissor.y1;
-		viewDef->scissor.x2 = tr.viewDef->scissor.x2;
-		viewDef->scissor.y2 = tr.viewDef->scissor.y2;
+		viewDef->scissor.x1 = viewDef->scissor.x1;
+		viewDef->scissor.y1 = viewDef->scissor.y1;
+		viewDef->scissor.x2 = viewDef->scissor.x2;
+		viewDef->scissor.y2 = viewDef->scissor.y2;
 	}
 
 	viewDef->floatTime = tr.frameShaderTime;
@@ -279,21 +285,22 @@ void idGuiModel::EmitFullScreen( void ) {
 	viewDef->worldSpace.modelViewMatrix[15] = 1.0f;
 
 	viewDef->maxDrawSurfs = surfaces.Num();
-	viewDef->drawSurfs = (drawSurf_t **)R_FrameAlloc( viewDef->maxDrawSurfs * sizeof( viewDef->drawSurfs[0] ) );
+	viewDef->drawSurfs = (drawSurf_t **)tr.drawQueue->FrameAlloc( viewDef->maxDrawSurfs * sizeof( viewDef->drawSurfs[0] ) );
 	viewDef->numDrawSurfs = 0;
 
-	viewDef_t	*oldViewDef = tr.viewDef;
-	tr.viewDef = viewDef;
+	viewDefptr_t oldViewDef = viewDef;
+	viewDef = viewDef;
 
 	// add the surfaces to this view
-	for ( int i = 0 ; i < surfaces.Num() ; i++ ) {
+	for ( int i = 0 ; i < surfaces.Num() ; i++ ) 
+	{
 		EmitSurface( &surfaces[i], viewDef->worldSpace.modelMatrix, viewDef->worldSpace.modelViewMatrix, false );
 	}
 
-	tr.viewDef = oldViewDef;
+	viewDef = oldViewDef;
 
 	// add the command to draw this view
-	R_AddDrawViewCmd( viewDef );
+	tr.drawQueue->AddDrawViewCmd( viewDef );
 }
 
 /*
@@ -456,16 +463,17 @@ DrawStretchPic
 x/y/w/h are in the 0,0 to 640,480 range
 =============
 */
-void idGuiModel::DrawStretchPic( float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial *hShader ) {
+void idGuiModel::DrawStretchPic( float x, float y, float w, float h, float s1, float t1, float s2, float t2, const idMaterial *hShader ) 
+{
 	idDrawVert verts[4];
 	glIndex_t indexes[6];
 
-	if ( !glConfig.isInitialized ) {
+	if ( !glConfig.isInitialized ) 
 		return;
-	}
-	if ( !hShader ) {
+
+	
+	if ( !hShader ) 
 		return;
-	}
 
 	// clip to edges, because the pic may be going into a guiShader
 	// instead of full screen

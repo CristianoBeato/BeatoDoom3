@@ -155,7 +155,7 @@ bool crFrontend::PreciseCullSurface( const drawSurf_t *drawSurf, idBounds &ndcBo
 		j = 0;
 		unsigned int pointFlags = 0;
 
-		crTransform::TransformModelToClip( tri->verts[i].xyz, drawSurf->space->modelViewMatrix, viewDef->projectionMatrix, eye, clip );
+		crTransform::TransformModelToClip( tri->verts[i].xyz, &drawSurf->space->modelViewMatrix, &viewDef->projectionMatrix, eye, clip );
 
 		pointFlags = 0;
 		for ( j = 0; j < 3; j++ ) 
@@ -173,7 +173,7 @@ bool crFrontend::PreciseCullSurface( const drawSurf_t *drawSurf, idBounds &ndcBo
 	if ( pointAnd )
 		return true;
 
-	crTransform::GlobalPointToLocal( drawSurf->space->modelMatrix, viewDef->renderView.vieworg, localView );
+	localView = drawSurf->space->modelMatrix.GlobalPointToLocal( viewDef->renderView.vieworg );
 
 	for ( i = 0; i < tri->numIndexes; i += 3 ) 
 	{
@@ -203,9 +203,10 @@ bool crFrontend::PreciseCullSurface( const drawSurf_t *drawSurf, idBounds &ndcBo
 
 		// now find the exact screen bounds of the clipped triangle
 		w.SetNumPoints( 3 );
-		crTransform::LocalPointToGlobal( drawSurf->space->modelMatrix, v1, w[0].ToVec3() );
-		crTransform::LocalPointToGlobal( drawSurf->space->modelMatrix, v2, w[1].ToVec3() );
-		crTransform::LocalPointToGlobal( drawSurf->space->modelMatrix, v3, w[2].ToVec3() );
+		w[0].ToVec3() = drawSurf->space->modelMatrix.LocalPointToGlobal( v1 );
+		w[1].ToVec3() = drawSurf->space->modelMatrix.LocalPointToGlobal( v2 );
+		w[2].ToVec3() = drawSurf->space->modelMatrix.LocalPointToGlobal( v3 );
+
 		w[0].s = w[0].t = w[1].s = w[1].t = w[2].s = w[2].t = 0.0f;
 
 		for ( j = 0; j < 4; j++ ) 
@@ -234,14 +235,13 @@ bool crFrontend::PreciseCullSurface( const drawSurf_t *drawSurf, idBounds &ndcBo
 crFrontend::MirrorViewBySurface
 ========================
 */
-viewDef_t* crFrontend::MirrorViewBySurface( drawSurf_t *drawSurf )
+viewDefptr_t crFrontend::MirrorViewBySurface( drawSurf_t *drawSurf )
 {
-	viewDef_t		*parms;
+	viewDefptr_t	parms = viewDefptr_t::New();
 	orientation_t	surface, camera;
 	idPlane			originalPlane, plane;
 
 	// copy the viewport size from the original
-	parms = static_cast<viewDef_t*>( tr.drawQueue->FrameAlloc( sizeof( *parms ) ) );
 	*parms = *viewDef;
 	parms->renderView.viewID = 0;	// clear to allow player bodies to show up, and suppress view weapons
 
@@ -250,7 +250,8 @@ viewDef_t* crFrontend::MirrorViewBySurface( drawSurf_t *drawSurf )
 
 	// create plane axis for the portal we are seeing
 	R_PlaneForSurface( drawSurf->geo, originalPlane );
-	crTransform::LocalPlaneToGlobal( drawSurf->space->modelMatrix, originalPlane, plane );
+	//crTransform::LocalPlaneToGlobal( drawSurf->space->modelMatrix, originalPlane, plane );
+	plane = drawSurf->space->modelMatrix.LocalPlaneToGlobal( originalPlane );
 
 	surface.origin = plane.Normal() * -plane[3];
 	surface.axis[0] = plane.Normal();
@@ -273,7 +274,7 @@ viewDef_t* crFrontend::MirrorViewBySurface( drawSurf_t *drawSurf )
 	idVec3	viewOrigin = ( drawSurf->geo->bounds[0] + drawSurf->geo->bounds[1] ) * 0.5;
 	viewOrigin += ( originalPlane.Normal() * 16 );
 
-	crTransform::LocalPointToGlobal( drawSurf->space->modelMatrix, viewOrigin, parms->initialViewAreaOrigin );
+	parms->initialViewAreaOrigin = drawSurf->space->modelMatrix.LocalPointToGlobal( viewOrigin );
 
 	// set the mirror clip plane
 	parms->numClipPlanes = 1;
@@ -289,14 +290,13 @@ viewDef_t* crFrontend::MirrorViewBySurface( drawSurf_t *drawSurf )
 crFrontend::XrayViewBySurface
 ========================
 */
-viewDef_t* crFrontend::XrayViewBySurface( drawSurf_t *drawSurf ) 
+viewDefptr_t crFrontend::XrayViewBySurface( drawSurf_t *drawSurf ) 
 {
-	viewDef_t		*parms;
+	viewDefptr_t	parms = viewDefptr_t::New();
 	orientation_t	surface, camera;
 	idPlane			originalPlane, plane;
 
 	// copy the viewport size from the original
-	parms = static_cast<viewDef_t *>( tr.drawQueue->FrameAlloc( sizeof( *parms ) ) );
 	*parms = *viewDef;
 	parms->renderView.viewID = 0;	// clear to allow player bodies to show up, and suppress view weapons
 
@@ -313,7 +313,7 @@ crFrontend::RemoteRender
 */
 void crFrontend::RemoteRender( drawSurf_t *surf, textureStage_t *stage ) 
 {
-	viewDef_t		*parms;
+	viewDefptr_t parms = viewDefptr_t();
 
 	// remote views can be reused in a single frame
 	if ( stage->dynamicFrameCount == tr.frameCount )
@@ -324,7 +324,7 @@ void crFrontend::RemoteRender( drawSurf_t *surf, textureStage_t *stage )
 		return;
 
 	// copy the viewport size from the original
-	parms = static_cast<viewDef_t *>( tr.drawQueue->FrameAlloc( sizeof( *parms ) ) );
+	parms = viewDefptr_t::New();
 	*parms = *viewDef;
 
 	parms->isSubview = true;
@@ -352,7 +352,7 @@ void crFrontend::RemoteRender( drawSurf_t *surf, textureStage_t *stage )
 	parms->subviewSurface = surf;
 
 	// generate render commands for it
-	RenderView(parms);
+	RenderView( parms );
 
 	// copy this rendering to the image
 	stage->dynamicFrameCount = tr.frameCount;
@@ -370,7 +370,7 @@ crFrontend::MirrorRender
 */
 void crFrontend::MirrorRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect scissor ) 
 {
-	viewDef_t		*parms;
+	viewDefptr_t parms = viewDefptr_t();
 
 	// remote views can be reused in a single frame
 	if ( stage->dynamicFrameCount == tr.frameCount )
@@ -419,7 +419,7 @@ crFrontend::XrayRender
 */
 void crFrontend::XrayRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect scissor ) 
 {
-	viewDef_t		*parms;
+	viewDefptr_t parms = viewDefptr_t();
 
 	// remote views can be reused in a single frame
 	if ( stage->dynamicFrameCount == tr.frameCount ) 
@@ -469,7 +469,7 @@ crFrontend::GenerateSurfaceSubview
 bool crFrontend::GenerateSurfaceSubview( drawSurf_t *drawSurf ) 
 {
 	idBounds					ndcBounds;
-	crAutoPointer<viewDef_t>	parms;
+	viewDefptr_t				parms = viewDefptr_t();
 	const idMaterial*			shader = nullptr;
 
 	// for testing the performance hit
@@ -544,7 +544,7 @@ bool crFrontend::GenerateSurfaceSubview( drawSurf_t *drawSurf )
 	parms->isMirror = ( ( (int)parms->isMirror ^ (int)viewDef->isMirror ) != 0 );
 
 	// generate render commands for it
-	tr.frontEnd->RenderView( parms );
+	tr.frontend->RenderView( parms );
 
 	return true;
 }

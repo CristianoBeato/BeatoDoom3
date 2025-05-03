@@ -457,7 +457,7 @@ static void CreateSquareLight( void ) {
 
 	width = height = 128;
 
-	buffer = (byte *)R_StaticAlloc( 128 * 128 * 4 );
+	buffer = (byte *)tr.frameData->StaticAlloc( 128 * 128 * 4 );
 
 	for ( x = 0 ; x < 128 ; x++ ) {
 		if ( x < 32 ) {
@@ -492,7 +492,7 @@ static void CreateSquareLight( void ) {
 
 	R_WriteTGA( "lights/squarelight.tga", buffer, width, height );
 
-	R_StaticFree( buffer );
+	tr.frameData->StaticFree( buffer );
 }
 
 static void CreateFlashOff( void ) {
@@ -504,7 +504,7 @@ static void CreateFlashOff( void ) {
 	width = 256;
 	height = 4;
 
-	buffer = (byte *)R_StaticAlloc( width * height * 4 );
+	buffer = (byte *)tr.frameData->StaticAlloc( width * height * 4 );
 
 	for ( x = 0 ; x < width ; x++ ) {
 		for ( y = 0 ; y < height ; y++ ) {
@@ -518,7 +518,7 @@ static void CreateFlashOff( void ) {
 
 	R_WriteTGA( "lights/flashoff.tga", buffer, width, height );
 
-	R_StaticFree( buffer );
+	tr.frameData->StaticFree( buffer );
 }
 
 
@@ -1832,7 +1832,7 @@ void idImage::StartBackgroundImageLoad()
 		return;
 	}
 
-	bgl.file.buffer = R_StaticAlloc( bgl.file.length );
+	bgl.file.buffer = tr.frameData->StaticAlloc( bgl.file.length );
 
 // BEATO Begin:
 #if 0
@@ -1885,7 +1885,7 @@ void idImageManager::CompleteBackgroundImageLoads() {
 			fileSystem->CloseFile( image->bgl.f );
 			// upload the image
 			image->UploadPrecompressedImage( (byte *)image->bgl.file.buffer, image->bgl.file.length );
-			R_StaticFree( image->bgl.file.buffer );
+			tr.frameData->StaticFree( image->bgl.file.buffer );
 			if ( image_showBackgroundLoads.GetBool() ) {
 				common->Printf( "R_CompleteBackgroundImageLoad: %s\n", image->imgName.c_str() );
 			}
@@ -1934,7 +1934,7 @@ int idImageManager::SumOfUsedImages() {
 	for ( i = 0; i < images.Num(); i++ ) 
 	{
 		image = images[i];
-		if ( image->frameUsed == tr.backEnd->GetFrameCount() ) 
+		if ( image->frameUsed == tr.backend->GetFrameCount() ) 
 		{
 			total += image->StorageSize();
 		}

@@ -150,20 +150,21 @@ matricies have been changed.  This allow the culling tightness to be
 evaluated interactively.
 ======================
 */
-void R_LockSurfaceScene( viewDef_t *parms ) 
+void R_LockSurfaceScene( viewDefptr_t parms ) 
 {
 	drawSurfsCommand_t	*cmd;
 	viewEntity_t			*vModel;
 
 	// set the matrix for world space to eye space
-	tr.frontEnd->SetViewMatrix( parms );
+	tr.frontend->SetViewMatrix( parms );
 	tr.lockSurfacesCmd.viewDef->worldSpace = parms->worldSpace;
 	
 	// update the view origin and axis, and all
 	// the entity matricies
 	for( vModel = tr.lockSurfacesCmd.viewDef->viewEntitys ; vModel ; vModel = vModel->next ) 
 	{
-		crTransform::GlMultMatrix( vModel->modelMatrix, tr.lockSurfacesCmd.viewDef->worldSpace.modelViewMatrix, vModel->modelViewMatrix );
+		vModel->modelViewMatrix = vModel->modelMatrix * tr.lockSurfacesCmd.viewDef->worldSpace.modelViewMatrix;
+		//crTransform::GlMultMatrix( vModel->modelMatrix, tr.lockSurfacesCmd.viewDef->worldSpace.modelViewMatrix, vModel->modelViewMatrix );
 	}
 
 	// add the stored off surface commands again
@@ -276,7 +277,7 @@ GlobalToNormalizedDeviceCoordinates
 */
 void idRenderSystemLocal::GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idVec3 &ndc ) 
 {
-	frontEnd->GlobalToNormalizedDeviceCoordinates( global, ndc );
+	tr.frontend->GlobalToNormalizedDeviceCoordinates( global, ndc );
 }
 
 /*
@@ -440,74 +441,6 @@ void idRenderSystemLocal::DrawBigStringExt( int x, int y, const char *string, co
 //======================================================================================
 
 /*
-==================
-SetBackEndRenderer
-
-Check for changes in the back end renderSystem, possibly invalidating cached data
-==================
-*/
-void idRenderSystemLocal::SetBackEndRenderer() {
-	if ( !r_renderer.IsModified() ) {
-		return;
-	}
-
-	bool oldVPstate = backEndRendererHasVertexPrograms;
-
-	backEndRenderer = BE_BAD;
-
-	if ( idStr::Icmp( r_renderer.GetString(), "arb" ) == 0 ) 
-	{
-		backEndRenderer = BE_ARB;
-	} 
-	else if ( idStr::Icmp( r_renderer.GetString(), "arb2" ) == 0 ) 
-	{
-		if ( glConfig.allowARB2Path ) {
-			backEndRenderer = BE_ARB2;
-		}
-	} 
-	
-	// fallback
-	if ( backEndRenderer == BE_BAD ) 
-	{
-		// choose the best
-		if ( glConfig.allowARB2Path ) 
-			backEndRenderer = BE_ARB2;
-		else 
-			backEndRenderer = BE_ARB; // the others are considered experimental
-		
-	}
-
-	backEndRendererHasVertexPrograms = false;
-	backEndRendererMaxLight = 1.0;
-
-	switch( backEndRenderer ) 
-	{
-	case BE_ARB:
-		common->Printf( "using ARB renderSystem\n" );
-		break;
-	case BE_ARB2:
-		common->Printf( "using ARB2 renderSystem\n" );
-		backEndRendererHasVertexPrograms = true;
-		backEndRendererMaxLight = 999;
-		break;
-	default:
-		common->FatalError( "SetbackEndRenderer: bad back end" );
-	}
-
-	// clear the vertex cache if we are changing between
-	// using vertex programs and not, because specular and
-	// shadows will be different data
-	if ( oldVPstate != backEndRendererHasVertexPrograms ) {
-		vertexCache.PurgeAll();
-		if ( primaryWorld ) {
-			primaryWorld->FreeInteractions();
-		}
-	}
-
-	r_renderer.ClearModified();
-}
-
-/*
 ====================
 BeginFrame
 ====================
@@ -519,13 +452,11 @@ void idRenderSystemLocal::BeginFrame( int windowWidth, int windowHeight )
 	if ( !glConfig.isInitialized )
 		return;
 
-	// determine which back end we will use
-	SetBackEndRenderer();
-
 	guiModel->Clear();
 
 	// for the larger-than-window tiled rendering screenshots
-	if ( tiledViewport[0] ) {
+	if ( tiledViewport[0] ) 
+	{
 		windowWidth = tiledViewport[0];
 		windowHeight = tiledViewport[1];
 	}
@@ -540,7 +471,8 @@ void idRenderSystemLocal::BeginFrame( int windowWidth, int windowHeight )
 	currentRenderCrop = 0;
 
 	// screenFraction is just for quickly testing fill rate limitations
-	if ( r_screenFraction.GetInteger() != 100 ) {
+	if ( r_screenFraction.GetInteger() != 100 ) 
+	{
 		int	w = SCREEN_WIDTH * r_screenFraction.GetInteger() / 100.0f;
 		int h = SCREEN_HEIGHT * r_screenFraction.GetInteger() / 100.0f;
 		CropRenderSize( w, h );
@@ -569,6 +501,7 @@ void idRenderSystemLocal::BeginFrame( int windowWidth, int windowHeight )
 	cmd->commandId = RC_SET_BUFFER;
 	cmd->frameCount = frameCount;
 
+#if 0
 	if ( r_frontBuffer.GetBool() ) 
 	{
 		cmd->buffer = (int)GL_FRONT;
@@ -577,15 +510,18 @@ void idRenderSystemLocal::BeginFrame( int windowWidth, int windowHeight )
 	{
 		cmd->buffer = (int)GL_BACK;
 	}
+#endif
 }
 
-void idRenderSystemLocal::WriteDemoPics() {
+void idRenderSystemLocal::WriteDemoPics( void ) 
+{
 	session->writeDemo->WriteInt( DS_RENDER );
 	session->writeDemo->WriteInt( DC_GUI_MODEL );
 	guiModel->WriteToDemo( session->writeDemo );
 }
 
-void idRenderSystemLocal::DrawDemoPics() {
+void idRenderSystemLocal::DrawDemoPics( void ) 
+{
 	demoGuiModel->EmitFullScreen();
 }
 
@@ -596,24 +532,24 @@ EndFrame
 Returns the number of msec spent in the back end
 =============
 */
-void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
+void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) 
+{
 	emptyCommand_t *cmd;
 
-	if ( !glConfig.isInitialized ) {
+	if ( !glConfig.isInitialized )
 		return;
-	}
+
 
 	// close any gui drawing
 	guiModel->EmitFullScreen();
 	guiModel->Clear();
 
 	// save out timing information
-	if ( frontEndMsec ) {
-		*frontEndMsec = pc.frontEndMsec;
-	}
-	if ( backEndMsec ) {
-		*backEndMsec = backEnd.pc.msec;
-	}
+	if ( frontEndMsec ) 
+		*frontEndMsec = tr.frontend->GetPerformanceCounters().frontEndMsec;
+	
+	if ( backEndMsec ) 
+		*backEndMsec = tr.backend->Get.pc.msec;
 
 	// print any other statistics and clear all of them
 	R_PerformanceCounters();
@@ -622,7 +558,7 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 	R_CheckCvars();
 
     // check for errors
-	GL_CheckErrors();
+	// GL_CheckErrors();
 
 	// add the swapbuffers command
 	cmd = (emptyCommand_t *)drawQueue->GetCommandBuffer( sizeof( *cmd ) );
@@ -638,7 +574,8 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 	// we can now release the vertexes used this frame
 	vertexCache.EndFrame();
 
-	if ( session->writeDemo ) {
+	if ( session->writeDemo ) 
+	{
 		session->writeDemo->WriteInt( DS_RENDER );
 		session->writeDemo->WriteInt( DC_END_FRAME );
 		if ( r_showDemo.GetBool() ) {

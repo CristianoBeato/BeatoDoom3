@@ -684,8 +684,8 @@ void crBackend::CreateSingleDrawInteractions( const drawSurf_t *surf, std::funct
 	inter.surf = surf;
 	inter.lightFalloffImage = vLight->falloffImage;
 
-	crTransform::GlobalPointToLocal( surf->space->modelMatrix, vLight->globalLightOrigin, inter.localLightOrigin.ToVec3() );
-	crTransform::GlobalPointToLocal( surf->space->modelMatrix, viewDef->renderView.vieworg, inter.localViewOrigin.ToVec3() );
+	inter.localLightOrigin.ToVec3() = surf->space->modelMatrix.GlobalPointToLocal( vLight->globalLightOrigin );// crTransform::GlobalPointToLocal( surf->space->modelMatrix, vLight->globalLightOrigin, inter.localLightOrigin.ToVec3() );
+	inter.localViewOrigin.ToVec3() = surf->space->modelMatrix.GlobalPointToLocal( viewDef->renderView.vieworg );// crTransform::GlobalPointToLocal( surf->space->modelMatrix, viewDef->renderView.vieworg, inter.localViewOrigin.ToVec3() );
 	inter.localLightOrigin[3] = 0;
 	inter.localViewOrigin[3] = 1;
 	inter.ambientLight = lightShader->IsAmbientLight();
@@ -839,7 +839,7 @@ void crBackend::ShowOverdraw( void )
 		}
 	}
 
-	drawSurf_t **newDrawSurfs = (drawSurf_t **)tr.drawQueue->StaticAlloc( numDrawSurfs + interactions * sizeof( newDrawSurfs[0] ) );
+	drawSurf_t **newDrawSurfs = (drawSurf_t **)tr.frameData->StaticAlloc( numDrawSurfs + interactions * sizeof( newDrawSurfs[0] ) );
 
 	for ( i = 0; i < numDrawSurfs; i++ ) 
 	{

@@ -489,7 +489,7 @@ idVec3 v4to3(const idVec4 & v)
 	return idVec3(v.x/v.w, v.y/v.w, v.z/v.w);
 }
 
-void draw_polyhedron( const crAutoPointer<viewDef_t> viewDef, const polyhedron & p, idVec4 color )
+void draw_polyhedron( const viewDefptr_t viewDef, const polyhedron & p, idVec4 color )
 {
 	for(unsigned int i = 0; i < p.e.size(); i++)
 	{
@@ -497,7 +497,7 @@ void draw_polyhedron( const crAutoPointer<viewDef_t> viewDef, const polyhedron &
 	}
 }
 
-void draw_segments( const crAutoPointer<viewDef_t> viewDef, const MySegments & s, idVec4 color )
+void draw_segments( const viewDefptr_t viewDef, const MySegments & s, idVec4 color )
 {
 	for(unsigned int i = 0; i < s.size(); i+=2)
 	{
@@ -505,7 +505,7 @@ void draw_segments( const crAutoPointer<viewDef_t> viewDef, const MySegments & s
 	}
 }
 
-void world_to_hclip( const crAutoPointer<viewDef_t> viewDef, const idVec4 &global, idVec4 &clip ) 
+void world_to_hclip( const viewDefptr_t viewDef, const idVec4 &global, idVec4 &clip ) 
 {
 	int		i;
 	idVec4	view;
@@ -530,11 +530,8 @@ void world_to_hclip( const crAutoPointer<viewDef_t> viewDef, const idVec4 &globa
 	}
 }
 
-idScreenRect R_CalcIntersectionScissor( const idRenderLightLocal * lightDef,
-									    const idRenderEntityLocal * entityDef,
-										const crAutoPointer<viewDef_t> viewDef ) 
-										{
-
+idScreenRect R_CalcIntersectionScissor( const idRenderLightLocal * lightDef, const idRenderEntityLocal * entityDef, const viewDefptr_t viewDef ) 
+{
 	idMat4 omodel = make_idMat4( entityDef->modelMatrix );
 	idMat4 lmodel = make_idMat4( lightDef->modelMatrix );
 

@@ -156,7 +156,7 @@ R_InitTriSurfData
 */
 void R_InitTriSurfData( void ) 
 {
-	silEdges = (silEdge_t *)R_StaticAlloc( MAX_SIL_EDGES * sizeof( silEdges[0] ) );
+	silEdges = static_cast<silEdge_t *>(tr.frameData->StaticAlloc( MAX_SIL_EDGES * sizeof( silEdges[0] ) ) );
 
 	// initialize allocators for triangle surfaces
 	triVertexAllocator.Init();
@@ -188,7 +188,7 @@ R_ShutdownTriSurfData
 */
 void R_ShutdownTriSurfData( void ) 
 {
-	R_StaticFree( silEdges );
+	tr.frameData->StaticFree( silEdges );
 	silEdgeHash.Free();
 	srfTrianglesAllocator.Shutdown();
 	triVertexAllocator.Shutdown();
@@ -301,34 +301,34 @@ int R_TriSurfMemory( const srfTriangles_t *tri ) {
 		return total;
 	}
 
-	if ( tri->shadowVertexes != NULL ) {
+	if ( tri->shadowVertexes != nullptr ) {
 		total += tri->numVerts * sizeof( tri->shadowVertexes[0] );
-	} else if ( tri->verts != NULL ) {
-		if ( tri->ambientSurface == NULL || tri->verts != tri->ambientSurface->verts ) {
+	} else if ( tri->verts != nullptr ) {
+		if ( tri->ambientSurface == nullptr || tri->verts != tri->ambientSurface->verts ) {
 			total += tri->numVerts * sizeof( tri->verts[0] );
 		}
 	}
-	if ( tri->facePlanes != NULL ) {
+	if ( tri->facePlanes != nullptr ) {
 		total += tri->numIndexes / 3 * sizeof( tri->facePlanes[0] );
 	}
-	if ( tri->indexes != NULL ) {
-		if ( tri->ambientSurface == NULL || tri->indexes != tri->ambientSurface->indexes ) {
+	if ( tri->indexes != nullptr ) {
+		if ( tri->ambientSurface == nullptr || tri->indexes != tri->ambientSurface->indexes ) {
 			total += tri->numIndexes * sizeof( tri->indexes[0] );
 		}
 	}
-	if ( tri->silIndexes != NULL ) {
+	if ( tri->silIndexes != nullptr ) {
 		total += tri->numIndexes * sizeof( tri->silIndexes[0] );
 	}
-	if ( tri->silEdges != NULL ) {
+	if ( tri->silEdges != nullptr ) {
 		total += tri->numSilEdges * sizeof( tri->silEdges[0] );
 	}
-	if ( tri->dominantTris != NULL ) {
+	if ( tri->dominantTris != nullptr ) {
 		total += tri->numVerts * sizeof( tri->dominantTris[0] );
 	}
-	if ( tri->mirroredVerts != NULL ) {
+	if ( tri->mirroredVerts != nullptr ) {
 		total += tri->numMirroredVerts * sizeof( tri->mirroredVerts[0] );
 	}
-	if ( tri->dupVerts != NULL ) {
+	if ( tri->dupVerts != nullptr ) {
 		total += tri->numDupVerts * sizeof( tri->dupVerts[0] );
 	}
 
@@ -342,27 +342,35 @@ int R_TriSurfMemory( const srfTriangles_t *tri ) {
 R_FreeStaticTriSurfVertexCaches
 ==============
 */
-void R_FreeStaticTriSurfVertexCaches( srfTriangles_t *tri ) {
-	if ( tri->ambientSurface == NULL ) {
+void R_FreeStaticTriSurfVertexCaches( srfTriangles_t *tri ) 
+{
+	if ( tri->ambientSurface == nullptr ) 
+	{
 		// this is a real model surface
 		vertexCache.Free( tri->ambientCache );
-		tri->ambientCache = NULL;
-	} else {
-		// this is a light interaction surface that references
-		// a different ambient model surface
-		vertexCache.Free( tri->lightingCache );
-		tri->lightingCache = NULL;
-	}
-	if ( tri->indexCache ) {
+		tri->ambientCache = nullptr;
+	} 
+//	else 
+//	{
+//		// this is a light interaction surface that references
+//		// a different ambient model surface
+//		vertexCache.Free( tri->lightingCache );
+//		tri->lightingCache = nullptr;
+//	}
+	
+	if ( tri->indexCache ) 
+	{
 		vertexCache.Free( tri->indexCache );
-		tri->indexCache = NULL;
+		tri->indexCache = nullptr;
 	}
-	if ( tri->shadowCache && ( tri->shadowVertexes != NULL || tri->verts != NULL ) ) {
+	
+	if ( tri->shadowCache && ( tri->shadowVertexes != nullptr || tri->verts != nullptr ) ) 
+	{
 		// if we don't have tri->shadowVertexes, these are a reference to a
 		// shadowCache on the original surface, which a vertex program
 		// will take care of making unique for each light
 		vertexCache.Free( tri->shadowCache );
-		tri->shadowCache = NULL;
+		tri->shadowCache = nullptr;
 	}
 }
 
@@ -380,42 +388,42 @@ void R_ReallyFreeStaticTriSurf( srfTriangles_t *tri ) {
 
 	R_FreeStaticTriSurfVertexCaches( tri );
 
-	if ( tri->verts != NULL ) {
+	if ( tri->verts != nullptr ) {
 		// R_CreateLightTris points tri->verts at the verts of the ambient surface
-		if ( tri->ambientSurface == NULL || tri->verts != tri->ambientSurface->verts ) {
+		if ( tri->ambientSurface == nullptr || tri->verts != tri->ambientSurface->verts ) {
 			triVertexAllocator.Free( tri->verts );
 		}
 	}
 
 	if ( !tri->deformedSurface ) {
-		if ( tri->indexes != NULL ) {
+		if ( tri->indexes != nullptr ) {
 			// if a surface is completely inside a light volume R_CreateLightTris points tri->indexes at the indexes of the ambient surface
-			if ( tri->ambientSurface == NULL || tri->indexes != tri->ambientSurface->indexes ) {
+			if ( tri->ambientSurface == nullptr || tri->indexes != tri->ambientSurface->indexes ) {
 				triIndexAllocator.Free( tri->indexes );
 			}
 		}
-		if ( tri->silIndexes != NULL ) {
+		if ( tri->silIndexes != nullptr ) {
 			triSilIndexAllocator.Free( tri->silIndexes );
 		}
-		if ( tri->silEdges != NULL ) {
+		if ( tri->silEdges != nullptr ) {
 			triSilEdgeAllocator.Free( tri->silEdges );
 		}
-		if ( tri->dominantTris != NULL ) {
+		if ( tri->dominantTris != nullptr ) {
 			triDominantTrisAllocator.Free( tri->dominantTris );
 		}
-		if ( tri->mirroredVerts != NULL ) {
+		if ( tri->mirroredVerts != nullptr ) {
 			triMirroredVertAllocator.Free( tri->mirroredVerts );
 		}
-		if ( tri->dupVerts != NULL ) {
+		if ( tri->dupVerts != nullptr ) {
 			triDupVertAllocator.Free( tri->dupVerts );
 		}
 	}
 
-	if ( tri->facePlanes != NULL ) {
+	if ( tri->facePlanes != nullptr ) {
 		triPlaneAllocator.Free( tri->facePlanes );
 	}
 
-	if ( tri->shadowVertexes != NULL ) {
+	if ( tri->shadowVertexes != nullptr ) {
 		triShadowVertexAllocator.Free( tri->shadowVertexes );
 	}
 
@@ -436,27 +444,31 @@ void R_CheckStaticTriSurfMemory( const srfTriangles_t *tri ) {
 		return;
 	}
 
-	if ( tri->verts != NULL ) {
+	if ( tri->verts != nullptr ) {
 		// R_CreateLightTris points tri->verts at the verts of the ambient surface
-		if ( tri->ambientSurface == NULL || tri->verts != tri->ambientSurface->verts ) {
+		if ( tri->ambientSurface == nullptr || tri->verts != tri->ambientSurface->verts ) {
 			const char *error = triVertexAllocator.CheckMemory( tri->verts );
-			assert( error == NULL );
+			assert( error == nullptr );
 		}
 	}
 
-	if ( !tri->deformedSurface ) {
-		if ( tri->indexes != NULL ) {
+	if ( !tri->deformedSurface ) 
+	{
+		if ( tri->indexes != nullptr ) 
+		{
 			// if a surface is completely inside a light volume R_CreateLightTris points tri->indexes at the indexes of the ambient surface
-			if ( tri->ambientSurface == NULL || tri->indexes != tri->ambientSurface->indexes ) {
+			if ( tri->ambientSurface == nullptr || tri->indexes != tri->ambientSurface->indexes ) 
+			{
 				const char *error = triIndexAllocator.CheckMemory( tri->indexes );
-				assert( error == NULL );
+				assert( error == nullptr );
 			}
 		}
 	}
 
-	if ( tri->shadowVertexes != NULL ) {
+	if ( tri->shadowVertexes != nullptr ) 
+	{
 		const char *error = triShadowVertexAllocator.CheckMemory( tri->shadowVertexes );
-		assert( error == NULL );
+		assert( error == nullptr );
 	}
 }
 
@@ -484,43 +496,6 @@ void R_FreeDeferredTriSurfs( frameData_t *frame )
 
 /*
 ==============
-R_FreeStaticTriSurf
-
-This will defer the free until the current frame has run through the back end.
-==============
-*/
-void R_FreeStaticTriSurf( srfTriangles_t *tri ) 
-{
-	frameData_t		*frame;
-
-	if ( !tri ) {
-		return;
-	}
-
-	if ( tri->nextDeferredFree ) {
-		common->Error( "R_FreeStaticTriSurf: freed a freed triangle" );
-	}
-	frame = frameData;
-
-	if ( !frame ) {
-		// command line utility, or rendering in editor preview mode ( force )
-		R_ReallyFreeStaticTriSurf( tri );
-	} else {
-#ifdef ID_DEBUG_MEMORY
-		R_CheckStaticTriSurfMemory( tri );
-#endif
-		tri->nextDeferredFree = NULL;
-		if ( frame->lastDeferredFreeTriSurf ) {
-			frame->lastDeferredFreeTriSurf->nextDeferredFree = tri;
-		} else {
-			frame->firstDeferredFreeTriSurf = tri;
-		}
-		frame->lastDeferredFreeTriSurf = tri;
-	}
-}
-
-/*
-==============
 R_AllocStaticTriSurf
 ==============
 */
@@ -537,7 +512,8 @@ R_CopyStaticTriSurf
 This only duplicates the indexes and verts, not any of the derived data.
 =================
 */
-srfTriangles_t *R_CopyStaticTriSurf( const srfTriangles_t *tri ) {
+srfTriangles_t *R_CopyStaticTriSurf( const srfTriangles_t *tri ) 
+{
 	srfTriangles_t	*newTri;
 
 	newTri = R_AllocStaticTriSurf();
@@ -556,8 +532,9 @@ srfTriangles_t *R_CopyStaticTriSurf( const srfTriangles_t *tri ) {
 R_AllocStaticTriSurfVerts
 =================
 */
-void R_AllocStaticTriSurfVerts( srfTriangles_t *tri, int numVerts ) {
-	assert( tri->verts == NULL );
+void R_AllocStaticTriSurfVerts( srfTriangles_t *tri, int numVerts ) 
+{
+	assert( tri->verts == nullptr );
 	tri->verts = triVertexAllocator.Alloc( numVerts );
 }
 
@@ -566,8 +543,9 @@ void R_AllocStaticTriSurfVerts( srfTriangles_t *tri, int numVerts ) {
 R_AllocStaticTriSurfIndexes
 =================
 */
-void R_AllocStaticTriSurfIndexes( srfTriangles_t *tri, int numIndexes ) {
-	assert( tri->indexes == NULL );
+void R_AllocStaticTriSurfIndexes( srfTriangles_t *tri, int numIndexes ) 
+{
+	assert( tri->indexes == nullptr );
 	tri->indexes = triIndexAllocator.Alloc( numIndexes );
 }
 
@@ -576,8 +554,9 @@ void R_AllocStaticTriSurfIndexes( srfTriangles_t *tri, int numIndexes ) {
 R_AllocStaticTriSurfShadowVerts
 =================
 */
-void R_AllocStaticTriSurfShadowVerts( srfTriangles_t *tri, int numVerts ) {
-	assert( tri->shadowVertexes == NULL );
+void R_AllocStaticTriSurfShadowVerts( srfTriangles_t *tri, int numVerts ) 
+{
+	assert( tri->shadowVertexes == nullptr );
 	tri->shadowVertexes = triShadowVertexAllocator.Alloc( numVerts );
 }
 
@@ -657,7 +636,7 @@ R_FreeStaticTriSurfSilIndexes
 */
 void R_FreeStaticTriSurfSilIndexes( srfTriangles_t *tri ) {
 	triSilIndexAllocator.Free( tri->silIndexes );
-	tri->silIndexes = NULL;
+	tri->silIndexes = nullptr;
 }
 
 /*
@@ -715,12 +694,12 @@ R_CreateSilRemap
 =================
 */
 static int *R_CreateSilRemap( const srfTriangles_t *tri ) {
-	int		c_removed, c_unique;
-	int		*remap;
-	int		i, j, hashKey;
-	const idDrawVert *v1, *v2;
+	int		i = 0, j = 0, hashKey = 0;
+	int		c_removed = 0, c_unique = 0;
+	int		*remap = nullptr;
+	const idDrawVert *v1 = nullptr, *v2 = nullptr;
 
-	remap = (int *)R_ClearedStaticAlloc( tri->numVerts * sizeof( remap[0] ) );
+	remap = static_cast<int *>( tr.frameData->ClearedStaticAlloc( tri->numVerts * sizeof( remap[0] ) ) );
 
 	if ( !r_useSilRemap.GetBool() ) {
 		for ( i = 0 ; i < tri->numVerts ; i++ ) {
@@ -733,22 +712,25 @@ static int *R_CreateSilRemap( const srfTriangles_t *tri ) {
 
 	c_removed = 0;
 	c_unique = 0;
-	for ( i = 0 ; i < tri->numVerts ; i++ ) {
+	for ( i = 0 ; i < tri->numVerts ; i++ ) 
+	{
 		v1 = &tri->verts[i];
 
 		// see if there is an earlier vert that it can map to
 		hashKey = hash.GenerateKey( v1->xyz );
-		for ( j = hash.First( hashKey ); j >= 0; j = hash.Next( j ) ) {
+		for ( j = hash.First( hashKey ); j >= 0; j = hash.Next( j ) ) 
+		{
 			v2 = &tri->verts[j];
-			if ( v2->xyz[0] == v1->xyz[0]
-				&& v2->xyz[1] == v1->xyz[1]
-				&& v2->xyz[2] == v1->xyz[2] ) {
+			if ( v2->xyz[0] == v1->xyz[0] && v2->xyz[1] == v1->xyz[1] && v2->xyz[2] == v1->xyz[2] ) 
+			{
 				c_removed++;
 				remap[i] = j;
 				break;
 			}
 		}
-		if ( j < 0 ) {
+
+		if ( j < 0 ) 
+		{
 			c_unique++;
 			remap[i] = i;
 			hash.Add( hashKey, i );
@@ -766,24 +748,27 @@ Uniquing vertexes only on xyz before creating sil edges reduces
 the edge count by about 20% on Q3 models
 =================
 */
-void R_CreateSilIndexes( srfTriangles_t *tri ) {
+void R_CreateSilIndexes( srfTriangles_t *tri ) 
+{
 	int		i;
 	int		*remap;
 
-	if ( tri->silIndexes ) {
+	if ( tri->silIndexes ) 
+	{
 		triSilIndexAllocator.Free( tri->silIndexes );
-		tri->silIndexes = NULL;
+		tri->silIndexes = nullptr;
 	}
 
 	remap = R_CreateSilRemap( tri );
 
 	// remap indexes to the first one
 	tri->silIndexes = triSilIndexAllocator.Alloc( tri->numIndexes );
-	for ( i = 0; i < tri->numIndexes; i++ ) {
+	for ( i = 0; i < tri->numIndexes; i++ ) 
+	{
 		tri->silIndexes[i] = remap[tri->indexes[i]];
 	}
 
-	R_StaticFree( remap );
+	tr.frameData->StaticFree( remap );
 }
 
 /*
@@ -1304,7 +1289,7 @@ static void	R_DuplicateMirroredVertexes( srfTriangles_t *tri ) {
 
 	// now create the new list
 	if ( totalVerts == tri->numVerts ) {
-		tri->mirroredVerts = NULL;
+		tri->mirroredVerts = nullptr;
 		return;
 	}
 
@@ -1456,25 +1441,28 @@ R_BuildDominantTris
 Find the largest triangle that uses each vertex
 ===================
 */
-typedef struct {
+typedef struct 
+{
 	int		vertexNum;
 	int		faceNum;
 } indexSort_t;
 
-static int IndexSort( const void *a, const void *b ) {
-	if ( ((indexSort_t *)a)->vertexNum < ((indexSort_t *)b)->vertexNum ) {
+static int IndexSort( const void *a, const void *b ) 
+{
+	if ( ((indexSort_t *)a)->vertexNum < ((indexSort_t *)b)->vertexNum ) 
 		return -1;
-	}
-	if ( ((indexSort_t *)a)->vertexNum > ((indexSort_t *)b)->vertexNum ) {
+
+	if ( ((indexSort_t *)a)->vertexNum > ((indexSort_t *)b)->vertexNum ) 
 		return 1;
-	}
+	
 	return 0;
 }
 
-void R_BuildDominantTris( srfTriangles_t *tri ) {
+void R_BuildDominantTris( srfTriangles_t *tri ) 
+{
 	int i, j;
 	dominantTri_t *dt;
-	indexSort_t *ind = (indexSort_t *)R_StaticAlloc( tri->numIndexes * sizeof( *ind ) );
+	indexSort_t *ind = static_cast<indexSort_t *>( tr.frameData->StaticAlloc( tri->numIndexes * sizeof( *ind ) ) );
 
 	for ( i = 0; i < tri->numIndexes; i++ ) {
 		ind[i].vertexNum = tri->indexes[i];
@@ -1569,7 +1557,7 @@ void R_BuildDominantTris( srfTriangles_t *tri ) {
 		}
 	}
 
-	R_StaticFree( ind );
+	tr.frameData->StaticFree( ind );
 }
 
 /*
@@ -1757,7 +1745,7 @@ void R_DeriveTangents( srfTriangles_t *tri, bool allocFacePlanes )
 
 #if 0
 
-	if ( tri->silIndexes != NULL ) {
+	if ( tri->silIndexes != nullptr ) {
 		for ( i = 0; i < tri->numVerts; i++ ) {
 			tri->verts[i].normal.Zero();
 		}
@@ -1997,7 +1985,7 @@ void R_RemoveUnusedVerts( srfTriangles_t *tri ) {
 		// this doesn't realloc the arrays to save the memory used by the unused verts
 	}
 
-	R_StaticFree( mark );
+	tr.frameData->StaticFree( mark );
 }
 
 /*
@@ -2225,25 +2213,25 @@ R_FreeDeformInfo
 ===================
 */
 void R_FreeDeformInfo( deformInfo_t *deformInfo ) {
-	if ( deformInfo->indexes != NULL ) {
+	if ( deformInfo->indexes != nullptr ) {
 		triIndexAllocator.Free( deformInfo->indexes );
 	}
-	if ( deformInfo->silIndexes != NULL ) {
+	if ( deformInfo->silIndexes != nullptr ) {
 		triSilIndexAllocator.Free( deformInfo->silIndexes );
 	}
-	if ( deformInfo->silEdges != NULL ) {
+	if ( deformInfo->silEdges != nullptr ) {
 		triSilEdgeAllocator.Free( deformInfo->silEdges );
 	}
-	if ( deformInfo->dominantTris != NULL ) {
+	if ( deformInfo->dominantTris != nullptr ) {
 		triDominantTrisAllocator.Free( deformInfo->dominantTris );
 	}
-	if ( deformInfo->mirroredVerts != NULL ) {
+	if ( deformInfo->mirroredVerts != nullptr ) {
 		triMirroredVertAllocator.Free( deformInfo->mirroredVerts );
 	}
-	if ( deformInfo->dupVerts != NULL ) {
+	if ( deformInfo->dupVerts != nullptr ) {
 		triDupVertAllocator.Free( deformInfo->dupVerts );
 	}
-	R_StaticFree( deformInfo );
+	tr.frameData->StaticFree( deformInfo );
 }
 
 /*
@@ -2254,22 +2242,22 @@ R_DeformInfoMemoryUsed
 int R_DeformInfoMemoryUsed( deformInfo_t *deformInfo ) {
 	int total = 0;
 
-	if ( deformInfo->indexes != NULL ) {
+	if ( deformInfo->indexes != nullptr ) {
 		total += deformInfo->numIndexes * sizeof( deformInfo->indexes[0] );
 	}
-	if ( deformInfo->silIndexes != NULL ) {
+	if ( deformInfo->silIndexes != nullptr ) {
 		total += deformInfo->numIndexes * sizeof( deformInfo->silIndexes[0] );
 	}
-	if ( deformInfo->silEdges != NULL ) {
+	if ( deformInfo->silEdges != nullptr ) {
 		total += deformInfo->numSilEdges * sizeof( deformInfo->silEdges[0] );
 	}
-	if ( deformInfo->dominantTris != NULL ) {
+	if ( deformInfo->dominantTris != nullptr ) {
 		total += deformInfo->numSourceVerts * sizeof( deformInfo->dominantTris[0] );
 	}
-	if ( deformInfo->mirroredVerts != NULL ) {
+	if ( deformInfo->mirroredVerts != nullptr ) {
 		total += deformInfo->numMirroredVerts * sizeof( deformInfo->mirroredVerts[0] );
 	}
-	if ( deformInfo->dupVerts != NULL ) {
+	if ( deformInfo->dupVerts != nullptr ) {
 		total += deformInfo->numDupVerts * sizeof( deformInfo->dupVerts[0] );
 	}
 

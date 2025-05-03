@@ -115,7 +115,7 @@ void crTransform::PointTimesMatrix( const float modelMatrix[16], const idVec4 &i
 
 void crTransform::GlobalPointToLocal( const float modelMatrix[16], const idVec3 &in, idVec3 &out ) 
 {
-#if ID_USE_INSTRINSEC
+#if 0 //ID_USE_INSTRINSEC
 	__m128 matCol1 = _mm_loadu_ps(&modelMatrix[0]);
 	__m128 matCol2 = _mm_loadu_ps(&modelMatrix[4]);
 	__m128 matCol3 = _mm_loadu_ps(&modelMatrix[8]);

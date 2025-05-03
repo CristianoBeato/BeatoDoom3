@@ -622,16 +622,16 @@ void R_ReportImageDuplication_f( const idCmdArgs &args ) {
 			R_LoadImageProgram( image2->imgName, &data2, &w2, &h2, NULL );
 
 			if ( w2 != w1 || h2 != h1 ) {
-				tr.drawQueue->StaticFree( data2 );
+				tr.frameData->StaticFree( data2 );
 				continue;
 			}
 
 			if ( memcmp( data1, data2, w1*h1*4 ) ) {
-				tr.drawQueue->StaticFree( data2 );
+				tr.frameData->StaticFree( data2 );
 				continue;
 			}
 
-			tr.drawQueue->StaticFree( data2 );
+			tr.frameData->StaticFree( data2 );
 
 			common->Printf( "%s == %s\n", image1->imgName.c_str(), image2->imgName.c_str() );
 			session->UpdateScreen( true );
@@ -639,7 +639,7 @@ void R_ReportImageDuplication_f( const idCmdArgs &args ) {
 			break;
 		}
 
-		tr.drawQueue->StaticFree( data1 );
+		tr.frameData->StaticFree( data1 );
 	}
 	common->Printf( "%i / %i collisions\n", count, globalImages->images.Num() );
 }
@@ -743,7 +743,7 @@ If ref isn't specified, the full session UpdateScreen will be done.
 */
 void R_ReadTiledPixels( int width, int height, byte *buffer, renderView_t *ref = NULL ) {
 	// include extra space for OpenGL padding to word boundaries
-	byte	*temp = (byte *)tr.drawQueue->StaticAlloc( (glConfig.vidWidth+3) * glConfig.vidHeight * 3 );
+	byte	*temp = (byte *)tr.frameData->StaticAlloc( (glConfig.vidWidth+3) * glConfig.vidHeight * 3 );
 
 	int	oldWidth = glConfig.vidWidth;
 	int oldHeight = glConfig.vidHeight;
@@ -795,7 +795,7 @@ void R_ReadTiledPixels( int width, int height, byte *buffer, renderView_t *ref =
 	tr.tiledViewport[0] = 0;
 	tr.tiledViewport[1] = 0;
 
-	tr.drawQueue->StaticFree( temp );
+	tr.frameData->StaticFree( temp );
 
 	glConfig.vidWidth = oldWidth;
 	glConfig.vidHeight = oldHeight;
@@ -1439,12 +1439,6 @@ extern	PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT;
 	} else if ( tss ) {
 		common->Printf( "Using two sided stencil\n" );
 	}
-
-	if ( vertexCache.IsFast() ) {
-		common->Printf( "Vertex cache is fast\n" );
-	} else {
-		common->Printf( "Vertex cache is SLOW\n" );
-	}
 }
 
 /*
@@ -1481,7 +1475,7 @@ void R_VidRestart_f( const idCmdArgs &args )
 	renderModelManager->FreeModelVertexCaches();
 
 	// free any current world interaction surfaces and vertex caches
-	tr.frontEnd->FreeDerivedData();
+	tr.frontend->FreeDerivedData();
 
 	// make sure the defered frees are actually freed
 	tr.drawQueue->ToggleSmpFrame();
@@ -1533,9 +1527,9 @@ void R_VidRestart_f( const idCmdArgs &args )
 	}
 
 	// make sure the regeneration doesn't use anything no longer valid
-	int viewCount = tr.frontEnd->GetViewCount() + 1;
-	tr.frontEnd->SetViewCount( viewCount );
-	tr.frontEnd->SetViewDef( nullptr );
+	int viewCount = tr.frontend->GetViewCount() + 1;
+	tr.frontend->SetViewCount( viewCount );
+	tr.frontend->SetViewDef( viewDefptr_t() );
 
 	// regenerate all necessary interactions
 	R_RegenerateWorld_f( idCmdArgs() );
@@ -1680,15 +1674,13 @@ void idRenderSystemLocal::Clear( void )
 	viewportOffset[1] = 0;
 	tiledViewport[0] = 0;
 	tiledViewport[1] = 0;
-	backEndRenderer = BE_BAD;
-	backEndRendererHasVertexPrograms = false;
 	backEndRendererMaxLight = 1.0f;
 	ambientLightVector.Zero();
 	sortOffset = 0;
 	worlds.Clear();
 	primaryWorld = nullptr;
 	memset( &primaryRenderView, 0, sizeof( primaryRenderView ) );
-	primaryView = nullptr;
+	primaryView = viewDefptr_t();
 	defaultMaterial = nullptr;
 	testImage = nullptr;
 	ambientCubeImage = nullptr;
@@ -1763,10 +1755,6 @@ void idRenderSystemLocal::Init( void )
 	identitySpace.modelMatrix[1*4+1] = 1.0f;
 	identitySpace.modelMatrix[2*4+2] = 1.0f;
 
-	// determine which back end we will use
-	// ??? this is invalid here as there is not enough information to set it up correctly
-	SetBackEndRenderer();
-
 	common->Printf( "renderSystem initialized.\n" );
 	common->Printf( "--------------------------------------\n" );
 }
@@ -1818,9 +1806,9 @@ void idRenderSystemLocal::Shutdown( void )
 
 // BEATO Begin:
 	backEnd->ShutDown();
-	backEnd.Delete();
-	frontEnd.Delete();
-	drawQueue.Delete();
+	backEnd = crAutoPointer<crBackend>(); // unreference the pointer 
+	frontEnd = crAutoPointer<crFrontend>(); // unreference the pointer
+	drawQueue = crAutoPointer<crDraw>(); // unreference the pointer 
 // BEATO End
 
 }

@@ -60,7 +60,7 @@ byte *R_ResampleTexture( const byte *in, int inwidth, int inheight,
 		outheight = MAX_DIMENSION;
 	}
 
-	out = (byte *)R_StaticAlloc( outwidth * outheight * 4 );
+	out = (byte *)tr.frameData->StaticAlloc( outwidth * outheight * 4 );
 	out_p = out;
 
 	fracstep = inwidth*0x10000/outwidth;
@@ -110,7 +110,7 @@ byte *R_Dropsample( const byte *in, int inwidth, int inheight,
 	const byte	*pix1;
 	byte		*out, *out_p;
 
-	out = (byte *)R_StaticAlloc( outwidth * outheight * 4 );
+	out = (byte *)tr.frameData->StaticAlloc( outwidth * outheight * 4 );
 	out_p = out;
 
 	for (i=0 ; i<outheight ; i++, out_p += outwidth*4 ) {
@@ -338,7 +338,7 @@ byte *R_MipMapWithAlphaSpecularity( const byte *in, int width, int height ) {
 	if ( !newHeight ) {
 		newHeight = 1;
 	}
-	out = (byte *)R_StaticAlloc( newWidth * newHeight * 4 );
+	out = (byte *)tr.frameData->StaticAlloc( newWidth * newHeight * 4 );
 	out_p = out;
 
 	in_p = in;
@@ -420,7 +420,7 @@ byte *R_MipMap( const byte *in, int width, int height, bool preserveBorder ) {
 	if ( !newHeight ) {
 		newHeight = 1;
 	}
-	out = (byte *)R_StaticAlloc( newWidth * newHeight * 4 );
+	out = (byte *)tr.frameData->StaticAlloc( newWidth * newHeight * 4 );
 	out_p = out;
 
 	in_p = in;
@@ -507,7 +507,7 @@ byte *R_MipMap3D( const byte *in, int width, int height, int depth, bool preserv
 	newHeight = height >> 1;
 	newDepth = depth >> 1;
 
-	out = (byte *)R_StaticAlloc( newWidth * newHeight * newDepth * 4 );
+	out = (byte *)tr.frameData->StaticAlloc( newWidth * newHeight * newDepth * 4 );
 	out_p = out;
 
 	in_p = in;
@@ -606,7 +606,7 @@ void R_RotatePic( byte *data, int width ) {
 	int		i, j;
 	int		*temp;
 
-	temp = (int *)R_StaticAlloc( width * width * 4 );
+	temp = (int *)tr.frameData->StaticAlloc( width * width * 4 );
 
 	for ( i = 0 ; i < width ; i++ ) {
 		for ( j = 0 ; j < width ; j++ ) {
@@ -616,6 +616,6 @@ void R_RotatePic( byte *data, int width ) {
 
 	memcpy( data, temp, width * width * 4 );
 
-	R_StaticFree( temp );
+	tr.frameData->StaticFree( temp );
 }
 

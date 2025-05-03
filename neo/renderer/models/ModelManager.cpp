@@ -374,7 +374,7 @@ void idRenderModelManagerLocal::FreeModel( idRenderModel *model )
 		return;
 	}
 
-	R_CheckForEntityDefsUsingModel( model );
+	tr.frontend->CheckForEntityDefsUsingModel( model );
 
 	delete model;
 }
@@ -438,7 +438,7 @@ void idRenderModelManagerLocal::ReloadModels( bool forceAll )
 	else
 		common->Printf( "Checking for changed model files...\n" );
 
-	tr.frontEnd->FreeDerivedData();
+	tr.frontend->FreeDerivedData();
 
 	// skip the default model at index 0
 	for ( int i = 1 ; i < models.Num() ; i++ ) 
@@ -468,7 +468,7 @@ void idRenderModelManagerLocal::ReloadModels( bool forceAll )
 
 	// we must force the world to regenerate, because models may
 	// have changed size, making their references invalid
-	tr.frontEnd->ReCreateWorldReferences();
+	tr.frontend->ReCreateWorldReferences();
 }
 
 /*
@@ -488,14 +488,17 @@ void idRenderModelManagerLocal::FreeModelVertexCaches() {
 idRenderModelManagerLocal::BeginLevelLoad
 =================
 */
-void idRenderModelManagerLocal::BeginLevelLoad() {
+void idRenderModelManagerLocal::BeginLevelLoad( void ) 
+{
 	insideLevelLoad = true;
 
-	for ( int i = 0 ; i < models.Num() ; i++ ) {
+	for ( int i = 0 ; i < models.Num() ; i++ ) 
+	{
 		idRenderModel *model = models[i];
 
-		if ( com_purgeAll.GetBool() && model->IsReloadable() ) {
-			R_CheckForEntityDefsUsingModel( model );
+		if ( com_purgeAll.GetBool() && model->IsReloadable() ) 
+		{
+			tr.frontend->CheckForEntityDefsUsingModel( model );
 			model->PurgeModel();
 		}
 
@@ -503,7 +506,7 @@ void idRenderModelManagerLocal::BeginLevelLoad() {
 	}
 
 	// purge unused triangle surface memory
-	R_PurgeTriSurfData( frameData );
+	tr.frontend->PurgeTriSurfData( frameData );
 }
 
 /*
@@ -532,7 +535,7 @@ void idRenderModelManagerLocal::EndLevelLoad()
 
 			purgeCount++;
 
-			R_CheckForEntityDefsUsingModel( model );
+			tr.frontend->CheckForEntityDefsUsingModel( model );
 
 			model->PurgeModel();
 
@@ -545,7 +548,7 @@ void idRenderModelManagerLocal::EndLevelLoad()
 	}
 
 	// purge unused triangle surface memory
-	R_PurgeTriSurfData( frameData );
+	tr.frontend->PurgeTriSurfData( frameData );
 
 	// load any new ones
 	for ( int i = 0 ; i < models.Num() ; i++ ) {

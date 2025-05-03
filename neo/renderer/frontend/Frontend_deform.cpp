@@ -57,7 +57,9 @@ void crFrontend::FinishDeform( drawSurf_t *drawSurf, srfTriangles_t *newTri, idD
 		newTri->verts = nullptr;
 	}
 
-	newTri->ambientCache = vertexCache.AllocFrameTemp( ac, newTri->numVerts * sizeof( idDrawVert ) );
+	// newTri->ambientCache = vertexCache.AllocFrameTemp( ac, newTri->numVerts * sizeof( idDrawVert ) );
+	newTri->ambientCache = vertexCache.AllocVertex( newTri->numVerts * sizeof( idDrawVert ), ac, true );
+	
 	// if we are out of vertex cache, leave it the way it is
 	if ( newTri->ambientCache ) 
 		drawSurf->geo = newTri;
@@ -95,13 +97,12 @@ void crFrontend::AutospriteDeform( drawSurf_t *surf )
 		return;
 	}
 
-	crTransform::GlobalVectorToLocal( surf->space->modelMatrix, viewDef->renderView.viewaxis[1], leftDir );
-	crTransform::GlobalVectorToLocal( surf->space->modelMatrix, viewDef->renderView.viewaxis[2], upDir );
+	leftDir = surf->space->modelMatrix.GlobalVectorToLocal( viewDef->renderView.viewaxis[1] );
+	upDir = surf->space->modelMatrix.GlobalVectorToLocal( viewDef->renderView.viewaxis[2] );
 
 	if ( viewDef->isMirror )
 		leftDir = vec3_origin - leftDir;
 	
-
 	// this srfTriangles_t and all its indexes and caches are in frame
 	// memory, and will be automatically disposed of
 	newTri = static_cast<srfTriangles_t *>( tr.drawQueue->ClearedFrameAlloc( sizeof( *newTri ) ) );
@@ -192,8 +193,7 @@ void crFrontend::TubeDeform( drawSurf_t *surf )
 
 	// we need the view direction to project the minor axis of the tube
 	// as the view changes
-	idVec3	localView;
-	crTransform::GlobalPointToLocal( surf->space->modelMatrix, viewDef->renderView.vieworg, localView ); 
+	idVec3	localView = surf->space->modelMatrix.GlobalPointToLocal( viewDef->renderView.vieworg );
 
 	// this srfTriangles_t and all its indexes and caches are in frame
 	// memory, and will be automatically disposed of
@@ -560,7 +560,8 @@ void crFrontend::FlareDeform( drawSurf_t *surf )
 	plane.FromPoints( tri->verts[tri->indexes[0]].xyz, tri->verts[tri->indexes[1]].xyz, tri->verts[tri->indexes[2]].xyz );
 
 	// if viewer is behind the plane, draw nothing
-	crTransform::GlobalPointToLocal( surf->space->modelMatrix, viewDef->renderView.vieworg, localViewer );
+	localViewer = surf->space->modelMatrix.GlobalPointToLocal( viewDef->renderView.vieworg );
+
 	float distFromPlane = localViewer * plane.Normal() + plane[3];
 	if ( distFromPlane <= 0 ) 
 	{
@@ -1254,8 +1255,9 @@ void crFrontend::ParticleDeform( drawSurf_t *surf, bool useArea )
 				}
 
 				tri->numIndexes = indexes;
-				tri->ambientCache = vertexCache.AllocFrameTemp( tri->verts, tri->numVerts * sizeof( idDrawVert ) );
-				
+				//tri->ambientCache = vertexCache.AllocFrameTemp( tri->verts, tri->numVerts * sizeof( idDrawVert ) );
+				tri->ambientCache = vertexCache.AllocVertex( tri->numVerts * sizeof( idDrawVert ), tri->verts, true );
+
 				if ( tri->ambientCache ) 
 				{
 					// add the drawsurf

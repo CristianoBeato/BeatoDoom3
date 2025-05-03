@@ -37,7 +37,7 @@ If you have questions concerning this license or the applicable additional terms
 idRenderWorldLocal::FreeWorld
 ================
 */
-void idRenderWorldLocal::FreeWorld() 
+void idRenderWorldLocal::FreeWorld( void )
 {
 	int i;
 
@@ -51,42 +51,50 @@ void idRenderWorldLocal::FreeWorld()
 		portal_t		*portal, *nextPortal;
 
 		area = &portalAreas[i];
-		for ( portal = area->portals ; portal ; portal = nextPortal ) {
+		for ( portal = area->portals ; portal ; portal = nextPortal ) 
+		{
 			nextPortal = portal->next;
 			delete portal->w;
-			R_StaticFree( portal );
+			tr.frameData->StaticFree( portal );
 		}
 
 		// there shouldn't be any remaining lightRefs or entityRefs
-		if ( area->lightRefs.areaNext != &area->lightRefs ) {
+		if ( area->lightRefs.areaNext != &area->lightRefs ) 
+		{
 			common->Error( "FreeWorld: unexpected remaining lightRefs" );
 		}
-		if ( area->entityRefs.areaNext != &area->entityRefs ) {
+		
+		if ( area->entityRefs.areaNext != &area->entityRefs ) 
+		{
 			common->Error( "FreeWorld: unexpected remaining entityRefs" );
 		}
 	}
 
-	if ( portalAreas ) {
-		R_StaticFree( portalAreas );
-		portalAreas = NULL;
+	if ( portalAreas ) 
+	{
+		tr.frameData->StaticFree( portalAreas );
+		portalAreas = nullptr;
 		numPortalAreas = 0;
-		R_StaticFree( areaScreenRect );
-		areaScreenRect = NULL;
+		tr.frameData->StaticFree( areaScreenRect );
+		areaScreenRect = nullptr;
 	}
 
-	if ( doublePortals ) {
-		R_StaticFree( doublePortals );
-		doublePortals = NULL;
+	if ( doublePortals ) 
+	{
+		tr.frameData->StaticFree( doublePortals );
+		doublePortals = nullptr;
 		numInterAreaPortals = 0;
 	}
 
-	if ( areaNodes ) {
-		R_StaticFree( areaNodes );
-		areaNodes = NULL;
+	if ( areaNodes ) 
+	{
+		tr.frameData->StaticFree( areaNodes );
+		areaNodes = nullptr;
 	}
 
 	// free all the inline idRenderModels 
-	for ( i = 0 ; i < localModels.Num() ; i++ ) {
+	for ( i = 0 ; i < localModels.Num() ; i++ ) 
+	{
 		renderModelManager->RemoveModel( localModels[i] );
 		delete localModels[i];
 	}
@@ -117,7 +125,8 @@ void idRenderWorldLocal::TouchWorldModels( void ) {
 idRenderWorldLocal::ParseModel
 ================
 */
-idRenderModel *idRenderWorldLocal::ParseModel( idLexer *src ) {
+idRenderModel *idRenderWorldLocal::ParseModel( idLexer *src ) 
+{
 	idRenderModel	*model;
 	idToken			token;
 	int				i, j;
@@ -277,26 +286,30 @@ void idRenderWorldLocal::ParseInterAreaPortals( idLexer *src ) {
 	src->ExpectTokenString( "{" );
 
 	numPortalAreas = src->ParseInt();
-	if ( numPortalAreas < 0 ) {
+	if ( numPortalAreas < 0 ) 
+	{
 		src->Error( "R_ParseInterAreaPortals: bad numPortalAreas" );
 		return;
 	}
-	portalAreas = (portalArea_t *)R_ClearedStaticAlloc( numPortalAreas * sizeof( portalAreas[0] ) );
-	areaScreenRect = (idScreenRect *) R_ClearedStaticAlloc( numPortalAreas * sizeof( idScreenRect ) );
+	
+	portalAreas = (portalArea_t *)tr.frameData->ClearedStaticAlloc( numPortalAreas * sizeof( portalAreas[0] ) );
+	areaScreenRect = (idScreenRect *) tr.frameData->ClearedStaticAlloc( numPortalAreas * sizeof( idScreenRect ) );
 
 	// set the doubly linked lists
 	SetupAreaRefs();
 
 	numInterAreaPortals = src->ParseInt();
-	if ( numInterAreaPortals < 0 ) {
+	if ( numInterAreaPortals < 0 ) 
+	{
 		src->Error(  "R_ParseInterAreaPortals: bad numInterAreaPortals" );
 		return;
 	}
 
-	doublePortals = (doublePortal_t *)R_ClearedStaticAlloc( numInterAreaPortals * 
+	doublePortals = (doublePortal_t *)tr.frameData->ClearedStaticAlloc( numInterAreaPortals * 
 		sizeof( doublePortals [0] ) );
 
-	for ( i = 0 ; i < numInterAreaPortals ; i++ ) {
+	for ( i = 0 ; i < numInterAreaPortals ; i++ ) 
+	{
 		int		numPoints, a1, a2;
 		idWinding	*w;
 		portal_t	*p;
@@ -315,7 +328,7 @@ void idRenderWorldLocal::ParseInterAreaPortals( idLexer *src ) {
 		}
 
 		// add the portal to a1
-		p = (portal_t *)R_ClearedStaticAlloc( sizeof( *p ) );
+		p = (portal_t *)tr.frameData->ClearedStaticAlloc( sizeof( *p ) );
 		p->intoArea = a2;
 		p->doublePortal = &doublePortals[i];
 		p->w = w;
@@ -327,7 +340,7 @@ void idRenderWorldLocal::ParseInterAreaPortals( idLexer *src ) {
 		doublePortals[i].portals[0] = p;
 
 		// reverse it for a2
-		p = (portal_t *)R_ClearedStaticAlloc( sizeof( *p ) );
+		p = (portal_t *)tr.frameData->ClearedStaticAlloc( sizeof( *p ) );
 		p->intoArea = a1;
 		p->doublePortal = &doublePortals[i];
 		p->w = w->Reverse();
@@ -347,7 +360,8 @@ void idRenderWorldLocal::ParseInterAreaPortals( idLexer *src ) {
 idRenderWorldLocal::ParseNodes
 ================
 */
-void idRenderWorldLocal::ParseNodes( idLexer *src ) {
+void idRenderWorldLocal::ParseNodes( idLexer *src ) 
+{
 	int			i;
 
 	src->ExpectTokenString( "{" );
@@ -356,7 +370,7 @@ void idRenderWorldLocal::ParseNodes( idLexer *src ) {
 	if ( numAreaNodes < 0 ) {
 		src->Error( "R_ParseNodes: bad numAreaNodes" );
 	}
-	areaNodes = (areaNode_t *)R_ClearedStaticAlloc( numAreaNodes * sizeof( areaNodes[0] ) );
+	areaNodes = (areaNode_t *)tr.frameData->ClearedStaticAlloc( numAreaNodes * sizeof( areaNodes[0] ) );
 
 	for ( i = 0 ; i < numAreaNodes ; i++ ) {
 		areaNode_t	*node;
@@ -414,17 +428,18 @@ idRenderWorldLocal::ClearWorld
 Sets up for a single area world
 =================
 */
-void idRenderWorldLocal::ClearWorld() {
+void idRenderWorldLocal::ClearWorld( void ) 
+{
 	numPortalAreas = 1;
-	portalAreas = (portalArea_t *)R_ClearedStaticAlloc( sizeof( portalAreas[0] ) );
-	areaScreenRect = (idScreenRect *) R_ClearedStaticAlloc( sizeof( idScreenRect ) );
+	portalAreas = (portalArea_t *)tr.frameData->ClearedStaticAlloc( sizeof( portalAreas[0] ) );
+	areaScreenRect = (idScreenRect *) tr.frameData->ClearedStaticAlloc( sizeof( idScreenRect ) );
 
 	SetupAreaRefs();
 
 	// even though we only have a single area, create a node
 	// that has both children pointing at it so we don't need to
 	//
-	areaNodes = (areaNode_t *)R_ClearedStaticAlloc( sizeof( areaNodes[0] ) );
+	areaNodes = (areaNode_t *)tr.frameData->ClearedStaticAlloc( sizeof( areaNodes[0] ) );
 	areaNodes[0].plane[3] = 1;
 	areaNodes[0].children[0] = -1;
 	areaNodes[0].children[1] = -1;
@@ -442,30 +457,35 @@ void idRenderWorldLocal::FreeDefs() {
 
 	generateAllInteractionsCalled = false;
 
-	if ( interactionTable ) {
-		R_StaticFree( interactionTable );
-		interactionTable = NULL;
+	if ( interactionTable ) 
+	{
+		tr.frameData->StaticFree( interactionTable );
+		interactionTable = nullptr;
 	}
 
 	// free all lightDefs
-	for ( i = 0 ; i < lightDefs.Num() ; i++ ) {
+	for ( i = 0 ; i < lightDefs.Num() ; i++ ) 
+	{
 		idRenderLightLocal	*light;
 
 		light = lightDefs[i];
-		if ( light && light->world == this ) {
+		if ( light && light->world == this ) 
+		{
 			FreeLightDef( i );
-			lightDefs[i] = NULL;
+			lightDefs[i] = nullptr;
 		}
 	}
 
 	// free all entityDefs
-	for ( i = 0 ; i < entityDefs.Num() ; i++ ) {
+	for ( i = 0 ; i < entityDefs.Num() ; i++ ) 
+	{
 		idRenderEntityLocal	*mod;
 
 		mod = entityDefs[i];
-		if ( mod && mod->world == this ) {
+		if ( mod && mod->world == this ) 
+		{
 			FreeEntityDef( i );
-			entityDefs[i] = NULL;
+			entityDefs[i] = nullptr;
 		}
 	}
 }
@@ -667,8 +687,8 @@ void idRenderWorldLocal::AddWorldModelEntities() {
 		def->parms.axis[1][1] = 1;
 		def->parms.axis[2][2] = 1;
 
-		R_AxisToModelMatrix( def->parms.axis, def->parms.origin, def->modelMatrix );
-
+		def->modelMatrix.FromAxist( def->parms.axis, def->parms.origin );
+		
 		// in case an explicit shader is used on the world, we don't
 		// want it to have a 0 alpha or color
 		def->parms.shaderParms[0] =

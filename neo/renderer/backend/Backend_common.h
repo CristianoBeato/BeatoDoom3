@@ -94,7 +94,7 @@ private:
 	idScreenRect		            currentScissor;             // for scissor clipping, local inside renderView viewport
 	const viewEntity_t*             currentSpace;		        // for detecting when a matrix must change
 	crAutoPointer<viewLight_t>      viewLight;                  //
-	crAutoPointer<viewDef_t>	    viewDef;                    //
+	viewDefptr_t                    viewDef;                    //
     crAutoPointer<crSwapChain>      m_swapChain;                //
     crAutoPointer<crCommandQueue>   m_graphicQueue;             //
     crAutoPointer<crCommandQueue>   m_transferQueue;            //

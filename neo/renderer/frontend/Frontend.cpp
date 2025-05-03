@@ -63,8 +63,8 @@ idScreenRect crFrontend::ScreenRectFromViewFrustumBounds( const idBounds &bounds
 
 	if ( r_useDepthBoundsTest.GetInteger() ) 
 	{
-		crTransform::TransformEyeZToWin( -bounds[0].x, viewDef->projectionMatrix, screenRect.zmin );
-		crTransform::TransformEyeZToWin( -bounds[1].x, viewDef->projectionMatrix, screenRect.zmax );
+		screenRect.zmin = viewDef->projectionMatrix.TransformEyeZToWin( -bounds[0].x );
+		screenRect.zmax = viewDef->projectionMatrix.TransformEyeZToWin( -bounds[1].x );
 	}
 
 	return screenRect;
@@ -95,7 +95,7 @@ A fast, conservative center-to-corner culling test
 Returns true if the box is outside the given global frustum, (positive sides are out)
 =================
 */
-bool crFrontend::RadiusCullLocalBox( const idBounds &bounds, const float modelMatrix[16], int numPlanes, const idPlane *planes ) 
+bool crFrontend::RadiusCullLocalBox( const idBounds &bounds, const crRenderMatrix modelMatrix, int numPlanes, const idPlane *planes ) 
 {
 	int			i;
 	float		d;
@@ -109,8 +109,7 @@ bool crFrontend::RadiusCullLocalBox( const idBounds &bounds, const float modelMa
 	// transform the surface bounds into world space
 	idVec3	localOrigin = ( bounds[0] + bounds[1] ) * 0.5;
 
-	crTransform::LocalPointToGlobal( modelMatrix, localOrigin, worldOrigin );
-
+	worldOrigin = modelMatrix.LocalPointToGlobal( localOrigin );
 	worldRadius = (bounds[0] - localOrigin).Length();	// FIXME: won't be correct for scaled objects
 
 	for ( i = 0 ; i < numPlanes ; i++ ) {
@@ -133,7 +132,7 @@ Can still generate a few false positives when the box is outside a corner.
 Returns true if the box is outside the given global frustum, (positive sides are out)
 =================
 */
-bool crFrontend::CornerCullLocalBox( const idBounds &bounds, const float modelMatrix[16], int numPlanes, const idPlane *planes ) 
+bool crFrontend::CornerCullLocalBox( const idBounds &bounds, const crRenderMatrix modelMatrix, int numPlanes, const idPlane *planes ) 
 {
 	int			i, j;
 	idVec3		transformed[8];
@@ -153,7 +152,7 @@ bool crFrontend::CornerCullLocalBox( const idBounds &bounds, const float modelMa
 		v[1] = bounds[(i>>1)&1][1];
 		v[2] = bounds[(i>>2)&1][2];
 
-		crTransform::LocalPointToGlobal( modelMatrix, v, transformed[i] );
+		transformed[i] = modelMatrix.LocalPointToGlobal( v );
 	}
 
 	// check against frustum planes
@@ -170,12 +169,12 @@ bool crFrontend::CornerCullLocalBox( const idBounds &bounds, const float modelMa
 		if ( j == 8 ) 
 		{
 			// all points were behind one of the planes
-			tr.pc.c_box_cull_out++;
+			tr.frontend->GetPerformanceCounters().c_box_cull_out++;
 			return true;
 		}
 	}
 
-	tr.pc.c_box_cull_in++;
+	tr.frontend->GetPerformanceCounters().c_box_cull_in++;
 
 	return false;		// not culled
 }
@@ -188,7 +187,7 @@ Performs quick test before expensive test
 Returns true if the box is outside the given global frustum, (positive sides are out)
 =================
 */
-bool crFrontend::CullLocalBox( const idBounds &bounds, const float modelMatrix[16], int numPlanes, const idPlane *planes ) 
+bool crFrontend::CullLocalBox( const idBounds &bounds, const crRenderMatrix modelMatrix, int numPlanes, const idPlane *planes ) 
 {
 	if ( RadiusCullLocalBox( bounds, modelMatrix, numPlanes, planes ) ) 
 		return true;
@@ -262,20 +261,34 @@ crFrontend::SetViewMatrix
 Sets up the world to view matrix for a given viewParm
 =================
 */
-void crFrontend::SetViewMatrix( crAutoPointer<viewDef_t> viewDef ) 
+void crFrontend::SetViewMatrix( viewDefptr_t viewDef ) 
 {
 	idVec3	origin;
 	viewEntity_t *world;
-	alignas( 16 ) float	viewerMatrix[16];
-	alignas( 16 ) float	s_flipMatrix[16] = 
-	{
-		// convert from our coordinate system (looking down X)
-		// to OpenGL's coordinate system (looking down -Z)
-		0, 0, -1, 0,
-		-1, 0, 0, 0,
-		0, 1, 0, 0,
-		0, 0, 0, 1
-	};
+	alignas( 16 ) crRenderMatrix viewerMatrix;
+	alignas( 16 ) crRenderMatrix s_flipMatrix; 
+
+	// convert from our coordinate system (looking down X)
+	// to OpenGL's coordinate system (looking down -Z)
+	s_flipMatrix[0] =  0.0f;
+	s_flipMatrix[1] =  0.0f;
+	s_flipMatrix[2] = -1.0f;
+	s_flipMatrix[3] =  0.0f;
+
+	s_flipMatrix[4] = -1.0f;
+	s_flipMatrix[5] =  0.0f;
+	s_flipMatrix[6] =  0.0f;
+	s_flipMatrix[7] =  0.0f;
+
+	s_flipMatrix[8] =  0.0f;
+	s_flipMatrix[9] =  1.0f;
+	s_flipMatrix[10] = 0.0f;
+	s_flipMatrix[11] = 0.0f;
+
+	s_flipMatrix[12] = 0.0f;
+	s_flipMatrix[13] = 0.0f;
+	s_flipMatrix[14] = 0.0f;
+	s_flipMatrix[15] = 0.1f;
 
 	world = &viewDef->worldSpace;
 
@@ -312,7 +325,7 @@ void crFrontend::SetViewMatrix( crAutoPointer<viewDef_t> viewDef )
 
 	// convert from our coordinate system (looking down X)
 	// to OpenGL's coordinate system (looking down -Z)
-	crTransform::GlMultMatrix( viewerMatrix, s_flipMatrix, world->modelViewMatrix );
+	world->modelViewMatrix = viewerMatrix * s_flipMatrix;
 }
 
 /*
@@ -533,9 +546,9 @@ a mirror / remote location, or a 3D view on a gui surface.
 Parms will typically be allocated with R_FrameAlloc
 ================
 */
-void crFrontend::RenderView( crAutoPointer<viewDef_t> parms ) 
+void crFrontend::RenderView( viewDefptr_t parms ) 
 {
-	crAutoPointer<viewDef_t> oldView;
+	viewDefptr_t oldView;
 
 	if ( parms->renderView.width <= 0 || parms->renderView.height <= 0 )
 		return;

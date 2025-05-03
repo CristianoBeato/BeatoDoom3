@@ -334,7 +334,7 @@ static void LoadBMP( const char *name, byte **pic, int *width, int *height, ID_T
 	if ( height )
 		*height = rows;
 
-	bmpRGBA = (byte *)R_StaticAlloc( numPixels * 4 );
+	bmpRGBA = (byte *)tr.frameData->StaticAlloc( numPixels * 4 );
 	*pic = bmpRGBA;
 
 
@@ -457,7 +457,7 @@ static void LoadPCX ( const char *filename, byte **pic, byte **palette, int *wid
 		return;
 	}
 
-	out = (byte *)R_StaticAlloc( (ymax+1) * (xmax+1) );
+	out = (byte *)tr.frameData->StaticAlloc( (ymax+1) * (xmax+1) );
 
 	*pic = out;
 
@@ -465,7 +465,7 @@ static void LoadPCX ( const char *filename, byte **pic, byte **palette, int *wid
 
 	if (palette)
 	{
-		*palette = (byte *)R_StaticAlloc(768);
+		*palette = (byte *)tr.frameData->StaticAlloc(768);
 		memcpy (*palette, (byte *)pcx + len - 768, 768);
 	}
 
@@ -498,7 +498,7 @@ static void LoadPCX ( const char *filename, byte **pic, byte **palette, int *wid
 	if ( raw - (byte *)pcx > len)
 	{
 		common->Printf( "PCX file %s was malformed", filename );
-		R_StaticFree (*pic);
+		tr.frameData->StaticFree (*pic);
 		*pic = NULL;
 	}
 
@@ -528,7 +528,7 @@ static void LoadPCX32 ( const char *filename, byte **pic, int *width, int *heigh
 	}
 
 	c = (*width) * (*height);
-	pic32 = *pic = (byte *)R_StaticAlloc(4 * c );
+	pic32 = *pic = (byte *)tr.frameData->StaticAlloc(4 * c );
 	for (i = 0 ; i < c ; i++) {
 		p = pic8[i];
 		pic32[0] = palette[p*3];
@@ -538,8 +538,8 @@ static void LoadPCX32 ( const char *filename, byte **pic, int *width, int *heigh
 		pic32 += 4;
 	}
 
-	R_StaticFree( pic8 );
-	R_StaticFree( palette );
+	tr.frameData->StaticFree( pic8 );
+	tr.frameData->StaticFree( palette );
 }
 
 /*
@@ -631,7 +631,7 @@ static void LoadTGA( const char *name, byte **pic, int *width, int *height, ID_T
 		*height = rows;
 	}
 
-	targa_rgba = (byte *)R_StaticAlloc(numPixels*4);
+	targa_rgba = (byte *)tr.frameData->StaticAlloc(numPixels*4);
 	*pic = targa_rgba;
 
 	if ( targa_header.id_length != 0 ) {
@@ -912,7 +912,7 @@ static void LoadJPG( const char *filename, unsigned char **pic, int *width, int 
 		common->DWarning( "JPG %s is unsupported color depth (%d)", 
 			filename, cinfo.output_components);
   }
-  out = (byte *)R_StaticAlloc(cinfo.output_width*cinfo.output_height*4);
+  out = (byte *)tr.frameData->StaticAlloc(cinfo.output_width*cinfo.output_height*4);
 
   *pic = out;
   *width = cinfo.output_width;
@@ -1042,7 +1042,7 @@ void R_LoadImage( const char *cname, byte **pic, int *width, int *height, ID_TIM
 
 	if ( ( width && *width < 1 ) || ( height && *height < 1 ) ) {
 		if ( pic && *pic ) {
-			R_StaticFree( *pic );
+			tr.frameData->StaticFree( *pic );
 			*pic = 0;
 		}
 	}
@@ -1072,7 +1072,7 @@ void R_LoadImage( const char *cname, byte **pic, int *width, int *height, ID_TIM
 			}
 
 			resampledBuffer = R_ResampleTexture( *pic, w, h, scaled_width, scaled_height );
-			R_StaticFree( *pic );
+			tr.frameData->StaticFree( *pic );
 			*pic = resampledBuffer;
 			*width = scaled_width;
 			*height = scaled_height;
@@ -1168,7 +1168,7 @@ bool R_LoadCubeImages( const char *imgName, cubeFiles_t extensions, byte *pics[6
 		// we had an error, so free everything
 		if ( pics ) {
 			for ( j = 0 ; j < i ; j++ ) {
-				R_StaticFree( pics[j] );
+				tr.frameData->StaticFree( pics[j] );
 			}
 		}
 

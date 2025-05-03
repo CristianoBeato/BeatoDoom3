@@ -29,15 +29,18 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #include "renderer_common.h"
 #include "Draw.h"
 
-#define	MEMORY_BLOCK_SIZE	0x100000
+static const size_t	MEMORY_BLOCK_SIZE = 0x100000;
 
-crDraw::crDraw( void ) : 
+crDrawFrameData::crDrawFrameData( void ) : 
+	m_frame( 0 ),
 	staticAllocCount( 0 ),
-	frameData( nullptr )
+	memoryHighwater( 0 ),
+	frameData( nullptr ),
+	smpFrameData( nullptr )
 {
 }
 
-crDraw::~crDraw( void )
+crDrawFrameData::~crDrawFrameData( void )
 {
 }
 
@@ -46,7 +49,7 @@ crDraw::~crDraw( void )
 R_ViewStatistics
 =================
 */
-static void R_ViewStatistics( crAutoPointer<viewDef_t> parms ) 
+static void R_ViewStatistics( viewDefptr_t parms ) 
 {
 	// report statistics about this view
 	if ( !r_showSurfaces.GetBool() ) 
@@ -57,21 +60,25 @@ static void R_ViewStatistics( crAutoPointer<viewDef_t> parms )
 
 /*
 =====================
-crDraw::InitFrameData
+crDrawFrameData::InitFrameData
 =====================
 */
-void crDraw::InitFrameData( void ) 
+void crDrawFrameData::InitFrameData( void ) 
 {
-	int size;
-	frameData_t *frame;
-	frameMemoryBlock_t *block;
+	size_t size = 0;
+	frameData_t*		frame = nullptr;
+	frameMemoryBlock_t*	block = nullptr;
 
 	ShutdownFrameData();
 
-	frameData = (frameData_t *)Mem_ClearedAlloc( sizeof( *frameData ));
+	for ( uint32_t i = 0; i < SMP_FRAMES; i++)
+	{
+		smpFrameData[i] = static_cast<frameData_t *>( Mem_ClearedAlloc( sizeof( frameData_t ) ) );
+	}
+	
 	frame = frameData;
 	size = MEMORY_BLOCK_SIZE;
-	block = (frameMemoryBlock_t *)Mem_Alloc( size + sizeof( *block ) );
+	block = static_cast<frameMemoryBlock_t*>( Mem_Alloc( size + sizeof( *block ) ) );
 	if ( !block ) 
 		common->FatalError( "R_InitFrameData: Mem_Alloc() failed" );
 	
@@ -80,20 +87,21 @@ void crDraw::InitFrameData( void )
 	block->used = 0;
 	block->next = nullptr;
 	frame->memory = block;
-	frame->memoryHighwater = 0;
+	
+	memoryHighwater = 0;
 
 	ToggleSmpFrame();
 }
 
 /*
 =====================
-crDraw::ShutdownFrameData
+crDrawFrameData::ShutdownFrameData
 =====================
 */
-void crDraw::ShutdownFrameData( void ) 
+void crDrawFrameData::ShutdownFrameData( void ) 
 {
-	frameData_t *frame;
-	frameMemoryBlock_t *block;
+	frameData_t* frame = nullptr;
+	frameMemoryBlock_t* block = nullptr;
 
 	// free any current data
 	frame = frameData;
@@ -103,7 +111,8 @@ void crDraw::ShutdownFrameData( void )
 	R_FreeDeferredTriSurfs( frame );
 
 	frameMemoryBlock_t *nextBlock;
-	for ( block = frame->memory ; block ; block = nextBlock ) {
+	for ( block = frame->memory ; block ; block = nextBlock ) 
+	{
 		nextBlock = block->next;
 		Mem_Free( block );
 	}
@@ -111,44 +120,63 @@ void crDraw::ShutdownFrameData( void )
 	frameData = nullptr;
 }
 
+void crDrawFrameData::ToggleSmpFrame(void)
+{
+	// clear frame-temporary data
+	frameData_t*		frame = nullptr; 
+	frameMemoryBlock_t*	block = nullptr;
+
+	// update the highwater mark
+	CountFrameData();
+
+	frame = frameData;
+
+	// reset the memory allocation to the first block
+	frame->alloc = frame->memory;
+
+	// clear all the blocks
+	for ( block = frame->memory ; block ; block = block->next ) 
+    {
+		block->used = 0;
+	}
+}
+
 /*
 ================
-crDraw::CountFrameData
+crDrawFrameData::CountFrameData
 ================
 */
-int crDraw::CountFrameData( void ) 
+int crDrawFrameData::CountFrameData( void ) 
 {
-	frameData_t		*frame;
-	frameMemoryBlock_t	*block;
-	int				count;
+	int count = 0;
+	frameData_t*		frame = nullptr;
+	frameMemoryBlock_t*	block = nullptr;
 
-	count = 0;
 	frame = frameData;
-	for ( block = frame->memory ; block ; block=block->next ) {
+	for ( block = frame->memory ; block ; block=block->next ) 
+	{
 		count += block->used;
-		if ( block == frame->alloc ) {
+		if ( block == frame->alloc ) 
 			break;
-		}
 	}
 
 	// note if this is a new highwater mark
-	if ( count > frame->memoryHighwater ) {
-		frame->memoryHighwater = count;
-	}
+	if ( count > memoryHighwater ) 
+		memoryHighwater = count;
 
 	return count;
 }
 
 /*
 =================
-crDraw::StaticAlloc
+crDrawFrameData::StaticAlloc
 =================
 */
-void* crDraw::StaticAlloc( size_t bytes ) 
+void* crDrawFrameData::StaticAlloc( size_t bytes ) 
 {
 	void	*buf;
 
-	tr.pc.c_alloc++;
+	tr.frontend->GetPerformanceCounters().c_alloc++;
 
 	staticAllocCount += bytes;
 
@@ -156,17 +184,17 @@ void* crDraw::StaticAlloc( size_t bytes )
 
 	// don't exit on failure on zero length allocations since the old code didn't
 	if ( !buf && ( bytes != 0 ) ) 
-		common->FatalError( "R_StaticAlloc failed on %i bytes", bytes );
+		common->FatalError( "tr.frameData->StaticAlloc failed on %i bytes", bytes );
 
 	return buf;
 }
 
 /*
 =================
-crDraw::ClearedStaticAlloc
+crDrawFrameData::ClearedStaticAlloc
 =================
 */
-void* crDraw::ClearedStaticAlloc( size_t bytes ) 
+void* crDrawFrameData::ClearedStaticAlloc( size_t bytes ) 
 {
 	void	*buf;
 
@@ -177,18 +205,18 @@ void* crDraw::ClearedStaticAlloc( size_t bytes )
 
 /*
 =================
-R_StaticFree
+tr.frameData->StaticFree
 =================
 */
-void crDraw::StaticFree( void *data ) 
+void crDrawFrameData::StaticFree( void *data ) 
 {
-	tr.pc.c_free++;
+	tr.frontend->GetPerformanceCounters().c_free++;
     Mem_Free( data );
 }
 
 /*
 ================
-crDraw::FrameAlloc
+crDrawFrameData::FrameAlloc
 
 This data will be automatically freed when the
 current frame's back end completes.
@@ -211,7 +239,7 @@ The memory is NOT zero filled.
 Should part of this be inlined in a macro?
 ================
 */
-void* crDraw::FrameAlloc( size_t bytes ) 
+void* crDrawFrameData::FrameAlloc( size_t bytes ) 
 {
 	frameData_t		*frame;
 	frameMemoryBlock_t	*block;
@@ -268,7 +296,7 @@ void* crDraw::FrameAlloc( size_t bytes )
 R_ClearedFrameAlloc
 ==================
 */
-void *crDraw::ClearedFrameAlloc( size_t bytes ) 
+void *crDrawFrameData::ClearedFrameAlloc( size_t bytes ) 
 {
 	void	*r;
 
@@ -279,7 +307,7 @@ void *crDraw::ClearedFrameAlloc( size_t bytes )
 
 /*
 ==================
-crDraw::FrameFree
+crDrawFrameData::FrameFree
 
 This does nothing at all, as the frame data is reused every frame
 and can only be stack allocated.
@@ -289,84 +317,135 @@ use either static or frame memory can set function pointers
 to both alloc and free.
 ==================
 */
-void crDraw::FrameFree( void *data ) 
+void crDrawFrameData::FrameFree( void *data ) 
 {
 }
 
 /*
-====================
-crDraw::ToggleSmpFrame
-====================
+==============
+R_FreeStaticTriSurf
+
+This will defer the free until the current frame has run through the back end.
+==============
 */
-void crDraw::ToggleSmpFrame( void ) 
+void crDrawFrameData::FreeStaticTriSurf( srfTriangles_t *tri ) 
 {
-	if ( r_lockSurfaces.GetBool() ) 
+	frameData_t		*frame = nullptr;
+
+	if ( !tri ) 
 		return;
+
+	if ( tri->nextDeferredFree ) 
+	{
+		common->Error( "R_FreeStaticTriSurf: freed a freed triangle" );
+	}
 	
-	R_FreeDeferredTriSurfs( frameData );
-
-	// clear frame-temporary data
-	frameData_t		*frame;
-	frameMemoryBlock_t	*block;
-
-	// update the highwater mark
-	CountFrameData();
-
 	frame = frameData;
 
-	// reset the memory allocation to the first block
-	frame->alloc = frame->memory;
-
-	// clear all the blocks
-	for ( block = frame->memory ; block ; block = block->next ) 
-    {
-		block->used = 0;
+	if ( !frame ) 
+	{
+		// command line utility, or rendering in editor preview mode ( force )
+		R_ReallyFreeStaticTriSurf( tri );
+	} 
+	else 
+	{
+#ifdef ID_DEBUG_MEMORY
+		R_CheckStaticTriSurfMemory( tri );
+#endif
+		tri->nextDeferredFree = nullptr;
+		if ( frame->lastDeferredFreeTriSurf )
+			frame->lastDeferredFreeTriSurf->nextDeferredFree = tri;
+		else
+			frame->firstDeferredFreeTriSurf = tri;
+		
+		frame->lastDeferredFreeTriSurf = tri;
 	}
+}
 
-	ClearCommandChain();
+void *crRenderAllocator::Allocate(const size_t size)
+{
+    return tr.frameData->StaticAlloc( size );
+}
+
+void *crRenderAllocator::Reallocate( void *ptr, const size_t size )
+{
+	void* newPtr = Allocate( size );
+	std::memcpy( newPtr, ptr, sizeof(ptr) );
+	Deallocate( ptr ); 
+    return newPtr;
+}
+
+void crRenderAllocator::Deallocate( void *ptr )
+{
+	tr.frameData->StaticFree( ptr );
 }
 
 /*
 =============
-crDraw::AddDrawViewCmd
+crDrawCommandQueue::crDrawCommandQueue
+=============
+*/
+crDrawCommandQueue::crDrawCommandQueue(void) : 
+	cmdHead( nullptr ),
+	cmdTail( nullptr )
+{
+}
+
+/*
+=============
+crDrawCommandQueue::AddDrawViewCmd
 
 This is the main 3D rendering command.  A single scene may
 have multiple views if a mirror, portal, or dynamic texture is present.
 =============
 */
-void crDraw::AddDrawViewCmd( crAutoPointer<viewDef_t> parms ) 
+void crDrawCommandQueue::AddDrawViewCmd( viewDefptr_t parms ) 
 {
-	drawSurfsCommand_t	*cmd;
-
-	cmd = (drawSurfsCommand_t *)GetCommandBuffer( sizeof( *cmd ) );
+	drawSurfsCommand_t	*cmd = static_cast<drawSurfsCommand_t*>( GetCommandBuffer( sizeof( *cmd ) ) );
 	cmd->commandId = RC_DRAW_VIEW;
 
 	cmd->viewDef = parms;
 
-	if ( parms->viewEntitys ) {
-		// save the command for r_lockSurfaces debugging
-		tr.lockSurfacesCmd = *cmd;
-	}
+	if ( parms->viewEntitys ) 
+		tr.lockSurfacesCmd = *cmd; // save the command for r_lockSurfaces debugging
 
-	tr.pc.c_numViews++;
+	tr.frontend->GetPerformanceCounters().c_numViews++;
 
 	R_ViewStatistics( parms );
 }
 
+/*
+============
+crDrawCommandQueue::GetCommandBuffer
+
+Returns memory for a command buffer (stretchPicCommand_t, 
+drawSurfsCommand_t, etc) and links it to the end of the
+current command chain.
+============
+*/
+void* crDrawCommandQueue::GetCommandBuffer( size_t bytes ) 
+{
+	emptyCommand_t	*cmd = nullptr;
+
+	cmd = static_cast<emptyCommand_t*>( tr.drawQueue->FrameAlloc( bytes ) );
+	cmd->next = nullptr;
+	cmdTail->next = &cmd->commandId;
+	cmdTail = cmd;
+
+	return reinterpret_cast<void*>( cmd );
+}
 
 /*
 ====================
-R_IssueRenderCommands
+crDrawCommandQueue::IssueRenderCommands
 
 Called by R_EndFrame each frame
 ====================
 */
-void crDraw::IssueRenderCommands( void ) 
+void crDrawCommandQueue::IssueRenderCommands(void)
 {
-	if ( frameData->cmdHead->commandId == RC_NOP && !frameData->cmdHead->next ) {
-		// nothing to issue
-		return;
-	}
+	if ( cmdHead->commandId == RC_NOP && !cmdHead->next )
+		return; // nothing to issue
 
 	// r_skipBackEnd allows the entire time of the back end
 	// to be removed from performance measurements, although
@@ -378,46 +457,40 @@ void crDraw::IssueRenderCommands( void )
 	// draw 2D graphics
 	if ( !r_skipBackEnd.GetBool() ) 
     {
-		RB_ExecuteBackEndCommands( frameData->cmdHead );
+		RB_ExecuteBackEndCommands( cmdHead );
 	}
 
 	ClearCommandChain();
 }
 
 /*
-============
-crDraw::GetCommandBuffer
-
-Returns memory for a command buffer (stretchPicCommand_t, 
-drawSurfsCommand_t, etc) and links it to the end of the
-current command chain.
-============
+====================
+crDrawCommandQueue::ToggleSmpFrame
+====================
 */
-void* crDraw::GetCommandBuffer( size_t bytes ) 
+void crDrawCommandQueue::ToggleSmpFrame( void ) 
 {
-	emptyCommand_t	*cmd;
+	if ( r_lockSurfaces.GetBool() ) 
+		return;
+	
+	tr.frameData->FreeDeferredTriSurfs();
+	tr.frameData->ToggleSmpFrame();
 
-	cmd = (emptyCommand_t *)FrameAlloc( bytes );
-	cmd->next = nullptr;
-	frameData->cmdTail->next = &cmd->commandId;
-	frameData->cmdTail = cmd;
-
-	return (void *)cmd;
+	ClearCommandChain();
 }
 
 /*
 ====================
-crDraw::ClearCommandChain
+crDrawCommandQueue::ClearCommandChain
 
 Called after every buffer submission
 and by R_ToggleSmpFrame
 ====================
 */
-void crDraw::ClearCommandChain( void ) 
+void crDrawCommandQueue::ClearCommandChain( void ) 
 {
 	// clear the command chain
-	frameData->cmdHead = frameData->cmdTail = (emptyCommand_t *)FrameAlloc( sizeof( *frameData->cmdHead ) );
-	frameData->cmdHead->commandId = RC_NOP;
-	frameData->cmdHead->next = nullptr;
+	cmdHead = cmdTail = static_cast<emptyCommand_t*>( tr.drawQueue->FrameAlloc( sizeof( emptyCommand_t ) ) );
+	cmdHead->commandId = RC_NOP;
+	cmdHead->next = nullptr;
 }
-

@@ -150,7 +150,7 @@ public:
 
 	renderEntity_t			parms;
 
-	float					modelMatrix[16];		// this is just a rearrangement of parms.axis and parms.origin
+	crRenderMatrix			modelMatrix;			// this is just a rearrangement of parms.axis and parms.origin
 
 	idRenderWorldLocal *	world;
 	int						index;					// in world entityDefs

@@ -13,12 +13,12 @@ public:
     void        Zero( void );
     void        FromAxist( const idMat3 &axis, const idVec3 &origin );
     
-//    idVec3      LocalPointToGlobal( const idVec3 &in );
-//    idVec3      GlobalPointToLocal( const idVec3 &in );
+    idVec3      LocalPointToGlobal( const idVec3 &in ) const;
     idVec3      LocalVectorToGlobal( const idVec3 &in ) const;
+    idPlane     LocalPlaneToGlobal( const idPlane &in ) const;
+    idVec3      GlobalPointToLocal( const idVec3 &in ) const;
     idVec3      GlobalVectorToLocal( const idVec3 &in ) const;
     idPlane     GlobalPlaneToLocal( const idPlane &in ) const;
-    idPlane     LocalPlaneToGlobal( const idPlane &in ) const;
     float       TransformEyeZToWin( const float srcz ) const;
 
     idVec4          operator* ( const idVec4 &in ) const;
@@ -26,6 +26,7 @@ public:
     
     crRenderMatrix Transpose( void ) const;
 
+    crRenderMatrix &operator=( const crRenderMatrix &ref );
     float &operator[]( int i ) { return static_cast<float*>( &mat[0][0] )[i]; }
     const float operator[]( int i ) const { return static_cast<const float*>( &mat[0][0] )[i]; }
     float* operator &( void ) { return &mat[0][0]; }

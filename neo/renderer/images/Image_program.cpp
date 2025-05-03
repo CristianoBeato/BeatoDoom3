@@ -84,7 +84,7 @@ static void R_HeightmapToNormalMap( byte *data, int width, int height, float sca
 
 	// copy and convert to grey scale
 	j = width * height;
-	depth = (byte *)R_StaticAlloc( j );
+	depth = (byte *)tr.frameData->StaticAlloc( j );
 	for ( i = 0 ; i < j ; i++ ) {
 		depth[i] = ( data[i*4] + data[i*4+1] + data[i*4+2] ) / 3;
 	}
@@ -131,7 +131,7 @@ static void R_HeightmapToNormalMap( byte *data, int width, int height, float sca
 	}
 
 
-	R_StaticFree( depth );
+	tr.frameData->StaticFree( depth );
 }
 
 
@@ -243,7 +243,7 @@ static void R_AddNormalMaps( byte *data1, int width1, int height1, byte *data2, 
 	}
 
 	if ( newMap ) {
-		R_StaticFree( newMap );
+		tr.frameData->StaticFree( newMap );
 	}
 }
 
@@ -263,7 +263,7 @@ static void R_SmoothNormalMap( byte *data, int width, int height ) {
 		{ 1, 1, 1 }
 	};
 
-	orig = (byte *)R_StaticAlloc( width * height * 4 );
+	orig = (byte *)tr.frameData->StaticAlloc( width * height * 4 );
 	memcpy( orig, data, width * height * 4 );
 
 	for ( i = 0 ; i < width ; i++ ) {
@@ -296,7 +296,7 @@ static void R_SmoothNormalMap( byte *data, int width, int height ) {
 		}
 	}
 
-	R_StaticFree( orig );
+	tr.frameData->StaticFree( orig );
 }
 
 
@@ -331,7 +331,7 @@ static void R_ImageAdd( byte *data1, int width1, int height1, byte *data2, int w
 	}
 
 	if ( newMap ) {
-		R_StaticFree( newMap );
+		tr.frameData->StaticFree( newMap );
 	}
 }
 
@@ -422,7 +422,7 @@ static bool R_ParseImageProgram_r( idLexer &src, byte **pic, int *width, int *he
 
 		if ( !R_ParseImageProgram_r( src, pic ? &pic2 : NULL, &width2, &height2, timestamps, depth ) ) {
 			if ( pic ) {
-				R_StaticFree( *pic );
+				tr.frameData->StaticFree( *pic );
 				*pic = NULL;
 			}
 			return false;
@@ -431,7 +431,7 @@ static bool R_ParseImageProgram_r( idLexer &src, byte **pic, int *width, int *he
 		// process it
 		if ( pic ) {
 			R_AddNormalMaps( *pic, *width, *height, pic2, width2, height2 );
-			R_StaticFree( pic2 );
+			tr.frameData->StaticFree( pic2 );
 			if ( depth ) {
 				*depth = TD_BUMP;
 			}
@@ -473,7 +473,7 @@ static bool R_ParseImageProgram_r( idLexer &src, byte **pic, int *width, int *he
 
 		if ( !R_ParseImageProgram_r( src, pic ? &pic2 : NULL, &width2, &height2, timestamps, depth ) ) {
 			if ( pic ) {
-				R_StaticFree( *pic );
+				tr.frameData->StaticFree( *pic );
 				*pic = NULL;
 			}
 			return false;
@@ -482,7 +482,7 @@ static bool R_ParseImageProgram_r( idLexer &src, byte **pic, int *width, int *he
 		// process it
 		if ( pic ) {
 			R_ImageAdd( *pic, *width, *height, pic2, width2, height2 );
-			R_StaticFree( pic2 );
+			tr.frameData->StaticFree( pic2 );
 		}
 
 		MatchAndAppendToken( src, ")" );

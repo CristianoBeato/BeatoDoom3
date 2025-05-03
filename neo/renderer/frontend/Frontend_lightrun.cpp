@@ -205,7 +205,7 @@ void crFrontend::CreateEntityRefs( idRenderEntityLocal *def )
 		v[1] = def->referenceBounds[(i>>1)&1][1];
 		v[2] = def->referenceBounds[(i>>2)&1][2];
 
-		crTransform::LocalPointToGlobal( def->modelMatrix, v, transformed[i] ); 
+		transformed[i] = def->modelMatrix.LocalPointToGlobal( v ); //crTransform::LocalPointToGlobal( def->modelMatrix, v, transformed[i] ); 
 	}
 
 	// bump the view count so we can tell if an
@@ -882,7 +882,7 @@ void crFrontend::ReCreateWorldReferences( void )
 
 	// let the interaction generation code know this shouldn't be optimized for
 	// a particular view
-	viewDef = nullptr;
+	viewDef = viewDefptr_t();
 
 	for ( int j = 0; j < tr.worlds.Num(); j++ ) 
 	{
@@ -927,12 +927,12 @@ must be done when switching between display list mode and immediate mode
 */
 void R_RegenerateWorld_f( const idCmdArgs &args ) 
 {
-	 tr.frontEnd->FreeDerivedData();
+	 tr.frontend->FreeDerivedData();
 
 	// watch how much memory we allocate
-	tr.drawQueue->SetStaticAllocCountZero();
+	tr.frameData->SetStaticAllocCountZero();
 
-	tr.frontEnd->ReCreateWorldReferences();
+	tr.frontend->ReCreateWorldReferences();
 
 	common->Printf( "Regenerated world, staticAllocCount = %i.\n", tr.drawQueue->GetStaticAllocCount() );
 }

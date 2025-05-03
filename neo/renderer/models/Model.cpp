@@ -832,7 +832,7 @@ bool idRenderModelStatic::ConvertASEToModelSurfaces( const struct aseModel_s *as
 		// before doing this operation, because we can miss a slop combination
 		// if they are in different surfaces
 
-		vRemap = (int *)tr.drawQueue->StaticAlloc( mesh->numVertexes * sizeof( vRemap[0] ) );
+		vRemap = (int *)tr.frameData->StaticAlloc( mesh->numVertexes * sizeof( vRemap[0] ) );
 
 		if ( fastLoad ) {
 			// renderbump doesn't care about vertex count
@@ -853,7 +853,7 @@ bool idRenderModelStatic::ConvertASEToModelSurfaces( const struct aseModel_s *as
 			}
 		}
 
-		tvRemap = (int *)tr.drawQueue->StaticAlloc( mesh->numTVertexes * sizeof( tvRemap[0] ) );
+		tvRemap = (int *)tr.frameData->StaticAlloc( mesh->numTVertexes * sizeof( tvRemap[0] ) );
 
 		if ( fastLoad ) {
 			// renderbump doesn't care about vertex count
@@ -878,10 +878,10 @@ bool idRenderModelStatic::ConvertASEToModelSurfaces( const struct aseModel_s *as
 		// there are, because ASE tracks them separately but we need them unified
 
 		// the maximum possible number of combined vertexes is the number of indexes
-		mvTable = (matchVert_t *)tr.drawQueue->ClearedStaticAlloc( mesh->numFaces * 3 * sizeof( mvTable[0] ) );
+		mvTable = (matchVert_t *)tr.frameData->ClearedStaticAlloc( mesh->numFaces * 3 * sizeof( mvTable[0] ) );
 
 		// we will have a hash chain based on the xyz values
-		mvHash = (matchVert_t **)tr.drawQueue->ClearedStaticAlloc( mesh->numVertexes * sizeof( mvHash[0] ) );
+		mvHash = (matchVert_t **)tr.frameData->ClearedStaticAlloc( mesh->numVertexes * sizeof( mvHash[0] ) );
 
 		// allocate triangle surface
 		tri = R_AllocStaticTriSurf();
@@ -1007,10 +1007,10 @@ bool idRenderModelStatic::ConvertASEToModelSurfaces( const struct aseModel_s *as
 			}
 		}
 
-		tr.drawQueue->StaticFree( mvTable );
-		tr.drawQueue->StaticFree( mvHash );
-		tr.drawQueue->StaticFree( tvRemap );
-		tr.drawQueue->StaticFree( vRemap );
+		tr.frameData->StaticFree( mvTable );
+		tr.frameData->StaticFree( mvHash );
+		tr.frameData->StaticFree( tvRemap );
+		tr.frameData->StaticFree( vRemap );
 
 		// see if we need to merge with a previous surface of the same material
 		modelSurf = &this->surfaces[mergeTo[ objectNum ]];
@@ -1120,7 +1120,7 @@ bool idRenderModelStatic::ConvertLWOToModelSurfaces( const struct st_lwObject *l
 		return false;
 	}
 
-	vList = (idVec3 *)tr.drawQueue->StaticAlloc( layer->point.count * sizeof( vList[0] ) );
+	vList = (idVec3 *)tr.frameData->StaticAlloc( layer->point.count * sizeof( vList[0] ) );
 	for ( j = 0; j < layer->point.count; j++ ) {
 		vList[j].x = layer->point.pt[j].pos[0];
 		vList[j].y = layer->point.pt[j].pos[2];
@@ -1165,7 +1165,7 @@ bool idRenderModelStatic::ConvertLWOToModelSurfaces( const struct st_lwObject *l
 	// before doing this operation, because we can miss a slop combination
 	// if they are in different surfaces
 
-	vRemap = (int *)tr.drawQueue->StaticAlloc( layer->point.count * sizeof( vRemap[0] ) );
+	vRemap = (int *)tr.frameData->StaticAlloc( layer->point.count * sizeof( vRemap[0] ) );
 
 	if ( fastLoad ) {
 		// renderbump doesn't care about vertex count
@@ -1186,7 +1186,7 @@ bool idRenderModelStatic::ConvertLWOToModelSurfaces( const struct st_lwObject *l
 		}
 	}
 
-	tvRemap = (int *)tr.drawQueue->StaticAlloc( numTVertexes * sizeof( tvRemap[0] ) );
+	tvRemap = (int *)tr.frameData->StaticAlloc( numTVertexes * sizeof( tvRemap[0] ) );
 
 	if ( fastLoad ) {
 		// renderbump doesn't care about vertex count
@@ -1223,10 +1223,10 @@ bool idRenderModelStatic::ConvertLWOToModelSurfaces( const struct st_lwObject *l
 		// we need to find out how many unique vertex / texcoord combinations there are
 
 		// the maximum possible number of combined vertexes is the number of indexes
-		mvTable = (matchVert_t *)tr.drawQueue->ClearedStaticAlloc( layer->polygon.count * 3 * sizeof( mvTable[0] ) );
+		mvTable = (matchVert_t *)tr.frameData->ClearedStaticAlloc( layer->polygon.count * 3 * sizeof( mvTable[0] ) );
 
 		// we will have a hash chain based on the xyz values
-		mvHash = (matchVert_t **)tr.drawQueue->ClearedStaticAlloc( layer->point.count * sizeof( mvHash[0] ) );
+		mvHash = (matchVert_t **)tr.frameData->ClearedStaticAlloc( layer->point.count * sizeof( mvHash[0] ) );
 
 		// allocate triangle surface
 		tri = R_AllocStaticTriSurf();
@@ -1359,8 +1359,8 @@ bool idRenderModelStatic::ConvertLWOToModelSurfaces( const struct st_lwObject *l
 			*(unsigned *)tri->verts[j].color = *(unsigned *)mv->color;
 		}
 
-		tr.drawQueue->StaticFree( mvTable );
-		tr.drawQueue->StaticFree( mvHash );
+		tr.frameData->StaticFree( mvTable );
+		tr.frameData->StaticFree( mvHash );
 
 		// see if we need to merge with a previous surface of the same material
 		modelSurf = &this->surfaces[mergeTo[ i ]];
@@ -1374,10 +1374,10 @@ bool idRenderModelStatic::ConvertLWOToModelSurfaces( const struct st_lwObject *l
 		}
 	}
 
-	tr.drawQueue->StaticFree( tvRemap );
-	tr.drawQueue->StaticFree( vRemap );
-	tr.drawQueue->StaticFree( tvList );
-	tr.drawQueue->StaticFree( vList );
+	tr.frameData->StaticFree( tvRemap );
+	tr.frameData->StaticFree( vRemap );
+	tr.frameData->StaticFree( tvList );
+	tr.frameData->StaticFree( vList );
 
 	return true;
 }
@@ -1679,7 +1679,7 @@ bool idRenderModelStatic::ConvertMAToModelSurfaces (const struct maModel_s *ma )
 		// before doing this operation, because we can miss a slop combination
 		// if they are in different surfaces
 
-		vRemap = (int *)tr.drawQueue->StaticAlloc( mesh->numVertexes * sizeof( vRemap[0] ) );
+		vRemap = (int *)tr.frameData->StaticAlloc( mesh->numVertexes * sizeof( vRemap[0] ) );
 
 		if ( fastLoad ) {
 			// renderbump doesn't care about vertex count
@@ -1700,7 +1700,7 @@ bool idRenderModelStatic::ConvertMAToModelSurfaces (const struct maModel_s *ma )
 			}
 		}
 
-		tvRemap = (int *)tr.drawQueue->StaticAlloc( mesh->numTVertexes * sizeof( tvRemap[0] ) );
+		tvRemap = (int *)tr.frameData->StaticAlloc( mesh->numTVertexes * sizeof( tvRemap[0] ) );
 
 		if ( fastLoad ) {
 			// renderbump doesn't care about vertex count
@@ -1725,10 +1725,10 @@ bool idRenderModelStatic::ConvertMAToModelSurfaces (const struct maModel_s *ma )
 		// there are, because MA tracks them separately but we need them unified
 
 		// the maximum possible number of combined vertexes is the number of indexes
-		mvTable = (matchVert_t *)tr.drawQueue->ClearedStaticAlloc( mesh->numFaces * 3 * sizeof( mvTable[0] ) );
+		mvTable = (matchVert_t *)tr.frameData->ClearedStaticAlloc( mesh->numFaces * 3 * sizeof( mvTable[0] ) );
 
 		// we will have a hash chain based on the xyz values
-		mvHash = (matchVert_t **)tr.drawQueue->ClearedStaticAlloc( mesh->numVertexes * sizeof( mvHash[0] ) );
+		mvHash = (matchVert_t **)tr.frameData->ClearedStaticAlloc( mesh->numVertexes * sizeof( mvHash[0] ) );
 
 		// allocate triangle surface
 		tri = R_AllocStaticTriSurf();
@@ -1857,10 +1857,10 @@ bool idRenderModelStatic::ConvertMAToModelSurfaces (const struct maModel_s *ma )
 			}
 		}
 
-		tr.drawQueue->StaticFree( mvTable );
-		tr.drawQueue->StaticFree( mvHash );
-		tr.drawQueue->StaticFree( tvRemap );
-		tr.drawQueue->StaticFree( vRemap );
+		tr.frameData->StaticFree( mvTable );
+		tr.frameData->StaticFree( mvHash );
+		tr.frameData->StaticFree( tvRemap );
+		tr.frameData->StaticFree( vRemap );
 
 		// see if we need to merge with a previous surface of the same material
 		modelSurf = &this->surfaces[mergeTo[ objectNum ]];
@@ -1974,7 +1974,7 @@ bool idRenderModelStatic::LoadFLT( const char *fileName ) {
 	}
 #if 1
 	// write out a gray scale height map
-	byte	*image = (byte *)tr.drawQueue->StaticAlloc( len );
+	byte	*image = (byte *)tr.framedata->StaticAlloc( len );
 	byte	*image_p = image;
 	for ( int i = 0 ; i < len/4 ; i++ ) {
 		float v = ( data[i] - min ) / ( max - min );
@@ -1988,7 +1988,7 @@ bool idRenderModelStatic::LoadFLT( const char *fileName ) {
 	tgaName.StripFileExtension();
 	tgaName += ".tga";
 	R_WriteTGA( tgaName.c_str(), image, size, size, false );
-	tr.drawQueue->StaticFree( image );
+	tr.frameData->StaticFree( image );
 //return false;
 #endif
 

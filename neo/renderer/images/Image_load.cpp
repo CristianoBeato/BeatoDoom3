@@ -625,7 +625,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 	if ( ( scaled_width == width ) && ( scaled_height == height ) ) {
 		// we must copy even if unchanged, because the border zeroing
 		// would otherwise modify const data
-		scaledBuffer = (byte *)R_StaticAlloc( sizeof( unsigned ) * scaled_width * scaled_height );
+		scaledBuffer = (byte *)tr.frameData->StaticAlloc( sizeof( unsigned ) * scaled_width * scaled_height );
 		memcpy (scaledBuffer, pic, width*height*4);
 	} else {
 		// resample down as needed (FIXME: this doesn't seem like it resamples anymore!)
@@ -642,7 +642,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 
 		while ( width > scaled_width || height > scaled_height ) {
 			shrunk = R_MipMap( scaledBuffer, width, height, preserveBorder );
-			R_StaticFree( scaledBuffer );
+			tr.frameData->StaticFree( scaledBuffer );
 			scaledBuffer = shrunk;
 
 			width >>= 1;
@@ -750,7 +750,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 	while ( scaled_width > 1 || scaled_height > 1 ) {
 		// preserve the border after mip map unless repeating
 		shrunk = R_MipMap( scaledBuffer, scaled_width, scaled_height, preserveBorder );
-		R_StaticFree( scaledBuffer );
+		tr.frameData->StaticFree( scaledBuffer );
 		scaledBuffer = shrunk;
 
 		scaled_width >>= 1;
@@ -784,7 +784,7 @@ void idImage::GenerateImage( const byte *pic, int width, int height,
 
 	if ( scaledBuffer != 0 ) 
 	{
-		R_StaticFree( scaledBuffer );
+		tr.frameData->StaticFree( scaledBuffer );
 	}
 
 	SetImageFilterAndRepeat();
@@ -852,14 +852,14 @@ void idImage::Generate3DImage( const byte *pic, int width, int height, int picDe
 	int		miplevel;
 	byte	*scaledBuffer, *shrunk;
 
-	scaledBuffer = (byte *)R_StaticAlloc( scaled_width * scaled_height * scaled_depth * 4 );
+	scaledBuffer = (byte *)tr.frameData->StaticAlloc( scaled_width * scaled_height * scaled_depth * 4 );
 	memcpy( scaledBuffer, pic, scaled_width * scaled_height * scaled_depth * 4 );
 	miplevel = 0;
 	while ( scaled_width > 1 || scaled_height > 1 || scaled_depth > 1 ) {
 		// preserve the border after mip map unless repeating
 		shrunk = R_MipMap3D( scaledBuffer, scaled_width, scaled_height, scaled_depth,
 			(bool)(repeat != TR_REPEAT) );
-		R_StaticFree( scaledBuffer );
+		tr.frameData->StaticFree( scaledBuffer );
 		scaledBuffer = shrunk;
 
 		scaled_width >>= 1;
@@ -880,7 +880,7 @@ void idImage::Generate3DImage( const byte *pic, int width, int height, int picDe
 		glTexImage3D(GL_TEXTURE_3D, miplevel, internalFormat, scaled_width, scaled_height, scaled_depth,
 			0, GL_RGBA, GL_UNSIGNED_BYTE, scaledBuffer );
 	}
-	R_StaticFree( scaledBuffer );
+	tr.frameData->StaticFree( scaledBuffer );
 
 	// set the minimize / maximize filtering
 	switch( filter ) {
@@ -1032,7 +1032,7 @@ void idImage::GenerateCubeImage( const byte *pic[6], int size,
 				shrunken = NULL;
 			}
 
-			R_StaticFree( shrunk[i] );
+			tr.frameData->StaticFree( shrunk[i] );
 			shrunk[i] = shrunken;
 		}
 
@@ -1314,7 +1314,7 @@ void idImage::WritePrecompressedImage( void )
 		}
 
 		if (data == NULL) {
-			data = (byte *)R_StaticAlloc( size );
+			data = (byte *)tr.frameData->StaticAlloc( size );
 		}
 
 		if ( FormatIsDXT( altInternalFormat ) ) 
@@ -1335,7 +1335,7 @@ void idImage::WritePrecompressedImage( void )
 	}
 
 	if (data != NULL) {
-		R_StaticFree( data );
+		tr.frameData->StaticFree( data );
 	}
 
 	fileSystem->CloseFile( f );
@@ -1468,7 +1468,7 @@ bool idImage::CheckPrecompressedImage( bool fullLoad ) {
 		len = globalImages->image_cacheMinK.GetInteger() * 1024;
 	}
 
-	byte *data = (byte *)R_StaticAlloc( len );
+	byte *data = (byte *)tr.frameData->StaticAlloc( len );
 
 	f->Read( data, len );
 
@@ -1481,7 +1481,7 @@ bool idImage::CheckPrecompressedImage( bool fullLoad ) {
 	if ( magic != DDS_MAKEFOURCC('D', 'D', 'S', ' ')) 
 	{
 		common->Printf( "CheckPrecompressedImage( %s ): magic != 'DDS '\n", imgName.c_str() );
-		R_StaticFree( data );
+		tr.frameData->StaticFree( data );
 		return false;
 	}
 
@@ -1489,14 +1489,14 @@ bool idImage::CheckPrecompressedImage( bool fullLoad ) {
 	// should we just expand the 256 color image to 32 bit for upload?
 //	if ( ddspf_dwFlags & DDSF_ID_INDEXCOLOR && !glConfig.sharedTexturePaletteAvailable ) 
 //	{
-//		R_StaticFree( data );
+//		tr.frameData->StaticFree( data );
 //		return false;
 //	}
 
 	// upload all the levels
 	UploadPrecompressedImage( data, len );
 
-	R_StaticFree( data );
+	tr.frameData->StaticFree( data );
 
 	return true;
 }
@@ -1707,7 +1707,7 @@ void	idImage::ActuallyLoadImage( bool checkForPrecompressed, bool fromBackEnd ) 
 
 		for ( int i = 0 ; i < 6 ; i++ ) {
 			if ( pics[i] ) {
-				R_StaticFree( pics[i] );
+				tr.frameData->StaticFree( pics[i] );
 			}
 		}
 	} else {
@@ -1750,7 +1750,7 @@ void	idImage::ActuallyLoadImage( bool checkForPrecompressed, bool fromBackEnd ) 
 		timestamp = timestamp;
 		precompressedFile = false;
 
-		R_StaticFree( pic );
+		tr.frameData->StaticFree( pic );
 
 		// write out the precompressed version of this file if needed
 		WritePrecompressedImage();
@@ -1833,10 +1833,10 @@ void idImage::Bind( void )
 	}
 
 	// bump our statistic counters
-	frameUsed = tr.backEnd->GetFrameCount();
+	frameUsed = tr.backend->GetFrameCount();
 	bindCount++;
 
-	tr.backEnd->GetShaderStorage()->BindTexture( tr.backEnd->GetCurrentTextureUnit(), m_handler, m_sampler );
+	tr.backend->GetShaderStorage()->BindTexture( tr.backend->GetCurrentTextureUnit(), m_handler, m_sampler );
 }
 
 /*

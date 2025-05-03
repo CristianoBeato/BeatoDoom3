@@ -208,14 +208,14 @@ void RB_ScanStencilBuffer( void ) {
 
 	memset( counts, 0, sizeof( counts ) );
 
-	stencilReadback = (byte *)R_StaticAlloc( glConfig.vidWidth * glConfig.vidHeight );
+	stencilReadback = (byte *)tr.frameData->StaticAlloc( glConfig.vidWidth * glConfig.vidHeight );
 	glReadPixels( 0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, stencilReadback );
 
 	for ( i = 0; i < glConfig.vidWidth * glConfig.vidHeight; i++ ) {
 		counts[ stencilReadback[i] ]++;
 	}
 
-	R_StaticFree( stencilReadback );
+	tr.frameData->StaticFree( stencilReadback );
 
 	// print some stats (not supposed to do from back end in SMP...)
 	common->Printf( "stencil values:\n" );
@@ -240,7 +240,7 @@ void RB_CountStencilBuffer( void ) {
 	byte	*stencilReadback;
 
 
-	stencilReadback = (byte *)R_StaticAlloc( glConfig.vidWidth * glConfig.vidHeight );
+	stencilReadback = (byte *)tr.frameData->StaticAlloc( glConfig.vidWidth * glConfig.vidHeight );
 	glReadPixels( 0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, stencilReadback );
 
 	count = 0;
@@ -248,7 +248,7 @@ void RB_CountStencilBuffer( void ) {
 		count += stencilReadback[i];
 	}
 
-	R_StaticFree( stencilReadback );
+	tr.frameData->StaticFree( stencilReadback );
 
 	// print some stats (not supposed to do from back end in SMP...)
 	common->Printf( "overdraw: %5.1f\n", (float)count/(glConfig.vidWidth * glConfig.vidHeight)  );
@@ -312,7 +312,7 @@ void RB_ShowIntensity( void ) {
 		return;
 	}
 
-	colorReadback = (byte *)R_StaticAlloc( glConfig.vidWidth * glConfig.vidHeight * 4 );
+	colorReadback = (byte *)tr.frameData->StaticAlloc( glConfig.vidWidth * glConfig.vidHeight * 4 );
 	glReadPixels( 0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_RGBA, GL_UNSIGNED_BYTE, colorReadback );
 
 	c = glConfig.vidWidth * glConfig.vidHeight * 4;
@@ -350,7 +350,7 @@ void RB_ShowIntensity( void ) {
 
 	glDrawPixels( glConfig.vidWidth, glConfig.vidHeight, GL_RGBA , GL_UNSIGNED_BYTE, colorReadback );
 
-	R_StaticFree( colorReadback );
+	tr.frameData->StaticFree( colorReadback );
 }
 
 
@@ -383,7 +383,7 @@ void RB_ShowDepthBuffer( void ) {
 	glColor3f( 1, 1, 1 );
 	globalImages->BindNull();
 
-	depthReadback = R_StaticAlloc( glConfig.vidWidth * glConfig.vidHeight*4 );
+	depthReadback = tr.frameData->StaticAlloc( glConfig.vidWidth * glConfig.vidHeight*4 );
 	memset( depthReadback, 0, glConfig.vidWidth * glConfig.vidHeight*4 );
 
 	glReadPixels( 0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_DEPTH_COMPONENT , GL_FLOAT, depthReadback );
@@ -398,7 +398,7 @@ void RB_ShowDepthBuffer( void ) {
 #endif
 
 	glDrawPixels( glConfig.vidWidth, glConfig.vidHeight, GL_RGBA , GL_UNSIGNED_BYTE, depthReadback );
-	R_StaticFree( depthReadback );
+	tr.frameData->StaticFree( depthReadback );
 }
 
 /*

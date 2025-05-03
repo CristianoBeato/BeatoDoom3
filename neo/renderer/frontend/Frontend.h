@@ -33,61 +33,63 @@ public:
 
     // Frontend_light.cpp
     viewEntity_t*   SetEntityDefViewEntity( idRenderEntityLocal *def );
+    viewLight_t*    SetLightDefViewLight( idRenderLightLocal *def );
     bool            IssueEntityDefCallback( idRenderEntityLocal *def );
     bool            CreateAmbientCache( srfTriangles_t *tri, bool needsLighting );
-    bool            CreateLightingCache( const idRenderEntityLocal *ent, const idRenderLightLocal *light, srfTriangles_t *tri );
     void            LinkLightSurf( const drawSurf_t **link, const srfTriangles_t *tri, const viewEntity_t *space, const idRenderLightLocal *light, const idMaterial *shader, const idScreenRect &scissor, bool viewInsideShadow );
     void            CreatePrivateShadowCache( srfTriangles_t *tri );
     void            AddAmbientDrawsurfs( viewEntity_t *vEntity );
+    void            AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const renderEntity_t *renderEntity, const idMaterial *shader, const idScreenRect &scissor );
 
     // Frontend_lightrun.cpp
     void            CreateLightRefs( idRenderLightLocal *light );
     void            CreateEntityRefs( idRenderEntityLocal *def );
     void            ReCreateWorldReferences( void );
     void            FreeDerivedData( void );
+    void            FreeEntityDefFadedDecals( idRenderEntityLocal *def, int time );
     
     // Frontend.cpp
-    void            RenderView( crAutoPointer<viewDef_t> parms );
+    void            RenderView( viewDefptr_t parms );
     idScreenRect    ScreenRectFromViewFrustumBounds( const idBounds &bounds );
     void            ShowColoredScreenRect( const idScreenRect &rect, int colorIndex );
-    void            SetViewMatrix( crAutoPointer<viewDef_t> viewDef );
+    void            SetViewMatrix( viewDefptr_t viewDef );
     void            GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idVec3 &ndc );
 
-    void            SetViewCount( int viewCount ) { this->viewCount = viewCount; }
-    void            SetViewDef( const crAutoPointer<viewDef_t> &viewDef ) { this->viewDef = viewDef; }
-    int             GetViewCount( void ) const { return viewCount; }
-    crAutoPointer<viewDef_t>    GetViewDef( void ) const { return viewDef; }
-    const viewEntity_t          GetWorldSpace( void )const { return viewDef->worldSpace; }
+    // Frontend_stencilshadrow.cpp
+    srfTriangles_t* CreateShadowVolume( const idRenderEntityLocal *ent, const srfTriangles_t *tri, const idRenderLightLocal *light, shadowGen_t optimize, srfCullInfo_t &cullInfo );
 
+    void            SetViewCount( int viewCount ) { this->viewCount = viewCount; }
+    void            SetViewDef( const viewDefptr_t &viewDef ) { this->viewDef = viewDef; }
+    int             GetViewCount( void ) const { return viewCount; }
+    viewDefptr_t    GetViewDef( void ) const { return viewDef; }
+    const viewEntity_t          GetWorldSpace( void )const { return viewDef->worldSpace; }
+    performanceCounters_t&      GetPerformanceCounters( void ) { return pc; }
 private:
     int						viewCount;		// incremented every view (twice a scene if subviewed)
                                             // and every R_MarkFragments call
-    crAutoPointer<viewDef_t>    viewDef; // current view definition 
+    performanceCounters_t	pc;             // performance counters
+    viewDefptr_t            viewDef;        // current view definition 
 
     // Frontend_light.cpp
     idScreenRect    CalcEntityScissorRectangle( viewEntity_t *vEntity );
     void            AddLightSurfaces( void );
     idRenderModel*  EntityDefDynamicModel( idRenderEntityLocal *def ); 
-    void            AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *space, const renderEntity_t *renderEntity, const idMaterial *shader,
-        const idScreenRect &scissor );
     void            AddModelSurfaces( void );
     void            RemoveUnecessaryViewLights( void );
-    viewLight_t*    SetLightDefViewLight( idRenderLightLocal *def );
     idScreenRect    CalcLightScissorRectangle( viewLight_t *vLight ); 
 
     // Frontend_lightrun.cpp
     void            FreeEntityDefCachedDynamicModel( idRenderEntityLocal *def );
-    void            FreeEntityDefFadedDecals( idRenderEntityLocal *def, int time );
     
     // Frontend_subview.cpp
     bool            PreciseCullSurface( const drawSurf_t *drawSurf, idBounds &ndcBounds );
     bool            GenerateSubViews( void );
     bool            GenerateSurfaceSubview( drawSurf_t *drawSurf );
-    viewDef_t*      MirrorViewBySurface( drawSurf_t *drawSurf );
+    viewDefptr_t    MirrorViewBySurface( drawSurf_t *drawSurf );
     void            RemoteRender( drawSurf_t *surf, textureStage_t *stage );
     void            MirrorRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect scissor );
     void            XrayRender( drawSurf_t *surf, textureStage_t *stage, idScreenRect scissor );
-    viewDef_t*      XrayViewBySurface( drawSurf_t *drawSurf );
+    viewDefptr_t    XrayViewBySurface( drawSurf_t *drawSurf );
 
     // Frontend_deform.cpp
     void            FinishDeform( drawSurf_t *drawSurf, srfTriangles_t *newTri, idDrawVert *ac );
@@ -115,9 +117,9 @@ private:
 
 
 public:
-    static bool     CullLocalBox( const idBounds &bounds, const float modelMatrix[16], int numPlanes, const idPlane *planes );
-    static bool     RadiusCullLocalBox( const idBounds &bounds, const float modelMatrix[16], int numPlanes, const idPlane *planes );
-    static bool     CornerCullLocalBox( const idBounds &bounds, const float modelMatrix[16], int numPlanes, const idPlane *planes );
+    static bool     CullLocalBox( const idBounds &bounds, const crRenderMatrix modelMatrix, int numPlanes, const idPlane *planes );
+    static bool     RadiusCullLocalBox( const idBounds &bounds, const crRenderMatrix modelMatrix, int numPlanes, const idPlane *planes );
+    static bool     CornerCullLocalBox( const idBounds &bounds, const crRenderMatrix modelMatrix, int numPlanes, const idPlane *planes );
     
     // Fontend_lightrun.cpp
     static void     CheckForEntityDefsUsingModel( idRenderModel *model );

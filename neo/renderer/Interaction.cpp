@@ -59,7 +59,7 @@ void R_CalcInteractionFacing( const idRenderEntityLocal *ent, const srfTriangles
 	if ( cullInfo.facing != nullptr ) 
 		return;
 
-	crTransform::GlobalPointToLocal( ent->modelMatrix, light->globalLightOrigin, localLightOrigin );
+	localLightOrigin = ent->modelMatrix.GlobalPointToLocal( light->globalLightOrigin );
 
 	int numFaces = tri->numIndexes / 3;
 
@@ -67,7 +67,7 @@ void R_CalcInteractionFacing( const idRenderEntityLocal *ent, const srfTriangles
 		R_DeriveFacePlanes( const_cast<srfTriangles_t *>(tri) );
 
 
-	cullInfo.facing = static_cast<byte *>( tr.drawQueue->StaticAlloc( ( numFaces + 1 ) * sizeof( cullInfo.facing[0] ) ) );
+	cullInfo.facing = static_cast<byte *>( tr.framedata->StaticAlloc( ( numFaces + 1 ) * sizeof( cullInfo.facing[0] ) ) );
 
 	// calculate back face culling
 	float *planeSide = static_cast<float *>( _alloca16( numFaces * sizeof( float ) ) );
@@ -101,7 +101,7 @@ void R_CalcInteractionCullBits( const idRenderEntityLocal *ent, const srfTriangl
 	// cull the triangle surface bounding box
 	for ( i = 0; i < 6; i++ ) 
 	{
-		crTransform::GlobalPlaneToLocal( ent->modelMatrix, -light->frustum[i], cullInfo.localClipPlanes[i] );
+		cullInfo.localClipPlanes[i] = ent->modelMatrix.GlobalPlaneToLocal( -light->frustum[i] );
 
 		// get front bits for the whole surface
 		if ( tri->bounds.PlaneDistance( cullInfo.localClipPlanes[i] ) >= LIGHT_CLIP_EPSILON ) 
@@ -115,7 +115,7 @@ void R_CalcInteractionCullBits( const idRenderEntityLocal *ent, const srfTriangl
 		return;
 	}
 
-	cullInfo.cullBits = static_cast<byte*>( tr.drawQueue->StaticAlloc( tri->numVerts * sizeof( cullInfo.cullBits[0] ) ) );
+	cullInfo.cullBits = static_cast<byte*>( tr.framedata->StaticAlloc( tri->numVerts * sizeof( cullInfo.cullBits[0] ) ) );
 	SIMDProcessor->Memset( cullInfo.cullBits, 0, tri->numVerts * sizeof( cullInfo.cullBits[0] ) );
 
 	float *planeSide = static_cast<float *>( _alloca16( tri->numVerts * sizeof( float ) ) );
@@ -140,14 +140,14 @@ void R_FreeInteractionCullInfo( srfCullInfo_t &cullInfo )
 {
 	if ( cullInfo.facing != nullptr ) 
 	{
-		tr.drawQueue->StaticFree( cullInfo.facing );
+		tr.frameData->StaticFree( cullInfo.facing );
 		cullInfo.facing = nullptr;
 	}
 
 	if ( cullInfo.cullBits != nullptr ) 
 	{
 		if ( cullInfo.cullBits != LIGHT_CULL_ALL_FRONT ) 
-			tr.drawQueue->StaticFree( cullInfo.cullBits );
+			tr.frameData->StaticFree( cullInfo.cullBits );
 		
 		cullInfo.cullBits = nullptr;
 	}
@@ -305,7 +305,7 @@ static srfTriangles_t *R_CreateLightTris( const idRenderEntityLocal *ent,
 	glIndex_t*		indexes = nullptr;
 	srfTriangles_t*	newTri = nullptr;
 
-	tr.pc.c_createLightTris++;
+	tr.frontend->GetPerformanceCounters().c_createLightTris++;
 	c_backfaced = 0;
 	c_distance = 0;
 
@@ -570,7 +570,7 @@ void idInteraction::FreeSurfaces( void )
 			R_FreeInteractionCullInfo( sint->cullInfo );
 		}
 
-		tr.drawQueue->StaticFree( this->surfaces );
+		tr.frameData->StaticFree( this->surfaces );
 		this->surfaces = nullptr;
 	}
 	this->numSurfaces = -1;
@@ -727,7 +727,7 @@ idScreenRect idInteraction::CalcInteractionScissorRectangle( const idFrustum &vi
 		return lightDef->viewLight->scissorRect;
 
 	if ( r_useInteractionScissors.GetInteger() < 0 ) 
-		return R_CalcIntersectionScissor( lightDef, entityDef, tr.frontEnd->GetViewDef() ); // this is the code from Cass at nvidia, it is more precise, but slower
+		return R_CalcIntersectionScissor( lightDef, entityDef, tr.frontend->GetViewDef() ); // this is the code from Cass at nvidia, it is more precise, but slower
 
 	// the following is Mr.E's code
 
@@ -750,7 +750,7 @@ idScreenRect idInteraction::CalcInteractionScissorRectangle( const idFrustum &vi
 				area->next = frustumAreas;
 				frustumAreas = area;
 			}
-			frustumAreas = tr.frontEnd->GetViewDef()->renderWorld->FloodFrustumAreas( frustum, frustumAreas );
+			frustumAreas = tr.frontend->GetViewDef()->renderWorld->FloodFrustumAreas( frustum, frustumAreas );
 			frustumState = idInteraction::FRUSTUM_VALIDAREAS;
 		}
 
@@ -783,13 +783,13 @@ idScreenRect idInteraction::CalcInteractionScissorRectangle( const idFrustum &vi
 		return portalRect;
 
 	// derive a scissor rectangle from the projection bounds
-	scissorRect = tr.frontEnd->ScreenRectFromViewFrustumBounds( projectionBounds );
+	scissorRect = tr.frontend->ScreenRectFromViewFrustumBounds( projectionBounds );
 
 	// intersect with the portal crossing scissor rectangle
 	scissorRect.Intersect( portalRect );
 
 	if ( r_showInteractionScissors.GetInteger() > 0 ) 
-		tr.frontEnd->ShowColoredScreenRect( scissorRect, lightDef->index );
+		tr.frontend->ShowColoredScreenRect( scissorRect, lightDef->index );
 
 	return scissorRect;
 }
@@ -833,9 +833,9 @@ bool idInteraction::CullInteractionByViewFrustum( const idFrustum &viewFrustum )
 	if ( r_showInteractionFrustums.GetInteger() ) 
 	{
 		static idVec4 colors[] = { colorRed, colorGreen, colorBlue, colorYellow, colorMagenta, colorCyan, colorWhite, colorPurple };
-		tr.frontEnd->GetViewDef()->renderWorld->DebugFrustum( colors[lightDef->index & 7], frustum, ( r_showInteractionFrustums.GetInteger() > 1 ) );
+		tr.frontend->GetViewDef()->renderWorld->DebugFrustum( colors[lightDef->index & 7], frustum, ( r_showInteractionFrustums.GetInteger() > 1 ) );
 		if ( r_showInteractionFrustums.GetInteger() > 2 ) 
-			tr.frontEnd->GetViewDef()->renderWorld->DebugBox( colorWhite, idBox( entityDef->referenceBounds, entityDef->parms.origin, entityDef->parms.axis ) );
+			tr.frontend->GetViewDef()->renderWorld->DebugBox( colorWhite, idBox( entityDef->referenceBounds, entityDef->parms.origin, entityDef->parms.axis ) );
 	}
 
 	return false;
@@ -862,7 +862,7 @@ void idInteraction::CreateInteraction( const idRenderModel *model )
 	bool				interactionGenerated;
 	idBounds			bounds;
 
-	tr.pc.c_createInteractions++;
+	tr.frontend->GetPerformanceCounters().c_createInteractions++;
 
 	bounds = model->Bounds( &entityDef->parms );
 
@@ -887,7 +887,7 @@ void idInteraction::CreateInteraction( const idRenderModel *model )
 	// create slots for each of the model's surfaces
 	//
 	numSurfaces = model->NumSurfaces();
-	surfaces = static_cast<surfaceInteraction_t *>( tr.drawQueue->ClearedStaticAlloc( sizeof( *surfaces ) * numSurfaces ) );
+	surfaces = static_cast<surfaceInteraction_t *>( tr.frameData->ClearedStaticAlloc( sizeof( *surfaces ) * numSurfaces ) );
 
 	interactionGenerated = false;
 
@@ -930,7 +930,7 @@ void idInteraction::CreateInteraction( const idRenderModel *model )
 		// generate a lighted surface and add it
 		if ( shader->ReceivesLighting() ) 
 		{
-			if ( tri->ambientViewCount == tr.frontEnd->GetViewCount() ) 
+			if ( tri->ambientViewCount == tr.frontend->GetViewCount() ) 
 				sint->lightTris = R_CreateLightTris( entityDef, tri, lightDef, shader, sint->cullInfo );
 			else 
 				sint->lightTris = LIGHT_TRIS_DEFERRED; // this will be calculated when sint->ambientTris is actually in view
@@ -945,7 +945,7 @@ void idInteraction::CreateInteraction( const idRenderModel *model )
 			if ( lightDef->parms.prelightModel == nullptr || !model->IsStaticWorldModel() || !r_useOptimizedShadows.GetBool() ) 
 			{
 				// this is the only place during gameplay (outside the utilities) that R_CreateShadowVolume() is called
-				sint->shadowTris = R_CreateShadowVolume( entityDef, tri, lightDef, shadowGen, sint->cullInfo );
+				sint->shadowTris = tr.frontend->CreateShadowVolume( entityDef, tri, lightDef, shadowGen, sint->cullInfo );
 				if ( sint->shadowTris ) 
 				{
 					if ( shader->Coverage() != MC_OPAQUE || ( !r_skipSuppress.GetBool() && entityDef->parms.suppressSurfaceInViewID ) ) 
@@ -987,7 +987,7 @@ static bool R_PotentiallyInsideInfiniteShadow( const srfTriangles_t *occluder, c
 	// view could be mathematically outside, but if the near clip plane
 	// chops a volume edge, the zpass rendering would fail.
 	float	znear = r_znear.GetFloat();
-	if ( tr.frontEnd->GetViewDef()->renderView.cramZNear ) 
+	if ( tr.frontend->GetViewDef()->renderView.cramZNear ) 
 		znear *= 0.25f;
 	
 	float	stretch = znear * 2;	// in theory, should vary with FOV
@@ -1080,11 +1080,11 @@ void idInteraction::AddActiveInteraction( void )
 		// try to cull the interaction
 		// this will also cull the case where the light origin is inside the
 		// view frustum and the entity bounds are outside the view frustum
-		if ( CullInteractionByViewFrustum( tr.frontEnd->GetViewDef()->viewFrustum ) ) 
+		if ( CullInteractionByViewFrustum( tr.frontend->GetViewDef()->viewFrustum ) ) 
 			return;
 
 		// calculate the shadow scissor rectangle
-		shadowScissor = CalcInteractionScissorRectangle( tr.frontEnd->GetViewDef()->viewFrustum );
+		shadowScissor = CalcInteractionScissorRectangle( tr.frontend->GetViewDef()->viewFrustum );
 	}
 
 	// get out before making the dynamic model if the shadow scissor rectangle is empty
@@ -1108,8 +1108,10 @@ void idInteraction::AddActiveInteraction( void )
 	if ( IsDeferred() )
 		CreateInteraction( model );
 
-	crTransform::GlobalPointToLocal( vEntity->modelMatrix, lightDef->globalLightOrigin, localLightOrigin );
-	crTransform::GlobalPointToLocal( vEntity->modelMatrix, tr.frontEnd->GetViewDef()->renderView.vieworg, localViewOrigin );
+	// crTransform::GlobalPointToLocal( vEntity->modelMatrix, lightDef->globalLightOrigin, localLightOrigin );
+	// crTransform::GlobalPointToLocal( vEntity->modelMatrix, tr.frontend->GetViewDef()->renderView.vieworg, localViewOrigin );
+	localLightOrigin = vEntity->modelMatrix.GlobalPointToLocal( lightDef->globalLightOrigin );
+	localViewOrigin = vEntity->modelMatrix.GlobalPointToLocal( tr.frontend->GetViewDef()->renderView.vieworg );
 
 	// calculate the scissor as the intersection of the light and model rects
 	// this is used for light triangles, but not for shadow triangles
@@ -1124,7 +1126,7 @@ void idInteraction::AddActiveInteraction( void )
 		surfaceInteraction_t *sint = &surfaces[i];
 
 		// see if the base surface is visible, we may still need to add shadows even if empty
-		if ( !lightScissorsEmpty && sint->ambientTris && sint->ambientTris->ambientViewCount == tr.frontEnd->GetViewCount() ) 
+		if ( !lightScissorsEmpty && sint->ambientTris && sint->ambientTris->ambientViewCount == tr.frontend->GetViewCount() ) 
 		{
 
 			// make sure we have created this interaction, which may have been deferred
@@ -1142,13 +1144,13 @@ void idInteraction::AddActiveInteraction( void )
 				// try to cull before adding
 				// FIXME: this may not be worthwhile. We have already done culling on the ambient,
 				// but individual surfaces may still be cropped somewhat more
-				if ( !crFrontend::CullLocalBox( lightTris->bounds, vEntity->modelMatrix, 5, tr.frontEnd->GetViewDef()->frustum ) ) 
+				if ( !crFrontend::CullLocalBox( lightTris->bounds, vEntity->modelMatrix, 5, tr.frontend->GetViewDef()->frustum ) ) 
 				{
 					// make sure the original surface has its ambient cache created
 					srfTriangles_t *tri = sint->ambientTris;
 					if ( !tri->ambientCache ) 
 					{
-						if ( !tr.frontEnd->CreateAmbientCache( tri, sint->shader->ReceivesLighting() ) ) 
+						if ( !tr.frontend->CreateAmbientCache( tri, sint->shader->ReceivesLighting() ) ) 
 							continue; // skip if we were out of vertex memory
 					}
 
@@ -1159,18 +1161,18 @@ void idInteraction::AddActiveInteraction( void )
 					vertexCache.Touch( lightTris->ambientCache );
 
 					// regenerate the lighting cache (for non-vertex program cards) if it has been purged
-					if ( !lightTris->lightingCache ) 
-					{
-						if ( !tr.frontEnd->CreateLightingCache( entityDef, lightDef, lightTris ) ) 
-							continue; // skip if we are out of vertex memory
-					}
+//					if ( !lightTris->lightingCache ) 
+//					{
+//						if ( !tr.frontend->CreateLightingCache( entityDef, lightDef, lightTris ) ) 
+//							continue; // skip if we are out of vertex memory
+//					}
 					// touch the light surface so it won't get purged
 					// (vertex program cards won't have a light cache at all)
-					if ( lightTris->lightingCache ) 
-						vertexCache.Touch( lightTris->lightingCache );
+//					if ( lightTris->lightingCache ) 
+//						vertexCache.Touch( lightTris->lightingCache );
 				
-					if ( !lightTris->indexCache && r_useIndexBuffers.GetBool() ) 
-						vertexCache.Alloc( lightTris->indexes, lightTris->numIndexes * sizeof( lightTris->indexes[0] ), &lightTris->indexCache, true );
+					if ( !lightTris->indexCache ) 
+						lightTris->indexCache = vertexCache.AllocElement( lightTris->numIndexes * sizeof( lightTris->indexes[0] ), lightTris->indexes );
 					
 					if ( lightTris->indexCache ) 
 						vertexCache.Touch( lightTris->indexCache );
@@ -1184,11 +1186,11 @@ void idInteraction::AddActiveInteraction( void )
 					// there will only be localSurfaces if the light casts shadows and
 					// there are surfaces with NOSELFSHADOW
 					if ( sint->shader->Coverage() == MC_TRANSLUCENT )
-						tr.frontEnd->LinkLightSurf( &vLight->translucentInteractions, lightTris, vEntity, lightDef, shader, lightScissor, false );
+						tr.frontend->LinkLightSurf( &vLight->translucentInteractions, lightTris, vEntity, lightDef, shader, lightScissor, false );
 					else if ( !lightDef->parms.noShadows && sint->shader->TestMaterialFlag(MF_NOSELFSHADOW) ) 
-						tr.frontEnd->LinkLightSurf( &vLight->localInteractions, lightTris, vEntity, lightDef, shader, lightScissor, false );
+						tr.frontend->LinkLightSurf( &vLight->localInteractions, lightTris, vEntity, lightDef, shader, lightScissor, false );
 					else 
-						tr.frontEnd->LinkLightSurf( &vLight->globalInteractions, lightTris, vEntity, lightDef, shader, lightScissor, false );
+						tr.frontend->LinkLightSurf( &vLight->globalInteractions, lightTris, vEntity, lightDef, shader, lightScissor, false );
 				}
 			}
 		}
@@ -1202,7 +1204,7 @@ void idInteraction::AddActiveInteraction( void )
 			// check for view specific shadow suppression (player shadows, etc)
 			if ( !r_skipSuppress.GetBool() ) 
 			{
-				if ( entityDef->parms.suppressShadowInViewID &&	entityDef->parms.suppressShadowInViewID == tr.frontEnd->GetViewDef()->renderView.viewID ) 
+				if ( entityDef->parms.suppressShadowInViewID &&	entityDef->parms.suppressShadowInViewID == tr.frontend->GetViewDef()->renderView.viewID ) 
 					continue;
 				
 				if ( entityDef->parms.suppressShadowInLightID && entityDef->parms.suppressShadowInLightID == lightDef->parms.lightId ) 
@@ -1214,7 +1216,7 @@ void idInteraction::AddActiveInteraction( void )
 			// bounds, because the perspective projection extends them to infinity
 			if ( r_useShadowCulling.GetBool() && !shadowTris->bounds.IsCleared() ) 
 			{
-				if ( crFrontend::CullLocalBox( shadowTris->bounds, vEntity->modelMatrix, 5, tr.frontEnd->GetViewDef()->frustum ) ) 
+				if ( crFrontend::CullLocalBox( shadowTris->bounds, vEntity->modelMatrix, 5, tr.frontend->GetViewDef()->frustum ) ) 
 					continue;
 			}
 
@@ -1231,11 +1233,11 @@ void idInteraction::AddActiveInteraction( void )
 				if ( shadowTris->shadowVertexes ) 
 				{
 					// each interaction has unique vertexes
-					tr.frontEnd->CreatePrivateShadowCache( shadowTris );
+					tr.frontend->CreatePrivateShadowCache( shadowTris );
 				} 
 				else 
 				{
-					tr.frontEnd->CreateVertexProgramShadowCache( sint->ambientTris );
+					tr.frontend->CreateVertexProgramShadowCache( sint->ambientTris );
 					shadowTris->shadowCache = sint->ambientTris->shadowCache;
 				}
 
@@ -1247,19 +1249,18 @@ void idInteraction::AddActiveInteraction( void )
 			// touch the shadow surface so it won't get purged
 			vertexCache.Touch( shadowTris->shadowCache );
 
-			if ( !shadowTris->indexCache && r_useIndexBuffers.GetBool() ) 
+			if ( !shadowTris->indexCache ) 
 			{
-				vertexCache.Alloc( shadowTris->indexes, shadowTris->numIndexes * sizeof( shadowTris->indexes[0] ), &shadowTris->indexCache, true );
+				shadowTris->indexCache = vertexCache.AllocElement( shadowTris->numIndexes * sizeof( shadowTris->indexes[0] ), shadowTris->indexes );
 				vertexCache.Touch( shadowTris->indexCache );
 			}
 
 			// see if we can avoid using the shadow volume caps
-			bool inside = R_PotentiallyInsideInfiniteShadow( sint->ambientTris, localViewOrigin, localLightOrigin );
-
-			if ( sint->shader->TestMaterialFlag( MF_NOSELFSHADOW ) ) 
-				tr.frontEnd->LinkLightSurf( &vLight->localShadows, shadowTris, vEntity, lightDef, nullptr, shadowScissor, inside );
-			else 
-				tr.frontEnd->LinkLightSurf( &vLight->globalShadows, shadowTris, vEntity, lightDef, nullptr, shadowScissor, inside );
+			// bool inside = R_PotentiallyInsideInfiniteShadow( sint->ambientTris, localViewOrigin, localLightOrigin );
+			// if ( sint->shader->TestMaterialFlag( MF_NOSELFSHADOW ) ) 
+			// 	tr.frontend->LinkLightSurf( &vLight->localShadows, shadowTris, vEntity, lightDef, nullptr, shadowScissor, inside );
+			// else 
+			// 	tr.frontend->LinkLightSurf( &vLight->globalShadows, shadowTris, vEntity, lightDef, nullptr, shadowScissor, inside );
 		}
 	}
 }
@@ -1287,12 +1288,12 @@ void R_ShowInteractionMemory_f( const idCmdArgs &args ) {
 		if ( !def ) {
 			continue;
 		}
-		if ( def->firstInteraction == NULL ) {
+		if ( def->firstInteraction == nullptr ) {
 			continue;
 		}
 		entities++;
 
-		for ( idInteraction *inter = def->firstInteraction; inter != NULL; inter = inter->entityNext ) {
+		for ( idInteraction *inter = def->firstInteraction; inter != nullptr; inter = inter->entityNext ) {
 			interactions++;
 			total += inter->MemoryUsed();
 

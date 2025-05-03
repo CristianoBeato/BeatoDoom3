@@ -139,13 +139,13 @@ void crFrontend::RenderGuiSurf( idUserInterface *gui, drawSurf_t *drawSurf )
 	if ( tr.guiRecursionLevel == 4 ) 
 		return;
 
-	tr.pc.c_guiSurfs++;
+	pc.c_guiSurfs++;
 
 	// create the new matrix to draw on this surface
 	SurfaceToTextureAxis( drawSurf->geo, origin, axis );
 
-	float	guiModelMatrix[16];
-	float	modelMatrix[16];
+	crRenderMatrix	guiModelMatrix;
+	crRenderMatrix	modelMatrix;
 
 	guiModelMatrix[0] = axis[0][0] / 640.0;
 	guiModelMatrix[4] = axis[1][0] / 480.0;
@@ -167,8 +167,8 @@ void crFrontend::RenderGuiSurf( idUserInterface *gui, drawSurf_t *drawSurf )
 	guiModelMatrix[11] = 0;
 	guiModelMatrix[15] = 1;
 
-	crTransform::GlMultMatrix( guiModelMatrix, drawSurf->space->modelMatrix, 
-			modelMatrix );
+	// crTransform::GlMultMatrix( guiModelMatrix, drawSurf->space->modelMatrix, modelMatrix );
+	modelMatrix = guiModelMatrix * drawSurf->space->modelMatrix;
 
 	tr.guiRecursionLevel++;
 

@@ -194,7 +194,7 @@ const int	INITIAL_DRAWSURFS =			0x4000;
 
 //=======================================================================
 
-void R_LockSurfaceScene( viewDef_t *parms );
+void R_LockSurfaceScene( viewDefptr_t parms );
 
 void R_ReloadGuis_f( const idCmdArgs &args );
 void R_ListGuis_f( const idCmdArgs &args );
@@ -213,7 +213,8 @@ const idMaterial *R_RemapShaderBySkin( const idMaterial *shader, const idDeclSki
 /*
 ** performanceCounters_t
 */
-typedef struct {
+typedef struct 
+{
 	int		c_sphere_cull_in, c_sphere_cull_clip, c_sphere_cull_out;
 	int		c_box_cull_in, c_box_cull_out;
 	int		c_createInteractions;	// number of calls to idInteraction::CreateInteraction
@@ -221,7 +222,7 @@ typedef struct {
 	int		c_createShadowVolumes;
 	int		c_generateMd5;
 	int		c_entityDefCallbacks;
-	int		c_alloc, c_free;	// counts for R_StaticAllc/R_StaticFree
+	int		c_alloc, c_free;	// counts for R_StaticAllc/tr.frameData->StaticFree
 	int		c_visibleViewEntities;
 	int		c_shadowViewEntities;
 	int		c_viewLights;
@@ -342,7 +343,6 @@ public:
 							~idRenderSystemLocal( void );
 
 	void					Clear( void );
-	void					SetBackEndRenderer();			// sets tr.backEndRenderer based on cvars
 	void					RenderViewToViewport( const renderView_t *renderView, idScreenRect *viewport );
 
 public:
@@ -371,7 +371,7 @@ public:
 
 	idRenderWorldLocal *	primaryWorld;
 	renderView_t			primaryRenderView;
-	viewDef_t *				primaryView;
+	viewDefptr_t			primaryView;
 	// many console commands need to know which world they should operate on
 
 	const idMaterial *		defaultMaterial;
@@ -381,8 +381,6 @@ public:
 
 	idImage *				ambientCubeImage;	// hack for testing dependent ambient lighting
  
-	performanceCounters_t	pc;					// performance counters
-
 	drawSurfsCommand_t		lockSurfacesCmd;	// use this when r_lockSurfaces = 1
 
 	viewEntity_t			identitySpace;		// can use if we don't know viewDef->worldSpace is valid
@@ -406,9 +404,11 @@ public:
 
 	// openGL context ( command buffer, dispach tread )
 	crAutoPointer<crGLContext>		opengl;
-	crAutoPointer<crDraw>			drawQueue;	// draw queue interface
-	crAutoPointer<crFrontend>		frontEnd;	// frontend interface
-	crAutoPointer<crBackend>		backEnd;	// backend interface
+
+	crAutoPointer<crDrawFrameData>		frameData;		// alloc frame temporary data 
+	crAutoPointer<crDrawCommandQueue>	drawCommand;	// draw queue interface
+	crAutoPointer<crFrontend>			frontend;		// frontend interface
+	crAutoPointer<crBackend>			backend;		// backend interface
 // BEATO End
 };
 
@@ -718,7 +718,7 @@ typedef enum
 	FRAMEBUFFER_DEPTH_PASS,
 	FRAMEBUFFER_LIGHT_PASS,
 	FRAMEBUFFER_COUNT
-} framebuffer_t
+} framebuffer_t;
 
 /*
 
@@ -767,10 +767,6 @@ typedef enum
 	SG_OFFLINE		// perform very time consuming optimizations
 } shadowGen_t;
 
-srfTriangles_t *R_CreateShadowVolume( const idRenderEntityLocal *ent,
-									 const srfTriangles_t *tri, const idRenderLightLocal *light,
-									 shadowGen_t optimize, srfCullInfo_t &cullInfo );
-
 /*
 ============================================================
 
@@ -803,7 +799,8 @@ dmap time optimization of shadow volumes, called from R_CreateShadowVolume
 */
 
 
-typedef struct {
+typedef struct 
+{
 	idVec3	*verts;			// includes both front and back projections, caller should free
 	int		numVerts;
 	glIndex_t	*indexes;	// caller should free
@@ -833,7 +830,6 @@ TRISURF
 
 void				R_InitTriSurfData( void );
 void				R_ShutdownTriSurfData( void );
-void				R_PurgeTriSurfData( frameData_t *frame );
 void				R_ShowTriSurfMemory_f( const idCmdArgs &args );
 
 srfTriangles_t *	R_AllocStaticTriSurf( void );
@@ -851,7 +847,6 @@ void				R_FreeStaticTriSurfSilIndexes( srfTriangles_t *tri );
 void				R_FreeStaticTriSurf( srfTriangles_t *tri );
 void				R_FreeStaticTriSurfVertexCaches( srfTriangles_t *tri );
 void				R_ReallyFreeStaticTriSurf( srfTriangles_t *tri );
-void				R_FreeDeferredTriSurfs( frameData_t *frame );
 int					R_TriSurfMemory( const srfTriangles_t *tri );
 
 void				R_BoundTriSurf( srfTriangles_t *tri );
@@ -946,15 +941,11 @@ TR_BACKEND
 =============================================================
 */
 
-void RB_SetDefaultGLState( void );
-void RB_SetGL2D( void );
-
 // write a comment to the r_logFile if it is enabled
 void RB_LogComment( const char *comment, ... ) id_attribute((format(printf,1,2)));
 
 void RB_ShowImages( void );
 
-void RB_ExecuteBackEndCommands( const emptyCommand_t *cmds );
 
 
 /*
@@ -994,7 +985,7 @@ TR_SHADOWBOUNDS
 
 =============================================================
 */
-idScreenRect R_CalcIntersectionScissor( const idRenderLightLocal * lightDef, const idRenderEntityLocal * entityDef, const crAutoPointer<viewDef_t> viewDef );
+idScreenRect R_CalcIntersectionScissor( const idRenderLightLocal * lightDef, const idRenderEntityLocal * entityDef, const viewDefptr_t viewDef );
 
 //=============================================
 #include "renderworld/RenderEntity.h"

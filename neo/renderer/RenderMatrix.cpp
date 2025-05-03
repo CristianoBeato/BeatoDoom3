@@ -79,19 +79,83 @@ void crRenderMatrix::Zero(void)
 #endif
 }
 
-//idVec3 crRenderMatrix::LocalPointToGlobal(const idVec3 &in)
-//{
-//	idVec3 out = idVec3();
-//    return out;
-//}
+idVec3 crRenderMatrix::LocalPointToGlobal(const idVec3 &in) const 
+{
+	idVec3 out = idVec3();
+#if 0// ID_USE_INSTRINSEC
+	__m128 matCol1 = _mm_loadu_ps( mat[0] );
+	__m128 matCol2 = _mm_loadu_ps( mat[1] );
+	__m128 matCol3 = _mm_loadu_ps( mat[2] );
+	__m128 matCol4 = _mm_loadu_ps( mat[3] );
 
-//idVec3 crRenderMatrix::GlobalPointToLocal(const idVec3 &in)
-//{
-//	idVec3 out = idVec3();
-//    return out;
-//}
+	__m128 inVec = _mm_set_ps(1.0f, in[2], in[1], in[0]);
+	__m128 temp = _mm_sub_ps(inVec, matCol4);
 
-idVec3 crRenderMatrix::LocalVectorToGlobal( const idVec3 &in ) const
+	__m128 resX = _mm_mul_ps(temp, matCol1);
+	__m128 resY = _mm_mul_ps(temp, matCol2);
+	__m128 resZ = _mm_mul_ps(temp, matCol3);
+
+	resX = _mm_hadd_ps(resX, resX);
+	resX = _mm_hadd_ps(resX, resX);
+	resY = _mm_hadd_ps(resY, resY);
+	resY = _mm_hadd_ps(resY, resY);
+	resZ = _mm_hadd_ps(resZ, resZ);
+	resZ = _mm_hadd_ps(resZ, resZ);
+
+	out[0] = _mm_cvtss_f32(resX);
+	out[1] = _mm_cvtss_f32(resY);
+	out[2] = _mm_cvtss_f32(resZ);
+#else
+	idVec3	temp;
+
+	VectorSubtract( in, mat[3], temp );
+
+	out[0] = DotProduct( temp, mat[0] );
+	out[1] = DotProduct( temp, mat[1] );
+	out[2] = DotProduct( temp, mat[2] );
+#endif
+	return out;
+}
+
+idVec3 crRenderMatrix::GlobalPointToLocal(const idVec3 &in) const
+{
+	idVec3 out = idVec3();
+#if 0 //ID_USE_INSTRINSEC
+	__m128 matCol1 = _mm_loadu_ps(&modelMatrix[0]);
+	__m128 matCol2 = _mm_loadu_ps(&modelMatrix[4]);
+	__m128 matCol3 = _mm_loadu_ps(&modelMatrix[8]);
+	__m128 matCol4 = _mm_loadu_ps(&modelMatrix[12]);
+
+	__m128 inVec = _mm_set_ps(1.0f, in[2], in[1], in[0]);
+	__m128 temp = _mm_sub_ps(inVec, matCol4);
+
+	__m128 resX = _mm_mul_ps(temp, matCol1);
+	__m128 resY = _mm_mul_ps(temp, matCol2);
+	__m128 resZ = _mm_mul_ps(temp, matCol3);
+
+	resX = _mm_hadd_ps(resX, resX);
+	resX = _mm_hadd_ps(resX, resX);
+	resY = _mm_hadd_ps(resY, resY);
+	resY = _mm_hadd_ps(resY, resY);
+	resZ = _mm_hadd_ps(resZ, resZ);
+	resZ = _mm_hadd_ps(resZ, resZ);
+
+	out[0] = _mm_cvtss_f32(resX);
+	out[1] = _mm_cvtss_f32(resY);
+	out[2] = _mm_cvtss_f32(resZ);
+#else
+	idVec3	temp;
+
+	VectorSubtract( in, mat[3], temp );
+
+	out[0] = DotProduct( temp, mat[0] );
+	out[1] = DotProduct( temp, mat[1] );
+	out[2] = DotProduct( temp, mat[2] );
+#endif
+    return out;
+}
+
+idVec3 crRenderMatrix::LocalVectorToGlobal(const idVec3 &in) const
 {
 	idVec4 out = idVec4();
 
@@ -359,4 +423,17 @@ crRenderMatrix crRenderMatrix::Transpose(void) const
 	
 #endif
 	return out;
+}
+
+crRenderMatrix &crRenderMatrix::operator=( const crRenderMatrix &ref )
+{
+#if 0
+	std::memcpy( mat, ref.mat, sizeof( float ) * 16 ); // just perform a memory copy 
+#else
+	_mm_stream_ps( mat[0], _mm_load_ps( ref.mat[0] ) );
+	_mm_stream_ps( mat[1], _mm_load_ps( ref.mat[1] ) );
+	_mm_stream_ps( mat[2], _mm_load_ps( ref.mat[2] ) );
+	_mm_stream_ps( mat[3], _mm_load_ps( ref.mat[3] ) );
+#endif
+	return *this;
 }
