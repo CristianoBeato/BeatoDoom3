@@ -36,49 +36,49 @@ class idSysInterlockedInteger
 {
 public:
 	idSysInterlockedInteger( void );
-	ID_INLINE int	Increment( void );		// atomically increments the integer and returns the old value
-	ID_INLINE int	Decrement( void );		// atomically decrements the integer and returns the old value
-	ID_INLINE int	Add( int v ); 			// atomically adds a value to the integer and returns the new value
-	ID_INLINE int	Sub( int v ); 			// atomically subtracts a value from the integer and returns the new value
-	ID_INLINE int	GetValue( void ) const;	// returns the current value of the integer	
-	ID_INLINE void	SetValue( int v ); 		// sets a new value, Note: this operation is not atomic
+	ID_INLINE intptr_t	Increment( void );			// atomically increments the integer and returns the old value
+	ID_INLINE intptr_t	Decrement( void );			// atomically decrements the integer and returns the old value
+	ID_INLINE intptr_t	Add( intptr_t v ); 			// atomically adds a value to the integer and returns the new value
+	ID_INLINE intptr_t	Sub( intptr_t v ); 			// atomically subtracts a value from the integer and returns the new value
+	ID_INLINE intptr_t	GetValue( void ) const;		// returns the current value of the integer	
+	ID_INLINE void	SetValue( intptr_t v ); 		// sets a new value, Note: this operation is not atomic
 
 	ID_INLINE bool	operator==( const int v ) const;
 private:
-	int	value;
+	uintptr_t value;
 };
 
-ID_INLINE int idSysInterlockedInteger::Increment( void ) 
+ID_INLINE intptr_t idSysInterlockedInteger::Increment( void ) 
 { 
 	return __sync_fetch_and_add( &value, 1); 
 }
 
-ID_INLINE int idSysInterlockedInteger::Decrement( void ) 
+ID_INLINE intptr_t idSysInterlockedInteger::Decrement( void ) 
 {
 	return __sync_fetch_and_sub( &value, 1 );
 }
 
-ID_INLINE int	idSysInterlockedInteger::Add( int v ) 
+ID_INLINE intptr_t	idSysInterlockedInteger::Add( intptr_t v ) 
 { 
 	return __sync_add_and_fetch( &value, v ); 
 }
 
-ID_INLINE int idSysInterlockedInteger::Sub( int v ) 
+ID_INLINE intptr_t idSysInterlockedInteger::Sub( intptr_t v ) 
 { 
 	return __sync_sub_and_fetch( &value, v );
 }
 
-ID_INLINE int idSysInterlockedInteger::GetValue( void ) const 
+ID_INLINE intptr_t idSysInterlockedInteger::GetValue( void ) const 
 { 
 	return value; 
 }
 
-ID_INLINE void	idSysInterlockedInteger::SetValue( int v ) 
+ID_INLINE void	idSysInterlockedInteger::SetValue( intptr_t v ) 
 {  
 	__sync_val_compare_and_swap( &value, value, v );
 }
 
-ID_INLINE bool idSysInterlockedInteger::operator==(const int v) const
+ID_INLINE bool idSysInterlockedInteger::operator==( const intptr_t v ) const
 {
 	return value == v;
 }
