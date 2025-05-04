@@ -43,7 +43,7 @@ public:
 	ID_INLINE intptr_t	GetValue( void ) const;		// returns the current value of the integer	
 	ID_INLINE void	SetValue( intptr_t v ); 		// sets a new value, Note: this operation is not atomic
 
-	ID_INLINE bool	operator==( const int v ) const;
+	ID_INLINE bool	operator==( const intptr_t v ) const;
 private:
 	uintptr_t value;
 };

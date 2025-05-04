@@ -26,6 +26,26 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #ifndef __DRAW_H__
 #define __DRAW_H__
 
+// everything that is needed by the backend needs
+// to be double buffered to allow it to run in
+// parallel on a dual cpu machine
+static const uint32_t	SMP_FRAMES = 3;
+
+class idImage;
+typedef struct viewDef_s viewDef_t;
+typedef struct srfTriangles_s srfTriangles_t;
+
+class crRenderAllocator
+{
+public:
+    void*   Allocate( const size_t size );
+    void*   Reallocate( void* ptr, const size_t size );
+    void    Deallocate( void* ptr );
+};
+
+// use a specific pointer allocation  
+typedef crAutoPointer<viewDef_t, crRenderAllocator> viewDefptr_t;
+
 typedef enum 
 {
 	RC_NOP,
@@ -44,7 +64,7 @@ typedef struct
 typedef struct 
 {
 	renderCommand_t		commandId, *next;
-	GLenum				buffer;
+	uint32_t			buffer;
 	uint32_t			frameCount;
 } setBufferCommand_t;
 
@@ -140,14 +160,6 @@ private:
 	// commands can be inserted at the front if needed, as for required
 	// dynamically generated textures
 	emptyCommand_t	*cmdHead, *cmdTail;		// may be of other command type based on commandId
-};
-
-class crRenderAllocator
-{
-public:
-    void*   Allocate( const size_t size );
-    void*   Reallocate( void* ptr, const size_t size );
-    void    Deallocate( void* ptr );
 };
 
 #endif //!__DRAW_H__

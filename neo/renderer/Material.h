@@ -29,6 +29,8 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __MATERIAL_H__
 #define __MATERIAL_H__
 
+#include "renderer/Draw.h"
+
 /*
 ===============================================================================
 
@@ -41,6 +43,7 @@ class idImage;
 class idCinematic;
 class idUserInterface;
 class idMegaTexture;
+class idSoundEmitter;
 
 // moved from image.h for default parm
 typedef enum {
@@ -335,11 +338,8 @@ typedef enum {
 											// won't collect light from any angle
 } surfaceFlags_t;
 
-#include "renderworld/RenderView.h"
-
-class idSoundEmitter;
-
-class idMaterial : public idDecl {
+class idMaterial : public idDecl 
+{
 public:
 						idMaterial();
 	virtual				~idMaterial();

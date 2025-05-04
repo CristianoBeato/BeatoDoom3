@@ -32,6 +32,7 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 static const uint32_t MAX_GLOBAL_SHADER_PARMS	= 12;
 static const uint32_t MAX_CLIP_PLANES	= 1;				// we may expand this to six for some subview issues
 
+class crRenderAllocator;
 class idMaterial;
 class idRenderWorldLocal;
 class idRenderEntityLocal;
@@ -152,8 +153,5 @@ typedef struct viewDef_s
 	// when the light is behind a closed door.
 
 } viewDef_t;
-
-// use a specific pointer allocation for the holde 
-typedef crAutoPointer<viewDef_t, crRenderAllocator> viewDefptr_t 
 
 #endif //__RENDER_VIEW_H__

@@ -29,9 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __TR_LOCAL_H__
 #define __TR_LOCAL_H__
 
-// BEATO Begin: pipeline implementation
-#include "backend/Backend_common.h"
-
 #if CR_USE_VULKAN
 #	include "backend/vulkan/vkContext.h"
 #endif //CR_USE_VULKAN
@@ -41,19 +38,17 @@ If you have questions concerning this license or the applicable additional terms
 #endif //CR_USE_OPENGL
 // BEATO End
 
-#include "images/Image.h"
-#include "images/Image_manager.h"
-#include "MegaTexture.h"
-
+// BEATO Begin: pipeline implementation
 class idRenderWorldLocal;
 #include "RenderMatrix.h"
 #include "frontend/Transform.h"
 #include "ScreenRect.h"
-
-// everything that is needed by the backend needs
-// to be double buffered to allow it to run in
-// parallel on a dual cpu machine
-const uint32_t	SMP_FRAMES = 3;
+#include "Draw.h" // TODO: better name
+#include "frontend/Frontend.h"
+#include "backend/Backend_common.h"
+#include "images/Image.h"
+#include "images/Image_manager.h"
+#include "MegaTexture.h"
 
 // BEATO Begin:
 const uint32_t	MAX_FRAME_DRAW_CALL = 4096;
@@ -65,8 +60,8 @@ const float		DEFAULT_FOG_DISTANCE = 500.0f;
 
 const uint32_t	FOG_ENTER_SIZE = 64;
 const float 	FOG_ENTER = (FOG_ENTER_SIZE+1.0f)/(FOG_ENTER_SIZE*2);
-// picky to get the bilerp correct at terminator
 
+// picky to get the bilerp correct at terminator
 typedef enum 
 {
 	DC_BAD,
