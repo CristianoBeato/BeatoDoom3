@@ -818,56 +818,13 @@ optimizedShadow_t SuperOptimizeOccluders( idVec4 *verts, glIndex_t *indexes, int
 
 void CleanupOptimizedShadowTris( srfTriangles_t *tri );
 
-/*
-============================================================
-
-TRISURF
-
-============================================================
-*/
-
 #define USE_TRI_DATA_ALLOCATOR
-
-void				R_InitTriSurfData( void );
-void				R_ShutdownTriSurfData( void );
-void				R_ShowTriSurfMemory_f( const idCmdArgs &args );
-
-srfTriangles_t *	R_AllocStaticTriSurf( void );
-srfTriangles_t *	R_CopyStaticTriSurf( const srfTriangles_t *tri );
-void				R_AllocStaticTriSurfVerts( srfTriangles_t *tri, int numVerts );
-void				R_AllocStaticTriSurfIndexes( srfTriangles_t *tri, int numIndexes );
-void				R_AllocStaticTriSurfShadowVerts( srfTriangles_t *tri, int numVerts );
-void				R_AllocStaticTriSurfPlanes( srfTriangles_t *tri, int numIndexes );
-void				R_ResizeStaticTriSurfVerts( srfTriangles_t *tri, int numVerts );
-void				R_ResizeStaticTriSurfIndexes( srfTriangles_t *tri, int numIndexes );
-void				R_ResizeStaticTriSurfShadowVerts( srfTriangles_t *tri, int numVerts );
-void				R_ReferenceStaticTriSurfVerts( srfTriangles_t *tri, const srfTriangles_t *reference );
-void				R_ReferenceStaticTriSurfIndexes( srfTriangles_t *tri, const srfTriangles_t *reference );
-void				R_FreeStaticTriSurfSilIndexes( srfTriangles_t *tri );
-void				R_FreeStaticTriSurf( srfTriangles_t *tri );
-void				R_FreeStaticTriSurfVertexCaches( srfTriangles_t *tri );
-void				R_ReallyFreeStaticTriSurf( srfTriangles_t *tri );
-int					R_TriSurfMemory( const srfTriangles_t *tri );
-
-void				R_BoundTriSurf( srfTriangles_t *tri );
-void				R_RemoveDuplicatedTriangles( srfTriangles_t *tri );
-void				R_CreateSilIndexes( srfTriangles_t *tri );
-void				R_RemoveDegenerateTriangles( srfTriangles_t *tri );
-void				R_RemoveUnusedVerts( srfTriangles_t *tri );
-void				R_RangeCheckIndexes( const srfTriangles_t *tri );
-void				R_CreateVertexNormals( srfTriangles_t *tri );	// also called by dmap
-void				R_DeriveFacePlanes( srfTriangles_t *tri );		// also called by renderbump
-void				R_CleanupTriangles( srfTriangles_t *tri, bool createNormals, bool identifySilEdges, bool useUnsmoothedTangents );
-void				R_ReverseTriangles( srfTriangles_t *tri );
 
 // Only deals with vertexes and indexes, not silhouettes, planes, etc.
 // Does NOT perform a cleanup triangles, so there may be duplicated verts in the result.
 srfTriangles_t *	R_MergeSurfaceList( const srfTriangles_t **surfaces, int numSurfaces );
 srfTriangles_t *	R_MergeTriangles( const srfTriangles_t *tri1, const srfTriangles_t *tri2 );
 
-// if the deformed verts have significant enough texture coordinate changes to reverse the texture
-// polarity of a triangle, the tangents will be incorrect
-void				R_DeriveTangents( srfTriangles_t *tri, bool allocFacePlanes = true );
 
 // deformable meshes precalculate as much as possible from a base frame, then generate
 // complete srfTriangles_t from just a new set of vertexes

@@ -35,8 +35,7 @@ crDrawFrameData::crDrawFrameData( void ) :
 	m_frame( 0 ),
 	staticAllocCount( 0 ),
 	memoryHighwater( 0 ),
-	frameData( nullptr ),
-	smpFrameData( nullptr )
+	frameData( nullptr )
 {
 }
 
@@ -66,27 +65,26 @@ crDrawFrameData::InitFrameData
 void crDrawFrameData::InitFrameData( void ) 
 {
 	size_t size = 0;
-	frameData_t*		frame = nullptr;
-	frameMemoryBlock_t*	block = nullptr;
 
 	ShutdownFrameData();
-
+	size = MEMORY_BLOCK_SIZE;
+	
 	for ( uint32_t i = 0; i < SMP_FRAMES; i++)
 	{
-		smpFrameData[i] = static_cast<frameData_t *>( Mem_ClearedAlloc( sizeof( frameData_t ) ) );
-	}
-	
-	frame = frameData;
-	size = MEMORY_BLOCK_SIZE;
-	block = static_cast<frameMemoryBlock_t*>( Mem_Alloc( size + sizeof( *block ) ) );
-	if ( !block ) 
-		common->FatalError( "R_InitFrameData: Mem_Alloc() failed" );
-	
+		frameData_t*		frame = nullptr;
+		frameMemoryBlock_t*	block = nullptr;
 
-	block->size = size;
-	block->used = 0;
-	block->next = nullptr;
-	frame->memory = block;
+		frame = &smpFrameData[i];
+
+		block = static_cast<frameMemoryBlock_t*>( Mem_Alloc( size + sizeof( *block ) ) );
+		if ( !block ) 
+			common->FatalError( "R_InitFrameData: Mem_Alloc() failed" );
+
+		block->size = size;
+		block->used = 0;
+		block->next = nullptr;
+		frame->memory = block;
+	}
 	
 	memoryHighwater = 0;
 
@@ -108,7 +106,7 @@ void crDrawFrameData::ShutdownFrameData( void )
 	if ( !frame )
 		return;
 
-	R_FreeDeferredTriSurfs( frame );
+	tr.frontend->FreeDeferredTriSurfs( frame );
 
 	frameMemoryBlock_t *nextBlock;
 	for ( block = frame->memory ; block ; block = nextBlock ) 
@@ -128,6 +126,13 @@ void crDrawFrameData::ToggleSmpFrame(void)
 
 	// update the highwater mark
 	CountFrameData();
+
+// BEATO BEgin:
+	m_frame = ( m_frame + 1 ) % SMP_FRAMES;
+
+	// update the frame data 
+	frameData = &smpFrameData[m_frame];
+// BEATO End
 
 	frame = frameData;
 
@@ -241,11 +246,12 @@ Should part of this be inlined in a macro?
 */
 void* crDrawFrameData::FrameAlloc( size_t bytes ) 
 {
-	frameData_t		*frame;
-	frameMemoryBlock_t	*block;
-	void			*buf;
+	frameData_t*		frame = nullptr;
+	frameMemoryBlock_t*	block = nullptr;
+	void*				buf = nullptr;
     
 	bytes = (bytes+16)&~15;
+	
 	// see if it can be satisfied in the current block
 	frame = frameData;
 	block = frame->alloc;
@@ -345,7 +351,7 @@ void crDrawFrameData::FreeStaticTriSurf( srfTriangles_t *tri )
 	if ( !frame ) 
 	{
 		// command line utility, or rendering in editor preview mode ( force )
-		R_ReallyFreeStaticTriSurf( tri );
+		tr.frontend->ReallyFreeStaticTriSurf( tri );
 	} 
 	else 
 	{
@@ -427,7 +433,7 @@ void* crDrawCommandQueue::GetCommandBuffer( size_t bytes )
 {
 	emptyCommand_t	*cmd = nullptr;
 
-	cmd = static_cast<emptyCommand_t*>( tr.drawQueue->FrameAlloc( bytes ) );
+	cmd = static_cast<emptyCommand_t*>( tr.frameData->FrameAlloc( bytes ) );
 	cmd->next = nullptr;
 	cmdTail->next = &cmd->commandId;
 	cmdTail = cmd;
@@ -455,11 +461,9 @@ void crDrawCommandQueue::IssueRenderCommands(void)
 
 	// r_skipRender is usually more usefull, because it will still
 	// draw 2D graphics
-	if ( !r_skipBackEnd.GetBool() ) 
-    {
-		RB_ExecuteBackEndCommands( cmdHead );
-	}
-
+	if ( !r_skipBackEnd.GetBool() )
+		tr.backend->ExecuteBackEndCommands( cmdHead ); 
+    
 	ClearCommandChain();
 }
 
@@ -490,7 +494,7 @@ and by R_ToggleSmpFrame
 void crDrawCommandQueue::ClearCommandChain( void ) 
 {
 	// clear the command chain
-	cmdHead = cmdTail = static_cast<emptyCommand_t*>( tr.drawQueue->FrameAlloc( sizeof( emptyCommand_t ) ) );
+	cmdHead = cmdTail = static_cast<emptyCommand_t*>( tr.frameData->FrameAlloc( sizeof( emptyCommand_t ) ) );
 	cmdHead->commandId = RC_NOP;
 	cmdHead->next = nullptr;
 }

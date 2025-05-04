@@ -148,13 +148,12 @@ static idDynamicAlloc<int, 1<<16, 1<<10>				triMirroredVertAllocator;
 static idDynamicAlloc<int, 1<<16, 1<<10>				triDupVertAllocator;
 #endif
 
-
 /*
 ===============
-R_InitTriSurfData
+crFrontend::InitTriSurfData
 ===============
 */
-void R_InitTriSurfData( void ) 
+void crFrontend::InitTriSurfData( void ) 
 {
 	silEdges = static_cast<silEdge_t *>(tr.frameData->StaticAlloc( MAX_SIL_EDGES * sizeof( silEdges[0] ) ) );
 
@@ -186,7 +185,7 @@ void R_InitTriSurfData( void )
 R_ShutdownTriSurfData
 ===============
 */
-void R_ShutdownTriSurfData( void ) 
+void crFrontend::ShutdownTriSurfData( void ) 
 {
 	tr.frameData->StaticFree( silEdges );
 	silEdgeHash.Free();
@@ -207,9 +206,10 @@ void R_ShutdownTriSurfData( void )
 R_PurgeTriSurfData
 ===============
 */
-void R_PurgeTriSurfData( frameData_t *frame ) {
+void crFrontend::PurgeTriSurfData( frameData_t *frame ) 
+{
 	// free deferred triangle surfaces
-	R_FreeDeferredTriSurfs( frame );
+	FreeDeferredTriSurfs( frame );
 
 	// free empty base blocks
 	triVertexAllocator.FreeEmptyBaseBlocks();
@@ -228,7 +228,8 @@ void R_PurgeTriSurfData( frameData_t *frame ) {
 R_ShowTriMemory_f
 ===============
 */
-void R_ShowTriSurfMemory_f( const idCmdArgs &args ) {
+void R_ShowTriSurfMemory_f( const idCmdArgs &args ) 
+{
 	common->Printf( "%6d kB in %ld triangle surfaces\n",
 		( srfTrianglesAllocator.GetAllocCount() * sizeof( srfTriangles_t ) ) >> 10,
 			srfTrianglesAllocator.GetAllocCount() );
@@ -284,53 +285,53 @@ void R_ShowTriSurfMemory_f( const idCmdArgs &args ) {
 
 /*
 =================
-R_TriSurfMemory
+crFrontend::TriSurfMemory
 
 For memory profiling
 =================
 */
-int R_TriSurfMemory( const srfTriangles_t *tri ) {
+int crFrontend::TriSurfMemory( const srfTriangles_t *tri ) 
+{
 	int total = 0;
 
-	if ( !tri ) {
+	if ( !tri )
 		return total;
-	}
 
 	// used as a flag in interations
-	if ( tri == LIGHT_TRIS_DEFERRED ) {
+	if ( tri == LIGHT_TRIS_DEFERRED ) 
 		return total;
+
+	if ( tri->shadowVertexes != nullptr ) 
+		total += tri->numVerts * sizeof( tri->shadowVertexes[0] );
+	else if ( tri->verts != nullptr ) 
+	{
+		if ( tri->ambientSurface == nullptr || tri->verts != tri->ambientSurface->verts ) 
+			total += tri->numVerts * sizeof( tri->verts[0] );
 	}
 
-	if ( tri->shadowVertexes != nullptr ) {
-		total += tri->numVerts * sizeof( tri->shadowVertexes[0] );
-	} else if ( tri->verts != nullptr ) {
-		if ( tri->ambientSurface == nullptr || tri->verts != tri->ambientSurface->verts ) {
-			total += tri->numVerts * sizeof( tri->verts[0] );
-		}
-	}
-	if ( tri->facePlanes != nullptr ) {
+	if ( tri->facePlanes != nullptr ) 
 		total += tri->numIndexes / 3 * sizeof( tri->facePlanes[0] );
-	}
-	if ( tri->indexes != nullptr ) {
-		if ( tri->ambientSurface == nullptr || tri->indexes != tri->ambientSurface->indexes ) {
+	
+	if ( tri->indexes != nullptr ) 
+	{
+		if ( tri->ambientSurface == nullptr || tri->indexes != tri->ambientSurface->indexes ) 
 			total += tri->numIndexes * sizeof( tri->indexes[0] );
-		}
 	}
-	if ( tri->silIndexes != nullptr ) {
+
+	if ( tri->silIndexes != nullptr ) 
 		total += tri->numIndexes * sizeof( tri->silIndexes[0] );
-	}
-	if ( tri->silEdges != nullptr ) {
+	
+	if ( tri->silEdges != nullptr ) 
 		total += tri->numSilEdges * sizeof( tri->silEdges[0] );
-	}
-	if ( tri->dominantTris != nullptr ) {
+	
+	if ( tri->dominantTris != nullptr ) 
 		total += tri->numVerts * sizeof( tri->dominantTris[0] );
-	}
-	if ( tri->mirroredVerts != nullptr ) {
+	
+	if ( tri->mirroredVerts != nullptr ) 
 		total += tri->numMirroredVerts * sizeof( tri->mirroredVerts[0] );
-	}
-	if ( tri->dupVerts != nullptr ) {
+	
+	if ( tri->dupVerts != nullptr )
 		total += tri->numDupVerts * sizeof( tri->dupVerts[0] );
-	}
 
 	total += sizeof( *tri );
 
@@ -339,10 +340,10 @@ int R_TriSurfMemory( const srfTriangles_t *tri ) {
 
 /*
 ==============
-R_FreeStaticTriSurfVertexCaches
+crFrontend::FreeStaticTriSurfVertexCaches
 ==============
 */
-void R_FreeStaticTriSurfVertexCaches( srfTriangles_t *tri ) 
+void crFrontend::FreeStaticTriSurfVertexCaches( srfTriangles_t *tri ) 
 {
 	if ( tri->ambientSurface == nullptr ) 
 	{
@@ -376,56 +377,55 @@ void R_FreeStaticTriSurfVertexCaches( srfTriangles_t *tri )
 
 /*
 ==============
-R_ReallyFreeStaticTriSurf
+crFrontend::ReallyFreeStaticTriSurf
 
 This does the actual free
 ==============
 */
-void R_ReallyFreeStaticTriSurf( srfTriangles_t *tri ) {
-	if ( !tri ) {
+void crFrontend::ReallyFreeStaticTriSurf( srfTriangles_t *tri ) 
+{
+	if ( !tri ) 
 		return;
-	}
 
-	R_FreeStaticTriSurfVertexCaches( tri );
+	FreeStaticTriSurfVertexCaches( tri );
 
-	if ( tri->verts != nullptr ) {
+	if ( tri->verts != nullptr ) 
+	{
 		// R_CreateLightTris points tri->verts at the verts of the ambient surface
-		if ( tri->ambientSurface == nullptr || tri->verts != tri->ambientSurface->verts ) {
+		if ( tri->ambientSurface == nullptr || tri->verts != tri->ambientSurface->verts ) 
 			triVertexAllocator.Free( tri->verts );
-		}
 	}
 
-	if ( !tri->deformedSurface ) {
-		if ( tri->indexes != nullptr ) {
+	if ( !tri->deformedSurface ) 
+	{
+		if ( tri->indexes != nullptr ) 
+		{
 			// if a surface is completely inside a light volume R_CreateLightTris points tri->indexes at the indexes of the ambient surface
-			if ( tri->ambientSurface == nullptr || tri->indexes != tri->ambientSurface->indexes ) {
+			if ( tri->ambientSurface == nullptr || tri->indexes != tri->ambientSurface->indexes ) 
 				triIndexAllocator.Free( tri->indexes );
-			}
 		}
-		if ( tri->silIndexes != nullptr ) {
+
+		if ( tri->silIndexes != nullptr ) 
 			triSilIndexAllocator.Free( tri->silIndexes );
-		}
-		if ( tri->silEdges != nullptr ) {
+		
+		if ( tri->silEdges != nullptr ) 
 			triSilEdgeAllocator.Free( tri->silEdges );
-		}
-		if ( tri->dominantTris != nullptr ) {
+	
+		if ( tri->dominantTris != nullptr ) 
 			triDominantTrisAllocator.Free( tri->dominantTris );
-		}
-		if ( tri->mirroredVerts != nullptr ) {
+		
+		if ( tri->mirroredVerts != nullptr ) 
 			triMirroredVertAllocator.Free( tri->mirroredVerts );
-		}
-		if ( tri->dupVerts != nullptr ) {
+		
+		if ( tri->dupVerts != nullptr ) 
 			triDupVertAllocator.Free( tri->dupVerts );
-		}
 	}
 
-	if ( tri->facePlanes != nullptr ) {
+	if ( tri->facePlanes != nullptr ) 
 		triPlaneAllocator.Free( tri->facePlanes );
-	}
 
-	if ( tri->shadowVertexes != nullptr ) {
+	if ( tri->shadowVertexes != nullptr ) 
 		triShadowVertexAllocator.Free( tri->shadowVertexes );
-	}
 
 #ifdef _DEBUG
 	memset( tri, 0, sizeof( srfTriangles_t ) );
@@ -474,10 +474,10 @@ void R_CheckStaticTriSurfMemory( const srfTriangles_t *tri ) {
 
 /*
 ==================
-R_FreeDeferredTriSurfs
+crFrontend::FreeDeferredTriSurfs
 ==================
 */
-void R_FreeDeferredTriSurfs( frameData_t *frame ) 
+void crFrontend::FreeDeferredTriSurfs( frameData_t *frame ) 
 {
 	srfTriangles_t	*tri, *next;
 
@@ -487,7 +487,7 @@ void R_FreeDeferredTriSurfs( frameData_t *frame )
 	for ( tri = frame->firstDeferredFreeTriSurf; tri; tri = next ) 
 	{
 		next = tri->nextDeferredFree;
-		R_ReallyFreeStaticTriSurf( tri );
+		ReallyFreeStaticTriSurf( tri );
 	}
 
 	frame->firstDeferredFreeTriSurf = nullptr;
@@ -496,10 +496,11 @@ void R_FreeDeferredTriSurfs( frameData_t *frame )
 
 /*
 ==============
-R_AllocStaticTriSurf
+crFrontend::AllocStaticTriSurf
 ==============
 */
-srfTriangles_t *R_AllocStaticTriSurf( void ) {
+srfTriangles_t* crFrontend::AllocStaticTriSurf( void ) 
+{
 	srfTriangles_t *tris = srfTrianglesAllocator.Alloc();
 	memset( tris, 0, sizeof( srfTriangles_t ) );
 	return tris;
@@ -507,18 +508,18 @@ srfTriangles_t *R_AllocStaticTriSurf( void ) {
 
 /*
 =================
-R_CopyStaticTriSurf
+crFrontend::CopyStaticTriSurf
 
 This only duplicates the indexes and verts, not any of the derived data.
 =================
 */
-srfTriangles_t *R_CopyStaticTriSurf( const srfTriangles_t *tri ) 
+srfTriangles_t* crFrontend::CopyStaticTriSurf( const srfTriangles_t *tri ) 
 {
 	srfTriangles_t	*newTri;
 
-	newTri = R_AllocStaticTriSurf();
-	R_AllocStaticTriSurfVerts( newTri, tri->numVerts );
-	R_AllocStaticTriSurfIndexes( newTri, tri->numIndexes );
+	newTri = AllocStaticTriSurf();
+	AllocStaticTriSurfVerts( newTri, tri->numVerts );
+	AllocStaticTriSurfIndexes( newTri, tri->numIndexes );
 	newTri->numVerts = tri->numVerts;
 	newTri->numIndexes = tri->numIndexes;
 	memcpy( newTri->verts, tri->verts, tri->numVerts * sizeof( newTri->verts[0] ) );
@@ -529,10 +530,10 @@ srfTriangles_t *R_CopyStaticTriSurf( const srfTriangles_t *tri )
 
 /*
 =================
-R_AllocStaticTriSurfVerts
+crFrontend::AllocStaticTriSurfVerts
 =================
 */
-void R_AllocStaticTriSurfVerts( srfTriangles_t *tri, int numVerts ) 
+void crFrontend::AllocStaticTriSurfVerts( srfTriangles_t *tri, int numVerts ) 
 {
 	assert( tri->verts == nullptr );
 	tri->verts = triVertexAllocator.Alloc( numVerts );
@@ -543,7 +544,7 @@ void R_AllocStaticTriSurfVerts( srfTriangles_t *tri, int numVerts )
 R_AllocStaticTriSurfIndexes
 =================
 */
-void R_AllocStaticTriSurfIndexes( srfTriangles_t *tri, int numIndexes ) 
+void crFrontend::AllocStaticTriSurfIndexes( srfTriangles_t *tri, int numIndexes ) 
 {
 	assert( tri->indexes == nullptr );
 	tri->indexes = triIndexAllocator.Alloc( numIndexes );
@@ -551,10 +552,10 @@ void R_AllocStaticTriSurfIndexes( srfTriangles_t *tri, int numIndexes )
 
 /*
 =================
-R_AllocStaticTriSurfShadowVerts
+crFrontend::AllocStaticTriSurfShadowVerts
 =================
 */
-void R_AllocStaticTriSurfShadowVerts( srfTriangles_t *tri, int numVerts ) 
+void crFrontend::AllocStaticTriSurfShadowVerts( srfTriangles_t *tri, int numVerts ) 
 {
 	assert( tri->shadowVertexes == nullptr );
 	tri->shadowVertexes = triShadowVertexAllocator.Alloc( numVerts );
@@ -565,10 +566,11 @@ void R_AllocStaticTriSurfShadowVerts( srfTriangles_t *tri, int numVerts )
 R_AllocStaticTriSurfPlanes
 =================
 */
-void R_AllocStaticTriSurfPlanes( srfTriangles_t *tri, int numIndexes ) {
-	if ( tri->facePlanes ) {
+void crFrontend::AllocStaticTriSurfPlanes( srfTriangles_t *tri, int numIndexes ) 
+{
+	if ( tri->facePlanes ) 
 		triPlaneAllocator.Free( tri->facePlanes );
-	}
+	
 	tri->facePlanes = triPlaneAllocator.Alloc( numIndexes / 3 );
 }
 
@@ -577,7 +579,8 @@ void R_AllocStaticTriSurfPlanes( srfTriangles_t *tri, int numIndexes ) {
 R_ResizeStaticTriSurfVerts
 =================
 */
-void R_ResizeStaticTriSurfVerts( srfTriangles_t *tri, int numVerts ) {
+void crFrontend::ResizeStaticTriSurfVerts( srfTriangles_t *tri, int numVerts ) 
+{
 #ifdef USE_TRI_DATA_ALLOCATOR
 	tri->verts = triVertexAllocator.Resize( tri->verts, numVerts );
 #else
@@ -590,7 +593,8 @@ void R_ResizeStaticTriSurfVerts( srfTriangles_t *tri, int numVerts ) {
 R_ResizeStaticTriSurfIndexes
 =================
 */
-void R_ResizeStaticTriSurfIndexes( srfTriangles_t *tri, int numIndexes ) {
+void crFrontend::ResizeStaticTriSurfIndexes( srfTriangles_t *tri, int numIndexes ) 
+{
 #ifdef USE_TRI_DATA_ALLOCATOR
 	tri->indexes = triIndexAllocator.Resize( tri->indexes, numIndexes );
 #else
@@ -600,10 +604,11 @@ void R_ResizeStaticTriSurfIndexes( srfTriangles_t *tri, int numIndexes ) {
 
 /*
 =================
-R_ResizeStaticTriSurfShadowVerts
+crFrontend::ResizeStaticTriSurfShadowVerts
 =================
 */
-void R_ResizeStaticTriSurfShadowVerts( srfTriangles_t *tri, int numVerts ) {
+void crFrontend::ResizeStaticTriSurfShadowVerts( srfTriangles_t *tri, int numVerts ) 
+{
 #ifdef USE_TRI_DATA_ALLOCATOR
 	tri->shadowVertexes = triShadowVertexAllocator.Resize( tri->shadowVertexes, numVerts );
 #else
@@ -613,35 +618,38 @@ void R_ResizeStaticTriSurfShadowVerts( srfTriangles_t *tri, int numVerts ) {
 
 /*
 =================
-R_ReferenceStaticTriSurfVerts
+crFrontend::ReferenceStaticTriSurfVerts
 =================
 */
-void R_ReferenceStaticTriSurfVerts( srfTriangles_t *tri, const srfTriangles_t *reference ) {
+void crFrontend::ReferenceStaticTriSurfVerts( srfTriangles_t *tri, const srfTriangles_t *reference ) 
+{
 	tri->verts = reference->verts;
 }
 
 /*
 =================
-R_ReferenceStaticTriSurfIndexes
+crFrontend::ReferenceStaticTriSurfIndexes
 =================
 */
-void R_ReferenceStaticTriSurfIndexes( srfTriangles_t *tri, const srfTriangles_t *reference ) {
+void crFrontend::ReferenceStaticTriSurfIndexes( srfTriangles_t *tri, const srfTriangles_t *reference ) 
+{
 	tri->indexes = reference->indexes;
 }
 
 /*
 =================
-R_FreeStaticTriSurfSilIndexes
+crFrontend::FreeStaticTriSurfSilIndexes
 =================
 */
-void R_FreeStaticTriSurfSilIndexes( srfTriangles_t *tri ) {
+void crFrontend::FreeStaticTriSurfSilIndexes( srfTriangles_t *tri ) 
+{
 	triSilIndexAllocator.Free( tri->silIndexes );
 	tri->silIndexes = nullptr;
 }
 
 /*
 ===============
-R_RangeCheckIndexes
+crFrontend::RangeCheckIndexes
 
 Check for syntactically incorrect indexes, like out of range values.
 Does not check for semantics, like degenerate triangles.
@@ -651,29 +659,29 @@ No indexes is acceptable.
 More vertexes than are referenced by indexes are acceptable.
 ===============
 */
-void R_RangeCheckIndexes( const srfTriangles_t *tri ) {
-	int		i;
+void crFrontend::RangeCheckIndexes( const srfTriangles_t *tri ) 
+{
+	int		i = 0;
 
-	if ( tri->numIndexes < 0 ) {
+	if ( tri->numIndexes < 0 ) 
 		common->Error( "R_RangeCheckIndexes: numIndexes < 0" );
-	}
-	if ( tri->numVerts < 0 ) {
+	
+	if ( tri->numVerts < 0 ) 
 		common->Error( "R_RangeCheckIndexes: numVerts < 0" );
-	}
 
 	// must specify an integral number of triangles
-	if ( tri->numIndexes % 3 != 0 ) {
+	if ( tri->numIndexes % 3 != 0 ) 
 		common->Error( "R_RangeCheckIndexes: numIndexes %% 3" );
-	}
 
-	for ( i = 0 ; i < tri->numIndexes ; i++ ) {
-		if ( tri->indexes[i] < 0 || tri->indexes[i] >= tri->numVerts ) {
+	for ( i = 0 ; i < tri->numIndexes ; i++ ) 
+	{
+		if ( tri->indexes[i] < 0 || tri->indexes[i] >= tri->numVerts ) 
 			common->Error( "R_RangeCheckIndexes: index out of range" );
-		}
 	}
 
 	// this should not be possible unless there are unused verts
-	if ( tri->numVerts > tri->numIndexes ) {
+	if ( tri->numVerts > tri->numIndexes ) 
+	{
 		// FIXME: find the causes of these
 		// common->Printf( "R_RangeCheckIndexes: tri->numVerts > tri->numIndexes\n" );
 	}
@@ -681,10 +689,11 @@ void R_RangeCheckIndexes( const srfTriangles_t *tri ) {
 
 /*
 =================
-R_BoundTriSurf
+crFrontend::BoundTriSurf
 =================
 */
-void R_BoundTriSurf( srfTriangles_t *tri ) {
+void crFrontend::BoundTriSurf( srfTriangles_t *tri ) 
+{
 	SIMDProcessor->MinMax( tri->bounds[0], tri->bounds[1], tri->verts, tri->numVerts );
 }
 
@@ -693,7 +702,8 @@ void R_BoundTriSurf( srfTriangles_t *tri ) {
 R_CreateSilRemap
 =================
 */
-static int *R_CreateSilRemap( const srfTriangles_t *tri ) {
+static int *R_CreateSilRemap( const srfTriangles_t *tri ) 
+{
 	int		i = 0, j = 0, hashKey = 0;
 	int		c_removed = 0, c_unique = 0;
 	int		*remap = nullptr;
@@ -742,13 +752,13 @@ static int *R_CreateSilRemap( const srfTriangles_t *tri ) {
 
 /*
 =================
-R_CreateSilIndexes
+crFrontend::CreateSilIndexes
 
 Uniquing vertexes only on xyz before creating sil edges reduces
 the edge count by about 20% on Q3 models
 =================
 */
-void R_CreateSilIndexes( srfTriangles_t *tri ) 
+void crFrontend::CreateSilIndexes( srfTriangles_t *tri ) 
 {
 	int		i;
 	int		*remap;
@@ -773,21 +783,24 @@ void R_CreateSilIndexes( srfTriangles_t *tri )
 
 /*
 =====================
-R_CreateDupVerts
+crFrontend::CreateDupVerts
 =====================
 */
-void R_CreateDupVerts( srfTriangles_t *tri ) {
-	int i;
+void crFrontend::CreateDupVerts( srfTriangles_t *tri ) 
+{
+	int i = 0;
 
 	int *remap = (int *) _alloca16( tri->numVerts * sizeof( remap[0] ) );
 
 	// initialize vertex remap in case there are unused verts
-	for ( i = 0; i < tri->numVerts; i++ ) {
+	for ( i = 0; i < tri->numVerts; i++ ) 
+	{
 		remap[i] = i;
 	}
 
 	// set the remap based on how the silhouette indexes are remapped
-	for ( i = 0; i < tri->numIndexes; i++ ) {
+	for ( i = 0; i < tri->numIndexes; i++ ) 
+	{
 		remap[tri->indexes[i]] = tri->silIndexes[i];
 	}
 
@@ -808,17 +821,18 @@ void R_CreateDupVerts( srfTriangles_t *tri ) {
 
 /*
 =====================
-R_DeriveFacePlanes
+crFrontend::DeriveFacePlanes
 
 Writes the facePlanes values, overwriting existing ones if present
 =====================
 */
-void R_DeriveFacePlanes( srfTriangles_t *tri ) {
+void crFrontend::DeriveFacePlanes( srfTriangles_t *tri ) 
+{
 	idPlane *	planes;
 
-	if ( !tri->facePlanes ) {
-		R_AllocStaticTriSurfPlanes( tri, tri->numIndexes );
-	}
+	if ( !tri->facePlanes ) 
+		AllocStaticTriSurfPlanes( tri, tri->numIndexes );
+	
 	planes = tri->facePlanes;
 
 #if 1
@@ -871,36 +885,41 @@ void R_DeriveFacePlanes( srfTriangles_t *tri ) {
 
 /*
 =====================
-R_CreateVertexNormals
+crFrontend::CreateVertexNormals
 
 Averages together the contributions of all faces that are
 used by a vertex, creating drawVert->normal
 =====================
 */
-void R_CreateVertexNormals( srfTriangles_t *tri ) {
+void crFrontend::CreateVertexNormals( srfTriangles_t *tri ) 
+{
 	int		i, j;
 	const idPlane *planes;
 
-	for ( i = 0 ; i < tri->numVerts ; i++ ) {
+	for ( i = 0 ; i < tri->numVerts ; i++ ) 
+	{
 		tri->verts[i].normal.Zero();
 	}
 
-	if ( !tri->facePlanes || !tri->facePlanesCalculated ) {
-		R_DeriveFacePlanes( tri );
-	}
-	if ( !tri->silIndexes ) {
-		R_CreateSilIndexes( tri );
-	}
+	if ( !tri->facePlanes || !tri->facePlanesCalculated ) 
+		DeriveFacePlanes( tri );
+	
+	if ( !tri->silIndexes ) 
+		CreateSilIndexes( tri );
+	
 	planes = tri->facePlanes;
-	for ( i = 0 ; i < tri->numIndexes ; i += 3, planes++ ) {
-		for ( j = 0 ; j < 3 ; j++ ) {
+	for ( i = 0 ; i < tri->numIndexes ; i += 3, planes++ ) 
+	{
+		for ( j = 0 ; j < 3 ; j++ ) 
+		{
 			int index = tri->silIndexes[i+j];
 			tri->verts[index].normal += planes->Normal();
 		}
 	}
 
 	// normalize and replicate from silIndexes to all indexes
-	for ( i = 0 ; i < tri->numIndexes ; i++ ) {
+	for ( i = 0 ; i < tri->numIndexes ; i++ ) 
+	{
 		tri->verts[tri->indexes[i]].normal = tri->verts[tri->silIndexes[i]].normal;
 		tri->verts[tri->indexes[i]].normal.Normalize();
 	}
@@ -980,7 +999,7 @@ static int SilEdgeSort( const void *a, const void *b ) {
 
 /*
 =================
-R_IdentifySilEdges
+crFrontend::IdentifySilEdges
 
 If the surface will not deform, coplanar edges (polygon interiors)
 can never create silhouette plains, and can be omited
@@ -989,10 +1008,11 @@ can never create silhouette plains, and can be omited
 int	c_coplanarSilEdges;
 int	c_totalSilEdges;
 
-void R_IdentifySilEdges( srfTriangles_t *tri, bool omitCoplanarEdges ) {
-	int		i;
-	int		numTris;
-	int		shared, single;
+void crFrontend::IdentifySilEdges( srfTriangles_t *tri, bool omitCoplanarEdges ) 
+{
+	int		i = 0;
+	int		numTris = 0;
+	int		shared = 0, single = 0;
 
 	omitCoplanarEdges = false;	// optimization doesn't work for some reason
 
@@ -1136,19 +1156,14 @@ static bool R_FaceNegativePolarity( const srfTriangles_t *tri, int firstIndex ) 
 
 /*
 ==================
-R_DeriveFaceTangents
+DeriveFaceTangents
 ==================
 */
-typedef struct {
-	idVec3		tangents[2];
-	bool	negativePolarity;
-	bool	degenerate;
-} faceTangents_t;
-
-static void	R_DeriveFaceTangents( const srfTriangles_t *tri, faceTangents_t *faceTangents ) {
-	int		i;
-	int			c_textureDegenerateFaces;
-	int			c_positive, c_negative;
+void crFrontend::DeriveFaceTangents( const srfTriangles_t *tri, faceTangents_t *faceTangents ) 
+{
+	int		i = 0;
+	int			c_textureDegenerateFaces = 0;
+	int			c_positive = 0, c_negative = 0;
 	faceTangents_t	*ft;
 	idDrawVert	*a, *b, *c;
 
@@ -1158,7 +1173,8 @@ static void	R_DeriveFaceTangents( const srfTriangles_t *tri, faceTangents_t *fac
 	c_positive = 0;
 	c_negative = 0;
 	c_textureDegenerateFaces = 0;
-	for ( i = 0 ; i < tri->numIndexes ; i+=3 ) {
+	for ( i = 0 ; i < tri->numIndexes ; i+=3 ) 
+	{
 		float	area;
 		idVec3	temp;
 		float		d0[5], d1[5];
@@ -1249,12 +1265,14 @@ sets mirroredVerts and mirroredVerts[]
 
 ===================
 */
-typedef struct {
+typedef struct 
+{
 	bool	polarityUsed[2];
 	int			negativeRemap;
 } tangentVert_t;
 
-static void	R_DuplicateMirroredVertexes( srfTriangles_t *tri ) {
+void crFrontend::DuplicateMirroredVertexes( srfTriangles_t *tri ) 
+{
 	tangentVert_t	*tverts, *vert;
 	int				i, j;
 	int				totalVerts;
@@ -1329,7 +1347,7 @@ static void	R_DuplicateMirroredVertexes( srfTriangles_t *tri ) {
 
 /*
 =================
-R_DeriveTangentsWithoutNormals
+crFrontend::DeriveTangentsWithoutNormals
 
 Build texture space tangents for bump mapping
 If a surface is deformed, this must be recalculated
@@ -1361,14 +1379,15 @@ to save space or speed transforms?
 this version only handles bilateral symetry
 =================
 */
-void R_DeriveTangentsWithoutNormals( srfTriangles_t *tri ) {
-	int			i, j;
-	faceTangents_t	*faceTangents;
-	faceTangents_t	*ft;
-	idDrawVert		*vert;
+void crFrontend::DeriveTangentsWithoutNormals( srfTriangles_t *tri ) 
+{
+	int			i = 0, j = 0;
+	faceTangents_t	*faceTangents = nullptr;
+	faceTangents_t	*ft = nullptr;
+	idDrawVert		*vert = nullptr;
 
 	faceTangents = (faceTangents_t *)_alloca16( sizeof(faceTangents[0]) * tri->numIndexes/3 );
-	R_DeriveFaceTangents( tri, faceTangents );
+	DeriveFaceTangents( tri, faceTangents );
 
 	// clear the tangents
 	for ( i = 0 ; i < tri->numVerts ; i++ ) {
@@ -1458,7 +1477,7 @@ static int IndexSort( const void *a, const void *b )
 	return 0;
 }
 
-void R_BuildDominantTris( srfTriangles_t *tri ) 
+void crFrontend::BuildDominantTris( srfTriangles_t *tri ) 
 {
 	int i, j;
 	dominantTri_t *dt;
@@ -1562,15 +1581,15 @@ void R_BuildDominantTris( srfTriangles_t *tri )
 
 /*
 ====================
-R_DeriveUnsmoothedTangents
+DeriveUnsmoothedTangents
 
 Uses the single largest area triangle for each vertex, instead of smoothing over all
 ====================
 */
-void R_DeriveUnsmoothedTangents( srfTriangles_t *tri ) {
-	if ( tri->tangentsCalculated ) {
+void crFrontend::DeriveUnsmoothedTangents( srfTriangles_t *tri ) 
+{
+	if ( tri->tangentsCalculated ) 
 		return;
-	}
 
 #if 1
 
@@ -1629,42 +1648,41 @@ void R_DeriveUnsmoothedTangents( srfTriangles_t *tri ) {
 
 /*
 ==================
-R_DeriveTangents
+crFrontend::DeriveTangents
 
 This is called once for static surfaces, and every frame for deforming surfaces
 
 Builds tangents, normals, and face planes
 ==================
 */
-void R_DeriveTangents( srfTriangles_t *tri, bool allocFacePlanes ) 
+void crFrontend::DeriveTangents( srfTriangles_t *tri, bool allocFacePlanes ) 
 {
 	int				i;
 	idPlane			*planes;
 
 	if ( tri->dominantTris != nullptr ) 
 	{
-		R_DeriveUnsmoothedTangents( tri );
+		DeriveUnsmoothedTangents( tri );
 		return;
 	}
 
 	if ( tri->tangentsCalculated ) 
 		return;
 
-	tr.pc.c_tangentIndexes += tri->numIndexes;
+	pc.c_tangentIndexes += tri->numIndexes;
 
-	if ( !tri->facePlanes && allocFacePlanes ) {
-		R_AllocStaticTriSurfPlanes( tri, tri->numIndexes );
-	}
+	if ( !tri->facePlanes && allocFacePlanes ) 
+		AllocStaticTriSurfPlanes( tri, tri->numIndexes );
+
 	planes = tri->facePlanes;
 
 #if 1
-
-	if ( !planes ) {
+	if ( !planes ) 
+	{
 		planes = (idPlane *)_alloca16( ( tri->numIndexes / 3 ) * sizeof( planes[0] ) );
 	}
 
 	SIMDProcessor->DeriveTangents( planes, tri->verts, tri->numVerts, tri->indexes, tri->numIndexes );
-
 #else
 
 	for ( i = 0; i < tri->numVerts; i++ ) {
@@ -1824,7 +1842,7 @@ void R_DeriveTangents( srfTriangles_t *tri, bool allocFacePlanes )
 
 /*
 =================
-R_RemoveDuplicatedTriangles
+crFrontend::RemoveDuplicatedTriangles
 
 silIndexes must have already been calculated
 
@@ -1832,7 +1850,8 @@ silIndexes are used instead of indexes, because duplicated
 triangles could have different texture coordinates.
 =================
 */
-void R_RemoveDuplicatedTriangles( srfTriangles_t *tri ) {
+void crFrontend::RemoveDuplicatedTriangles( srfTriangles_t *tri ) 
+{
 	int		c_removed;
 	int		i, j, r;
 	int		a, b, c;
@@ -1842,16 +1861,20 @@ void R_RemoveDuplicatedTriangles( srfTriangles_t *tri ) {
 	// check for completely duplicated triangles
 	// any rotation of the triangle is still the same, but a mirroring
 	// is considered different
-	for ( i = 0 ; i < tri->numIndexes ; i+=3 ) {
-		for ( r = 0 ; r < 3 ; r++ ) {
+	for ( i = 0 ; i < tri->numIndexes ; i+=3 ) 
+	{
+		for ( r = 0 ; r < 3 ; r++ ) 
+		{
 			a = tri->silIndexes[i+r];
 			b = tri->silIndexes[i+(r+1)%3];
 			c = tri->silIndexes[i+(r+2)%3];
-			for ( j = i + 3 ; j < tri->numIndexes ; j+=3 ) {
-				if ( tri->silIndexes[j] == a && tri->silIndexes[j+1] == b && tri->silIndexes[j+2] == c ) {
+			for ( j = i + 3 ; j < tri->numIndexes ; j+=3 ) 
+			{
+				if ( tri->silIndexes[j] == a && tri->silIndexes[j+1] == b && tri->silIndexes[j+2] == c ) 
+				{
 					c_removed++;
-					memmove( tri->indexes + j, tri->indexes + j + 3, ( tri->numIndexes - j - 3 ) * sizeof( tri->indexes[0] ) );
-					memmove( tri->silIndexes + j, tri->silIndexes + j + 3, ( tri->numIndexes - j - 3 ) * sizeof( tri->silIndexes[0] ) );
+					std::memmove( tri->indexes + j, tri->indexes + j + 3, ( tri->numIndexes - j - 3 ) * sizeof( tri->indexes[0] ) );
+					std::memmove( tri->silIndexes + j, tri->silIndexes + j + 3, ( tri->numIndexes - j - 3 ) * sizeof( tri->silIndexes[0] ) );
 					tri->numIndexes -= 3;
 					j -= 3;
 				}
@@ -1867,27 +1890,31 @@ void R_RemoveDuplicatedTriangles( srfTriangles_t *tri ) {
 
 /*
 =================
-R_RemoveDegenerateTriangles
+crFrontend::RemoveDegenerateTriangles
 
 silIndexes must have already been calculated
 =================
 */
-void R_RemoveDegenerateTriangles( srfTriangles_t *tri ) {
+void crFrontend::RemoveDegenerateTriangles( srfTriangles_t *tri ) 
+{
 	int		c_removed;
 	int		i;
 	int		a, b, c;
 
 	// check for completely degenerate triangles
 	c_removed = 0;
-	for ( i = 0; i < tri->numIndexes; i += 3 ) {
+	for ( i = 0; i < tri->numIndexes; i += 3 ) 
+	{
 		a = tri->silIndexes[i];
 		b = tri->silIndexes[i+1];
 		c = tri->silIndexes[i+2];
-		if ( a == b || a == c || b == c ) {
+		if ( a == b || a == c || b == c ) 
+		{
 			c_removed++;
-			memmove( tri->indexes + i, tri->indexes + i + 3, ( tri->numIndexes - i - 3 ) * sizeof( tri->indexes[0] ) );
-			if ( tri->silIndexes ) {
-				memmove( tri->silIndexes + i, tri->silIndexes + i + 3, ( tri->numIndexes - i - 3 ) * sizeof( tri->silIndexes[0] ) );
+			std::memmove( tri->indexes + i, tri->indexes + i + 3, ( tri->numIndexes - i - 3 ) * sizeof( tri->indexes[0] ) );
+			if ( tri->silIndexes ) 
+			{
+				std::memmove( tri->silIndexes + i, tri->silIndexes + i + 3, ( tri->numIndexes - i - 3 ) * sizeof( tri->silIndexes[0] ) );
 			}
 			tri->numIndexes -= 3;
 			i -= 3;
@@ -1929,16 +1956,16 @@ void R_TestDegenerateTextureSpace( srfTriangles_t *tri ) {
 
 /*
 =================
-R_RemoveUnusedVerts
+crFrontend::RemoveUnusedVerts
 =================
 */
-void R_RemoveUnusedVerts( srfTriangles_t *tri ) {
+void crFrontend::RemoveUnusedVerts( srfTriangles_t *tri ) {
 	int		i;
 	int		*mark;
 	int		index;
 	int		used;
 
-	mark = (int *)R_ClearedStaticAlloc( tri->numVerts * sizeof( *mark ) );
+	mark = (int *)tr.frameData->ClearedStaticAlloc( tri->numVerts * sizeof( *mark ) );
 
 	for ( i = 0 ; i < tri->numIndexes ; i++ ) {
 		index = tri->indexes[i];
@@ -1990,40 +2017,46 @@ void R_RemoveUnusedVerts( srfTriangles_t *tri ) {
 
 /*
 =================
-R_MergeSurfaceList
+crFrontend::MergeSurfaceList
 
 Only deals with vertexes and indexes, not silhouettes, planes, etc.
 Does NOT perform a cleanup triangles, so there may be duplicated verts in the result.
 =================
 */
-srfTriangles_t	*R_MergeSurfaceList( const srfTriangles_t **surfaces, int numSurfaces ) {
-	srfTriangles_t	*newTri;
-	const srfTriangles_t	*tri;
-	int				i, j;
-	int				totalVerts;
-	int				totalIndexes;
+srfTriangles_t* crFrontend::MergeSurfaceList( const srfTriangles_t **surfaces, int numSurfaces ) 
+{
+	srfTriangles_t	*newTri = nullptr;
+	const srfTriangles_t	*tri = nullptr;
+	int				i = 0, j = 0;
+	int				totalVerts = 0;
+	int				totalIndexes = 0;
 
 	totalVerts = 0;
 	totalIndexes = 0;
-	for ( i = 0 ; i < numSurfaces ; i++ ) {
+	for ( i = 0 ; i < numSurfaces ; i++ ) 
+	{
 		totalVerts += surfaces[i]->numVerts;
 		totalIndexes += surfaces[i]->numIndexes;
 	}
 
-	newTri = R_AllocStaticTriSurf();
+	newTri = AllocStaticTriSurf();
 	newTri->numVerts = totalVerts;
 	newTri->numIndexes = totalIndexes;
-	R_AllocStaticTriSurfVerts( newTri, newTri->numVerts );
-	R_AllocStaticTriSurfIndexes( newTri, newTri->numIndexes );
+	AllocStaticTriSurfVerts( newTri, newTri->numVerts );
+	AllocStaticTriSurfIndexes( newTri, newTri->numIndexes );
 
 	totalVerts = 0;
 	totalIndexes = 0;
-	for ( i = 0 ; i < numSurfaces ; i++ ) {
+	for ( i = 0 ; i < numSurfaces ; i++ ) 
+	{
 		tri = surfaces[i];
-		memcpy( newTri->verts + totalVerts, tri->verts, tri->numVerts * sizeof( *tri->verts ) );
-		for ( j = 0 ; j < tri->numIndexes ; j++ ) {
+		std::memcpy( newTri->verts + totalVerts, tri->verts, tri->numVerts * sizeof( *tri->verts ) );
+		
+		for ( j = 0 ; j < tri->numIndexes ; j++ ) 
+		{
 			newTri->indexes[ totalIndexes + j ] = totalVerts + tri->indexes[j];
 		}
+		
 		totalVerts += tri->numVerts;
 		totalIndexes += tri->numIndexes;
 	}
@@ -2039,7 +2072,8 @@ Only deals with vertexes and indexes, not silhouettes, planes, etc.
 Does NOT perform a cleanup triangles, so there may be duplicated verts in the result.
 =================
 */
-srfTriangles_t	*R_MergeTriangles( const srfTriangles_t *tri1, const srfTriangles_t *tri2 ) {
+srfTriangles_t	*R_MergeTriangles( const srfTriangles_t *tri1, const srfTriangles_t *tri2 ) 
+{
 	const srfTriangles_t	*tris[2];
 
 	tris[0] = tri1;
@@ -2050,7 +2084,7 @@ srfTriangles_t	*R_MergeTriangles( const srfTriangles_t *tri1, const srfTriangles
 
 /*
 =================
-R_ReverseTriangles
+crFrontend::ReverseTriangles
 
 Lit two sided surfaces need to have the triangles actually duplicated,
 they can't just turn on two sided lighting, because the normal and tangents
@@ -2059,18 +2093,21 @@ are wrong on the other sides.
 This should be called before R_CleanupTriangles
 =================
 */
-void R_ReverseTriangles( srfTriangles_t *tri ) {
-	int			i;
+void crFrontend::ReverseTriangles( srfTriangles_t *tri ) 
+{
+	int			i = 0;
 
 	// flip the normal on each vertex
 	// If the surface is going to have generated normals, this won't matter,
 	// but if it has explicit normals, this will keep it on the correct side
-	for ( i = 0 ; i < tri->numVerts ; i++ ) {
+	for ( i = 0 ; i < tri->numVerts ; i++ ) 
+	{
 		tri->verts[i].normal = vec3_origin - tri->verts[i].normal;
 	}
 
 	// flip the index order to make them back sided
-	for ( i = 0 ; i < tri->numIndexes ; i+= 3 ) {
+	for ( i = 0 ; i < tri->numIndexes ; i+= 3 ) 
+	{
 		glIndex_t	temp;
 
 		temp = tri->indexes[ i + 0 ];
@@ -2081,46 +2118,51 @@ void R_ReverseTriangles( srfTriangles_t *tri ) {
 
 /*
 =================
-R_CleanupTriangles
+crFrontend::CleanupTriangles
 
 FIXME: allow createFlat and createSmooth normals, as well as explicit
 =================
 */
-void R_CleanupTriangles( srfTriangles_t *tri, bool createNormals, bool identifySilEdges, bool useUnsmoothedTangents ) {
-	R_RangeCheckIndexes( tri );
+void crFrontend::CleanupTriangles( srfTriangles_t *tri, bool createNormals, bool identifySilEdges, bool useUnsmoothedTangents ) 
+{
+	RangeCheckIndexes( tri );
 
-	R_CreateSilIndexes( tri );
+	CreateSilIndexes( tri );
 
 //	R_RemoveDuplicatedTriangles( tri );	// this may remove valid overlapped transparent triangles
 
-	R_RemoveDegenerateTriangles( tri );
+	RemoveDegenerateTriangles( tri );
 
 	R_TestDegenerateTextureSpace( tri );
 
 //	R_RemoveUnusedVerts( tri );
 
-	if ( identifySilEdges ) {
-		R_IdentifySilEdges( tri, true );	// assume it is non-deformable, and omit coplanar edges
-	}
+	if ( identifySilEdges ) 
+		IdentifySilEdges( tri, true );	// assume it is non-deformable, and omit coplanar edges
 
 	// bust vertexes that share a mirrored edge into separate vertexes
-	R_DuplicateMirroredVertexes( tri );
+	DuplicateMirroredVertexes( tri );
 
 	// optimize the index order (not working?)
 //	R_OrderIndexes( tri->numIndexes, tri->indexes );
 
-	R_CreateDupVerts( tri );
+	CreateDupVerts( tri );
 
-	R_BoundTriSurf( tri );
+	BoundTriSurf( tri );
 
-	if ( useUnsmoothedTangents ) {
-		R_BuildDominantTris( tri );
-		R_DeriveUnsmoothedTangents( tri );
-	} else if ( !createNormals ) {
-		R_DeriveFacePlanes( tri );
-		R_DeriveTangentsWithoutNormals( tri );
-	} else {
-		R_DeriveTangents( tri );
+	if ( useUnsmoothedTangents ) 
+	{
+		BuildDominantTris( tri );
+		DeriveUnsmoothedTangents( tri );
+	} 
+	else if ( !createNormals ) 
+	{
+		DeriveFacePlanes( tri );
+		DeriveTangentsWithoutNormals( tri );
+	} 
+	else 
+	{
+		DeriveTangents( tri );
 	}
 }
 
@@ -2137,45 +2179,46 @@ DEFORMED SURFACES
 R_BuildDeformInfo
 ===================
 */
-deformInfo_t *R_BuildDeformInfo( int numVerts, const idDrawVert *verts, int numIndexes, const int *indexes, bool useUnsmoothedTangents ) {
-	deformInfo_t	*deform;
+deformInfo_t* crFrontend::BuildDeformInfo( int numVerts, const idDrawVert *verts, int numIndexes, const int *indexes, bool useUnsmoothedTangents ) 
+{
+	deformInfo_t	*deform = nullptr;
 	srfTriangles_t	tri;
-	int				i;
+	int				i = 0;
 
-	memset( &tri, 0, sizeof( tri ) );
+	std::memset( &tri, 0, sizeof( tri ) );
 
 	tri.numVerts = numVerts;
-	R_AllocStaticTriSurfVerts( &tri, tri.numVerts );
+	AllocStaticTriSurfVerts( &tri, tri.numVerts );
 	SIMDProcessor->Memcpy( tri.verts, verts, tri.numVerts * sizeof( tri.verts[0] ) );
 
 	tri.numIndexes = numIndexes;
-	R_AllocStaticTriSurfIndexes( &tri, tri.numIndexes );
+	AllocStaticTriSurfIndexes( &tri, tri.numIndexes );
 
 	// don't memcpy, so we can change the index type from int to short without changing the interface
-	for ( i = 0 ; i < tri.numIndexes ; i++ ) {
+	for ( i = 0 ; i < tri.numIndexes ; i++ ) 
+	{
 		tri.indexes[i] = indexes[i];
 	}
 
-	R_RangeCheckIndexes( &tri );
-	R_CreateSilIndexes( &tri );
+	RangeCheckIndexes( &tri );
+	CreateSilIndexes( &tri );
 
 // should we order the indexes here?
 
 //	R_RemoveDuplicatedTriangles( &tri );
 //	R_RemoveDegenerateTriangles( &tri );
 //	R_RemoveUnusedVerts( &tri );
-	R_IdentifySilEdges( &tri, false );			// we cannot remove coplanar edges, because
+	IdentifySilEdges( &tri, false );			// we cannot remove coplanar edges, because
 												// they can deform to silhouettes
 
-	R_DuplicateMirroredVertexes( &tri );		// split mirror points into multiple points
+	DuplicateMirroredVertexes( &tri );		// split mirror points into multiple points
 
-	R_CreateDupVerts( &tri );
+	CreateDupVerts( &tri );
 
-	if ( useUnsmoothedTangents ) {
-		R_BuildDominantTris( &tri );
-	}
-
-	deform = (deformInfo_t *)R_ClearedStaticAlloc( sizeof( *deform ) );
+	if ( useUnsmoothedTangents ) 
+		BuildDominantTris( &tri );
+	
+	deform = static_cast<deformInfo_t*>( tr.frameData->ClearedStaticAlloc( sizeof( *deform ) ) );
 
 	deform->numSourceVerts = numVerts;
 	deform->numOutputVerts = tri.numVerts;

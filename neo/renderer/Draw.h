@@ -116,11 +116,11 @@ public:
 	ID_INLINE void		SetStaticAllocCountZero( void ){ staticAllocCount = 0; };
 
 private:
-	uint32_t		m_frame;
-	intptr_t		staticAllocCount;	// running total of bytes allocated
-	size_t			memoryHighwater;	// max used on any frame
-    frameData_t*	frameData;
-	frameData_t*	smpFrameData[SMP_FRAMES];
+	uint32_t								m_frame;
+	intptr_t								staticAllocCount;	// running total of bytes allocated
+	size_t									memoryHighwater;	// max used on any frame
+    frameData_t*							frameData;
+	idStaticList<frameData_t, SMP_FRAMES>	smpFrameData;
 };
 
 class crDrawCommandQueue

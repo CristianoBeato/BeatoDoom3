@@ -25,6 +25,13 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #ifndef __FRONTEND_H__
 #define __FRONTEND_H__
 
+typedef struct 
+{
+	idVec3		tangents[2];
+	bool	negativePolarity;
+	bool	degenerate;
+} faceTangents_t;
+
 class crFrontend
 {
 public:
@@ -54,6 +61,42 @@ public:
     void            ShowColoredScreenRect( const idScreenRect &rect, int colorIndex );
     void            SetViewMatrix( viewDefptr_t viewDef );
     void            GlobalToNormalizedDeviceCoordinates( const idVec3 &global, idVec3 &ndc );
+
+    // Frontend_trisurf.cpp
+    void            InitTriSurfData( void );
+    void            ShutdownTriSurfData( void );
+    srfTriangles_t*	AllocStaticTriSurf( void );
+    srfTriangles_t*	CopyStaticTriSurf( const srfTriangles_t *tri );
+    void            AllocStaticTriSurfVerts( srfTriangles_t *tri, int numVerts );
+    void            AllocStaticTriSurfIndexes( srfTriangles_t *tri, int numIndexes );
+    void            AllocStaticTriSurfShadowVerts( srfTriangles_t *tri, int numVerts );
+    void            AllocStaticTriSurfPlanes( srfTriangles_t *tri, int numIndexes );
+    void            ResizeStaticTriSurfVerts( srfTriangles_t *tri, int numVerts );
+    void            ResizeStaticTriSurfIndexes( srfTriangles_t *tri, int numIndexes );
+    void            ResizeStaticTriSurfShadowVerts( srfTriangles_t *tri, int numVerts );
+    void            ReferenceStaticTriSurfVerts( srfTriangles_t *tri, const srfTriangles_t *reference );
+    void            ReferenceStaticTriSurfIndexes( srfTriangles_t *tri, const srfTriangles_t *reference );
+    void            FreeStaticTriSurfSilIndexes( srfTriangles_t *tri );
+    void            FreeStaticTriSurf( srfTriangles_t *tri );
+    void            FreeStaticTriSurfVertexCaches( srfTriangles_t *tri );
+    void            ReallyFreeStaticTriSurf( srfTriangles_t *tri );
+    void            FreeDeferredTriSurfs( frameData_t *frame );
+    int             TriSurfMemory( const srfTriangles_t *tri );
+    
+    void            BoundTriSurf( srfTriangles_t *tri );
+    void            RemoveDuplicatedTriangles( srfTriangles_t *tri );
+    void            CreateSilIndexes( srfTriangles_t *tri );
+    void            RemoveDegenerateTriangles( srfTriangles_t *tri );
+    void            RemoveUnusedVerts( srfTriangles_t *tri );
+    void            RangeCheckIndexes( const srfTriangles_t *tri );
+    void            CreateVertexNormals( srfTriangles_t *tri );	// also called by dmap
+    void            DeriveFacePlanes( srfTriangles_t *tri );		// also called by renderbump
+    void            CleanupTriangles( srfTriangles_t *tri, bool createNormals, bool identifySilEdges, bool useUnsmoothedTangents );
+    void            ReverseTriangles( srfTriangles_t *tri );
+
+    // if the deformed verts have significant enough texture coordinate changes to reverse the texture
+    // polarity of a triangle, the tangents will be incorrect
+    void            DeriveTangents( srfTriangles_t *tri, bool allocFacePlanes = true );
 
     // Frontend_stencilshadrow.cpp
     srfTriangles_t* CreateShadowVolume( const idRenderEntityLocal *ent, const srfTriangles_t *tri, const idRenderLightLocal *light, shadowGen_t optimize, srfCullInfo_t &cullInfo );
@@ -115,6 +158,16 @@ private:
     void            ConstrainViewFrustum( void );
     void            SortDrawSurfs( void ); 
 
+    // Frontend_trisurf.cpp
+    void            BuildDominantTris( srfTriangles_t *tri ); 
+    void            PurgeTriSurfData( frameData_t *frame );
+    srfTriangles_t* MergeSurfaceList( const srfTriangles_t **surfaces, int numSurfaces );
+    srfTriangles_t* MergeTriangles( const srfTriangles_t *tri1, const srfTriangles_t *tri2 );
+    void            CreateDupVerts( srfTriangles_t *tri );
+    deformInfo_t*   BuildDeformInfo( int numVerts, const idDrawVert *verts, int numIndexes, const int *indexes, bool useUnsmoothedTangents );
+    void            IdentifySilEdges( srfTriangles_t *tri, bool omitCoplanarEdges );
+    void            DeriveUnsmoothedTangents( srfTriangles_t *tri );
+    void            DeriveTangentsWithoutNormals( srfTriangles_t *tri );
 
 public:
     static bool     CullLocalBox( const idBounds &bounds, const crRenderMatrix modelMatrix, int numPlanes, const idPlane *planes );
@@ -140,6 +193,10 @@ public:
     
     // returns the frustum planes in world space
     static void     RenderLightFrustum( const struct renderLight_s &renderLight, idPlane lightFrustum[6] );
+
+    // Frontend_trisurf.cpp
+    static void     DuplicateMirroredVertexes( srfTriangles_t *tri );
+    static void     DeriveFaceTangents( const srfTriangles_t *tri, faceTangents_t *faceTangents );
 
 };
 

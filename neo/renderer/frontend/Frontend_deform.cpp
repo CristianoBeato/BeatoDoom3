@@ -53,7 +53,7 @@ void crFrontend::FinishDeform( drawSurf_t *drawSurf, srfTriangles_t *newTri, idD
 	if ( drawSurf->material->ReceivesLighting() ) 
 	{
 		newTri->verts = ac;
-		R_DeriveTangents( newTri, false );
+		DeriveTangents( newTri, false );
 		newTri->verts = nullptr;
 	}
 
@@ -105,10 +105,10 @@ void crFrontend::AutospriteDeform( drawSurf_t *surf )
 	
 	// this srfTriangles_t and all its indexes and caches are in frame
 	// memory, and will be automatically disposed of
-	newTri = static_cast<srfTriangles_t *>( tr.drawQueue->ClearedFrameAlloc( sizeof( *newTri ) ) );
+	newTri = static_cast<srfTriangles_t *>( tr.frameData->ClearedFrameAlloc( sizeof( *newTri ) ) );
 	newTri->numVerts = tri->numVerts;
 	newTri->numIndexes = tri->numIndexes;
-	newTri->indexes = static_cast<glIndex_t*>( tr.drawQueue->FrameAlloc( newTri->numIndexes * sizeof( newTri->indexes[0] ) ) );
+	newTri->indexes = static_cast<glIndex_t*>( tr.frameData->FrameAlloc( newTri->numIndexes * sizeof( newTri->indexes[0] ) ) );
 
 	idDrawVert* ac = static_cast<idDrawVert*>( _alloca16( newTri->numVerts * sizeof( idDrawVert ) ) );
 
@@ -197,10 +197,10 @@ void crFrontend::TubeDeform( drawSurf_t *surf )
 
 	// this srfTriangles_t and all its indexes and caches are in frame
 	// memory, and will be automatically disposed of
-	srfTriangles_t *newTri = static_cast<srfTriangles_t *>( tr.drawQueue->ClearedFrameAlloc( sizeof( *newTri ) ) );
+	srfTriangles_t *newTri = static_cast<srfTriangles_t *>( tr.frameData->ClearedFrameAlloc( sizeof( *newTri ) ) );
 	newTri->numVerts = tri->numVerts;
 	newTri->numIndexes = tri->numIndexes;
-	newTri->indexes = static_cast<glIndex_t *>( tr.drawQueue->FrameAlloc( newTri->numIndexes * sizeof( newTri->indexes[0] ) ) );
+	newTri->indexes = static_cast<glIndex_t *>( tr.frameData->FrameAlloc( newTri->numIndexes * sizeof( newTri->indexes[0] ) ) );
 	memcpy( newTri->indexes, tri->indexes, newTri->numIndexes * sizeof( newTri->indexes[0] ) );
 
 	idDrawVert	*ac = static_cast<idDrawVert *>( _alloca16( newTri->numVerts * sizeof( idDrawVert ) ) );
@@ -549,10 +549,10 @@ void crFrontend::FlareDeform( drawSurf_t *surf )
 
 	// this srfTriangles_t and all its indexes and caches are in frame
 	// memory, and will be automatically disposed of
-	newTri = static_cast<srfTriangles_t *>(tr.drawQueue->ClearedFrameAlloc( sizeof( *newTri ) ) );
+	newTri = static_cast<srfTriangles_t *>(tr.frameData->ClearedFrameAlloc( sizeof( *newTri ) ) );
 	newTri->numVerts = 16;
 	newTri->numIndexes = 18*3;
-	newTri->indexes = static_cast<glIndex_t*>( tr.drawQueue->FrameAlloc( newTri->numIndexes * sizeof( newTri->indexes[0] ) ) );
+	newTri->indexes = static_cast<glIndex_t*>( tr.frameData->FrameAlloc( newTri->numIndexes * sizeof( newTri->indexes[0] ) ) );
 	
 	idDrawVert *ac = static_cast<idDrawVert *>( _alloca16( newTri->numVerts * sizeof( idDrawVert ) ) );
 
@@ -743,7 +743,7 @@ void crFrontend::ExpandDeform( drawSurf_t *surf )
 
 	// this srfTriangles_t and all its indexes and caches are in frame
 	// memory, and will be automatically disposed of
-	newTri = static_cast<srfTriangles_t *>( tr.drawQueue->ClearedFrameAlloc( sizeof( *newTri ) ) );
+	newTri = static_cast<srfTriangles_t *>( tr.frameData->ClearedFrameAlloc( sizeof( *newTri ) ) );
 	newTri->numVerts = tri->numVerts;
 	newTri->numIndexes = tri->numIndexes;
 	newTri->indexes = tri->indexes;
@@ -776,7 +776,7 @@ void crFrontend::MoveDeform( drawSurf_t *surf )
 
 	// this srfTriangles_t and all its indexes and caches are in frame
 	// memory, and will be automatically disposed of
-	newTri = static_cast<srfTriangles_t *>( tr.drawQueue->ClearedFrameAlloc( sizeof( *newTri ) ) );
+	newTri = static_cast<srfTriangles_t *>( tr.frameData->ClearedFrameAlloc( sizeof( *newTri ) ) );
 	newTri->numVerts = tri->numVerts;
 	newTri->numIndexes = tri->numIndexes;
 	newTri->indexes = tri->indexes;
@@ -812,7 +812,7 @@ void crFrontend::TurbulentDeform( drawSurf_t *surf )
 
 	// this srfTriangles_t and all its indexes and caches are in frame
 	// memory, and will be automatically disposed of
-	newTri = static_cast<srfTriangles_t *>( tr.drawQueue->ClearedFrameAlloc( sizeof( *newTri ) ) );
+	newTri = static_cast<srfTriangles_t *>( tr.frameData->ClearedFrameAlloc( sizeof( *newTri ) ) );
 	newTri->numVerts = tri->numVerts;
 	newTri->numIndexes = tri->numIndexes;
 	newTri->indexes = tri->indexes;
@@ -957,11 +957,11 @@ void crFrontend::EyeballDeform( drawSurf_t *surf )
 	// memory, and will be automatically disposed of
 
 	// the surface cannot have more indexes or verts than the original
-	newTri = static_cast<srfTriangles_t*>( tr.drawQueue->ClearedFrameAlloc( sizeof( *newTri ) ) );
+	newTri = static_cast<srfTriangles_t*>( tr.frameData->ClearedFrameAlloc( sizeof( *newTri ) ) );
 	memset( newTri, 0, sizeof( *newTri ) );
 	newTri->numVerts = tri->numVerts;
 	newTri->numIndexes = tri->numIndexes;
-	newTri->indexes = static_cast<glIndex_t*>( tr.drawQueue->FrameAlloc( tri->numIndexes * sizeof( newTri->indexes[0] ) ) );
+	newTri->indexes = static_cast<glIndex_t*>( tr.frameData->FrameAlloc( tri->numIndexes * sizeof( newTri->indexes[0] ) ) );
 	idDrawVert *ac = static_cast<idDrawVert*>( _alloca16( tri->numVerts * sizeof( idDrawVert ) ) );
 
 	newTri->numIndexes = 0;
@@ -1138,11 +1138,11 @@ void crFrontend::ParticleDeform( drawSurf_t *surf, bool useArea )
 			// allocate a srfTriangles in temp memory that can hold all the particles
 			srfTriangles_t	*tri;
 
-			tri = static_cast<srfTriangles_t *>( tr.drawQueue->ClearedFrameAlloc( sizeof( *tri ) ) );
+			tri = static_cast<srfTriangles_t *>( tr.frameData->ClearedFrameAlloc( sizeof( *tri ) ) );
 			tri->numVerts = 4 * count;
 			tri->numIndexes = 6 * count;
-			tri->verts = static_cast<idDrawVert*>( tr.drawQueue->FrameAlloc( tri->numVerts * sizeof( tri->verts[0] ) ) );
-			tri->indexes = static_cast<glIndex_t*>( tr.drawQueue->FrameAlloc( tri->numIndexes * sizeof( tri->indexes[0] ) ) );
+			tri->verts = static_cast<idDrawVert*>( tr.frameData->FrameAlloc( tri->numVerts * sizeof( tri->verts[0] ) ) );
+			tri->indexes = static_cast<glIndex_t*>( tr.frameData->FrameAlloc( tri->numIndexes * sizeof( tri->indexes[0] ) ) );
 
 			// just always draw the particles
 			tri->bounds = stage->bounds;

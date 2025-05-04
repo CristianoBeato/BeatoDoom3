@@ -197,6 +197,7 @@ source_group("Backend" FILES ${RENDERER_BAKCEND_SOURCES} )
 SET( RENDERER_FRONTEND_SOURCES
 	${CMAKE_SOURCE_DIR}/renderer/frontend/Frontend.cpp
 	${CMAKE_SOURCE_DIR}/renderer/frontend/Frontend.h
+	${CMAKE_SOURCE_DIR}/renderer/frontend/Frontend_trisurf.cpp
 	${CMAKE_SOURCE_DIR}/renderer/frontend/Frontend_deform.cpp
 	${CMAKE_SOURCE_DIR}/renderer/frontend/Frontend_guisurf.cpp
 	${CMAKE_SOURCE_DIR}/renderer/frontend/Frontend_light.cpp
@@ -215,7 +216,6 @@ SET( RENDERER_FRONTEND_SOURCES
 	${CMAKE_SOURCE_DIR}/renderer/tr_rendertools.cpp
 	${CMAKE_SOURCE_DIR}/renderer/tr_shadowbounds.cpp
 	${CMAKE_SOURCE_DIR}/renderer/tr_trace.cpp
-	${CMAKE_SOURCE_DIR}/renderer/tr_trisurf.cpp
 	${CMAKE_SOURCE_DIR}/renderer/tr_turboshadow.cpp
 	${CMAKE_SOURCE_DIR}/renderer/renderer_common.h
 	)
