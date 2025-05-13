@@ -29,7 +29,7 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 struct glInternalFormat_t
 {
     glInternalFormat_t( void ) : format( 0 ){}
-    glInternalFormat_t( const GLenum__format ) : format( _format ) {}
+    glInternalFormat_t( const GLenum _format ) : format( _format ) {}
 
     GLenum    GetInternalFormat( void ) const { return format; }
     GLenum    GetFormat( void ) const;
@@ -51,7 +51,7 @@ public:
     virtual bool    Create( const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t layers, const uint32_t mips, const GLenum format, const uint32_t type );
     virtual void    Destroy( void );
     virtual void    CopyBufferToImage( const crBuffer* buffer, const uint32_t rowLength, const bufferTextureRect_t * imageMap, const uint32_t count );
-    virtual void    MakeResident( const crGLTextureSampler* sampler );
+    virtual void    MakeResident( const crTextureSampler* sampler );
     virtual void    Unmakeresident( void );
 
     /// @brief get the texture object handle

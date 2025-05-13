@@ -70,19 +70,19 @@ static const uint32_t   SHADER_BUFFER_BINDING_VERTEX_BLOCK = 1;     // layout( s
 static const uint32_t   SHADER_BUFFER_BINDING_FRAGMENT_BLOCK = 2;   // layout( std430, binding = 2 ) buffer fragmentStorageBlock
 static const uint32_t   SHADER_BUFFER_BINDING_LIGHT_BLOCK = 3;      // layout( std430, binding = 3 ) buffer lightStorageBlock
 
-static const size_t     SHADER_VERTEX_BLOCK_SIZE;
-static const size_t     SHADER_FRAGMENT_BLOCK_SIZE;
-static const size_t     SHADER_LIGHT_BLOCK_SIZE;
+extern const size_t     SHADER_VERTEX_BLOCK_SIZE;
+extern const size_t     SHADER_FRAGMENT_BLOCK_SIZE;
+extern const size_t     SHADER_LIGHT_BLOCK_SIZE;
 
-static const size_t     FRAME_UNIFORM_VERTEX_SIZE;       // ~1,25 mb
-static const size_t     FRAME_UNIFORM_FRAGMENT_SIZE;   // ~576 kb
-static const size_t     FRAME_UNIFORM_LIGHT_SIZE;         // ~320 kbb
-static const size_t     FRAME_TEXTURE_HANDLE_SIZE;     // ~256 kb
+extern const size_t     FRAME_UNIFORM_VERTEX_SIZE;       // ~1,25 mb
+extern const size_t     FRAME_UNIFORM_FRAGMENT_SIZE;   // ~576 kb
+extern const size_t     FRAME_UNIFORM_LIGHT_SIZE;         // ~320 kbb
+extern const size_t     FRAME_TEXTURE_HANDLE_SIZE;     // ~256 kb
 
-static const size_t     UNIFORMS_BUFFER_VERTEX_SIZE;
-static const size_t     UNIFORMS_BUFFER_FRAGMENT_UNIFORMS_SIZE;
-static const size_t     UNIFORMS_BUFFER_LIGHT_UNIFORMS_SIZE;
-static const size_t     TEXTURE_BUFFER_HANDLES_SIZE;
+extern const size_t     UNIFORMS_BUFFER_VERTEX_SIZE;
+extern const size_t     UNIFORMS_BUFFER_FRAGMENT_UNIFORMS_SIZE;
+extern const size_t     UNIFORMS_BUFFER_LIGHT_UNIFORMS_SIZE;
+extern const size_t     TEXTURE_BUFFER_HANDLES_SIZE;
 
 // ===========================================================================
 

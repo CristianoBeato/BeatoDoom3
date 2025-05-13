@@ -147,6 +147,8 @@ typedef enum {
 
 #define	MAX_IMAGE_NAME	256
 
+class crTexture;
+class crTextureSampler;
 class idImage {
 public:
 				idImage();

@@ -58,10 +58,10 @@ void crGLShaderStorage::StartUp(void)
     textureHandlerSSBO.New();
 
     // Create buffers 
-    vertexUniformSSBO->Create( UNIFORMS_BUFFER_VERTEX_SIZE ); // Create vertex uniform buffer storage 
-    fragmentUniformSSBO->Create( UNIFORMS_BUFFER_FRAGMENT_UNIFORMS_SIZE ); // Create fragment uniform buffer storage 
-    lightUniformSSBO->Create( UNIFORMS_BUFFER_LIGHT_UNIFORMS_SIZE ); // Create light uniform buffer stogare
-    textureHandlerSSBO->Create( TEXTURE_BUFFER_HANDLES_SIZE ); // Create texture binding buffer 
+    vertexUniformSSBO->Create( BUFFER_USAGE_SHADER, UNIFORMS_BUFFER_VERTEX_SIZE ); // Create vertex uniform buffer storage 
+    fragmentUniformSSBO->Create( BUFFER_USAGE_SHADER, UNIFORMS_BUFFER_FRAGMENT_UNIFORMS_SIZE ); // Create fragment uniform buffer storage 
+    lightUniformSSBO->Create( BUFFER_USAGE_SHADER, UNIFORMS_BUFFER_LIGHT_UNIFORMS_SIZE ); // Create light uniform buffer stogare
+    textureHandlerSSBO->Create( BUFFER_USAGE_SHADER, TEXTURE_BUFFER_HANDLES_SIZE ); // Create texture binding buffer 
 
     // reference the buffer 
     m_vertexUniformSSBO = vertexUniformSSBO.DynamicCast<crBuffer>();
@@ -95,25 +95,21 @@ void crGLShaderStorage::ShutDown(void)
     if( m_lightUniformSSBO )
     { 
         m_lightUniformSSBO->Destroy();
-        m_lightUniformSSBO.Delete();
     }
 
     if( m_fragmentUniformSSBO ) 
     {
         m_fragmentUniformSSBO->Destroy();
-        m_fragmentUniformSSBO.Delete();
     }
 
     if( m_vertexUniformSSBO ) 
     {
         m_vertexUniformSSBO->Destroy();
-        m_vertexUniformSSBO.Delete();
     }
 
     if ( m_textureHandlerSSBO )
     {
         m_textureHandlerSSBO->Destroy();
-        m_textureHandlerSSBO.Delete();
     }
 }
 

@@ -197,7 +197,7 @@ void crShaderStorage::End(void)
      {
          // remove texture binding 
          m_bindTextures[i]->SetBinding( -1 );
-         m_bindTextures[i] = nullptr;
+         m_bindTextures[i] = crAutoPointer<crTexture>();
      }
      
      m_textureCount = 0;

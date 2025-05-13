@@ -30,10 +30,12 @@ If you have questions concerning this license or the applicable additional terms
 #define __TR_LOCAL_H__
 
 #if CR_USE_VULKAN
+#	include "backend/vulkan/qvk.h"
 #	include "backend/vulkan/vkContext.h"
 #endif //CR_USE_VULKAN
 
 #if CR_USE_OPENGL
+#	include "backend/opengl/qgl.h" 
 #	include "backend/opengl/glContext.h"
 #endif //CR_USE_OPENGL
 // BEATO End
@@ -43,9 +45,6 @@ class idRenderWorldLocal;
 #include "RenderMatrix.h"
 #include "frontend/Transform.h"
 #include "ScreenRect.h"
-#include "Draw.h" // TODO: better name
-#include "frontend/Frontend.h"
-#include "backend/Backend_common.h"
 #include "images/Image.h"
 #include "images/Image_manager.h"
 #include "MegaTexture.h"
@@ -279,16 +278,14 @@ typedef struct
 } renderCrop_t;
 static const int	MAX_RENDER_CROPS = 8;
 
-// BEATO Begin:
-#include "Draw.h"
-#include "frontend/Frontend.h"
-// BEATO End
 /*
 ** Most renderer globals are defined here.
 ** backend functions should never modify any of these fields,
 ** but may read fields that aren't dynamically modified
 ** by the frontend.
 */
+class crBackend;
+class crFrontend;
 class idRenderSystemLocal : public idRenderSystem 
 {
 public:
@@ -379,8 +376,6 @@ public:
 	drawSurfsCommand_t		lockSurfacesCmd;	// use this when r_lockSurfaces = 1
 
 	viewEntity_t			identitySpace;		// can use if we don't know viewDef->worldSpace is valid
-	FILE *					logFile;			// for logging GL calls and frame breaks
-
 	int						stencilIncr, stencilDecr;	// GL_INCR / INCR_WRAP_EXT, GL_DECR / GL_DECR_EXT
 
 	renderCrop_t			renderCrops[MAX_RENDER_CROPS];
@@ -940,6 +935,11 @@ TR_SHADOWBOUNDS
 idScreenRect R_CalcIntersectionScissor( const idRenderLightLocal * lightDef, const idRenderEntityLocal * entityDef, const viewDefptr_t viewDef );
 
 //=============================================
+// BEATO Begin:
+#include "Draw.h"
+#include "frontend/Frontend.h"
+#include "backend/Backend_common.h"
+// BEATO End
 #include "renderworld/RenderEntity.h"
 #include "renderworld/RenderLight.h"
 #include "renderworld/RenderView.h"

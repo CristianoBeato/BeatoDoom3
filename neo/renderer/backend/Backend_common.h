@@ -122,7 +122,6 @@ private:
     void    STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs );
     void    StencilShadowPass( const drawSurf_t *drawSurfs );
     void    STD_FogAllLights( void );
-    void    BakeTextureMatrixIntoTexgen( idPlane lightProject[3], const float textureMatrix[16] );
     void    LeaveDepthHack( void );
     void    RenderTriangleSurface( const srfTriangles_t *tri );
     void    RenderTriangleSurface( const drawSurf_t *surf );

@@ -141,7 +141,7 @@ public:
 	ID_INLINE crAutoPointer<u_, a_>	DynamicCast( void ) const
 	{
         crAutoPointer<u_, a_> ref = crAutoPointer<u_, a_>(); // empty ref
-        ref.m_object = dynamic_cast<u_*>( m_object ); // cast to type 
+        &ref = dynamic_cast<u_*>( m_object ); // cast to type 
 		return ref; // return reference
 	}
 	

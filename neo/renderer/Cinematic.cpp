@@ -369,7 +369,8 @@ int idCinematicLocal::AnimationLength() {
 idCinematicLocal::ResetTime
 ==============
 */
-void idCinematicLocal::ResetTime(int time) {
+void idCinematicLocal::ResetTime(int time) 
+{
 	startTime = ( backEnd.viewDef ) ? 1000 * backEnd.viewDef->floatTime : -1;
 	status = FMV_PLAY;
 }
@@ -379,7 +380,8 @@ void idCinematicLocal::ResetTime(int time) {
 idCinematicLocal::ImageForTime
 ==============
 */
-cinData_t idCinematicLocal::ImageForTime( int thisTime ) {
+cinData_t idCinematicLocal::ImageForTime( int thisTime ) 
+{
 	cinData_t	cinData;
 
 	if ( thisTime < 0 ) {

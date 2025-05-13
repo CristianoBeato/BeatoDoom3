@@ -88,7 +88,7 @@ crAutoPointer<glAsyncCommand> glCommandQueue::Get(void)
     {
         crScopeLock lock( m_lock );
         if ( !m_tail )
-            return nullptr;
+            return command;
         
         // get tail
         command = m_tail;

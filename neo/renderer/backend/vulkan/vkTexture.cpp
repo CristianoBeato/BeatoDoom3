@@ -228,7 +228,7 @@ crVKTexture::crVKTexture(void) :
 {
 }
 
-bool crVKTexture::Create(const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t layers, const uint32_t mips, const GLenum format, const uint32_t type)
+bool crVKTexture::Create(const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t layers, const uint32_t mips, const uint32_t format, const uint32_t type)
 {
     VkResult res = VK_SUCCESS;
     auto device = tr.vulkan->GetDevice();

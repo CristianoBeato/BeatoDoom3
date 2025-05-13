@@ -2875,5 +2875,5 @@ idRenderModel *idGameEdit::AF_CreateMesh( const idDict &args, idVec3 &meshOrigin
 	}
 
 	// instantiate a mesh using the joint information from the render entity
-	return md5->InstantiateDynamicModel( &ent, NULL, NULL );
+	return md5->InstantiateDynamicModel( &ent, viewDefptr_t(), nullptr );
 }

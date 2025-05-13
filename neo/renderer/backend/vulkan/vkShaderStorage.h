@@ -32,7 +32,7 @@ public:
     ~crVKShaderStorage( void );
     void    StartUp( void ) override;
     void    ShutDown( void ) override;
-    void    Begin( void ) override;
+    void    Begin( uint32_t frame ) override;
     void    BindTexture( const uint32_t binding, crAutoPointer<crTexture> texture, crAutoPointer<crTextureSampler> sampler ) override;
 
 private:

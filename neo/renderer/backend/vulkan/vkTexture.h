@@ -31,10 +31,10 @@ public:
     crVKTexture( void );
     ~crVKTexture( void);
 
-    virtual bool    Create( const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t layers, const uint32_t mips, const GLenum format, const uint32_t type ) override;
+    virtual bool    Create( const uint32_t width, const uint32_t height, const uint32_t depth, const uint32_t layers, const uint32_t mips, const uint32_t format, const uint32_t type ) override; 
     virtual void    Destroy( void ) override;
     virtual void    CopyBufferToImage( const crBuffer* buffer, const uint32_t rowLength, const bufferTextureRect_t * imageMap, const uint32_t count ) override;
-    virtual void    MakeResident( const crGLTextureSampler* sampler );
+    virtual void    MakeResident( const crTextureSampler* sampler );
     virtual void    Unmakeresident( void );
 
     /// @brief get the texture object handle

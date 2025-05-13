@@ -423,10 +423,10 @@ void crGLTexture::CopyBufferToImage(const crBuffer *buffer, const uint32_t rowLe
         glBindBuffer( GL_PIXEL_UNPACK_BUFFER, currentBuffer );
 }
 
-void crGLTexture::MakeResident( const crGLTextureSampler* sampler )
+void crGLTexture::MakeResident( const crTextureSampler* sampler )
 {
     if( m_bindingHandler == 0 )
-        m_bindingHandler = glGetTextureSamplerHandleARB( m_texture, sampler->GetHandler() );
+        m_bindingHandler = glGetTextureSamplerHandleARB( m_texture, dynamic_cast<crGLTextureSampler*>(sampler)->GetHandler() );
 }
 
 void crGLTexture::Unmakeresident(void)

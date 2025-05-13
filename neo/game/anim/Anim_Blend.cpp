@@ -5000,7 +5000,7 @@ idRenderModel *idGameEdit::ANIM_CreateMeshForAnim( idRenderModel *model, const c
 	}
 
 	if ( !md5anim ) {
-		return NULL;
+		return nullptr;
 	}
 
 	temp = args->GetString( "skin", "" );
@@ -5013,10 +5013,10 @@ idRenderModel *idGameEdit::ANIM_CreateMeshForAnim( idRenderModel *model, const c
 
 	ANIM_CreateAnimFrame( model, md5anim, ent.numJoints, ent.joints, FRAME2MS( frame ), offset, remove_origin_offset );
 
-	newmodel = model->InstantiateDynamicModel( &ent, NULL, NULL );
+	newmodel = model->InstantiateDynamicModel( &ent, viewDefptr_t(), nullptr );
 
 	Mem_Free16( ent.joints );
-	ent.joints = NULL;
+	ent.joints = nullptr;
 
 	return newmodel;
 }

@@ -42,8 +42,6 @@ public:
 
 private:
     GLuint      m_framebuffer;
-    GLuint      m_depthStencilAttachment;
-    GLuint      m_attachments[MAX_COLOR_ATTACHMENS];
 };
 
 #endif //__GL_FRAMEBUFFER_H__

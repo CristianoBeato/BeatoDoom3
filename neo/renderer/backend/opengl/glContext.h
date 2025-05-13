@@ -121,6 +121,7 @@ struct glState
 };
 
 // OpenGL command thread
+typedef void *SDL_GLContext;
 class crGLContext : private idSysThread
 {
 public:
@@ -138,7 +139,7 @@ private:
     glProperties                    m_properties;
     glState                         m_state;
     SDL_GLContext                   m_renderContext;
-    SDL_Window*                     m_window;
+    struct SDL_Window*              m_window;
     crMutex*                        m_queueLock;    
     crAutoPointer<glCommandQueue>   m_tail;
     crAutoPointer<glCommandQueue>   m_head;

@@ -333,7 +333,7 @@ crRenderMatrix crRenderMatrix::operator*( const crRenderMatrix &in ) const
 	t2 = _mm_mul_ps( _mm_splat_ps( a2, 0 ), b0 );
 	t3 = _mm_mul_ps( _mm_splat_ps( a3, 0 ), b0 );
 
-#if 0
+#if 1
 
 	t0 = _mm_madd_ps( _mm_splat_ps( a0, 1 ), b1, t0 );
 	t1 = _mm_madd_ps( _mm_splat_ps( a1, 1 ), b1, t1 );
