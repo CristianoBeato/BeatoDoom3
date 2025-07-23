@@ -29,6 +29,7 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __IMAGE_H__
 #define __IMAGE_H__
 
+#include "renderer/backend/Backend_apiwrapper.h"
 /*
 ====================================================================
 
@@ -147,9 +148,8 @@ typedef enum {
 
 #define	MAX_IMAGE_NAME	256
 
-class crTexture;
-class crTextureSampler;
-class idImage {
+class idImage 
+{
 public:
 				idImage();
 
@@ -216,8 +216,7 @@ public:
 	void		StartBackgroundImageLoad();
 	int			BitsForInternalFormat( int internalFormat ) const;
 //	void		UploadCompressedNormalMap( int width, int height, const byte *rgba, int mipLevel );
-	GLenum		SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, int width, int height,
-									 textureDepth_t minimumDepth, bool *monochromeResult ) const;
+	uint32_t	SelectInternalFormat( const byte **dataPtrs, int numDataPtrs, int width, int height, textureDepth_t minimumDepth, bool *monochromeResult ) const;
 	void		ImageProgramStringToCompressedFileName( const char *imageProg, char *fileName ) const;
 	int			NumLevelsForImageSize( int width, int height ) const;
 

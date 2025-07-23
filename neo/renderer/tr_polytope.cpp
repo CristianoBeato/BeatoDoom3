@@ -75,9 +75,9 @@ srfTriangles_t *R_PolytopeSurface( int numPlanes, const idPlane *planes, idWindi
 	}
 
 	// allocate the surface
-	tri = R_AllocStaticTriSurf();
-	R_AllocStaticTriSurfVerts( tri, numVerts );
-	R_AllocStaticTriSurfIndexes( tri, numIndexes );
+	tri = tr.frontend->AllocStaticTriSurf();
+	tr.frontend->AllocStaticTriSurfVerts( tri, numVerts );
+	tr.frontend->AllocStaticTriSurfIndexes( tri, numIndexes );
 
 	// copy the data from the windings
 	for ( i = 0; i < numPlanes; i++ ) {
@@ -105,7 +105,7 @@ srfTriangles_t *R_PolytopeSurface( int numPlanes, const idPlane *planes, idWindi
 		}
 	}
 
-	R_BoundTriSurf( tri );
+	tr.frontend->BoundTriSurf( tri );
 
 	return tri;
 }

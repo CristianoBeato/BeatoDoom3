@@ -42,7 +42,6 @@ If you have questions concerning this license or the applicable additional terms
 class idImage;
 class idCinematic;
 class idUserInterface;
-class idMegaTexture;
 class idSoundEmitter;
 
 // moved from image.h for default parm
@@ -173,7 +172,8 @@ typedef struct {
 } textureStage_t;
 
 // the order BUMP / DIFFUSE / SPECULAR is necessary for interactions to draw correctly on low end cards
-typedef enum {
+typedef enum 
+{
 	SL_AMBIENT,						// execute after lighting
 	SL_BUMP,
 	SL_DIFFUSE,
@@ -182,7 +182,8 @@ typedef enum {
 
 // cross-blended terrain textures need to modulate the color by
 // the vertex color to smoothly blend between two textures
-typedef enum {
+typedef enum 
+{
 	SVC_IGNORE,
 	SVC_MODULATE,
 	SVC_INVERSE_MODULATE
@@ -191,7 +192,8 @@ typedef enum {
 static const int	MAX_FRAGMENT_IMAGES = 8;
 static const int	MAX_VERTEX_PARMS = 4;
 
-typedef struct {
+typedef struct 
+{
 	int					vertexProgram;
 	int					numVertexParms;
 	int					vertexParms[MAX_VERTEX_PARMS][4];	// evaluated register indexes
@@ -199,8 +201,6 @@ typedef struct {
 	int					fragmentProgram;
 	int					numFragmentProgramImages;
 	idImage *			fragmentProgramImages[MAX_FRAGMENT_IMAGES];
-
-	idMegaTexture		*megaTexture;		// handles all the binding and parameter setting 
 } newShaderStage_t;
 
 typedef struct {
@@ -219,14 +219,16 @@ typedef struct {
 	newShaderStage_t	*newStage;			// vertex / fragment program based stage
 } shaderStage_t;
 
-typedef enum {
+typedef enum 
+{
 	MC_BAD,
 	MC_OPAQUE,			// completely fills the triangle, will have black drawn on fillDepthBuffer
 	MC_PERFORATED,		// may have alpha tested holes
 	MC_TRANSLUCENT		// blended with background
 } materialCoverage_t;
 
-typedef enum {
+typedef enum 
+{
 	SS_SUBVIEW = -3,	// mirrors, viewscreens, etc
 	SS_GUI = -2,		// guis
 	SS_BAD = -1,
@@ -247,7 +249,8 @@ typedef enum {
 	SS_POST_PROCESS = 100	// after a screen copy to texture
 } materialSort_t;
 
-typedef enum {
+typedef enum 
+{
 	CT_FRONT_SIDED,
 	CT_BACK_SIDED,
 	CT_TWO_SIDED
@@ -259,7 +262,8 @@ static const int MAX_TEXGEN_REGISTERS		= 4;
 static const int MAX_ENTITY_SHADER_PARMS	= 12;
 
 // material flags
-typedef enum {
+typedef enum 
+{
 	MF_DEFAULTED				= BIT(0),
 	MF_POLYGONOFFSET			= BIT(1),
 	MF_NOSHADOWS				= BIT(2),

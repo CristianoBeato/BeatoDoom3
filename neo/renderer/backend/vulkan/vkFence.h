@@ -32,12 +32,14 @@ public:
     ~crVKFence( void );
 
     void    Create( void );
-    void    Wait( void );
+    void    Wait( const uint64_t in_timeout = 0xFFFFFFFFFFFFFFFF );
     void    Reset( void );
     bool    IsSignaled( void ) const;
 
 private:
-    VkFence     m_fence;
+    VkAllocationCallbacks*  m_allocationCallbacks;
+    VkDevice                m_device;
+    VkFence                 m_fence;
 };
 
 #endif //!__VK_FENCE_H__

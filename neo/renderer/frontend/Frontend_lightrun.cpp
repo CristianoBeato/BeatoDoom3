@@ -339,7 +339,7 @@ static void R_FreeLightDefFrustum( idRenderLightLocal *ldef )
 	// free the frustum tris
 	if ( ldef->frustumTris ) 
 	{
-		R_FreeStaticTriSurf( ldef->frustumTris );
+		tr.frontend->FreeStaticTriSurf( ldef->frustumTris );
 		ldef->frustumTris = nullptr;
 	}
 	
@@ -536,7 +536,7 @@ void crFrontend::RenderLightFrustum( const renderLight_t &renderLight, idPlane l
 
 	DeriveLightData( &fakeLight );
 	
-	R_FreeStaticTriSurf( fakeLight.frustumTris );
+	tr.frontend->FreeStaticTriSurf( fakeLight.frustumTris );
 
 	for ( int i = 0 ; i < 6 ; i++ ) 
 	{
@@ -934,5 +934,5 @@ void R_RegenerateWorld_f( const idCmdArgs &args )
 
 	tr.frontend->ReCreateWorldReferences();
 
-	common->Printf( "Regenerated world, staticAllocCount = %i.\n", tr.drawQueue->GetStaticAllocCount() );
+	common->Printf( "Regenerated world, staticAllocCount = %i.\n", tr.frameData->GetStaticAllocCount() );
 }

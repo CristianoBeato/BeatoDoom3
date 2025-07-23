@@ -633,9 +633,12 @@ int idMaterial::ParseTerm( idLexer &src )
 		pd->registersAreConstant = false;
 		return EXP_REG_GLOBAL7;
 	}
+
+#if 0
 	if ( !token.Icmp( "fragmentPrograms" ) ) {
 		return GetExpressionConstant( (float) glConfig.ARBFragmentProgramAvailable );
 	}
+#endif
 
 	if ( !token.Icmp( "sound" ) ) {
 		pd->registersAreConstant = false;
@@ -1470,7 +1473,8 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 		}		
 
 		// shorthand for 2D modulated
-		if ( !token.Icmp( "colored" ) ) {
+		if ( !token.Icmp( "colored" ) ) 
+		{
 			ss->color.registers[0] = EXP_REG_PARM0;
 			ss->color.registers[1] = EXP_REG_PARM1;
 			ss->color.registers[2] = EXP_REG_PARM2;
@@ -1479,7 +1483,8 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 			continue;
 		}
 
-		if ( !token.Icmp( "color" ) ) {
+		if ( !token.Icmp( "color" ) ) 
+		{
 			ss->color.registers[0] = ParseExpression( src );
 			MatchToken( src, "," );
 			ss->color.registers[1] = ParseExpression( src );
@@ -1489,58 +1494,85 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 			ss->color.registers[3] = ParseExpression( src );
 			continue;
 		}
-		if ( !token.Icmp( "red" ) ) {
+		
+		if ( !token.Icmp( "red" ) ) 
+		{
 			ss->color.registers[0] = ParseExpression( src );
 			continue;
 		}
-		if ( !token.Icmp( "green" ) ) {
+		
+		if ( !token.Icmp( "green" ) ) 
+		{
 			ss->color.registers[1] = ParseExpression( src );
 			continue;
 		}
-		if ( !token.Icmp( "blue" ) ) {
+		
+		if ( !token.Icmp( "blue" ) ) 
+		{
 			ss->color.registers[2] = ParseExpression( src );
 			continue;
 		}
-		if ( !token.Icmp( "alpha" ) ) {
+		
+		if ( !token.Icmp( "alpha" ) ) 
+		{
 			ss->color.registers[3] = ParseExpression( src );
 			continue;
 		}
-		if ( !token.Icmp( "rgb" ) ) {
+		
+		if ( !token.Icmp( "rgb" ) ) 
+		{
 			ss->color.registers[0] = ss->color.registers[1] = 
 				ss->color.registers[2] = ParseExpression( src );
 			continue;
 		}
-		if ( !token.Icmp( "rgba" ) ) {
+		
+		if ( !token.Icmp( "rgba" ) ) 
+		{
 			ss->color.registers[0] = ss->color.registers[1] = 
 				ss->color.registers[2] = ss->color.registers[3] = ParseExpression( src );
 			continue;
 		}
 
-		if ( !token.Icmp( "if" ) ) {
+		if ( !token.Icmp( "if" ) ) 
+		{
 			ss->conditionRegister = ParseExpression( src );
 			continue;
 		}
-		if ( !token.Icmp( "program" ) ) {
-			if ( src.ReadTokenOnLine( &token ) ) {
+// BEATO Begin: 
+#if 0
+		if ( !token.Icmp( "program" ) ) 
+		{
+			if ( src.ReadTokenOnLine( &token ) ) 
+			{
 				newStage.vertexProgram = R_FindARBProgram( GL_VERTEX_PROGRAM_ARB, token.c_str() );
 				newStage.fragmentProgram = R_FindARBProgram( GL_FRAGMENT_PROGRAM_ARB, token.c_str() );
 			}
 			continue;
 		}
-		if ( !token.Icmp( "fragmentProgram" ) ) {
-			if ( src.ReadTokenOnLine( &token ) ) {
+		if ( !token.Icmp( "fragmentProgram" ) ) 
+		{
+			if ( src.ReadTokenOnLine( &token ) ) 
+			{
 				newStage.fragmentProgram = R_FindARBProgram( GL_FRAGMENT_PROGRAM_ARB, token.c_str() );
 			}
 			continue;
 		}
-		if ( !token.Icmp( "vertexProgram" ) ) {
-			if ( src.ReadTokenOnLine( &token ) ) {
+		if ( !token.Icmp( "vertexProgram" ) ) 
+		{
+			if ( src.ReadTokenOnLine( &token ) ) 
+			{
 				newStage.vertexProgram = R_FindARBProgram( GL_VERTEX_PROGRAM_ARB, token.c_str() );
 			}
 			continue;
 		}
-		if ( !token.Icmp( "megaTexture" ) ) {
-			if ( src.ReadTokenOnLine( &token ) ) {
+#endif
+// BEATO End
+// BEATO Begin: remove Mega Texture suport 
+#if 0
+		if ( !token.Icmp( "megaTexture" ) ) 
+		{
+			if ( src.ReadTokenOnLine( &token ) ) 
+			{
 				newStage.megaTexture = new idMegaTexture;
 				if ( !newStage.megaTexture->InitFromMegaFile( token.c_str() ) ) {
 					delete newStage.megaTexture;
@@ -1552,8 +1584,8 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 				continue;
 			}
 		}
-
-
+#endif 
+// BEATO End
 		if ( !token.Icmp( "vertexParm" ) ) {
 			ParseVertexParm( src, &newStage );
 			continue;
@@ -2328,20 +2360,20 @@ bool idMaterial::Parse( const char *text, const int textLength )
 
 	if (numStages) 
 	{
-		stages = static_cast<shaderStage_t*>( tr.framedata->StaticAlloc( numStages * sizeof( stages[0] ) ) );
-		memcpy( stages, pd->parseStages, numStages * sizeof( stages[0] ) );
+		stages = static_cast<shaderStage_t*>( tr.frameData->StaticAlloc( numStages * sizeof( stages[0] ) ) );
+		std::memcpy( stages, pd->parseStages, numStages * sizeof( stages[0] ) );
 	}
 
 	if ( numOps ) 
 	{
-		ops = static_cast<expOp_t *>( tr.framedata->StaticAlloc( numOps * sizeof( ops[0] ) ) );
-		memcpy( ops, pd->shaderOps, numOps * sizeof( ops[0] ) );
+		ops = static_cast<expOp_t *>( tr.frameData->StaticAlloc( numOps * sizeof( ops[0] ) ) );
+		std::memcpy( ops, pd->shaderOps, numOps * sizeof( ops[0] ) );
 	}
 
 	if ( numRegisters ) 
 	{
-		expressionRegisters = static_cast<float *>( tr.framedata->StaticAlloc( numRegisters * sizeof( expressionRegisters[0] ) ) );
-		memcpy( expressionRegisters, pd->shaderRegisters, numRegisters * sizeof( expressionRegisters[0] ) );
+		expressionRegisters = static_cast<float *>( tr.frameData->StaticAlloc( numRegisters * sizeof( expressionRegisters[0] ) ) );
+		std::memcpy( expressionRegisters, pd->shaderRegisters, numRegisters * sizeof( expressionRegisters[0] ) );
 	}
 
 	// see if the registers are completely constant, and don't need to be evaluated
@@ -2573,7 +2605,8 @@ int idMaterial::GetImageHeight( void ) const {
 idMaterial::CinematicLength
 =============
 */
-int	idMaterial::CinematicLength() const {
+int	idMaterial::CinematicLength( void ) const 
+{
 	if ( !stages || !stages[0].texture.cinematic ) {
 		return 0;
 	}
@@ -2585,10 +2618,11 @@ int	idMaterial::CinematicLength() const {
 idMaterial::UpdateCinematic
 =============
 */
-void idMaterial::UpdateCinematic( int time ) const {
-	if ( !stages || !stages[0].texture.cinematic || !backEnd.viewDef ) {
+void idMaterial::UpdateCinematic( int time ) const 
+{
+	if ( !stages || !stages[0].texture.cinematic || !tr.backend->GetViewDef() )
 		return;
-	}
+	
 	stages[0].texture.cinematic->ImageForTime( tr.primaryRenderView.time );
 }
 
@@ -2612,9 +2646,12 @@ void idMaterial::CloseCinematic( void ) const {
 idMaterial::ResetCinematicTime
 =============
 */
-void idMaterial::ResetCinematicTime( int time ) const {
-	for( int i = 0; i < numStages; i++ ) {
-		if ( stages[i].texture.cinematic ) {
+void idMaterial::ResetCinematicTime( int time ) const 
+{
+	for( int i = 0; i < numStages; i++ ) 
+	{
+		if ( stages[i].texture.cinematic ) 
+		{
 			stages[i].texture.cinematic->ResetTime( time );
 		}
 	}
@@ -2642,7 +2679,7 @@ This is probably an optimization of dubious value.
 ==================
 */
 static int	c_constant, c_variable;
-void idMaterial::CheckForConstantRegisters() 
+void idMaterial::CheckForConstantRegisters( void ) 
 {
 	if ( !pd->registersAreConstant )
 		return;
@@ -2652,10 +2689,11 @@ void idMaterial::CheckForConstantRegisters()
 
 	float shaderParms[MAX_ENTITY_SHADER_PARMS];
 	memset( shaderParms, 0, sizeof( shaderParms ) );
-	viewDef_t	viewDef;
-	memset( &viewDef, 0, sizeof( viewDef ) );
-
-	EvaluateRegisters( constantRegisters, shaderParms, &viewDef, 0 );
+	
+	//viewDef_t	viewDef;
+	//memset( &viewDef, 0, sizeof( viewDef ) );
+	viewDefptr_t viewDef = viewDefptr_t::New();
+	EvaluateRegisters( constantRegisters, shaderParms, viewDef, 0 );
 }
 
 /*
@@ -2663,14 +2701,15 @@ void idMaterial::CheckForConstantRegisters()
 idMaterial::ImageName
 ===================
 */
-const char *idMaterial::ImageName( void ) const {
-	if ( numStages == 0 ) {
+const char *idMaterial::ImageName( void ) const 
+{
+	if ( numStages == 0 )
 		return "_scratch";
-	}
+	
 	idImage	*image = stages[0].texture.image;
-	if ( image ) {
+	if ( image )
 		return image->imgName;
-	}
+
 	return "_scratch";
 }
 
@@ -2705,9 +2744,11 @@ size_t idMaterial::Size( void ) const {
 idMaterial::SetDefaultText
 ===================
 */
-bool idMaterial::SetDefaultText( void ) {
+bool idMaterial::SetDefaultText( void ) 
+{
 	// if there exists an image with the same name
-	if ( 1 ) { //fileSystem->ReadFile( GetName(), NULL ) != -1 ) {
+	if ( 1 ) 
+	{ //fileSystem->ReadFile( GetName(), NULL ) != -1 ) {
 		char generated[2048];
 		idStr::snPrintf( generated, sizeof( generated ), 
 						"material %s // IMPLICITLY GENERATED\n"
@@ -2721,9 +2762,9 @@ bool idMaterial::SetDefaultText( void ) {
 						"}\n", GetName(), GetName() );
 		SetText( generated );
 		return true;
-	} else {
-		return false;
-	}
+	} 
+
+	return false;
 }
 
 /*

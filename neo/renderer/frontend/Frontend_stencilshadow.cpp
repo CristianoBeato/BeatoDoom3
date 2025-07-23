@@ -1367,7 +1367,7 @@ srfTriangles_t*  crFrontend::CreateShadowVolume( const idRenderEntityLocal *ent,
 		common->FatalError( "Shadow volume exceeded allocation" );
 
 	// allocate a new surface for the shadow volume
-	newTri = R_AllocStaticTriSurf();
+	newTri = tr.frontend->AllocStaticTriSurf();
 
 	// we might consider setting this, but it would only help for
 	// large lights that are partially off screen
@@ -1379,10 +1379,10 @@ srfTriangles_t*  crFrontend::CreateShadowVolume( const idRenderEntityLocal *ent,
 
 	// the shadow verts will go into a main memory buffer as well as a vertex
 	// cache buffer, so they can be copied back if they are purged
-	R_AllocStaticTriSurfShadowVerts( newTri, newTri->numVerts );
+	tr.frontend->AllocStaticTriSurfShadowVerts( newTri, newTri->numVerts );
 	SIMDProcessor->Memcpy( newTri->shadowVertexes, shadowVerts, newTri->numVerts * sizeof( newTri->shadowVertexes[0] ) );
 
-	R_AllocStaticTriSurfIndexes( newTri, newTri->numIndexes );
+	tr.frontend->AllocStaticTriSurfIndexes( newTri, newTri->numIndexes );
 
 	if ( 1 /* sortCapIndexes */ ) 
 	{

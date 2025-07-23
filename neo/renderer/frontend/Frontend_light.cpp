@@ -56,7 +56,7 @@ bool crFrontend::CreateAmbientCache( srfTriangles_t *tri, bool needsLighting )
 	
 	// we are going to use it for drawing, so make sure we have the tangents and normals
 	if ( needsLighting && !tri->tangentsCalculated ) 
-		R_DeriveTangents( tri );
+		DeriveTangents( tri );
 
 	//vertexCache.Alloc( tri->verts, tri->numVerts * sizeof( tri->verts[0] ), &tri->ambientCache );
 	tri->ambientCache = vertexCache.AllocVertex( tri->numVerts * sizeof( tri->verts[0] ), tri->verts );
@@ -409,7 +409,7 @@ viewLight_t* crFrontend::SetLightDefViewLight( idRenderLightLocal *light )
 	light->viewCount = viewCount;
 
 	// add to the view light chain
-	vLight = static_cast<viewLight_t *>( tr.drawQueue->ClearedFrameAlloc( sizeof( *vLight ) ) );
+	vLight = static_cast<viewLight_t *>( tr.frameData->ClearedFrameAlloc( sizeof( *vLight ) ) );
 	vLight->lightDef = light;
 
 	// the scissorRect will be expanded as the light bounds is accepted into visible portal chains
@@ -624,7 +624,7 @@ void crFrontend::LinkLightSurf( const drawSurf_t **link, const srfTriangles_t *t
 	if ( !space ) 
 		space = &viewDef->worldSpace;
 	
-	drawSurf = static_cast<drawSurf_t *>( tr.drawQueue->FrameAlloc( sizeof( *drawSurf ) ) );
+	drawSurf = static_cast<drawSurf_t *>( tr.frameData->FrameAlloc( sizeof( *drawSurf ) ) );
 
 	drawSurf->geo = tri;
 	drawSurf->space = space;
@@ -646,7 +646,7 @@ void crFrontend::LinkLightSurf( const drawSurf_t **link, const srfTriangles_t *t
 		else 
 		{
 			// FIXME: share with the ambient surface?
-			float *regs = static_cast<float *>( tr.drawQueue->FrameAlloc( shader->GetNumRegisters() * sizeof( float ) ) );
+			float *regs = static_cast<float *>( tr.frameData->FrameAlloc( shader->GetNumRegisters() * sizeof( float ) ) );
 			drawSurf->shaderRegisters = regs;
 			shader->EvaluateRegisters( regs, space->entityDef->parms.shaderParms, viewDef, space->entityDef->parms.referenceSound );
 		}
@@ -1194,7 +1194,7 @@ void crFrontend::AddDrawSurf( const srfTriangles_t *tri, const viewEntity_t *spa
 			viewDef->maxDrawSurfs *= 2;
 		}
 
-		viewDef->drawSurfs = static_cast<drawSurf_t **>( tr.drawQueue->FrameAlloc( viewDef->maxDrawSurfs * sizeof( viewDef->drawSurfs[0] ) ) );
+		viewDef->drawSurfs = static_cast<drawSurf_t **>( tr.frameData->FrameAlloc( viewDef->maxDrawSurfs * sizeof( viewDef->drawSurfs[0] ) ) );
 		memcpy( viewDef->drawSurfs, old, count );
 	}
 

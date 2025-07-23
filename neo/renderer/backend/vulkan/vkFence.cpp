@@ -38,46 +38,46 @@ crVKFence::crVKFence( void ): m_fence( VK_NULL_HANDLE )
 
 crVKFence::~crVKFence( void )
 {
-    auto allocator = tr.vulkan->GetAllocator();
-    auto device = tr.vulkan->GetDevice();
-
     // free fence 
     if ( m_fence )
     {
-        vkDestroyFence( device, m_fence, &allocator );
+        vkDestroyFence( m_device, m_fence, &m_allocationCallbacks );
         m_fence = nullptr;
     }
+
+    m_allocationCallbacks = nullptr;
+    m_device = nullptr;
 }
 
 void crVKFence::Create( void )
 {
-    auto device = tr.vulkan->GetDevice();
-    auto allocator = tr.vulkan->GetAllocator();
-
     VkResult res = VK_SUCCESS;
     VkFenceCreateInfo info = {};
     info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+
+    crAutoPointer<crVulkanContext> vk = tr.m_renderContext.DynamicCast<crVulkanContext>();
+
+    m_device = vk->Device();
+    m_allocationCallbacks = vk->AllocationCallbacks();
+
     info.flags = 0;
-    res = vkCreateFence( device, &info, &allocator, &m_fence );
+    res = vkCreateFence( m_device, &info, m_allocationCallbacks, &m_fence );
     if ( res != VK_SUCCESS) 
         throw crVkException( "vkCreateFence failed!", res );
 }
 
-void crVKFence::Wait( void )
+void crVKFence::Wait( const uint64_t in_timeout )
 {
-    auto device = tr.vulkan->GetDevice();
-    vkWaitForFences( device, 1, &m_fence, VK_TRUE, 0xFFFFFFFFFFFFFFFF );
+    vkWaitForFences( m_device, 1, &m_fence, VK_TRUE, in_timeout );
 }
 
 void crVKFence::Reset(void)
 {
-    auto device = tr.vulkan->GetDevice();
-    vkResetFences( device, 1, &m_fence );
+    vkResetFences( m_device, 1, &m_fence );
 }
 
 bool crVKFence::IsSignaled( void ) const
 {
-    auto device = tr.vulkan->GetDevice();
-    return vkGetFenceStatus( device, m_fence ) == VK_SUCCESS;
+    return vkGetFenceStatus( m_device, m_fence ) == VK_SUCCESS;
 }
 

@@ -29,6 +29,8 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
+#include "idlib/Lib.h"
+
 idCVar gui_filter_password( "gui_filter_password", "0", CVAR_GUI | CVAR_INTEGER | CVAR_ARCHIVE, "Password filter" );
 idCVar gui_filter_players( "gui_filter_players", "0", CVAR_GUI | CVAR_INTEGER | CVAR_ARCHIVE, "Players filter" );
 idCVar gui_filter_gameType( "gui_filter_gameType", "0", CVAR_GUI | CVAR_INTEGER | CVAR_ARCHIVE, "Gametype filter" );
@@ -276,7 +278,7 @@ void idServerScan::NetScan( ) {
 	GUIUpdateSelected();
 	common->DPrintf( "NetScan with challenge %d\n", challenge );
 	
-	while ( cur_info < min( net_servers.Num(), MAX_PINGREQUESTS ) ) 
+	while ( cur_info < min<int>( net_servers.Num(), MAX_PINGREQUESTS ) ) 
 	{
 		netadr_t serv = net_servers[ cur_info ].adr;
 		EmitGetInfo( serv );

@@ -142,7 +142,7 @@ struct deviceProperties_t
     idList<VkPresentModeKHR>            presentModes;
 };
 
-class crVulkanContext
+class crVulkanContext : public crContext
 {
 public:
     crVulkanContext( void );
@@ -150,6 +150,16 @@ public:
 
     void    StartUp( void );
     void    ShutDown( void );
+
+    ID_INLINE VkAllocationCallbacks*                 AllocationCallbacks( void) const { return m_allocationCallbacks; }
+
+    /// @brief acess the vulkan present surface 
+    /// @return the opaque surface handle
+    ID_INLINE VkSurfaceKHR                          Surface( void ) const { return m_surface; }
+    
+    /// @brief Return the vulkan logic device 
+    /// @return the opaque device handle
+    ID_INLINE VkDevice                              Device( void ) const { return m_device; }
 
     /// @brief find a suitabe device buffer memmory 
     /// @param typeFilter 
@@ -161,9 +171,7 @@ public:
     VkSurfaceTransformFlagBitsKHR                   GetDeviceSurfaceTransform( void ) const;
     ID_INLINE VkInstance                            GetInstance( void ) const { return m_instance; }
     ID_INLINE VkPhysicalDevice                      GetPhysicalDevice( void ) const { return m_physicalDevices[m_currentDevice]; }
-    ID_INLINE VkDevice                              GetDevice( void ) const { return m_device; }
     ID_INLINE VkSurfaceKHR                          GetSurface( void ) const { return m_surface; }
-    ID_INLINE crAutoPointer<VkAllocationCallbacks>  GetAllocator( void ) const { return m_allocationCallbacks; }
     ID_INLINE uint32_t                              GetGraphicsQueueFamilyIndex( void ) { return m_graphicsQueueFamilyIndex; }
     ID_INLINE VkExtent2D                            GetDeviceSurfaceExtent( void ) const { return m_devicesProperties[m_currentDevice].surfaceCapabilities.currentExtent; }
     ID_INLINE VkExtent2D                            GetDeviceSurfaceMinExtent( void ) const { return m_devicesProperties[m_currentDevice].surfaceCapabilities.minImageExtent; }
@@ -186,7 +194,7 @@ private:
     idList<VkLayerProperties>               m_instanceLayerProperties;
     idList<const char*>                     m_enabledExtensions;              // 
     idList<const char*>                     m_enabledLayerNames;              // layers enable
-    crAutoPointer<VkAllocationCallbacks>    m_allocationCallbacks;
+    VkAllocationCallbacks*                  m_allocationCallbacks;
     idList<deviceProperties_t>              m_devicesProperties;
     idList<VkPhysicalDevice>                m_physicalDevices;
 

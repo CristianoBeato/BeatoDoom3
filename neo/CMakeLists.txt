@@ -86,6 +86,7 @@ add_subdirectory( ${CMAKE_SOURCE_DIR}/idlib )		# Engine utils library
 add_subdirectory( ${CMAKE_SOURCE_DIR}/TypeInfo )	#
 add_subdirectory( ${CMAKE_SOURCE_DIR}/contrib )		# Thirdy party libs
 add_subdirectory( ${CMAKE_SOURCE_DIR}/framework )	# Tools and compilers
+add_subdirectory( ${CMAKE_SOURCE_DIR}/renderer )	# Render system structures
 
 ###########################
 ##		Game logic Lib	 ##
@@ -104,185 +105,6 @@ endif( BUILD_GAME_D3XP )
 ###########################
 ##		 Engine 		 ##
 ###########################			
-
-##
-## Renderer
-## Core renderer engine 
-SET( RENDERER_SOURCES
-	${CMAKE_SOURCE_DIR}/renderer/Cinematic.cpp
-	${CMAKE_SOURCE_DIR}/renderer/Cinematic.h
-	${CMAKE_SOURCE_DIR}/renderer/Material.cpp
-	${CMAKE_SOURCE_DIR}/renderer/Material.h
-	${CMAKE_SOURCE_DIR}/renderer/MegaTexture.cpp
-	${CMAKE_SOURCE_DIR}/renderer/MegaTexture.h
-	${CMAKE_SOURCE_DIR}/renderer/RenderMatrix.cpp
-	${CMAKE_SOURCE_DIR}/renderer/RenderMatrix.h
-	${CMAKE_SOURCE_DIR}/renderer/RenderSystem.cpp
-	${CMAKE_SOURCE_DIR}/renderer/RenderSystem_init.cpp
-	${CMAKE_SOURCE_DIR}/renderer/RenderSystem.h
-	${CMAKE_SOURCE_DIR}/renderer/VertexCache.cpp
-	${CMAKE_SOURCE_DIR}/renderer/VertexCache.h
-	${CMAKE_SOURCE_DIR}/renderer/simplex.h
-	)
-	
-source_group("" FILES ${RENDERER_SOURCES} )
-
-#
-# Backend OpenGL
-#
-SET ( RENDERER_BACKEND_OPENGL_SOURCES 
-	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glBuffer.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glBuffer.h
-	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glCommandQueue.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glCommandQueue.h
-	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glContext.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glContext.h
-	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glFence.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glFence.h
-	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glFramebuffer.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glFramebuffer.h
-	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glPipeline.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glPipeline.h
-	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glShaderStorage.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glShaderStorage.h
-	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glTexture.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/glTexture.h
-	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/qgl.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/opengl/qgl.h
-	)
-
-#
-# Backend Vulkan
-#	
-SET ( RENDERER_BACKEND_VULKAN_SOURCES
-	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkBuffer.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkBuffer.h
-	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkCommandQueue.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkCommandQueue.h
-	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkContext.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkContext.h
-	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkFence.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkFence.h
-	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkFramebuffer.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkFramebuffer.h
-	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkPipeline.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkPipeline.h
-	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkShaderStorage.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkShaderStorage.h
-	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkSwapChain.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkSwapChain.h
-	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkTexture.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/vkTexture.h
-	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/qvk.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/vulkan/qvk.h
-	)
-##
-## Backend
-## 
-SET( RENDERER_BACKEND_SOURCES
-	${CMAKE_SOURCE_DIR}/renderer/backend/Backend_apiwrapper.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/Backend_apiwrapper.h
-	${CMAKE_SOURCE_DIR}/renderer/backend/Backend_common.h
-	${CMAKE_SOURCE_DIR}/renderer/backend/Backend.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/Backend_draw.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/Backend_draw_interactions.cpp
-	${CMAKE_SOURCE_DIR}/renderer/backend/Backend_render.cpp
-	)
-
-source_group("Backend" FILES ${RENDERER_BAKCEND_SOURCES} )
-
-##
-## Frontend
-## 
-SET( RENDERER_FRONTEND_SOURCES
-	${CMAKE_SOURCE_DIR}/renderer/frontend/Frontend.cpp
-	${CMAKE_SOURCE_DIR}/renderer/frontend/Frontend.h
-	${CMAKE_SOURCE_DIR}/renderer/frontend/Frontend_trisurf.cpp
-	${CMAKE_SOURCE_DIR}/renderer/frontend/Frontend_deform.cpp
-	${CMAKE_SOURCE_DIR}/renderer/frontend/Frontend_guisurf.cpp
-	${CMAKE_SOURCE_DIR}/renderer/frontend/Frontend_light.cpp
-	${CMAKE_SOURCE_DIR}/renderer/frontend/Frontend_lightrun.cpp
-	${CMAKE_SOURCE_DIR}/renderer/frontend/Frontend_stencilshadow.cpp
-	${CMAKE_SOURCE_DIR}/renderer/frontend/Frontend_subview.cpp
-	${CMAKE_SOURCE_DIR}/renderer/frontend/Transform.cpp
-	${CMAKE_SOURCE_DIR}/renderer/frontend/Transform.h
-
-	${CMAKE_SOURCE_DIR}/renderer/Interaction.cpp
-	${CMAKE_SOURCE_DIR}/renderer/Interaction.h
-	${CMAKE_SOURCE_DIR}/renderer/tr_font.cpp
-	${CMAKE_SOURCE_DIR}/renderer/tr_font.cpp
-	${CMAKE_SOURCE_DIR}/renderer/tr_orderIndexes.cpp
-	${CMAKE_SOURCE_DIR}/renderer/tr_polytope.cpp
-	${CMAKE_SOURCE_DIR}/renderer/tr_rendertools.cpp
-	${CMAKE_SOURCE_DIR}/renderer/tr_shadowbounds.cpp
-	${CMAKE_SOURCE_DIR}/renderer/tr_trace.cpp
-	${CMAKE_SOURCE_DIR}/renderer/tr_turboshadow.cpp
-	${CMAKE_SOURCE_DIR}/renderer/renderer_common.h
-	)
-	
-source_group("Frontend" FILES ${RENDERER_FRONTEND_SOURCES} )
-
-##
-## Imagens
-## 
-SET( RENDERER_IMAGENS_SOURCES
-	${CMAKE_SOURCE_DIR}/renderer/images/Image_files.cpp
-	${CMAKE_SOURCE_DIR}/renderer/images/Image_init.cpp
-	${CMAKE_SOURCE_DIR}/renderer/images/Image_load.cpp
-	${CMAKE_SOURCE_DIR}/renderer/images/Image_process.cpp
-	${CMAKE_SOURCE_DIR}/renderer/images/Image_program.cpp
-	${CMAKE_SOURCE_DIR}/renderer/images/Image.h
-	)
-	
-source_group("Imagens" FILES ${RENDERER_IMAGENS_SOURCES} )
-
-##
-## Models
-## 
-SET( RENDERER_MODELS_SOURCES
-	${CMAKE_SOURCE_DIR}/renderer/models/GuiModel.cpp
-	${CMAKE_SOURCE_DIR}/renderer/models/GuiModel.h
-	${CMAKE_SOURCE_DIR}/renderer/models/Model.cpp
-	${CMAKE_SOURCE_DIR}/renderer/models/Model.h
-	${CMAKE_SOURCE_DIR}/renderer/models/Model_ase.cpp
-	${CMAKE_SOURCE_DIR}/renderer/models/Model_ase.h
-	${CMAKE_SOURCE_DIR}/renderer/models/Model_beam.cpp
-	${CMAKE_SOURCE_DIR}/renderer/models/Model_liquid.cpp
-	${CMAKE_SOURCE_DIR}/renderer/models/Model_lwo.cpp
-	${CMAKE_SOURCE_DIR}/renderer/models/Model_lwo.h
-	${CMAKE_SOURCE_DIR}/renderer/models/Model_ma.cpp
-	${CMAKE_SOURCE_DIR}/renderer/models/Model_ma.h
-	${CMAKE_SOURCE_DIR}/renderer/models/Model_md3.cpp
-	${CMAKE_SOURCE_DIR}/renderer/models/Model_md3.h
-	${CMAKE_SOURCE_DIR}/renderer/models/Model_md5.cpp
-	${CMAKE_SOURCE_DIR}/renderer/models/Model_prt.cpp
-	${CMAKE_SOURCE_DIR}/renderer/models/Model_sprite.cpp
-	${CMAKE_SOURCE_DIR}/renderer/models/ModelDecal.cpp
-	${CMAKE_SOURCE_DIR}/renderer/models/ModelDecal.h
-	${CMAKE_SOURCE_DIR}/renderer/models/ModelManager.cpp
-	${CMAKE_SOURCE_DIR}/renderer/models/ModelManager.h
-	${CMAKE_SOURCE_DIR}/renderer/models/ModelOverlay.cpp
-	${CMAKE_SOURCE_DIR}/renderer/models/ModelOverlay.h
-	${CMAKE_SOURCE_DIR}/renderer/models/Model_local.h
-	)
-	
-source_group("Models" FILES ${RENDERER_MODELS_SOURCES} )
-
-##
-## Render World
-## 
-SET( RENDERER_RENDERWORL_SOURCES
-	${CMAKE_CURRENT_SOURCE_DIR}/renderer/renderworld/RenderEntity.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/renderer/renderworld/RenderWorld.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/renderer/renderworld/RenderWorld.h
-	${CMAKE_CURRENT_SOURCE_DIR}/renderer/renderworld/RenderWorld_demo.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/renderer/renderworld/RenderWorld_load.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/renderer/renderworld/RenderWorld_local.h
-	${CMAKE_CURRENT_SOURCE_DIR}/renderer/renderworld/RenderWorld_portals.cpp
-
-	)
-	
-source_group("RenderWorld" FILES ${RENDERER_RENDERWORL_SOURCES} )
 
 ##
 ## Sound
@@ -409,15 +231,6 @@ SET( ENGINE_SOURCES
 source_group("" FILES ${ENGINE_SOURCES} )
 
 set( BEATO_DOOM_SOURCES 
-	${RENDERER_SOURCES}
-	${RENDERER_BACKEND_OPENGL_SOURCES}
-	${RENDERER_BACKEND_VULKAN_SOURCES}
-	${RENDERER_BACKEND_SOURCES}
-	${RENDERER_FRONTEND_SOURCES}
-	${RENDERER_RENDERWORL_SOURCES}
-	${RENDERER_IMAGENS_SOURCES}
-	${RENDERER_MODELS_SOURCES}
-	${RENDERER_OPENGL_SOURCES}
 	${SOUND_SOURCES}
 	${TOOLS_SOURECES}
 	${TOOLS_COMPILER_AAS}

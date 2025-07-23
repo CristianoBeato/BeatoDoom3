@@ -534,7 +534,10 @@ void crFrontend::SortDrawSurfs( void )
 
 //==============================================================================
 
-
+void crFrontend::ZeroPerformanceCounters(void)
+{
+	pc = performanceCounters_t(); 
+}
 
 /*
 ================

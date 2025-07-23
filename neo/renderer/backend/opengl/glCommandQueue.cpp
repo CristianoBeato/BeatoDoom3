@@ -28,6 +28,7 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #include "qgl.h"
 #include "glCommandQueue.h"
 
+#if 0
 glCommandQueue::glCommandQueue(void) :
     m_lock( nullptr ),
     m_doneLock( nullptr ),
@@ -100,3 +101,5 @@ crAutoPointer<glAsyncCommand> glCommandQueue::Get(void)
     }
     return command;
 }
+
+#endif

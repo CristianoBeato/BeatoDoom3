@@ -43,30 +43,35 @@ only be called when the back end thread is idle.
 */
 static void R_PerformanceCounters( void ) 
 {
+	auto bpc = tr.backend->GetPerformanceCounters();
+	auto fpc = tr.frontend->GetPerformanceCounters();
+
 	if ( r_showPrimitives.GetInteger() != 0 ) 
 	{
 		
 		float megaBytes = globalImages->SumOfUsedImages() / ( 1024*1024.0 );
-
-		if ( r_showPrimitives.GetInteger() > 1 ) {
+		if ( r_showPrimitives.GetInteger() > 1 ) 
+		{
 			common->Printf( "v:%i ds:%i t:%i/%i v:%i/%i st:%i sv:%i image:%5.1f MB\n",
-				tr.pc.c_numViews,
-				backEnd.pc.c_drawElements + backEnd.pc.c_shadowElements,
-				backEnd.pc.c_drawIndexes / 3,
-				( backEnd.pc.c_drawIndexes - backEnd.pc.c_drawRefIndexes ) / 3,
-				backEnd.pc.c_drawVertexes,
-				( backEnd.pc.c_drawVertexes - backEnd.pc.c_drawRefVertexes ),
-				backEnd.pc.c_shadowIndexes / 3,
-				backEnd.pc.c_shadowVertexes,
+				fpc.c_numViews,
+				bpc.c_drawElements + bpc.c_shadowElements,
+				bpc.c_drawIndexes / 3,
+				( bpc.c_drawIndexes - bpc.c_drawRefIndexes ) / 3,
+				bpc.c_drawVertexes,
+				( bpc.c_drawVertexes - bpc.c_drawRefVertexes ),
+				bpc.c_shadowIndexes / 3,
+				bpc.c_shadowVertexes,
 				megaBytes
 				);
-		} else {
+		} 
+		else 
+		{
 			common->Printf( "views:%i draws:%i tris:%i (shdw:%i) (vbo:%i) image:%5.1f MB\n",
-				tr.pc.c_numViews,
-				backEnd.pc.c_drawElements + backEnd.pc.c_shadowElements,
-				( backEnd.pc.c_drawIndexes + backEnd.pc.c_shadowIndexes ) / 3,
-				backEnd.pc.c_shadowIndexes / 3,
-				backEnd.pc.c_vboIndexes / 3,
+				fpc.c_numViews, 
+				bpc.c_drawElements + bpc.c_shadowElements,
+				( bpc.c_drawIndexes + bpc.c_shadowIndexes ) / 3,
+				bpc.c_shadowIndexes / 3,
+				bpc.c_vboIndexes / 3,
 				megaBytes
 				);
 		}
@@ -75,59 +80,62 @@ static void R_PerformanceCounters( void )
 	if ( r_showDynamic.GetBool() ) 
 	{
 		common->Printf( "callback:%i md5:%i dfrmVerts:%i dfrmTris:%i tangTris:%i guis:%i\n",
-			tr.pc.c_entityDefCallbacks,
-			tr.pc.c_generateMd5,
-			tr.pc.c_deformedVerts,
-			tr.pc.c_deformedIndexes/3,
-			tr.pc.c_tangentIndexes/3,
-			tr.pc.c_guiSurfs
+			fpc.c_entityDefCallbacks,
+			fpc.c_generateMd5,
+			fpc.c_deformedVerts,
+			fpc.c_deformedIndexes/3,
+			fpc.c_tangentIndexes/3,
+			fpc.c_guiSurfs
 			); 
 	}
 
 	if ( r_showCull.GetBool() ) 
 	{
 		common->Printf( "%i sin %i sclip  %i sout %i bin %i bout\n",
-			tr.pc.c_sphere_cull_in, tr.pc.c_sphere_cull_clip, tr.pc.c_sphere_cull_out, 
-			tr.pc.c_box_cull_in, tr.pc.c_box_cull_out );
+			fpc.c_sphere_cull_in, 
+			fpc.c_sphere_cull_clip, 
+			fpc.c_sphere_cull_out, 
+			fpc.c_box_cull_in, 
+			fpc.c_box_cull_out );
 	}
 	
 	if ( r_showAlloc.GetBool() ) 
 	{
-		common->Printf( "alloc:%i free:%i\n", tr.pc.c_alloc, tr.pc.c_free );
+		common->Printf( "alloc:%i free:%i\n", fpc.c_alloc, fpc.c_free );
 	}
 
 	if ( r_showInteractions.GetBool() ) 
 	{
 		common->Printf( "createInteractions:%i createLightTris:%i createShadowVolumes:%i\n",
-			tr.pc.c_createInteractions, tr.pc.c_createLightTris, tr.pc.c_createShadowVolumes );
+			fpc.c_createInteractions, fpc.c_createLightTris, fpc.c_createShadowVolumes );
  	}
 	
 	if ( r_showDefs.GetBool() ) 
 	{
-		common->Printf( "viewEntities:%i  shadowEntities:%i  viewLights:%i\n", tr.pc.c_visibleViewEntities,
-			tr.pc.c_shadowViewEntities, tr.pc.c_viewLights );
+		common->Printf( "viewEntities:%i  shadowEntities:%i  viewLights:%i\n", fpc.c_visibleViewEntities,
+			fpc.c_shadowViewEntities, fpc.c_viewLights );
 	}
 	
 	if ( r_showUpdates.GetBool() ) 
 	{
 		common->Printf( "entityUpdates:%i  entityRefs:%i  lightUpdates:%i  lightRefs:%i\n", 
-			tr.pc.c_entityUpdates, tr.pc.c_entityReferences,
-			tr.pc.c_lightUpdates, tr.pc.c_lightReferences );
+			fpc.c_entityUpdates, fpc.c_entityReferences,
+			fpc.c_lightUpdates, fpc.c_lightReferences );
 	}
 	
 	if ( r_showMemory.GetBool() ) 
 	{
-		int	m1 = tr.drawQueue->GetMemoryHighwater();
-		common->Printf( "frameData: %i (%i)\n", tr.drawQueue->CountFrameData(), m1 );
+		int	m1 =  tr.frameData->GetMemoryHighwater();
+		common->Printf( "frameData: %i (%i)\n", tr.frameData->CountFrameData(), m1 );
 	}
 	
 	if ( r_showLightScale.GetBool() ) 
 	{
-		common->Printf( "lightScale: %f\n", backEnd.pc.maxLightValue );
+		common->Printf( "lightScale: %f\n", bpc.maxLightValue );
 	}
 
-	memset( &tr.pc, 0, sizeof( tr.pc ) );
-	memset( &backEnd.pc, 0, sizeof( backEnd.pc ) );
+	tr.frontend->ZeroPerformanceCounters();
+	tr.backend->ZeroPerformanceCounters();
 }
 
 
@@ -168,7 +176,7 @@ void R_LockSurfaceScene( viewDefptr_t parms )
 	}
 
 	// add the stored off surface commands again
-	cmd = (drawSurfsCommand_t *)tr.drawQueue->GetCommandBuffer( sizeof( *cmd ) );
+	cmd = (drawSurfsCommand_t *)tr.drawCommand->GetCommandBuffer( sizeof( *cmd ) );
 	*cmd = tr.lockSurfacesCmd;
 }
 
@@ -449,7 +457,7 @@ void idRenderSystemLocal::BeginFrame( int windowWidth, int windowHeight )
 {
 	setBufferCommand_t	*cmd;
 
-	if ( !glConfig.isInitialized )
+	if ( !m_renderContext->IsInitialized() )
 		return;
 
 	guiModel->Clear();
@@ -497,7 +505,7 @@ void idRenderSystemLocal::BeginFrame( int windowWidth, int windowHeight )
 	//
 	// draw buffer stuff
 	//
-	cmd = (setBufferCommand_t *)drawQueue->GetCommandBuffer( sizeof( *cmd ) );
+	cmd = static_cast<setBufferCommand_t *>( drawCommand->GetCommandBuffer( sizeof( *cmd ) ) );
 	cmd->commandId = RC_SET_BUFFER;
 	cmd->frameCount = frameCount;
 
@@ -536,9 +544,8 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec )
 {
 	emptyCommand_t *cmd;
 
-	if ( !glConfig.isInitialized )
+	if ( !m_renderContext->IsInitialized() )
 		return;
-
 
 	// close any gui drawing
 	guiModel->EmitFullScreen();
@@ -549,7 +556,7 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec )
 		*frontEndMsec = tr.frontend->GetPerformanceCounters().frontEndMsec;
 	
 	if ( backEndMsec ) 
-		*backEndMsec = tr.backend->Get.pc.msec;
+		*backEndMsec = tr.backend->GetPerformanceCounters().msec;
 
 	// print any other statistics and clear all of them
 	R_PerformanceCounters();
@@ -561,15 +568,15 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec )
 	// GL_CheckErrors();
 
 	// add the swapbuffers command
-	cmd = (emptyCommand_t *)drawQueue->GetCommandBuffer( sizeof( *cmd ) );
+	cmd = static_cast<emptyCommand_t *>( drawCommand->GetCommandBuffer( sizeof( *cmd ) ) );
 	cmd->commandId = RC_SWAP_BUFFERS;
 
 	// start the back end up again with the new command list
-	drawQueue->IssueRenderCommands();
+	drawCommand->IssueRenderCommands();
 
 	// use the other buffers next frame, because another CPU
 	// may still be rendering into the current buffers
-	drawQueue->ToggleSmpFrame();
+	drawCommand->ToggleSmpFrame();
 
 	// we can now release the vertexes used this frame
 	vertexCache.EndFrame();
@@ -605,17 +612,18 @@ void idRenderSystemLocal::RenderViewToViewport( const renderView_t *renderView, 
 	viewport->y2 = idMath::Ftoi( ( rc->y + rc->height ) - floor( renderView->y * hRatio + 0.5f ) - 1 );
 }
 
-static int RoundDownToPowerOfTwo( int v ) {
-	int	i;
-
-	for ( i = 0 ; i < 20 ; i++ ) {
-		if ( ( 1 << i ) == v ) {
+static int RoundDownToPowerOfTwo( int v ) 
+{
+	int	i = 0;
+	for ( i = 0 ; i < 20 ; i++ ) 
+	{
+		if ( ( 1 << i ) == v ) 
 			return v;
-		}
-		if ( ( 1 << i ) > v ) {
+		
+		if ( ( 1 << i ) > v )
 			return 1 << ( i-1 );
-		}
 	}
+
 	return 1<<i;
 }
 
@@ -628,10 +636,10 @@ so if you specify a power of two size for a texture copy, it may be shrunk
 down, but still valid.
 ================
 */
-void	idRenderSystemLocal::CropRenderSize( int width, int height, bool makePowerOfTwo, bool forceDimensions ) {
-	if ( !glConfig.isInitialized ) {
+void	idRenderSystemLocal::CropRenderSize( int width, int height, bool makePowerOfTwo, bool forceDimensions ) 
+{
+	if ( !m_renderContext->IsInitialized() ) 
 		return;
-	}
 
 	// close any gui drawing before changing the size
 	guiModel->EmitFullScreen();
@@ -666,14 +674,16 @@ void	idRenderSystemLocal::CropRenderSize( int width, int height, bool makePowerO
 	width = r.x2 - r.x1 + 1;
 	height = r.y2 - r.y1 + 1;
 
-	if ( forceDimensions ) {
+	if ( forceDimensions ) 
+	{
 		// just give exactly what we ask for
 		width = renderView.width;
 		height = renderView.height;
 	}
 
 	// if makePowerOfTwo, drop to next lower power of two after scaling to physical pixels
-	if ( makePowerOfTwo ) {
+	if ( makePowerOfTwo ) 
+	{
 		width = RoundDownToPowerOfTwo( width );
 		height = RoundDownToPowerOfTwo( height );
 		// FIXME: megascreenshots with offset viewports don't work right with this yet
@@ -708,10 +718,10 @@ void	idRenderSystemLocal::CropRenderSize( int width, int height, bool makePowerO
 UnCrop
 ================
 */
-void idRenderSystemLocal::UnCrop() {
-	if ( !glConfig.isInitialized ) {
+void idRenderSystemLocal::UnCrop( void ) 
+{
+	if ( !m_renderContext->IsInitialized() ) 
 		return;
-	}
 
 	if ( currentRenderCrop < 1 ) {
 		common->Error( "idRenderSystemLocal::UnCrop: currentRenderCrop < 1" );
@@ -738,19 +748,22 @@ void idRenderSystemLocal::UnCrop() {
 CaptureRenderToImage
 ================
 */
-void idRenderSystemLocal::CaptureRenderToImage( const char *imageName ) {
-	if ( !glConfig.isInitialized ) {
+void idRenderSystemLocal::CaptureRenderToImage( const char *imageName ) 
+{
+	if ( !m_renderContext->IsInitialized() )
 		return;
-	}
+
 	guiModel->EmitFullScreen();
 	guiModel->Clear();
 
-	if ( session->writeDemo ) {
+	if ( session->writeDemo ) 
+	{
 		session->writeDemo->WriteInt( DS_RENDER );
 		session->writeDemo->WriteInt( DC_CAPTURE_RENDER );
 		session->writeDemo->WriteHashString( imageName );
 
-		if ( r_showDemo.GetBool() ) {
+		if ( r_showDemo.GetBool() ) 
+		{
 			common->Printf( "write DC_CAPTURE_RENDER: %s\n", imageName );
 		}
 	}
@@ -761,7 +774,7 @@ void idRenderSystemLocal::CaptureRenderToImage( const char *imageName ) {
 
 	renderCrop_t *rc = &renderCrops[currentRenderCrop];
 
-	copyRenderCommand_t *cmd = (copyRenderCommand_t *)drawQueue->GetCommandBuffer( sizeof( *cmd ) );
+	copyRenderCommand_t *cmd = (copyRenderCommand_t *)drawCommand->GetCommandBuffer( sizeof( *cmd ) );
 	cmd->commandId = RC_COPY_RENDER;
 	cmd->x = rc->x;
 	cmd->y = rc->y;
@@ -778,38 +791,34 @@ CaptureRenderToFile
 
 ==============
 */
-void idRenderSystemLocal::CaptureRenderToFile( const char *fileName, bool fixAlpha ) {
-	if ( !glConfig.isInitialized ) {
+void idRenderSystemLocal::CaptureRenderToFile( const char *fileName, bool fixAlpha ) 
+{
+	if ( !m_renderContext->IsInitialized() ) 
 		return;
-	}
 
 	renderCrop_t *rc = &renderCrops[currentRenderCrop];
 
 	guiModel->EmitFullScreen();
 	guiModel->Clear();
-	drawQueue->IssueRenderCommands();
+	drawCommand->IssueRenderCommands();
 
-	glReadBuffer( GL_BACK );
+	byte *data = (byte *)frameData->StaticAlloc( rc->width * rc->height * 4 );
 
-	// include extra space for OpenGL padding to word boundaries
-	int	c = ( rc->width + 3 ) * rc->height;
-	byte *data = (byte *)drawQueue->StaticAlloc( c * 3 );
-	
-	glReadPixels( rc->x, rc->y, rc->width, rc->height, GL_RGB, GL_UNSIGNED_BYTE, data ); 
+	// copy the content of current frame buffer 
+	backend->ReadCurrentFrameBuffer( rc->x, rc->y, rc->width, rc->height, data );
 
-	byte *data2 = (byte *)drawQueue->StaticAlloc( c * 4 );
-
-	for ( int i = 0 ; i < c ; i++ ) {
-		data2[ i * 4 ] = data[ i * 3 ];
-		data2[ i * 4 + 1 ] = data[ i * 3 + 1 ];
-		data2[ i * 4 + 2 ] = data[ i * 3 + 2 ];
-		data2[ i * 4 + 3 ] = 0xff;
+	// override the alpha 
+	for ( uint32_t i = 0 ; i < rc->width * rc->height * 4 ; i++ ) 
+	{
+		data[ i * 4 ] = data[ i * 3 ];
+		data[ i * 4 + 1 ] = data[ i * 3 + 1 ];
+		data[ i * 4 + 2 ] = data[ i * 3 + 2 ];
+		data[ i * 4 + 3 ] = 0xff;
 	}
 
-	R_WriteTGA( fileName, data2, rc->width, rc->height, true );
+	R_WriteTGA( fileName, data, rc->width, rc->height, true );
 
-	drawQueue->StaticFree( data );
-	drawQueue->StaticFree( data2 );
+	frameData->StaticFree( data );
 }
 
 
@@ -818,7 +827,7 @@ void idRenderSystemLocal::CaptureRenderToFile( const char *fileName, bool fixAlp
 AllocRenderWorld
 ==============
 */
-idRenderWorld *idRenderSystemLocal::AllocRenderWorld() 
+idRenderWorld *idRenderSystemLocal::AllocRenderWorld( void ) 
 {
 	idRenderWorldLocal *rw;
 	rw = new idRenderWorldLocal;
@@ -833,9 +842,9 @@ FreeRenderWorld
 */
 void idRenderSystemLocal::FreeRenderWorld( idRenderWorld *rw ) 
 {
-	if ( primaryWorld == rw ) {
-		primaryWorld = NULL;
-	}
+	if ( primaryWorld == rw ) 
+		primaryWorld = nullptr;
+	
 	worlds.Remove( static_cast<idRenderWorldLocal *>(rw) );
 	delete rw;
 }
@@ -845,7 +854,8 @@ void idRenderSystemLocal::FreeRenderWorld( idRenderWorld *rw )
 PrintMemInfo
 ==============
 */
-void idRenderSystemLocal::PrintMemInfo( MemInfo_t *mi ) {
+void idRenderSystemLocal::PrintMemInfo( MemInfo_t *mi ) 
+{
 	// sum up image totals
 	globalImages->PrintMemInfo( mi );
 

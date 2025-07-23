@@ -37,6 +37,7 @@ public:
     virtual void            SwapBuffers( void );
 
 private:
+    uint32_t                    m_imageFrame;
     VkExtent2D                  m_swapChainExtent;
     VkSurfaceFormatKHR          m_surfaceFormat;
     VkSwapchainKHR              m_swapChain;

@@ -252,117 +252,6 @@ static bool R_GetModeInfo( int *width, int *height, int mode )
     return true;
 }
 
-
-/*
-==================
-R_InitOpenGL
-
-This function is responsible for initializing a valid OpenGL subsystem
-for rendering.  This is done by calling the system specific GLimp_Init,
-which gives us a working OGL subsystem, then setting all necessary openGL
-state, including images, vertex programs, and display lists.
-
-Changes to the vertex cache size or smp state require a vid_restart.
-
-If glConfig.isInitialized is false, no rendering can take place, but
-all renderSystem functions will still operate properly, notably the material
-and model information functions.
-==================
-*/
-void R_InitOpenGL( void ) 
-{
-	GLint			temp;
-#if CR_USE_VULKAN
-	vkParms_t		parms;
-#else
-	glimpParms_t	parms;
-#endif
-	int				i;
-
-	common->Printf( "----- R_InitOpenGL -----\n" );
-
-	if ( glConfig.isInitialized ) {
-		common->FatalError( "R_InitOpenGL called while active" );
-	}
-
-	// in case we had an error while doing a tiled rendering
-	tr.viewportOffset[0] = 0;
-	tr.viewportOffset[1] = 0;
-
-	//
-	// initialize OS specific portions of the renderSystem
-	//
-	for ( i = 0 ; i < 2 ; i++ ) 
-	{
-		// set the parameters we are trying
-		R_GetModeInfo( &glConfig.vidWidth, &glConfig.vidHeight, r_mode.GetInteger() );
-
-		parms.width = glConfig.vidWidth;
-		parms.height = glConfig.vidHeight;
-		parms.fullScreen = r_fullscreen.GetBool();
-		parms.displayHz = r_displayRefresh.GetInteger();
-		parms.multiSamples = r_multiSamples.GetInteger();
-		parms.stereo = false;
-
-#if 	CR_USE_VULKAN
-		if ( Sys_InitVulkanDevice( parms ) ) 
-			break; // it worked
-#else
-		if( Sys_InitOpenGLContext( parms ) )
-			break;
-#endif
-
-		if ( i == 1 ) 
-			common->FatalError( "Unable to initialize OpenGL" );
-
-		// if we failed, set everything back to "safe mode"
-		// and try again
-		r_mode.SetInteger( 3 );
-		r_fullscreen.SetInteger( 1 );
-		r_displayRefresh.SetInteger( 0 );
-		r_multiSamples.SetInteger( 0 );
-	}
-
-	// get our config strings
-	glConfig.vendor_string = (const char *)glGetString(GL_VENDOR);
-	glConfig.renderer_string = (const char *)glGetString(GL_RENDERER);
-	glConfig.version_string = (const char *)glGetString(GL_VERSION);
-	glConfig.extensions_string = (const char *)glGetString(GL_EXTENSIONS);
-
-	// OpenGL driver constants
-	glGetIntegerv( GL_MAX_TEXTURE_SIZE, &temp );
-	glConfig.maxTextureSize = temp;
-
-	// stubbed or broken drivers may have reported 0...
-	if ( glConfig.maxTextureSize <= 0 ) 
-		glConfig.maxTextureSize = 256;
-
-	glConfig.isInitialized = true;
-//BEATO Begin: extencion cehck is done at context creation
-	
-	// parse our vertex and fragment programs, possibly disably support for
-	// one of the paths if there was an error
-	R_ARB2_Init();
-
-	cmdSystem->AddCommand( "reloadARBprograms", R_ReloadARBPrograms_f, CMD_FL_RENDERER, "reloads ARB programs" );
-	R_ReloadARBPrograms_f( idCmdArgs() );
-
-	// allocate the vertex array range or vertex objects
-	vertexCache.Init();
-
-	// select which renderSystem we are going to use
-	r_renderer.SetModified();
-	tr.SetBackEndRenderer();
-
-	// allocate the frame data, which may be more if smp is enabled
-	tr.drawQueue->InitFrameData();
-
-	// Reset our gamma
-	R_SetColorMappings();
-
-// BEATO End
-}
-
 /*
 =====================
 R_ReloadSurface_f
@@ -422,27 +311,29 @@ testimage <number>
 testimage <filename>
 =============
 */
-void R_TestImage_f( const idCmdArgs &args ) {
+void R_TestImage_f( const idCmdArgs &args ) 
+{
 	int imageNum;
 
-	if ( tr.testVideo ) {
+	if ( tr.testVideo ) 
+	{
 		delete tr.testVideo;
-		tr.testVideo = NULL;
+		tr.testVideo = nullptr;
 	}
-	tr.testImage = NULL;
+	
+	tr.testImage = nullptr;
 
-	if ( args.Argc() != 2 ) {
+	if ( args.Argc() != 2 )
 		return;
-	}
 
-	if ( idStr::IsNumeric( args.Argv(1) ) ) {
+	if ( idStr::IsNumeric( args.Argv(1) ) ) 
+	{
 		imageNum = atoi( args.Argv(1) );
-		if ( imageNum >= 0 && imageNum < globalImages->images.Num() ) {
+		if ( imageNum >= 0 && imageNum < globalImages->images.Num() )
 			tr.testImage = globalImages->images[imageNum];
-		}
-	} else {
+	} 
+	else 
 		tr.testImage = globalImages->ImageFromFile( args.Argv( 1 ), TF_DEFAULT, false, TR_REPEAT, TD_DEFAULT );
-	}
 }
 
 /*
@@ -452,16 +343,18 @@ R_TestVideo_f
 Plays the cinematic file in a testImage
 =============
 */
-void R_TestVideo_f( const idCmdArgs &args ) {
-	if ( tr.testVideo ) {
+void R_TestVideo_f( const idCmdArgs &args ) 
+{
+	if ( tr.testVideo ) 
+	{
 		delete tr.testVideo;
-		tr.testVideo = NULL;
+		tr.testVideo = nullptr;
 	}
-	tr.testImage = NULL;
 
-	if ( args.Argc() < 2 ) {
+	tr.testImage = nullptr;
+
+	if ( args.Argc() < 2 ) 
 		return;
-	}
 
 	tr.testImage = globalImages->ImageFromFile( "_scratch", TF_DEFAULT, false, TR_REPEAT, TD_DEFAULT );
 	tr.testVideo = idCinematic::Alloc();
@@ -469,10 +362,11 @@ void R_TestVideo_f( const idCmdArgs &args ) {
 
 	cinData_t	cin;
 	cin = tr.testVideo->ImageForTime( 0 );
-	if ( !cin.image ) {
+	if ( !cin.image ) 
+	{
 		delete tr.testVideo;
-		tr.testVideo = NULL;
-		tr.testImage = NULL;
+		tr.testVideo = nullptr;
+		tr.testImage = nullptr;
 		return;
 	}
 
@@ -525,7 +419,8 @@ R_ReportSurfaceAreas_f
 Prints a list of the materials sorted by surface area
 ===================
 */
-void R_ReportSurfaceAreas_f( const idCmdArgs &args ) {
+void R_ReportSurfaceAreas_f( const idCmdArgs &args ) 
+{
 	int		i, count;
 	idMaterial	**list;
 
@@ -657,7 +552,8 @@ void R_ReportImageDuplication_f( const idCmdArgs &args ) {
 R_RenderingFPS
 ================
 */
-static float R_RenderingFPS( const renderView_t *renderView ) {
+static float R_RenderingFPS( const renderView_t *renderView ) 
+{
 	glFinish();
 
 	int		start = Sys_Milliseconds();
@@ -669,7 +565,7 @@ static float R_RenderingFPS( const renderView_t *renderView ) {
 		// render
 		renderSystem->BeginFrame( glConfig.vidWidth, glConfig.vidHeight );
 		tr.primaryWorld->RenderScene( renderView );
-		renderSystem->EndFrame( NULL, NULL );
+		renderSystem->EndFrame( nullptr, nullptr );
 		glFinish();
 		count++;
 		end = Sys_Milliseconds();
@@ -688,7 +584,8 @@ static float R_RenderingFPS( const renderView_t *renderView ) {
 R_Benchmark_f
 ================
 */
-void R_Benchmark_f( const idCmdArgs &args ) {
+void R_Benchmark_f( const idCmdArgs &args ) 
+{
 	float	fps, msec;
 	renderView_t	view;
 
@@ -1198,8 +1095,7 @@ void R_MakeAmbientMap_f( const idCmdArgs &args ) {
 	renderView_t	ref;
 	viewDef_t	primary;
 	int			downSample;
-	char	*extensions[6] =  { "_px.tga", "_nx.tga", "_py.tga", "_ny.tga", 
-		"_pz.tga", "_nz.tga" };
+	const char	*extensions[6] =  { "_px.tga", "_nx.tga", "_py.tga", "_ny.tga",  "_pz.tga", "_nz.tga" };
 	int			outSize;
 	byte		*buffers[6];
 	int			width, height;
@@ -1399,15 +1295,6 @@ void GfxInfo_f( const idCmdArgs &args ) {
 	}
 	common->Printf( "CPU: %s\n", Sys_GetProcessorString() );
 
-	const char *active[2] = { "", " (ACTIVE)" };
-	common->Printf( "ARB path ENABLED%s\n", active[tr.backEndRenderer == BE_ARB] );
-
-	if ( glConfig.allowARB2Path ) {
-		common->Printf( "ARB2 path ENABLED%s\n", active[tr.backEndRenderer == BE_ARB2] );
-	} else {
-		common->Printf( "ARB2 path disabled\n" );
-	}
-
 	//=============================
 
 	common->Printf( "-------\n" );
@@ -1430,8 +1317,7 @@ extern	PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT;
 	}
 #endif
 	
-	bool tss = glConfig.twoSidedStencilAvailable || glConfig.atiTwoSidedStencilAvailable;
-
+	bool tss = false;// glConfig.twoSidedStencilAvailable || glConfig.atiTwoSidedStencilAvailable;
 	if ( !r_useTwoSidedStencil.GetBool() && tss ) {
 		common->Printf( "Two sided stencil available but disabled\n" );
 	} else if ( !tss ) {
@@ -1443,121 +1329,15 @@ extern	PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT;
 
 /*
 =================
-R_VidRestart_f
-=================
-*/
-void R_VidRestart_f( const idCmdArgs &args ) 
-{
-	int	err;
-
-	// if OpenGL isn't started, do nothing
-	if ( !glConfig.isInitialized ) {
-		return;
-	}
-
-	bool full = true;
-	bool forceWindow = false;
-	for ( int i = 1 ; i < args.Argc() ; i++ ) {
-		if ( idStr::Icmp( args.Argv( i ), "partial" ) == 0 ) {
-			full = false;
-			continue;
-		}
-		if ( idStr::Icmp( args.Argv( i ), "windowed" ) == 0 ) {
-			forceWindow = true;
-			continue;
-		}
-	}
-
-	// this could take a while, so give them the cursor back ASAP
-	Sys_GrabMouseCursor( false );
-
-	// dump ambient caches
-	renderModelManager->FreeModelVertexCaches();
-
-	// free any current world interaction surfaces and vertex caches
-	tr.frontend->FreeDerivedData();
-
-	// make sure the defered frees are actually freed
-	tr.drawQueue->ToggleSmpFrame();
-	tr.drawQueue->ToggleSmpFrame();
-
-	// free the vertex caches so they will be regenerated again
-	vertexCache.PurgeAll();
-
-	// sound and input are tied to the window we are about to destroy
-
-	if ( full ) 
-	{
-		// free all of our texture numbers
-		soundSystem->ShutdownHW();
-		Sys_ShutdownInput();
-		globalImages->PurgeAllImages();
-	
-		// free the context 
-#if CR_USE_VULKAN
-	Sys_ShutDownVulkanDevice();
-#else
-	Sys_ShutDownOpenGLContext();
-#endif
-		
-		glConfig.isInitialized = false;
-
-		// create the new context and vertex cache
-		bool latch = cvarSystem->GetCVarBool( "r_fullscreen" );
-		if ( forceWindow ) {
-			cvarSystem->SetCVarBool( "r_fullscreen", false );
-		}
-		R_InitOpenGL();
-		cvarSystem->SetCVarBool( "r_fullscreen", latch );
-
-		// regenerate all images
-		globalImages->ReloadAllImages();
-	} 
-	else 
-	{
-		glimpParms_t	parms;
-		parms.width = glConfig.vidWidth;
-		parms.height = glConfig.vidHeight;
-		parms.fullScreen = ( forceWindow ) ? false : r_fullscreen.GetBool();
-		parms.displayHz = r_displayRefresh.GetInteger();
-		parms.multiSamples = r_multiSamples.GetInteger();
-		parms.stereo = false;
-		// TODO: update window 
-//		GLimp_SetScreenParms( parms );
-	}
-
-	// make sure the regeneration doesn't use anything no longer valid
-	int viewCount = tr.frontend->GetViewCount() + 1;
-	tr.frontend->SetViewCount( viewCount );
-	tr.frontend->SetViewDef( viewDefptr_t() );
-
-	// regenerate all necessary interactions
-	R_RegenerateWorld_f( idCmdArgs() );
-
-	// check for problems
-#if !CR_USE_VULKAN
-	err = glGetError();
-	if ( err != GL_NO_ERROR ) 
-	{
-		common->Printf( "glGetError() = 0x%x\n", err );
-	}
-#endif
-
-	// start sound playing again
-	soundSystem->SetMute( false );
-}
-
-
-/*
-=================
 R_InitMaterials
 =================
 */
-void R_InitMaterials( void ) {
+void R_InitMaterials( void ) 
+{
 	tr.defaultMaterial = declManager->FindMaterial( "_default", false );
-	if ( !tr.defaultMaterial ) {
+	if ( !tr.defaultMaterial ) 
 		common->FatalError( "_default material not found" );
-	}
+	
 	declManager->FindMaterial( "_default", false );
 
 	// needed by R_DeriveLightData
@@ -1573,12 +1353,12 @@ R_SizeUp_f
 Keybinding command
 =================
 */
-static void R_SizeUp_f( const idCmdArgs &args ) {
-	if ( r_screenFraction.GetInteger() + 10 > 100 ) {
+static void R_SizeUp_f( const idCmdArgs &args ) 
+{
+	if ( r_screenFraction.GetInteger() + 10 > 100 ) 
 		r_screenFraction.SetInteger( 100 );
-	} else {
+	else 
 		r_screenFraction.SetInteger( r_screenFraction.GetInteger() + 10 );
-	}
 }
 
 
@@ -1589,12 +1369,12 @@ R_SizeDown_f
 Keybinding command
 =================
 */
-static void R_SizeDown_f( const idCmdArgs &args ) {
-	if ( r_screenFraction.GetInteger() - 10 < 10 ) {
+static void R_SizeDown_f( const idCmdArgs &args ) 
+{
+	if ( r_screenFraction.GetInteger() - 10 < 10 ) 
 		r_screenFraction.SetInteger( 10 );
-	} else {
+	else
 		r_screenFraction.SetInteger( r_screenFraction.GetInteger() - 10 );
-	}
 }
 
 
@@ -1605,10 +1385,12 @@ TouchGui_f
   this is called from the main thread
 ===============
 */
-void R_TouchGui_f( const idCmdArgs &args ) {
+void R_TouchGui_f( const idCmdArgs &args ) 
+{
 	const char	*gui = args.Argv( 1 );
 
-	if ( !gui[0] ) {
+	if ( !gui[0] ) 
+	{
 		common->Printf( "USAGE: touchGui <guiName>\n" );
 		return;
 	}
@@ -1627,6 +1409,11 @@ void R_InitCvars( void ) {
 	// update latched cvars here
 }
 
+void R_VidRestart_f( const idCmdArgs &args ) 
+{
+	// todo
+}
+
 /*
 =================
 R_InitCommands
@@ -1634,7 +1421,7 @@ R_InitCommands
 */
 void R_InitCommands( void ) 
 {
-	cmdSystem->AddCommand( "MakeMegaTexture", idMegaTexture::MakeMegaTexture_f, CMD_FL_RENDERER|CMD_FL_CHEAT, "processes giant images" );
+	//cmdSystem->AddCommand( "MakeMegaTexture", idMegaTexture::MakeMegaTexture_f, CMD_FL_RENDERER|CMD_FL_CHEAT, "processes giant images" );
 	cmdSystem->AddCommand( "sizeUp", R_SizeUp_f, CMD_FL_RENDERER, "makes the rendered view larger" );
 	cmdSystem->AddCommand( "sizeDown", R_SizeDown_f, CMD_FL_RENDERER, "makes the rendered view smaller" );
 	cmdSystem->AddCommand( "reloadGuis", R_ReloadGuis_f, CMD_FL_RENDERER, "reloads guis" );
@@ -1652,7 +1439,7 @@ void R_InitCommands( void )
 	cmdSystem->AddCommand( "reportImageDuplication", R_ReportImageDuplication_f, CMD_FL_RENDERER, "checks all referenced images for duplications" );
 	cmdSystem->AddCommand( "regenerateWorld", R_RegenerateWorld_f, CMD_FL_RENDERER, "regenerates all interactions" );
 	cmdSystem->AddCommand( "showInteractionMemory", R_ShowInteractionMemory_f, CMD_FL_RENDERER, "shows memory used by interactions" );
-	cmdSystem->AddCommand( "showTriSurfMemory", R_ShowTriSurfMemory_f, CMD_FL_RENDERER, "shows memory used by triangle surfaces" );
+//	cmdSystem->AddCommand( "showTriSurfMemory", R_ShowTriSurfMemory_f, CMD_FL_RENDERER, "shows memory used by triangle surfaces" );
 	cmdSystem->AddCommand( "vid_restart", R_VidRestart_f, CMD_FL_RENDERER, "restarts renderSystem" );
 	cmdSystem->AddCommand( "listRenderEntityDefs", R_ListRenderEntityDefs_f, CMD_FL_RENDERER, "lists the entity defs" );
 	cmdSystem->AddCommand( "listRenderLightDefs", R_ListRenderLightDefs_f, CMD_FL_RENDERER, "lists the light defs" );
@@ -1684,10 +1471,8 @@ void idRenderSystemLocal::Clear( void )
 	defaultMaterial = nullptr;
 	testImage = nullptr;
 	ambientCubeImage = nullptr;
-	memset( &pc, 0, sizeof( pc ) );
 	memset( &lockSurfacesCmd, 0, sizeof( lockSurfacesCmd ) );
 	memset( &identitySpace, 0, sizeof( identitySpace ) );
-	logFile = nullptr;
 	stencilIncr = 0;
 	stencilDecr = 0;
 	memset( renderCrops, 0, sizeof( renderCrops ) );
@@ -1714,18 +1499,16 @@ void idRenderSystemLocal::Init( void )
 	// there may be other state we need to reset
 
 // BEATO Begin:
-	drawQueue.New(); // draw comand queue and frame allocator 
-	frontEnd.New();  // create the front end pipe 
-	backEnd.New();   // create back end pipe 
-	backEnd->StartUp();
+	drawCommand = crAutoPointer<crDrawCommandQueue>::New(); // draw comand queue and frame allocator 
+	frontend = crAutoPointer<crFrontend>::New();  // create the front end pipe 
+	backend = crAutoPointer<crBackend>::New();   // create back end pipe 
+	backend->StartUp();
 // BEATO End
 
 	ambientLightVector[0] = 0.5f;
 	ambientLightVector[1] = 0.5f - 0.385f;
 	ambientLightVector[2] = 0.8925f;
 	ambientLightVector[3] = 1.0f;
-
-	memset( &backEnd, 0, sizeof( backEnd ) );
 
 	R_InitCvars();
 
@@ -1736,12 +1519,20 @@ void idRenderSystemLocal::Init( void )
 
 	demoGuiModel = new idGuiModel;
 	demoGuiModel->Clear();
-
-	R_InitTriSurfData();
+	
+	frontend->InitTriSurfData();
 
 	globalImages->Init();
 
 	idCinematic::InitCinematic( );
+
+	// allocate the vertex array range or vertex objects
+	vertexCache.Init();
+
+	// allocate the frame data, which may be more if smp is enabled
+	tr.frameData->InitFrameData();
+	globalImages->ReloadAllImages();
+
 
 	// build brightness translation tables
 	R_SetColorMappings();
@@ -1770,7 +1561,7 @@ void idRenderSystemLocal::Shutdown( void )
 
 	R_DoneFreeType( );
 
-	if ( glConfig.isInitialized ) 
+	if ( m_renderContext->IsInitialized() ) 
 		globalImages->PurgeAllImages();
 	
 	renderModelManager->Shutdown();
@@ -1779,6 +1570,7 @@ void idRenderSystemLocal::Shutdown( void )
 
 	globalImages->Shutdown();
 
+#if 0
 	// close the r_logFile
 	if ( logFile )
 	{
@@ -1786,14 +1578,15 @@ void idRenderSystemLocal::Shutdown( void )
 		fclose( logFile );
 		logFile = 0;
 	}
+#endif
 
 	// free frame memory
-	drawQueue->ShutdownFrameData();
+	frameData->ShutdownFrameData();
 
 	// free the vertex cache, which should have nothing allocated now
 	vertexCache.Shutdown();
 
-	R_ShutdownTriSurfData();
+	frontend->ShutdownTriSurfData();
 
 	RB_ShutdownDebugTools();
 
@@ -1805,10 +1598,10 @@ void idRenderSystemLocal::Shutdown( void )
 	ShutdownAPI();
 
 // BEATO Begin:
-	backEnd->ShutDown();
-	backEnd = crAutoPointer<crBackend>(); // unreference the pointer 
-	frontEnd = crAutoPointer<crFrontend>(); // unreference the pointer
-	drawQueue = crAutoPointer<crDraw>(); // unreference the pointer 
+	backend->ShutDown();
+	backend = crAutoPointer<crBackend>(); // unreference the pointer 
+	frontend = crAutoPointer<crFrontend>(); // unreference the pointer
+	drawCommand = crAutoPointer<crDrawCommandQueue>(); // unreference the pointer 
 // BEATO End
 
 }
@@ -1845,19 +1638,16 @@ idRenderSystemLocal::InitOpenGL
 void idRenderSystemLocal::InitAPI( void ) 
 {
 	// if OpenGL isn't started, start it now
-	if ( !glConfig.isInitialized ) 
-	{
-		int	err;
+	if ( m_renderContext && m_renderContext->IsInitialized() ) 
+		return;
 
-		R_InitOpenGL();
+	m_renderContext->Create();
 
-		globalImages->ReloadAllImages();
+	// select which renderSystem we are going to use
+	// r_renderer.SetModified();
+	// tr.SetBackEndRenderer();
 
-		err = glGetError();
-		if ( err != GL_NO_ERROR ) {
-			common->Printf( "glGetError() = 0x%x\n", err );
-		}
-	}
+
 }
 
 /*
@@ -1867,16 +1657,10 @@ idRenderSystemLocal::ShutdownOpenGL
 */
 void idRenderSystemLocal::ShutdownAPI( void ) 
 {
-	// free the context and close the window
-	drawQueue->ShutdownFrameData();
-	
-#if CR_USE_VULKAN
-	Sys_ShutDownVulkanDevice();
-#else
-	Sys_ShutDownOpenGLContext();
-#endif
+	m_renderContext->Destroy();
 
-	glConfig.isInitialized = false;
+	// free the context and close the window
+	frameData->ShutdownFrameData();
 }
 
 /*
@@ -1886,10 +1670,7 @@ idRenderSystemLocal::IsOpenGLRunning
 */
 bool idRenderSystemLocal::IsAPIRunning( void ) const
 {
-	if ( !glConfig.isInitialized ) 
-		return false;
-
-	return true;
+	return m_renderContext->IsInitialized();
 }
 
 /*

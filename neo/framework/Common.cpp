@@ -29,7 +29,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "idlib/precompiled.h"
 #pragma hdrstop
 
-#include "renderer/images/Image.h"
+#include "renderer/renderer_common.h"
 
 #define	MAX_PRINT_MSG_SIZE	4096
 #define MAX_WARNING_LIST	256
@@ -2300,7 +2300,8 @@ void Com_LocalizeMapsTest_f( const idCmdArgs &args ) {
 Com_StartBuild_f
 =================
 */
-void Com_StartBuild_f( const idCmdArgs &args ) {
+void Com_StartBuild_f( const idCmdArgs &args ) 
+{
 	globalImages->StartBuild();
 }
 
@@ -2309,9 +2310,11 @@ void Com_StartBuild_f( const idCmdArgs &args ) {
 Com_FinishBuild_f
 =================
 */
-void Com_FinishBuild_f( const idCmdArgs &args ) {
-	if ( game ) {
-		game->CacheDictionaryMedia( NULL );
+void Com_FinishBuild_f( const idCmdArgs &args ) 
+{
+	if ( game ) 
+	{
+		game->CacheDictionaryMedia( nullptr );
 	}
 	globalImages->FinishBuild( ( args.Argc() > 1 ) );
 }

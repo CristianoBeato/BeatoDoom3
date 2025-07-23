@@ -422,12 +422,12 @@ static void LoadPCX ( const char *filename, byte **pic, byte **palette, int *wid
 	int		xmax, ymax;
 
 	if ( !pic ) {
-		fileSystem->ReadFile( filename, NULL, timestamp );
+		fileSystem->ReadFile( filename, nullptr, timestamp );
 		return;	// just getting timestamp
 	}
 
-	*pic = NULL;
-	*palette = NULL;
+	*pic = nullptr;
+	*palette = nullptr;
 
 	//
 	// load the file
@@ -1090,9 +1090,9 @@ Loads six files with proper extensions
 */
 bool R_LoadCubeImages( const char *imgName, cubeFiles_t extensions, byte *pics[6], int *outSize, ID_TIME_T *timestamp ) {
 	int		i, j;
-	char	*cameraSides[6] =  { "_forward.tga", "_back.tga", "_left.tga", "_right.tga", 
+	const char	*cameraSides[6] =  { "_forward.tga", "_back.tga", "_left.tga", "_right.tga", 
 		"_up.tga", "_down.tga" };
-	char	*axisSides[6] =  { "_px.tga", "_nx.tga", "_py.tga", "_ny.tga", 
+	const char	*axisSides[6] =  { "_px.tga", "_nx.tga", "_py.tga", "_ny.tga", 
 		"_pz.tga", "_nz.tga" };
 	char	**sides;
 	char	fullName[MAX_IMAGE_NAME];

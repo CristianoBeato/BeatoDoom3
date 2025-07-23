@@ -384,3 +384,204 @@ void APIENTRY R_DebugOutput( GLenum source,GLenum type,GLuint id,GLenum severity
 
     std::cerr << glLog.rdbuf();
 }
+
+/*
+=================
+R_VidRestart_f
+=================
+*/
+void R_VidRestart_f( const idCmdArgs &args ) 
+{
+	int	err;
+
+	// if OpenGL isn't started, do nothing
+	if ( !glConfig.isInitialized ) {
+		return;
+	}
+
+	bool full = true;
+	bool forceWindow = false;
+	for ( int i = 1 ; i < args.Argc() ; i++ ) {
+		if ( idStr::Icmp( args.Argv( i ), "partial" ) == 0 ) {
+			full = false;
+			continue;
+		}
+		if ( idStr::Icmp( args.Argv( i ), "windowed" ) == 0 ) {
+			forceWindow = true;
+			continue;
+		}
+	}
+
+	// this could take a while, so give them the cursor back ASAP
+	Sys_GrabMouseCursor( false );
+
+	// dump ambient caches
+	renderModelManager->FreeModelVertexCaches();
+
+	// free any current world interaction surfaces and vertex caches
+	tr.frontend->FreeDerivedData();
+
+	// make sure the defered frees are actually freed
+	tr.drawCommand->ToggleSmpFrame();
+	tr.drawCommand->ToggleSmpFrame();
+
+	// free the vertex caches so they will be regenerated again
+	vertexCache.PurgeAll();
+
+	// sound and input are tied to the window we are about to destroy
+
+	if ( full ) 
+	{
+		// free all of our texture numbers
+		soundSystem->ShutdownHW();
+		Sys_ShutdownInput();
+		globalImages->PurgeAllImages();
+	
+		// free the context 
+#if CR_USE_VULKAN
+	Sys_ShutDownVulkanDevice();
+#else
+	Sys_ShutDownOpenGLContext();
+#endif
+		
+		glConfig.isInitialized = false;
+
+		// create the new context and vertex cache
+		bool latch = cvarSystem->GetCVarBool( "r_fullscreen" );
+		if ( forceWindow ) {
+			cvarSystem->SetCVarBool( "r_fullscreen", false );
+		}
+		R_InitOpenGL();
+		cvarSystem->SetCVarBool( "r_fullscreen", latch );
+
+		// regenerate all images
+		globalImages->ReloadAllImages();
+	} 
+	else 
+	{
+		glimpParms_t	parms;
+		parms.width = glConfig.vidWidth;
+		parms.height = glConfig.vidHeight;
+		parms.fullScreen = ( forceWindow ) ? false : r_fullscreen.GetBool();
+		parms.displayHz = r_displayRefresh.GetInteger();
+		parms.multiSamples = r_multiSamples.GetInteger();
+		parms.stereo = false;
+		// TODO: update window 
+//		GLimp_SetScreenParms( parms );
+	}
+
+	// make sure the regeneration doesn't use anything no longer valid
+	int viewCount = tr.frontend->GetViewCount() + 1;
+	tr.frontend->SetViewCount( viewCount );
+	tr.frontend->SetViewDef( viewDefptr_t() );
+
+	// regenerate all necessary interactions
+	R_RegenerateWorld_f( idCmdArgs() );
+
+	// check for problems
+#if !CR_USE_VULKAN
+	err = glGetError();
+	if ( err != GL_NO_ERROR ) 
+	{
+		common->Printf( "glGetError() = 0x%x\n", err );
+	}
+#endif
+
+	// start sound playing again
+	soundSystem->SetMute( false );
+}
+
+
+/*
+==================
+R_InitOpenGL
+
+This function is responsible for initializing a valid OpenGL subsystem
+for rendering.  This is done by calling the system specific GLimp_Init,
+which gives us a working OGL subsystem, then setting all necessary openGL
+state, including images, vertex programs, and display lists.
+
+Changes to the vertex cache size or smp state require a vid_restart.
+
+If glConfig.isInitialized is false, no rendering can take place, but
+all renderSystem functions will still operate properly, notably the material
+and model information functions.
+==================
+*/
+void R_InitOpenGL( void ) 
+{
+	GLint			temp;
+#if CR_USE_VULKAN
+	vkParms_t		parms;
+#else
+	glimpParms_t	parms;
+#endif
+	int				i;
+
+	common->Printf( "----- R_InitOpenGL -----\n" );
+
+	if ( glConfig.isInitialized ) {
+		common->FatalError( "R_InitOpenGL called while active" );
+	}
+
+	// in case we had an error while doing a tiled rendering
+	tr.viewportOffset[0] = 0;
+	tr.viewportOffset[1] = 0;
+
+	//
+	// initialize OS specific portions of the renderSystem
+	//
+	for ( i = 0 ; i < 2 ; i++ ) 
+	{
+		// set the parameters we are trying
+		R_GetModeInfo( &glConfig.vidWidth, &glConfig.vidHeight, r_mode.GetInteger() );
+
+		parms.width = glConfig.vidWidth;
+		parms.height = glConfig.vidHeight;
+		parms.fullScreen = r_fullscreen.GetBool();
+		parms.displayHz = r_displayRefresh.GetInteger();
+		parms.multiSamples = r_multiSamples.GetInteger();
+		parms.stereo = false;
+
+#if 	CR_USE_VULKAN
+		if ( Sys_InitVulkanDevice( parms ) ) 
+			break; // it worked
+#else
+		if( Sys_InitOpenGLContext( parms ) )
+			break;
+#endif
+
+		if ( i == 1 ) 
+			common->FatalError( "Unable to initialize OpenGL" );
+
+		// if we failed, set everything back to "safe mode"
+		// and try again
+		r_mode.SetInteger( 3 );
+		r_fullscreen.SetInteger( 1 );
+		r_displayRefresh.SetInteger( 0 );
+		r_multiSamples.SetInteger( 0 );
+	}
+
+	// get our config strings
+	glConfig.vendor_string = (const char *)glGetString(GL_VENDOR);
+	glConfig.renderer_string = (const char *)glGetString(GL_RENDERER);
+	glConfig.version_string = (const char *)glGetString(GL_VERSION);
+	glConfig.extensions_string = (const char *)glGetString(GL_EXTENSIONS);
+
+	// OpenGL driver constants
+	glGetIntegerv( GL_MAX_TEXTURE_SIZE, &temp );
+	glConfig.maxTextureSize = temp;
+
+	// stubbed or broken drivers may have reported 0...
+	if ( glConfig.maxTextureSize <= 0 ) 
+		glConfig.maxTextureSize = 256;
+
+	glConfig.isInitialized = true;
+//BEATO Begin: extencion cehck is done at context creation
+	
+	cmdSystem->AddCommand( "reloadARBprograms", R_ReloadARBPrograms_f, CMD_FL_RENDERER, "reloads ARB programs" );
+	R_ReloadARBPrograms_f( idCmdArgs() );
+
+
+// BEATO End
+}

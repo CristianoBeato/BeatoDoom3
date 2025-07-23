@@ -57,8 +57,6 @@ struct glSuportedFeatures
     bool    debugOutputAvailable = false;
 };
 
-
-
 //TODO:
 // GL_NUM_COMPRESSED_TEXTURE_FORMATS
 // GL_COMPRESSED_TEXTURE_FORMATS

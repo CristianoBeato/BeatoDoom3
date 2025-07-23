@@ -63,9 +63,6 @@ typedef struct glconfig_s
 	int					vidWidth, vidHeight;	// passed to R_BeginFrame
 	int					displayFrequency;
 	bool				isFullscreen;
-	bool				isInitialized;
-
-
 } glconfig_t;
 
 

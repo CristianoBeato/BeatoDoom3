@@ -49,6 +49,52 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #include "opengl/glCommandQueue.h"
 #endif // CR_USE_OPENGL
 
+typedef struct backEndCounters_s
+{
+	int		c_surfaces;
+	int		c_shaders;
+	int		c_vertexes;
+	int		c_indexes;		// one set per pass
+	int		c_totalIndexes;	// counting all passes
+
+	int		c_drawElements;
+	int		c_drawIndexes;
+	int		c_drawVertexes;
+	int		c_drawRefIndexes;
+	int		c_drawRefVertexes;
+
+	int		c_shadowElements;
+	int		c_shadowIndexes;
+	int		c_shadowVertexes;
+
+	int		c_vboIndexes;
+	float	c_overDraw;	
+
+	float	maxLightValue;	// for light scale
+	int		msec;			// total msec for backend run
+
+    backEndCounters_s( void ) :
+        c_surfaces( 0 ),
+        c_shaders( 0 ),
+        c_vertexes( 0 ),
+        c_indexes( 0 ),
+        c_totalIndexes( 0 ),
+        c_drawElements( 0 ),
+        c_drawIndexes( 0 ),
+        c_drawVertexes( 0 ),
+        c_drawRefIndexes( 0 ),
+        c_drawRefVertexes( 0 ),
+        c_shadowElements( 0 ),
+        c_shadowIndexes( 0 ),
+        c_shadowVertexes( 0 ),
+        c_vboIndexes( 0 ),
+        c_overDraw( 0.0f ),
+        maxLightValue( 0.0f ),
+        msec( 0 )
+    {
+    }
+} backEndCounters_t;
+
 // all state modified by the back end is separated
 // from the front end state
 class crBackend
@@ -61,15 +107,24 @@ public:
     void        ShutDown( void );
 
     // Backend.cpp
+    void                            ZeroPerformanceCounters( void );
     void                            ExecuteBackEndCommands( const emptyCommand_t *cmds ); 
     
+    /// @brief Copy the content of the current frame buffer ( will stall render )
+    /// @param in_x horizontal rect position 
+    /// @param in_y vertical rect position
+    /// @param in_width rect width 
+    /// @param in_height rect height 
+    /// @param pixels 
+    void                            ReadCurrentFrameBuffer( const int32_t in_x, int32_t in_y, uint32_t in_width, uint32_t in_height, byte *pixels );
+
     //
     void                            SelectTexture( const uint32_t unit ) { currentTextureUnit = unit; }
     uint32_t                        SwapChainImages( void ) const { return m_swapChain->GetImageCount(); }
     uint32_t                        GetFrameCount( void ) const { return frameCount; }
 
-    crAutoPointer<crCommandQueue>   GetGraphicQueue( void ) const { return m_graphicQueue; }
-    crAutoPointer<crCommandQueue>   GetTransferQueue( void ) const { return m_transferQueue; }
+    viewDefptr_t                    GetViewDef( void ) const { return viewDef; };
+    backEndCounters_t               &GetPerformanceCounters( void ) { return pc; }
     
 protected:
     friend class idImage;
@@ -96,8 +151,6 @@ private:
 	crAutoPointer<viewLight_t>      viewLight;                  //
 	viewDefptr_t                    viewDef;                    //
     crAutoPointer<crSwapChain>      m_swapChain;                //
-    crAutoPointer<crCommandQueue>   m_graphicQueue;             //
-    crAutoPointer<crCommandQueue>   m_transferQueue;            //
     crAutoPointer<crShaderStorage>  m_uniforms;                 //
     crAutoPointer<crFramebuffer>    m_currentFrameBuffer;       //
     crAutoPointer<crPipeline>       m_currentPipeline;          //

@@ -119,7 +119,8 @@ void RB_LogComment( const char *comment, ... )
 {
    va_list marker;
 
-	if ( !tr.logFile ) {
+	if ( !tr.logFile ) 
+	{
 		return;
 	}
 
@@ -276,7 +277,17 @@ void crBackend::CopyRender( const void *data )
 
 /*
 ====================
-RB_ExecuteBackEndCommands
+ZeroPerformanceCounters
+====================
+*/
+void crBackend::ZeroPerformanceCounters( void )
+{
+	pc = backEndCounters_t();
+}
+
+/*
+====================
+ExecuteBackEndCommands
 
 This function will be called syncronously if running without
 smp extensions, or asyncronously by another thread.
@@ -351,7 +362,7 @@ void crBackend::Pipeline( const uint32_t pipelineID )
 		m_currentPipeline = nullptr;
 }
 
-void crBackend::Framebuffer(const uint32_t framebufferID)
+void crBackend::Framebuffer( const uint32_t framebufferID )
 {
 	if ( framebufferID > FRAMEBUFFER_INVALID && framebufferID < FRAMEBUFFER_COUNT )
 		m_currentFrameBuffer = m_framebuffers[framebufferID];

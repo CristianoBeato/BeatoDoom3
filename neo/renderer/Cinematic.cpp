@@ -371,7 +371,8 @@ idCinematicLocal::ResetTime
 */
 void idCinematicLocal::ResetTime(int time) 
 {
-	startTime = ( backEnd.viewDef ) ? 1000 * backEnd.viewDef->floatTime : -1;
+	auto vd = tr.backend->GetViewDef();
+	startTime = ( vd ) ? 1000 * vd->floatTime : -1;
 	status = FMV_PLAY;
 }
 
@@ -384,69 +385,81 @@ cinData_t idCinematicLocal::ImageForTime( int thisTime )
 {
 	cinData_t	cinData;
 
-	if ( thisTime < 0 ) {
+	if ( thisTime < 0 )
 		thisTime = 0;
-	}
 
 	memset( &cinData, 0, sizeof(cinData) );
 
-	if ( r_skipROQ.GetBool() ) {
+	if ( r_skipROQ.GetBool() ) 
 		return cinData;
-	}
 
-	if ( status == FMV_EOF || status == FMV_IDLE ) {
+	if ( status == FMV_EOF || status == FMV_IDLE ) 
 		return cinData;
-	}
 
-	if ( buf == NULL || startTime == -1 ) {
-		if ( startTime == -1 ) {
+	if ( buf == nullptr || startTime == -1 ) 
+	{
+		if ( startTime == -1 ) 
 			RoQReset();
-		}
+
 		startTime = thisTime;
 	}
 
 	tfps = ( ( thisTime - startTime ) * frameRate ) / 1000;
 
-	if ( tfps < 0 ) {
+	if ( tfps < 0 ) 
 		tfps = 0;
-	}
-
-	if ( tfps < numQuads ) {
+	
+	if ( tfps < numQuads ) 
+	{
 		RoQReset();
-		buf = NULL;
+		buf = nullptr;
 		status = FMV_PLAY;
 	}
 
-	if ( buf == NULL ) {
-		while( buf == NULL ) {
+	if ( buf == nullptr ) 
+	{
+		while( buf == nullptr ) 
+		{
 			RoQInterrupt();
 		}
-	} else {
-		while( (tfps != numQuads && status == FMV_PLAY) ) {
+	} 
+	else 
+	{
+		while( (tfps != numQuads && status == FMV_PLAY) ) 
+		{
 			RoQInterrupt();
 		}
 	}
 
-	if ( status == FMV_LOOPED ) {
+	if ( status == FMV_LOOPED ) 
+	{
 		status = FMV_PLAY;
-		while( buf == NULL && status == FMV_PLAY ) {
+		while( buf == nullptr && status == FMV_PLAY ) 
+		{
 			RoQInterrupt();
 		}
 		startTime = thisTime;
 	}
 
-	if ( status == FMV_EOF ) {
-		if ( looping ) {
+	if ( status == FMV_EOF )
+	{
+		if ( looping ) 
+		{
 			RoQReset();
-			buf = NULL;
-			if ( status == FMV_LOOPED ) {
+			buf = nullptr;
+			if ( status == FMV_LOOPED ) 
+			{
 				status = FMV_PLAY;
 			}
-			while ( buf == NULL && status == FMV_PLAY ) {
+		
+			while ( buf == nullptr && status == FMV_PLAY ) 
+			{
 				RoQInterrupt();
 			}
 			startTime = thisTime;
-		} else {
+		} 
+		else 
+		{
 			status = FMV_IDLE;
 			RoQShutdown();
 		}
@@ -465,7 +478,8 @@ cinData_t idCinematicLocal::ImageForTime( int thisTime )
 idCinematicLocal::move8_32
 ==============
 */
-void idCinematicLocal::move8_32( byte *src, byte *dst, int spl ) {
+void idCinematicLocal::move8_32( byte *src, byte *dst, int spl ) 
+{
 #if 1
 	int *dsrc, *ddst;
 	int dspl;
@@ -576,7 +590,8 @@ void idCinematicLocal::move8_32( byte *src, byte *dst, int spl ) {
 idCinematicLocal::move4_32
 ==============
 */
-void idCinematicLocal::move4_32( byte *src, byte *dst, int spl  ) {
+void idCinematicLocal::move4_32( byte *src, byte *dst, int spl  ) 
+{
 #if 1
 	int *dsrc, *ddst;
 	int dspl;
@@ -627,7 +642,8 @@ void idCinematicLocal::move4_32( byte *src, byte *dst, int spl  ) {
 idCinematicLocal::blit8_32
 ==============
 */
-void idCinematicLocal::blit8_32( byte *src, byte *dst, int spl  ) {
+void idCinematicLocal::blit8_32( byte *src, byte *dst, int spl  ) 
+{
 #if 1
 	int *dsrc, *ddst;
 	int dspl;

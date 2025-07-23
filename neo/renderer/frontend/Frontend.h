@@ -32,12 +32,73 @@ typedef struct
 	bool	degenerate;
 } faceTangents_t;
 
+// performanceCounters_t
+typedef struct performanceCounters_s
+{
+    
+	int		c_sphere_cull_in;
+    int     c_sphere_cull_clip;
+    int     c_sphere_cull_out;
+	int		c_box_cull_in;
+    int     c_box_cull_out;
+	int		c_createInteractions;	// number of calls to idInteraction::CreateInteraction
+	int		c_createLightTris;
+	int		c_createShadowVolumes;
+	int		c_generateMd5;
+	int		c_entityDefCallbacks;
+	int		c_alloc;
+    int     c_free;	// counts for R_StaticAllc/tr.frameData->StaticFree
+	int		c_visibleViewEntities;
+	int		c_shadowViewEntities;
+	int		c_viewLights;
+	int		c_numViews;			// number of total views rendered
+	int		c_deformedSurfaces;	// idMD5Mesh::GenerateSurface
+	int		c_deformedVerts;	// idMD5Mesh::GenerateSurface
+	int		c_deformedIndexes;	// idMD5Mesh::GenerateSurface
+	int		c_tangentIndexes;	// R_DeriveTangents()
+	int		c_entityUpdates;
+	int		c_lightUpdates;
+	int		c_entityReferences;
+	int		c_lightReferences;
+	int		c_guiSurfs;
+	int		frontEndMsec;		// sum of time in all RE_RenderScene's in a frame
+    
+    performanceCounters_s( void ) :
+    c_sphere_cull_in( 0 ),
+    c_sphere_cull_clip( 0 ),
+    c_sphere_cull_out( 0 ),
+    c_box_cull_in( 0 ),
+    c_box_cull_out( 0 ),
+    c_createInteractions( 0 ),
+    c_createLightTris( 0 ),
+    c_createShadowVolumes( 0 ),
+    c_generateMd5( 0 ),
+    c_entityDefCallbacks( 0 ),
+    c_alloc( 0 ),
+    c_free( 0 ),
+    c_visibleViewEntities( 0 ),
+    c_shadowViewEntities( 0 ),
+    c_viewLights( 0 ),
+    c_numViews( 0 ),
+    c_deformedSurfaces( 0 ),
+    c_deformedVerts( 0 ),
+    c_deformedIndexes( 0 ),
+    c_tangentIndexes( 0 ),
+    c_entityUpdates( 0 ),
+    c_lightUpdates( 0 ),
+    c_entityReferences( 0 ),
+    c_lightReferences( 0 ),
+    c_guiSurfs( 0 ),
+    frontEndMsec( 0 )
+    {
+    }
+} performanceCounters_t;
+
 class crFrontend
 {
 public:
     crFrontend( void );
     ~crFrontend( void );
-
     // Frontend_light.cpp
     viewEntity_t*   SetEntityDefViewEntity( idRenderEntityLocal *def );
     viewLight_t*    SetLightDefViewLight( idRenderLightLocal *def );
@@ -56,6 +117,7 @@ public:
     void            FreeEntityDefFadedDecals( idRenderEntityLocal *def, int time );
     
     // Frontend.cpp
+    void            ZeroPerformanceCounters( void );
     void            RenderView( viewDefptr_t parms );
     idScreenRect    ScreenRectFromViewFrustumBounds( const idBounds &bounds );
     void            ShowColoredScreenRect( const idScreenRect &rect, int colorIndex );

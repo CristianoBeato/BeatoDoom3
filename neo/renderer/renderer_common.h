@@ -29,17 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __TR_LOCAL_H__
 #define __TR_LOCAL_H__
 
-#if CR_USE_VULKAN
-#	include "backend/vulkan/qvk.h"
-#	include "backend/vulkan/vkContext.h"
-#endif //CR_USE_VULKAN
-
-#if CR_USE_OPENGL
-#	include "backend/opengl/qgl.h" 
-#	include "backend/opengl/glContext.h"
-#endif //CR_USE_OPENGL
-// BEATO End
-
 // BEATO Begin: pipeline implementation
 class idRenderWorldLocal;
 #include "RenderMatrix.h"
@@ -47,7 +36,6 @@ class idRenderWorldLocal;
 #include "ScreenRect.h"
 #include "images/Image.h"
 #include "images/Image_manager.h"
-#include "MegaTexture.h"
 
 // BEATO Begin:
 const uint32_t	MAX_FRAME_DRAW_CALL = 4096;
@@ -203,34 +191,6 @@ const idMaterial *R_RemapShaderBySkin( const idMaterial *shader, const idDeclSki
 
 //====================================================
 
-
-/*
-** performanceCounters_t
-*/
-typedef struct 
-{
-	int		c_sphere_cull_in, c_sphere_cull_clip, c_sphere_cull_out;
-	int		c_box_cull_in, c_box_cull_out;
-	int		c_createInteractions;	// number of calls to idInteraction::CreateInteraction
-	int		c_createLightTris;
-	int		c_createShadowVolumes;
-	int		c_generateMd5;
-	int		c_entityDefCallbacks;
-	int		c_alloc, c_free;	// counts for R_StaticAllc/tr.frameData->StaticFree
-	int		c_visibleViewEntities;
-	int		c_shadowViewEntities;
-	int		c_viewLights;
-	int		c_numViews;			// number of total views rendered
-	int		c_deformedSurfaces;	// idMD5Mesh::GenerateSurface
-	int		c_deformedVerts;	// idMD5Mesh::GenerateSurface
-	int		c_deformedIndexes;	// idMD5Mesh::GenerateSurface
-	int		c_tangentIndexes;	// R_DeriveTangents()
-	int		c_entityUpdates, c_lightUpdates, c_entityReferences, c_lightReferences;
-	int		c_guiSurfs;
-	int		frontEndMsec;		// sum of time in all RE_RenderScene's in a frame
-} performanceCounters_t;
-
-
 typedef struct 
 {
 	int		current2DMap;
@@ -241,32 +201,6 @@ typedef struct
 } tmu_t;
 
 const int MAX_MULTITEXTURE_UNITS =	8;
-
-typedef struct 
-{
-	int		c_surfaces;
-	int		c_shaders;
-	int		c_vertexes;
-	int		c_indexes;		// one set per pass
-	int		c_totalIndexes;	// counting all passes
-
-	int		c_drawElements;
-	int		c_drawIndexes;
-	int		c_drawVertexes;
-	int		c_drawRefIndexes;
-	int		c_drawRefVertexes;
-
-	int		c_shadowElements;
-	int		c_shadowIndexes;
-	int		c_shadowVertexes;
-
-	int		c_vboIndexes;
-	float	c_overDraw;	
-
-	float	maxLightValue;	// for light scale
-	int		msec;			// total msec for backend run
-} backEndCounters_t;
-
 
 typedef struct viewLight_s viewLight_t;
 
@@ -286,6 +220,7 @@ static const int	MAX_RENDER_CROPS = 8;
 */
 class crBackend;
 class crFrontend;
+class crContext;
 class idRenderSystemLocal : public idRenderSystem 
 {
 public:
@@ -389,12 +324,7 @@ public:
 	unsigned short			gammaTable[256];	// brightness / gamma modify this
 
 // BEATO Begin: 
-	// Vulkan Context ( instance, device, memmory and surface management )
-	crAutoPointer<crVulkanContext>	vulkan;
-
-	// openGL context ( command buffer, dispach tread )
-	crAutoPointer<crGLContext>		opengl;
-
+	crAutoPointer<crContext>			m_renderContext;
 	crAutoPointer<crDrawFrameData>		frameData;		// alloc frame temporary data 
 	crAutoPointer<crDrawCommandQueue>	drawCommand;	// draw queue interface
 	crAutoPointer<crFrontend>			frontend;		// frontend interface
@@ -414,7 +344,7 @@ extern idCVar r_ext_vertex_array_range;
 #if CR_USE_VULKAN
 extern idCVar r_vkDriver;
 extern idCVar r_rendererDevice;
-#endif CR_USE_VULKAN
+#endif // CR_USE_VULKAN
 #if CR_USE_OPENGL
 extern idCVar r_glDriver;				// "opengl32", etc
 #endif // CR_USE_OPENGL

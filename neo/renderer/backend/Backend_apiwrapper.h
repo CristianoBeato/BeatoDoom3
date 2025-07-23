@@ -604,4 +604,21 @@ protected:
     uint32_t    m_height;
 };
 
+/*
+===========================================================================
+crContext
+===========================================================================
+*/
+class crContext
+{
+private:
+
+public:
+    crContext( void );
+    ~crContext( void );
+    virtual void    Create( void ) = 0;
+    virtual void    Destroy( void ) = 0;
+    virtual bool    IsInitialized( void ) const = 0;    
+};
+
 #endif //__BACKEND_API_WRAPER_H__
