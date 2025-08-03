@@ -31,7 +31,6 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "renderer_common.h"
 
-
 static const int	FRAME_MEMORY_BYTES = 0x200000;
 static const int	EXPAND_HEADERS = 1024;
 
@@ -39,6 +38,61 @@ idCVar idVertexCache::r_showVertexCache( "r_showVertexCache", "0", CVAR_INTEGER|
 idCVar idVertexCache::r_vertexBufferMegs( "r_vertexBufferMegs", "32", CVAR_INTEGER|CVAR_RENDERER, "" );
 
 idVertexCache		vertexCache;
+
+/*
+===========================================================================================================
+buffer cache
+===========================================================================================================
+*/
+
+/*
+==============
+crCache::crCache
+==============
+*/
+crCache::crCache( void ) : 
+	m_size( 0 ),
+	m_offset( 0 ),
+	m_data( nullptr ),
+	m_next( nullptr ),
+	m_prev( nullptr )
+{
+}
+
+/*
+==============
+crCache::~crCache
+==============
+*/
+crCache::~crCache( void )
+{
+	m_prev->m_next = m_next;
+	m_next->m_prev = m_prev;
+}
+
+/*
+===========================================================================================================
+Buffer base
+===========================================================================================================
+*/
+
+/*
+==============
+crBuffer::crBuffer
+==============
+*/
+crBuffer::crBuffer( void )
+{
+}
+
+/*
+==============
+crBuffer::~crBuffer
+==============
+*/
+crBuffer::~crBuffer( void )
+{
+}
 
 /*
 ==============

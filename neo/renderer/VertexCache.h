@@ -27,116 +27,152 @@ If you have questions concerning this license or the applicable additional terms
 */
 
 // vertex cache calls should only be made by the front end
+#ifndef __VERTEX_CACHE_H__
+#define __VERTEX_CACHE_H__
+
+#include <atomic>
+
+// BEATO Begin:
+class crCache
+{
+public:
+	crCache( void );
+	~crCache( void );
+
+	ID_INLINE void			Upload( const void* in_data, const size_t in_size );	
+	ID_INLINE uintptr_t		Offset( void ) const { return m_offset; }
+	ID_INLINE size_t		Size( void ) const { return m_size; }
+	ID_INLINE void*			Ptr( void ) const { return m_data; }
+
+private:
+	size_t		m_size;
+	uintptr_t	m_offset;
+	void*		m_data;
+	
+protected:
+	crCache*  	m_next;
+    crCache*  	m_prev;
+
+private:
+	crCache( const crCache &ref  ) = delete;
+	crCache operator = ( const crCache $ref ) = delete; 
+};
+
+void crCache::Upload( const void* in_data, const size_t in_size )
+{
+	std::memcpy( m_data, in_data, in_size < m_size ? in_size : m_size );
+}
+
+class crBuffer
+{
+public:
+	crBuffer( void );
+	~crBuffer( void );
+
+	/// @brief Create buffer
+	/// @param in_size the current buffer size 
+	void    		Create( const size_t in_size );
+
+    /// @brief Recreate the buffer whit a new size, and copy the content
+    /// @param in_size 
+    void    		Resize( const size_t in_size );
+
+    /// @brief release the buffer 
+    /// @param  
+    void    		Destroy( void );
+	crCache*   		Alloc( const size_t in_bytes );
+    void            Free( crCache* in_block );
+    const size_t	GetSize( void ) const { return m_size; }
+    const size_t	GetFree( void ) const { return m_free; }
+    const size_t	GetUsed( void ) const { return m_size - m_free; }
+
+private:
+	uint32_t				m_frame;	//
+	size_t					m_size;		// full buffer size
+	size_t					m_free; 	// availabe buffer size
+	std::atomic<uintptr_t>	m_offset;	// current free offset location
+	void*           		m_map;      // buffer map pointer
+	crCache*   				m_freeList; // free data blocks 
+    crCache*   				m_usedList; // used data blocks
+};
+// BEATO End
 
 const int NUM_VERTEX_FRAMES = 2;
 
-typedef enum {
+typedef enum bufferCacheType_t
+{
+	CACHE_TYPE_INDEX_STATIC = 0,
+	CACHE_TYPE_INDEX_DYNAMIC,
+	CACHE_TYPE_VERTEX_STATIC,
+	CACHE_TYPE_VERTEX_DYNAMIC
+} bufferCacheType_t;
+
+typedef enum 
+{
 	TAG_FREE,
 	TAG_USED,
 	TAG_FIXED,		// for the temp buffers
 	TAG_TEMP		// in frame temp area, not static area
 } vertBlockTag_t;
 
-typedef struct vertCache_s {
-	GLuint			vbo;
-//	void			*virtMem;			// only one of vbo / virtMem will be set
-	bool			indexBuffer;		// holds indexes instead of vertexes
-
-	intptr_t		offset;
-	size_t			size;				// may be larger than the amount asked for, due
-										// to round up and minimum fragment sizes
-	int				tag;				// a tag of 0 is a free block
-	struct vertCache_s	**	user;				// will be set to zero when purged
-	struct vertCache_s *next, *prev;	// may be on the static list or one of the frame lists
-	int				frameUsed;			// it can't be purged if near the current frame
-} vertCache_t;
-
-
 class idVertexCache 
 {
 public:
-	void			Init();
-	void			Shutdown();
+	void			Init( void );
+	void			Shutdown(void);
 
 	// just for gfxinfo printing
-	bool			IsFast();
+	bool			IsFast( void );
 
 	// called when vertex programs are enabled or disabled, because
 	// the cached data is no longer valid
-	void			PurgeAll();
+	void			PurgeAll( void );
 
 	// Tries to allocate space for the given data in fast vertex
 	// memory, and copies it over.
 	// Alloc does NOT do a touch, which allows purging of things
 	// created at level load time even if a frame hasn't passed yet.
 	// These allocations can be purged, which will zero the pointer.
-	void			Alloc( void *data, int bytes, vertCache_t **buffer, bool indexBuffer = false );
-
-	// This will be a real pointer with virtual memory,
-	// but it will be an int offset cast to a pointer of ARB_vertex_buffer_object
-	intptr_t		Position( vertCache_t *buffer );
-
-	// if r_useIndexBuffers is enabled, but you need to draw something without
-	// an indexCache, this must be called to reset GL_ELEMENT_ARRAY_BUFFER_ARB
-	void			UnbindIndex();
-
-	// automatically freed at the end of the next frame
-	// used for specular texture coordinates and gui drawing, which
-	// will change every frame.
-	// will return NULL if the vertex cache is completely full
-	// As with Position(), this may not actually be a pointer you can access.
-	vertCache_t	*	AllocFrameTemp( void *data, int bytes );
-
-	// notes that a buffer is used this frame, so it can't be purged
-	// out from under the GPU
-	void			Touch( vertCache_t *buffer );
+	crCache*		Alloc( const size_t in_bytes, const bufferCacheType_t in_type );
 
 	// this block won't have to zero a buffer pointer when it is purged,
 	// but it must still wait for the frames to pass, in case the GPU
 	// is still referencing it
-	void			Free( vertCache_t *buffer );	
+	void			Free( crCache* in_cache );	
+
+	// notes that a buffer is used this frame, so it can't be purged
+	// out from under the GPU
+	void			Touch( crCache* in_cache );
 
 	// updates the counter for determining which temp space to use
 	// and which blocks can be purged
 	// Also prints debugging info when enabled
-	void			EndFrame();
+	void			EndFrame( void );
 
 	// listVertexCache calls this
-	void			List();
+	void			List( void );
 
 private:
-	void			InitMemoryBlocks( int size );
-	void			ActuallyFree( vertCache_t *block );
-
+	bool			allocatingTempBuffer;	// force GL_STREAM_DRAW_ARB
+	bool			tempOverflow;			// had to alloc a temp in static memory
+	uint32_t		staticCountTotal;
+	uint32_t		staticAllocTotal;		// for end of frame purging
+	uint32_t		staticAllocThisFrame;	// debug counter
+	uint32_t		staticCountThisFrame;
+	uint32_t		dynamicAllocThisFrame;
+	uint32_t		dynamicCountThisFrame;
+	uint32_t		currentFrame;			// for purgable block tracking
+	uint32_t		listNum;				// currentFrame % NUM_VERTEX_FRAMES, determines which tempBuffers to use											// staticHeaders.next is most recently used
+	int				frameBytes;				// for each of NUM_VERTEX_FRAMES frames
 	static idCVar	r_showVertexCache;
 	static idCVar	r_vertexBufferMegs;
 
-	int				staticCountTotal;
-	int				staticAllocTotal;		// for end of frame purging
+	void			InitMemoryBlocks( int size );
+	void			ActuallyFree( crCache *block );
 
-	int				staticAllocThisFrame;	// debug counter
-	int				staticCountThisFrame;
-	int				dynamicAllocThisFrame;
-	int				dynamicCountThisFrame;
-
-	int				currentFrame;			// for purgable block tracking
-	int				listNum;				// currentFrame % NUM_VERTEX_FRAMES, determines which tempBuffers to use
-
-	bool			allocatingTempBuffer;	// force GL_STREAM_DRAW_ARB
-
-	vertCache_t		*tempBuffers[NUM_VERTEX_FRAMES];		// allocated at startup
-	bool			tempOverflow;			// had to alloc a temp in static memory
-
-	idBlockAlloc<vertCache_t,1024>	headerAllocator;
-
-	vertCache_t		freeStaticHeaders;		// head of doubly linked list
-	vertCache_t		freeDynamicHeaders;		// head of doubly linked list
-	vertCache_t		dynamicHeaders;			// head of doubly linked list
-	vertCache_t		deferredFreeList;		// head of doubly linked list
-	vertCache_t		staticHeaders;			// head of doubly linked list in MRU order,
-											// staticHeaders.next is most recently used
-
-	int				frameBytes;				// for each of NUM_VERTEX_FRAMES frames
 };
 
+// todo: move to renderer (tr.) class
 extern	idVertexCache	vertexCache;
+
+#endif //__VERTEX_CACHE_H__
