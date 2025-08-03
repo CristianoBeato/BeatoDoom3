@@ -217,6 +217,10 @@ typedef struct {
 	float				privatePolygonOffset;	// a per-stage polygon offset
 
 	newShaderStage_t	*newStage;			// vertex / fragment program based stage
+
+// BEATO Begin: crvkLib Vulkan implementation, material pipeline
+	crvkPipeline*		m_pipe;
+// BEATO End
 } shaderStage_t;
 
 typedef enum 

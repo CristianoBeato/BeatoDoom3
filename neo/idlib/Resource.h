@@ -27,7 +27,7 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #define __RESOURCE_H__
 
 // resoucer load state
-enum class resourceState_s 
+enum resourceState_s 
 {
     RESOURCE_UNINITIALIZED = -1,    // unitialized resource
     RESOURCE_FAILED,                // failed to load resouce 
