@@ -32,10 +32,10 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 class SDLMutexLock
 {
 private:
-    SDLMutex*  mutex;
+    SDL::Mutex*  mutex;
 
 public:
-    explicit SDLMutexLock( SDLMutex* mtx ) : mutex( mtx )
+    explicit SDLMutexLock( SDL::Mutex* mtx ) : mutex( mtx )
     {
 		mutex->Lock();
     }
@@ -50,7 +50,7 @@ const int32_t k_MAX_TIMEOUT = -1;
 
 crMutex::crMutex( void ) : m_mtxhnd( nullptr )
 {
-	m_mtxhnd = new SDLMutex();
+	m_mtxhnd = new SDL::Mutex();
 	m_mtxhnd->Create();
 }
 
@@ -76,7 +76,7 @@ void crMutex::Unlock( void ) const
 
 crCondition::crCondition( void ) : m_cndhnd( nullptr )
 {
-	m_cndhnd = new SDLCondition();
+	m_cndhnd = new SDL::Condition();
 	m_cndhnd->Create();
 }
 
@@ -117,7 +117,7 @@ void crCondition::Wait( const crMutex * lock, const uint32_t timeout ) const
 
 crSemaphore::crSemaphore( void ) : m_sem(nullptr)
 {
-	m_sem = new SDLSemaphore();
+	m_sem = new SDL::Semaphore();
 	m_sem->Create( 1 );
 }
 
@@ -173,10 +173,10 @@ idSysSignal::idSysSignal( bool manualReset ) :
 	// the inital state is always "not signaled"
     SDL_SetAtomicInt( &m_signaled, NOT_SIGNALED );
     SDL_SetAtomicInt( &m_waiting, 0 ); 
-    m_mutex = new SDLMutex();
+    m_mutex = new SDL::Mutex();
 	m_mutex->Create();
 	
-    m_cond = new SDLCondition();
+    m_cond = new SDL::Condition();
 	m_cond->Create();
 }
 

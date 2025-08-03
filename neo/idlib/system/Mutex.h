@@ -27,6 +27,7 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #define _MUTEX_H_
 
 #include <SDL3/SDL_atomic.h>
+#include <SDL3/SDL_mutex.hpp>
 
 extern const int32_t k_MAX_TIMEOUT;
 
@@ -46,11 +47,11 @@ private:
 	// Mutex pointer acess, for condition lock
 	friend class 	crCondition;
 	friend class 	crEvent;
-	class SDLMutex*	m_mtxhnd;
+	class SDL::Mutex*	m_mtxhnd;
 
 	// prevent object copy
 	crMutex( const crMutex & s ) = delete;
-	void			operator=( const crMutex & s ) = delete;
+	void operator=( const crMutex & s ) = delete;
 };
 
 class crScopeLock
@@ -89,11 +90,11 @@ public:
 
 private:
 	friend class crEvent;
-	class SDLCondition*		m_cndhnd;
+	class SDL::Condition*	m_cndhnd;
 
 	// prevent object copy
 	crCondition( const crCondition & s ) = delete;
-	void			operator=( const crCondition & s ) = delete;
+	void operator=( const crCondition & s ) = delete;
 };
 
 class crSemaphore
@@ -105,7 +106,7 @@ public:
 	void	Trigger( void );
 
 private:
-	class SDLSemaphore*	m_sem;
+	class SDL::Semaphore* m_sem;
 };
 
 /*
@@ -118,7 +119,7 @@ a thread has reached a specific point.
 class idSysSignal
 {
 public:
-	static const int	WAIT_INFINITE = -1;
+	static const int WAIT_INFINITE = -1;
 	
 	idSysSignal( bool manualReset = false );
 	~idSysSignal( void );
@@ -133,11 +134,11 @@ public:
 private:
 	// DG: all this stuff is needed to emulate Window's Event API
 	//     (CreateEvent(), SetEvent(), WaitForSingleObject(), ...)
-	bool 						m_manualReset;
-	SDL_AtomicInt				m_signaled; 		    // is it signaled right now?
-	SDL_AtomicInt				m_waiting;            // number of threads waiting for a signal
-	struct SDLCondition*		m_cond;
-	struct SDLMutex* 			m_mutex;
+	bool 					m_manualReset;
+	SDL_AtomicInt			m_signaled; 		    // is it signaled right now?
+	SDL_AtomicInt			m_waiting;            // number of threads waiting for a signal
+	struct SDL::Condition*	m_cond;
+	struct SDL::Mutex*		m_mutex;
 	
 	idSysSignal( const idSysSignal& s ) = delete;
 	void				operator=( const idSysSignal& s ) = delete;

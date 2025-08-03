@@ -70,7 +70,7 @@ idSysThread::StartThread
 */
 bool idSysThread::StartThread( const char* name_, int stackSize )
 {
-	SDLProperties threadProperties;
+	SDL::Properties threadProperties;
 	if( isRunning )
 		return false;
 	
