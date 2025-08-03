@@ -32,8 +32,8 @@ If you have questions concerning this license or the applicable additional terms
 #include "Model_local.h"
 #include "renderer/renderer_common.h"	// just for R_FreeWorldInteractions and R_CreateWorldInteractions
 
-
-class idRenderModelManagerLocal : public idRenderModelManager {
+class idRenderModelManagerLocal : public idRenderModelManager 
+{
 public:
 							idRenderModelManagerLocal();
 	virtual					~idRenderModelManagerLocal() {}
@@ -72,7 +72,6 @@ private:
 	static void				TouchModel_f( const idCmdArgs &args );
 };
 
-
 idRenderModelManagerLocal	localModelManager;
 idRenderModelManager *		renderModelManager = &localModelManager;
 
@@ -81,12 +80,13 @@ idRenderModelManager *		renderModelManager = &localModelManager;
 idRenderModelManagerLocal::idRenderModelManagerLocal
 ==============
 */
-idRenderModelManagerLocal::idRenderModelManagerLocal() {
-	defaultModel = NULL;
-	beamModel = NULL;
-	spriteModel = NULL;
+idRenderModelManagerLocal::idRenderModelManagerLocal( void ) 
+{
+	defaultModel = nullptr;
+	beamModel = nullptr;
+	spriteModel = nullptr;
 	insideLevelLoad = false;
-	trailModel = NULL;
+	trailModel = nullptr;
 }
 
 /*
@@ -94,7 +94,8 @@ idRenderModelManagerLocal::idRenderModelManagerLocal() {
 idRenderModelManagerLocal::PrintModel_f
 ==============
 */
-void idRenderModelManagerLocal::PrintModel_f( const idCmdArgs &args ) {
+void idRenderModelManagerLocal::PrintModel_f( const idCmdArgs &args ) 
+{
 	idRenderModel	*model;
 
 	if ( args.Argc() != 2 ) {
@@ -116,7 +117,8 @@ void idRenderModelManagerLocal::PrintModel_f( const idCmdArgs &args ) {
 idRenderModelManagerLocal::ListModels_f
 ==============
 */
-void idRenderModelManagerLocal::ListModels_f( const idCmdArgs &args ) {
+void idRenderModelManagerLocal::ListModels_f( const idCmdArgs &args ) 
+{
 	int		totalMem = 0;
 	int		inUse = 0;
 
@@ -146,12 +148,12 @@ void idRenderModelManagerLocal::ListModels_f( const idCmdArgs &args ) {
 idRenderModelManagerLocal::ReloadModels_f
 ==============
 */
-void idRenderModelManagerLocal::ReloadModels_f( const idCmdArgs &args ) {
-	if ( idStr::Icmp( args.Argv(1), "all" ) == 0 ) {
+void idRenderModelManagerLocal::ReloadModels_f( const idCmdArgs &args ) 
+{
+	if ( idStr::Icmp( args.Argv(1), "all" ) == 0 ) 
 		localModelManager.ReloadModels( true );
-	} else {
+	else 
 		localModelManager.ReloadModels( false );
-	}
 }
 
 /*
@@ -161,10 +163,12 @@ idRenderModelManagerLocal::TouchModel_f
 Precache a specific model
 ==============
 */
-void idRenderModelManagerLocal::TouchModel_f( const idCmdArgs &args ) {
+void idRenderModelManagerLocal::TouchModel_f( const idCmdArgs &args ) 
+{
 	const char	*model = args.Argv( 1 );
 
-	if ( !model[0] ) {
+	if ( !model[0] ) 
+	{
 		common->Printf( "usage: touchModel <modelName>\n" );
 		return;
 	}
@@ -172,7 +176,8 @@ void idRenderModelManagerLocal::TouchModel_f( const idCmdArgs &args ) {
 	common->Printf( "touchModel %s\n", model );
 	session->UpdateScreen();
 	idRenderModel *m = renderModelManager->CheckModel( model );
-	if ( !m ) {
+	if ( !m ) 
+	{
 		common->Printf( "...not found\n" );
 	}
 }
@@ -182,16 +187,17 @@ void idRenderModelManagerLocal::TouchModel_f( const idCmdArgs &args ) {
 idRenderModelManagerLocal::WritePrecacheCommands
 =================
 */
-void idRenderModelManagerLocal::WritePrecacheCommands( idFile *f ) {
-	for ( int i = 0 ; i < models.Num() ; i++ ) {
+void idRenderModelManagerLocal::WritePrecacheCommands( idFile *f ) 
+{
+	for ( int i = 0 ; i < models.Num() ; i++ ) 
+	{
 		idRenderModel	*model = models[i];
 
-		if ( !model ) {
+		if ( !model ) 
 			continue;
-		}
-		if ( !model->IsReloadable() ) {
+		
+		if ( !model->IsReloadable() ) 
 			continue;
-		}
 
 		char	str[1024];
 		sprintf( str, "touchModel %s\n", model->Name() );
@@ -205,7 +211,8 @@ void idRenderModelManagerLocal::WritePrecacheCommands( idFile *f ) {
 idRenderModelManagerLocal::Init
 =================
 */
-void idRenderModelManagerLocal::Init() {
+void idRenderModelManagerLocal::Init( void ) 
+{
 	cmdSystem->AddCommand( "listModels", ListModels_f, CMD_FL_RENDERER, "lists all models" );
 	cmdSystem->AddCommand( "printModel", PrintModel_f, CMD_FL_RENDERER, "prints model info", idCmdSystem::ArgCompletion_ModelName );
 	cmdSystem->AddCommand( "reloadModels", ReloadModels_f, CMD_FL_RENDERER|CMD_FL_CHEAT, "reloads models" );

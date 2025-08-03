@@ -190,6 +190,6 @@ set( RENDERER_SOURCES_ALL
 	)
 
 add_library( renderer STATIC ${RENDERER_SOURCES_ALL} )
-target_include_directories( renderer PUBLIC ${CMAKE_SOURCE_DIR}/contrib/crvkLib/lib )
+target_include_directories( renderer PUBLIC ${CMAKE_SOURCE_DIR}/contrib/crvkLib/lib/include )
 add_dependencies( renderer idlib )
 target_precompile_headers( renderer PUBLIC ${CMAKE_SOURCE_DIR}/idlib/precompiled.h PRIVATE "$<$<COMPILE_LANGUAGE:CXX>:${CMAKE_CURRENT_SOURCE_DIR}/renderer_common.h>" )
