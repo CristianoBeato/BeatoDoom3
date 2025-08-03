@@ -64,7 +64,8 @@ idRenderModelOverlay::~idRenderModelOverlay() {
 idRenderModelOverlay::Alloc
 ====================
 */
-idRenderModelOverlay *idRenderModelOverlay::Alloc( void ) {
+idRenderModelOverlay *idRenderModelOverlay::Alloc( void ) 
+{
 	return new idRenderModelOverlay;
 }
 

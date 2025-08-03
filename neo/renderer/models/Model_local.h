@@ -36,43 +36,53 @@ If you have questions concerning this license or the applicable additional terms
 
 ===============================================================================
 */
-
-class idRenderModelStatic : public idRenderModel {
+class idRenderModelStatic : public idRenderModel 
+{
 public:
 	// the inherited public interface
-	static idRenderModel *		Alloc();
+	static idRenderModel *		Alloc( void );
 
-								idRenderModelStatic();
-	virtual						~idRenderModelStatic();
+								idRenderModelStatic( void );
+	virtual						~idRenderModelStatic( void );
 
+// BEATO Begin:
+#if 0
 	virtual void				InitFromFile( const char *fileName );
-	virtual void				PartialInitFromFile( const char *fileName );
-	virtual void				PurgeModel();
-	virtual void				Reset() {};
-	virtual void				LoadModel();
-	virtual bool				IsLoaded();
+#else
+	virtual void                Create( const idStr& in_name );
+	virtual void                Load( void );
+#endif
+
+	virtual void				PartialInitFromFile( const idStr& in_fileName );
+	virtual void                Load( void );
+// BEATO End
+
+	virtual void				PurgeModel( void );
+	virtual void				Reset( void ) {};
+	virtual void				LoadModel( void );
+	virtual bool				IsLoaded( void );
 	virtual void				SetLevelLoadReferenced( bool referenced );
-	virtual bool				IsLevelLoadReferenced();
-	virtual void				TouchData();
-	virtual void				InitEmpty( const char *name );
+	virtual bool				IsLevelLoadReferenced( void );
+	virtual void				TouchData( void );
+	virtual void				InitEmpty( const idStr &in_name );
 	virtual void				AddSurface( modelSurface_t surface );
-	virtual void				FinishSurfaces();
-	virtual void				FreeVertexCache();
-	virtual const char *		Name() const;
-	virtual void				Print() const;
-	virtual void				List() const;
-	virtual int					Memory() const;
-	virtual ID_TIME_T				Timestamp() const;
+	virtual void				FinishSurfaces( void );
+	virtual void				FreeVertexCache( void );
+	virtual const char *		Name( void ) const;
+	virtual void				Print( void ) const;
+	virtual void				List( void ) const;
+	virtual int					Memory( void ) const;
+	virtual ID_TIME_T			Timestamp( void ) const;
 	virtual int					NumSurfaces() const;
-	virtual int					NumBaseSurfaces() const;
+	virtual int					NumBaseSurfaces( void ) const;
 	virtual const modelSurface_t *Surface( int surfaceNum ) const;
 	virtual srfTriangles_t *	AllocSurfaceTriangles( int numVerts, int numIndexes ) const;
 	virtual void				FreeSurfaceTriangles( srfTriangles_t *tris ) const;
-	virtual srfTriangles_t *	ShadowHull() const;
-	virtual bool				IsStaticWorldModel() const;
-	virtual dynamicModel_t		IsDynamicModel() const;
-	virtual bool				IsDefaultModel() const;
-	virtual bool				IsReloadable() const;
+	virtual srfTriangles_t *	ShadowHull( void ) const;
+	virtual bool				IsStaticWorldModel( void ) const;
+	virtual dynamicModel_t		IsDynamicModel( void ) const;
+	virtual bool				IsDefaultModel( void ) const;
+	virtual bool				IsReloadable( void ) const;
 	virtual idRenderModel *		InstantiateDynamicModel( const struct renderEntity_s *ent, const viewDefptr_t view, idRenderModel *cachedModel );
 	virtual int					NumJoints( void ) const;
 	virtual const idMD5Joint *	GetJoints( void ) const;
@@ -83,9 +93,9 @@ public:
 	virtual idBounds			Bounds( const struct renderEntity_s *ent ) const;
 	virtual void				ReadFromDemoFile( class idDemoFile *f );
 	virtual void				WriteToDemoFile( class idDemoFile *f );
-	virtual float				DepthHack() const;
+	virtual float				DepthHack( void ) const;
 
-	void						MakeDefaultModel();
+	void						MakeDefaultModel( void );
 	
 	bool						LoadASE( const char *fileName );
 	bool						LoadLWO( const char *fileName );
@@ -111,7 +121,7 @@ protected:
 	int							lastModifiedFrame;
 	int							lastArchivedFrame;
 
-	idStr						name;
+//	idStr						name;
 	srfTriangles_t *			shadowHull;
 	bool						isStaticWorldModel;
 	bool						defaulted;

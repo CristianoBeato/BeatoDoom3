@@ -58,25 +58,28 @@ typedef short glIndex_t;
 
 #endif
 
-
-typedef struct {
+typedef struct 
+{
 	// NOTE: making this a glIndex is dubious, as there can be 2x the faces as verts
 	glIndex_t					p1, p2;					// planes defining the edge
 	glIndex_t					v1, v2;					// verts defining the edge
 } silEdge_t;
 
 // this is used for calculating unsmoothed normals and tangents for deformed models
-typedef struct dominantTri_s {
+typedef struct dominantTri_s 
+{
 	glIndex_t					v2, v3;
 	float						normalizationScale[3];
 } dominantTri_t;
 
-typedef struct lightingCache_s {
+typedef struct lightingCache_s 
+{
 	idVec3						localLightVector;		// this is the statically computed vector to the light
 														// in texture space for cards without vertex programs
 } lightingCache_t;
 
-typedef struct shadowCache_s {
+typedef struct shadowCache_s 
+{
 	idVec4						xyz;					// we use homogenous coordinate tricks
 } shadowCache_t;
 
@@ -168,21 +171,23 @@ public:
 // the init methods may be called again on an already created model when
 // a reloadModels is issued
 
-class idRenderModel 
+class idRenderModel : public crResource
 {
 public:
-	virtual						~idRenderModel() {};
+	virtual						~idRenderModel( void ) {};
 
-	// Loads static models only, dynamic models must be loaded by the modelManager
-	virtual void				InitFromFile( const char *fileName ) = 0;
+// BEATO Begin: resouce implementation
+//	// Loads static models only, dynamic models must be loaded by the modelManager
+//	virtual void				InitFromFile( const char *fileName ) = 0;
+// BEATO Resource implementation
 
 	// renderBump uses this to load the very high poly count models, skipping the
 	// shadow and tangent generation, along with some surface cleanup to make it load faster
-	virtual void				PartialInitFromFile( const char *fileName ) = 0;
+	virtual void				PartialInitFromFile( const idStr &fileName ) = 0;
 
 	// this is used for dynamically created surfaces, which are assumed to not be reloadable.
 	// It can be called again to clear out the surfaces of a dynamic model for regeneration.
-	virtual void				InitEmpty( const char *name ) = 0;
+	virtual void				InitEmpty( const idStr &name ) = 0;
 
 	// dynamic model instantiations will be created with this
 	// the geometry data will be owned by the model, and freed when it is freed
@@ -222,7 +227,7 @@ public:
 	virtual void				FreeVertexCache() = 0;
 
 	// returns the name of the model
-	virtual const char	*		Name() const = 0;
+	//virtual const char	*		Name( void ) const = 0;
 
 	// prints a detailed report on the model for printModel
 	virtual void				Print() const = 0;
@@ -278,7 +283,7 @@ public:
 	virtual idBounds			Bounds( const struct renderEntity_s *ent = NULL ) const = 0;
 
 	// returns value != 0.0f if the model requires the depth hack
-	virtual float				DepthHack() const = 0;
+	virtual float				DepthHack( void ) const = 0;
 
 	// returns a static model based on the definition and view
 	// currently, this will be regenerated for every view, even though

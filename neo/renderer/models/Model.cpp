@@ -264,24 +264,29 @@ void idRenderModelStatic::MakeDefaultModel() {
 idRenderModelStatic::PartialInitFromFile
 ================
 */
-void idRenderModelStatic::PartialInitFromFile( const char *fileName ) {
+void idRenderModelStatic::PartialInitFromFile( const char *fileName ) 
+{
 	fastLoad = true;
-	InitFromFile( fileName );
+	// BEATO Begin: Resource implementation 
+	Create( fileName ); //InitFromFile( fileName );
+	/// Beato end 
 }
 
+// BEATO Begin:
+#if 0
 /*
 ================
 idRenderModelStatic::InitFromFile
 ================
 */
-void idRenderModelStatic::InitFromFile( const char *fileName ) {
-	bool loaded;
+void idRenderModelStatic::InitFromFile( const char *fileName ) 
+{
+	bool loaded = false;
 	idStr extension;
 
 	InitEmpty( fileName );
 
 	// FIXME: load new .proc map format
-
 	name.ExtractFileExtension( extension );
 
 	if ( extension.Icmp( "ase" ) == 0 ) {
@@ -313,15 +318,96 @@ void idRenderModelStatic::InitFromFile( const char *fileName ) {
 	// create the bounds for culling and dynamic surface creation
 	FinishSurfaces();
 }
+#else
+/*
+================
+idRenderModelStatic::Create
+================
+*/
+void idRenderModelStatic::Create( const idStr& in_name )
+{
+	m_name = in_name;
+	InitEmpty( in_name );
+	// 
+	m_state = RESOURCE_CREATED;
+}
+
+/*
+================
+idRenderModelStatic::Create
+================
+*/
+void idRenderModelStatic::Load( void )
+{
+	bool loaded = false;
+	idStr extension = idStr();
+
+	crStr name = Name();
+
+	// FIXME: load new .proc map format
+	name.ExtractFileExtension( extension );
+
+	m_state = RESOURCE_LOADING;
+	if ( extension.Icmp( "ase" ) == 0 ) 
+	{
+		loaded		= LoadASE( name );
+		reloadable	= true;
+	} 
+	else if ( extension.Icmp( "lwo" ) == 0 ) 
+	{
+		loaded		= LoadLWO( name );
+		reloadable	= true;
+	} 
+	else if ( extension.Icmp( "flt" ) == 0 ) 
+	{
+		loaded		= LoadFLT( name );
+		reloadable	= true;
+	} 
+	else if ( extension.Icmp( "ma" ) == 0 ) 
+	{
+		loaded		= LoadMA( name );
+		reloadable	= true;
+	} 
+	else 
+	{
+		m_state = RESOURCE_FAILED;
+		common->Warning( "idRenderModelStatic::InitFromFile: unknown type for model: \'%s\'", name.c_str() );
+		loaded		= false;
+	}
+
+	if ( !loaded )
+	{
+		m_state = RESOURCE_FAILED;
+		common->Warning( "Couldn't load model: '%s'", name.c_str() );
+		MakeDefaultModel();
+		return;
+	}
+
+	// it is now available for use
+	purged = false;
+
+	// create the bounds for culling and dynamic surface creation
+	FinishSurfaces();
+	m_state = RESOURCE_LOADED;
+}
+#endif
+// BEATO End
 
 /*
 ================
 idRenderModelStatic::LoadModel
 ================
 */
-void idRenderModelStatic::LoadModel() {
+void idRenderModelStatic::LoadModel( void ) 
+{
 	PurgeModel();
+// BEATO Begin
+#if 0
 	InitFromFile( name );
+#else
+	Load();
+#endif 
+// BEATO End
 }
 
 /*
@@ -329,18 +415,18 @@ void idRenderModelStatic::LoadModel() {
 idRenderModelStatic::InitEmpty
 ================
 */
-void idRenderModelStatic::InitEmpty( const char *fileName ) {
+void idRenderModelStatic::InitEmpty( const idStr &in_fileName ) 
+{
 	// model names of the form _area* are static parts of the
 	// world, and have already been considered for optimized shadows
 	// other model names are inline entity models, and need to be
 	// shadowed normally
-	if ( !idStr::Cmpn( fileName, "_area", 5 ) ) {
+	if ( !idStr::Cmpn( in_fileName, "_area", 5 ) ) 
 		isStaticWorldModel = true;
-	} else {
+	else 
 		isStaticWorldModel = false;
-	}
 
-	name = fileName;
+//	name = fileName;
 	reloadable = false;	// if it didn't come from a file, we can't reload it
 	PurgeModel();
 	purged = false;
@@ -352,28 +438,34 @@ void idRenderModelStatic::InitEmpty( const char *fileName ) {
 idRenderModelStatic::AddSurface
 ================
 */
-void idRenderModelStatic::AddSurface( modelSurface_t surface ) {
+void idRenderModelStatic::AddSurface( modelSurface_t surface ) 
+{
 	surfaces.Append( surface );
-	if ( surface.geometry ) {
+	if ( surface.geometry ) 
+	{
 		bounds += surface.geometry->bounds;
 	}
 }
 
+// BEATO Begin:
 /*
 ================
 idRenderModelStatic::Name
 ================
 */
-const char *idRenderModelStatic::Name() const {
-	return name;
-}
+// const char *idRenderModelStatic::Name() const 
+// {
+// 	return name;
+// }
+// BEATO End
 
 /*
 ================
 idRenderModelStatic::Timestamp
 ================
 */
-ID_TIME_T idRenderModelStatic::Timestamp() const {
+ID_TIME_T idRenderModelStatic::Timestamp( void ) const 
+{
 	return timeStamp;
 }
 
@@ -382,7 +474,8 @@ ID_TIME_T idRenderModelStatic::Timestamp() const {
 idRenderModelStatic::NumSurfaces
 ================
 */
-int idRenderModelStatic::NumSurfaces() const {
+int idRenderModelStatic::NumSurfaces( void ) const 
+{
 	return surfaces.Num();
 }
 
@@ -391,7 +484,8 @@ int idRenderModelStatic::NumSurfaces() const {
 idRenderModelStatic::NumBaseSurfaces
 ================
 */
-int idRenderModelStatic::NumBaseSurfaces() const {
+int idRenderModelStatic::NumBaseSurfaces( void ) const 
+{
 	return surfaces.Num() - overlaysAdded;
 }
 
@@ -400,7 +494,8 @@ int idRenderModelStatic::NumBaseSurfaces() const {
 idRenderModelStatic::Surface
 ================
 */
-const modelSurface_t *idRenderModelStatic::Surface( int surfaceNum ) const {
+const modelSurface_t *idRenderModelStatic::Surface( int surfaceNum ) const 
+{
 	return &surfaces[surfaceNum];
 }
 
@@ -409,7 +504,8 @@ const modelSurface_t *idRenderModelStatic::Surface( int surfaceNum ) const {
 idRenderModelStatic::AllocSurfaceTriangles
 ================
 */
-srfTriangles_t *idRenderModelStatic::AllocSurfaceTriangles( int numVerts, int numIndexes ) const {
+srfTriangles_t *idRenderModelStatic::AllocSurfaceTriangles( int numVerts, int numIndexes ) const 
+{
 	srfTriangles_t *tri = R_AllocStaticTriSurf();
 	R_AllocStaticTriSurfVerts( tri, numVerts );
 	R_AllocStaticTriSurfIndexes( tri, numIndexes );
@@ -421,7 +517,8 @@ srfTriangles_t *idRenderModelStatic::AllocSurfaceTriangles( int numVerts, int nu
 idRenderModelStatic::FreeSurfaceTriangles
 ================
 */
-void idRenderModelStatic::FreeSurfaceTriangles( srfTriangles_t *tris ) const {
+void idRenderModelStatic::FreeSurfaceTriangles( srfTriangles_t *tris ) const 
+{
 	R_FreeStaticTriSurf( tris );
 }
 
@@ -430,7 +527,8 @@ void idRenderModelStatic::FreeSurfaceTriangles( srfTriangles_t *tris ) const {
 idRenderModelStatic::ShadowHull
 ================
 */
-srfTriangles_t *idRenderModelStatic::ShadowHull() const {
+srfTriangles_t *idRenderModelStatic::ShadowHull( void ) const 
+{
 	return shadowHull;
 }
 
@@ -439,7 +537,8 @@ srfTriangles_t *idRenderModelStatic::ShadowHull() const {
 idRenderModelStatic::IsStaticWorldModel
 ================
 */
-bool idRenderModelStatic::IsStaticWorldModel() const {
+bool idRenderModelStatic::IsStaticWorldModel( void ) const 
+{
 	return isStaticWorldModel;
 }
 
@@ -448,7 +547,8 @@ bool idRenderModelStatic::IsStaticWorldModel() const {
 idRenderModelStatic::IsDynamicModel
 ================
 */
-dynamicModel_t idRenderModelStatic::IsDynamicModel() const {
+dynamicModel_t idRenderModelStatic::IsDynamicModel( void ) const 
+{
 	// dynamic subclasses will override this
 	return DM_STATIC;
 }
@@ -458,7 +558,8 @@ dynamicModel_t idRenderModelStatic::IsDynamicModel() const {
 idRenderModelStatic::IsReloadable
 ================
 */
-bool idRenderModelStatic::IsReloadable() const {
+bool idRenderModelStatic::IsReloadable( void ) const 
+{
 	return reloadable;
 }
 
@@ -467,7 +568,8 @@ bool idRenderModelStatic::IsReloadable() const {
 idRenderModelStatic::Bounds
 ================
 */
-idBounds idRenderModelStatic::Bounds( const struct renderEntity_s *mdef ) const {
+idBounds idRenderModelStatic::Bounds( const struct renderEntity_s *mdef ) const 
+{
 	return bounds;
 }
 
@@ -476,7 +578,8 @@ idBounds idRenderModelStatic::Bounds( const struct renderEntity_s *mdef ) const 
 idRenderModelStatic::DepthHack
 ================
 */
-float idRenderModelStatic::DepthHack() const {
+float idRenderModelStatic::DepthHack( void ) const 
+{
 	return 0.0f;
 }
 
@@ -502,7 +605,8 @@ idRenderModel *idRenderModelStatic::InstantiateDynamicModel( const struct render
 idRenderModelStatic::NumJoints
 ================
 */
-int idRenderModelStatic::NumJoints( void ) const {
+int idRenderModelStatic::NumJoints( void ) const 
+{
 	return 0;
 }
 
@@ -511,8 +615,9 @@ int idRenderModelStatic::NumJoints( void ) const {
 idRenderModelStatic::GetJoints
 ================
 */
-const idMD5Joint *idRenderModelStatic::GetJoints( void ) const {
-	return NULL;
+const idMD5Joint *idRenderModelStatic::GetJoints( void ) const 
+{
+	return nullptr;
 }
 
 /*
@@ -520,7 +625,8 @@ const idMD5Joint *idRenderModelStatic::GetJoints( void ) const {
 idRenderModelStatic::GetJointHandle
 ================
 */
-jointHandle_t idRenderModelStatic::GetJointHandle( const char *name ) const {
+jointHandle_t idRenderModelStatic::GetJointHandle( const char *name ) const 
+{
 	return INVALID_JOINT;
 }
 

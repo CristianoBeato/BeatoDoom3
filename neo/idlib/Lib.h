@@ -245,6 +245,7 @@ template<typename _t> ID_INLINE constexpr const _t& clamp( const _t& v, const _t
 
 // BEATO Begin
 #include "containers/Array.h"
+#include "Resource.h"
 // BEATO End
 
 // hashing

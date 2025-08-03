@@ -39,24 +39,25 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
-class idRenderModelManager {
+class idRenderModelManager 
+{
 public:
 	virtual					~idRenderModelManager() {}
 
 	// registers console commands and clears the list
-	virtual	void			Init() = 0;
+	virtual	void			Init( void ) = 0;
 
 	// frees all the models
-	virtual	void			Shutdown() = 0;
+	virtual	void			Shutdown( void ) = 0;
 
 	// called only by renderer::BeginLevelLoad
-	virtual void			BeginLevelLoad() = 0;
+	virtual void			BeginLevelLoad( void ) = 0;
 
 	// called only by renderer::EndLevelLoad
-	virtual void			EndLevelLoad() = 0;
+	virtual void			EndLevelLoad( void ) = 0;
 
 	// allocates a new empty render model.
-	virtual idRenderModel *	AllocModel() = 0;
+	virtual idRenderModel *	AllocModel( void ) = 0;
 
 	// frees a render model
 	virtual void			FreeModel( idRenderModel *model ) = 0;
@@ -69,7 +70,7 @@ public:
 	virtual	idRenderModel *	CheckModel( const char *modelName ) = 0;
 
 	// returns the default cube model
-	virtual	idRenderModel *	DefaultModel() = 0;
+	virtual	idRenderModel *	DefaultModel( void ) = 0;
 
 	// world map parsing will add all the inline models with this call
 	virtual	void			AddModel( idRenderModel *model ) = 0;
@@ -87,7 +88,7 @@ public:
 	virtual	void			WritePrecacheCommands( idFile *f ) = 0;
 
 	// called during vid_restart
-	virtual	void			FreeModelVertexCaches() = 0;
+	virtual	void			FreeModelVertexCaches( void ) = 0;
 
 	// print memory info
 	virtual	void			PrintMemInfo( MemInfo_t *mi ) = 0;

@@ -27,14 +27,19 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #define __RESOURCE_H__
 
 // resoucer load state
-enum resourceState_s 
+typedef enum resourceState_s 
 {
     RESOURCE_UNINITIALIZED = -1,    // unitialized resource
     RESOURCE_FAILED,                // failed to load resouce 
     RESOURCE_CREATED,               // just resource pointer
     RESOURCE_LOADING,               // resource is loading
     RESOURCE_LOADED                 // resource load is finished 
-};
+} resourceState_t;
+
+typedef enum resourceOrigin_s
+{
+    RESOURCE_ORIGIN_MEMORY
+}resourceOrigin_s;
 
 /// @brief abstract resource class,
 /// resources are objects that need to be loaded from the engine's assets,
@@ -45,9 +50,20 @@ class crResource
 public:
     crResource( void );
     ~crResource( void );
+
+    /// @brief Create the resource handlers, alloc memory and prepare for load
+    /// @param in_name the asset path
     virtual void                Create(const idStr& in_name ) = 0;
+    
+    /// @brief Perform the resource loading and parsing
     virtual void                Load( void ) = 0;
+
+    /// @brief Resource name
+    /// @return a string that contain the resource name
     virtual const idStr&        Name( void ) const { return m_name; };
+    
+    /// @brief Current resource state 
+    /// @return the state of resource creation and loading 
     virtual resourceState_s     GetState( void ) const { return m_state; };
 
 protected:
