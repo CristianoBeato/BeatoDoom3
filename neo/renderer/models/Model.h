@@ -136,10 +136,10 @@ typedef struct srfTriangles_s {
 	struct srfTriangles_s *		nextDeferredFree;		// chain of tris to free next frame
 
 	// data in vertex object space, not directly readable by the CPU
-	struct vertCache_s *		indexCache;				// int
-	struct vertCache_s *		ambientCache;			// idDrawVert
+	struct crCache *			indexCache;				// int
+	struct crCache *			ambientCache;			// idDrawVert
 //	struct vertCache_s *		lightingCache;			// lightingCache_t
-	struct vertCache_s *		shadowCache;			// shadowCache_t
+	struct crCache *			shadowCache;			// shadowCache_t
 } srfTriangles_t;
 
 typedef idList<srfTriangles_t *> idTriList;

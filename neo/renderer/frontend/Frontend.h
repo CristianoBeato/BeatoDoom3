@@ -99,6 +99,7 @@ class crFrontend
 public:
     crFrontend( void );
     ~crFrontend( void );
+    
     // Frontend_light.cpp
     viewEntity_t*   SetEntityDefViewEntity( idRenderEntityLocal *def );
     viewLight_t*    SetLightDefViewLight( idRenderLightLocal *def );
@@ -143,7 +144,7 @@ public:
     void            FreeStaticTriSurfVertexCaches( srfTriangles_t *tri );
     void            ReallyFreeStaticTriSurf( srfTriangles_t *tri );
     void            FreeDeferredTriSurfs( frameData_t *frame );
-    int             TriSurfMemory( const srfTriangles_t *tri );
+    static int      TriSurfMemory( const srfTriangles_t *tri );
     
     void            BoundTriSurf( srfTriangles_t *tri );
     void            RemoveDuplicatedTriangles( srfTriangles_t *tri );
@@ -162,6 +163,10 @@ public:
 
     // Frontend_stencilshadrow.cpp
     srfTriangles_t* CreateShadowVolume( const idRenderEntityLocal *ent, const srfTriangles_t *tri, const idRenderLightLocal *light, shadowGen_t optimize, srfCullInfo_t &cullInfo );
+
+    //Interaction.cpp
+    void            CalcInteractionFacing( const idRenderEntityLocal *ent, const srfTriangles_t *tri, const idRenderLightLocal *light, srfCullInfo_t &cullInfo );
+    srfTriangles_t* CreateLightTris( const idRenderEntityLocal *ent, const srfTriangles_t *tri, const idRenderLightLocal *light, const idMaterial *shader, srfCullInfo_t &cullInfo );
 
     void            SetViewCount( int viewCount ) { this->viewCount = viewCount; }
     void            SetViewDef( const viewDefptr_t &viewDef ) { this->viewDef = viewDef; }
@@ -259,6 +264,8 @@ public:
     // Frontend_trisurf.cpp
     static void     DuplicateMirroredVertexes( srfTriangles_t *tri );
     static void     DeriveFaceTangents( const srfTriangles_t *tri, faceTangents_t *faceTangents );
+
+    // Inteaction cpp
 
 };
 

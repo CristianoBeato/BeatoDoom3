@@ -718,7 +718,7 @@ void idRenderSystemLocal::TakeScreenshot( int width, int height, const char *fil
 
 	int	pix = width * height;
 
-	buffer = (byte *)drawQueue->StaticAlloc(pix*3 + 18);
+	buffer = (byte *)tr.frameData->StaticAlloc( pix * 3 + 18);
 	memset (buffer, 0, 18);
 
 	if ( blends <= 1 ) 
@@ -727,7 +727,7 @@ void idRenderSystemLocal::TakeScreenshot( int width, int height, const char *fil
 	} 
 	else 
 	{
-		unsigned short *shortBuffer = (unsigned short *)drawQueue->StaticAlloc(pix*2*3);
+		unsigned short *shortBuffer = (unsigned short *)tr.frameData->StaticAlloc(pix*2*3);
 		memset (shortBuffer, 0, pix*2*3);
 
 		// enable anti-aliasing jitter
@@ -749,7 +749,7 @@ void idRenderSystemLocal::TakeScreenshot( int width, int height, const char *fil
 			buffer[18+i] = shortBuffer[i] / blends;
 		}
 
-		drawQueue->StaticFree( shortBuffer );
+		tr.frameData->StaticFree( shortBuffer );
 		r_jitter.SetBool( false );
 	}
 
@@ -775,7 +775,7 @@ void idRenderSystemLocal::TakeScreenshot( int width, int height, const char *fil
 	else 
 		fileSystem->WriteFile( fileName, buffer, c );
 
-	drawQueue->StaticFree( buffer );
+	tr.frameData->StaticFree( buffer );
 
 	takingScreenshot = false;
 

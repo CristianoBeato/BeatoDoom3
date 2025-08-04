@@ -52,7 +52,7 @@ the number of surface triangles, which will be used to handle dangling
 edge silhouettes.
 ================
 */
-void R_CalcInteractionFacing( const idRenderEntityLocal *ent, const srfTriangles_t *tri, const idRenderLightLocal *light, srfCullInfo_t &cullInfo ) 
+void crFrontend::CalcInteractionFacing( const idRenderEntityLocal *ent, const srfTriangles_t *tri, const idRenderLightLocal *light, srfCullInfo_t &cullInfo ) 
 {
 	idVec3 localLightOrigin;
 
@@ -64,10 +64,9 @@ void R_CalcInteractionFacing( const idRenderEntityLocal *ent, const srfTriangles
 	int numFaces = tri->numIndexes / 3;
 
 	if ( !tri->facePlanes || !tri->facePlanesCalculated ) 
-		R_DeriveFacePlanes( const_cast<srfTriangles_t *>(tri) );
+		DeriveFacePlanes( const_cast<srfTriangles_t *>(tri) );
 
-
-	cullInfo.facing = static_cast<byte *>( tr.framedata->StaticAlloc( ( numFaces + 1 ) * sizeof( cullInfo.facing[0] ) ) );
+	cullInfo.facing = static_cast<byte *>( tr.frameData->StaticAlloc( ( numFaces + 1 ) * sizeof( cullInfo.facing[0] ) ) );
 
 	// calculate back face culling
 	float *planeSide = static_cast<float *>( _alloca16( numFaces * sizeof( float ) ) );
@@ -115,7 +114,7 @@ void R_CalcInteractionCullBits( const idRenderEntityLocal *ent, const srfTriangl
 		return;
 	}
 
-	cullInfo.cullBits = static_cast<byte*>( tr.framedata->StaticAlloc( tri->numVerts * sizeof( cullInfo.cullBits[0] ) ) );
+	cullInfo.cullBits = static_cast<byte*>( tr.frameData->StaticAlloc( tri->numVerts * sizeof( cullInfo.cullBits[0] ) ) );
 	SIMDProcessor->Memset( cullInfo.cullBits, 0, tri->numVerts * sizeof( cullInfo.cullBits[0] ) );
 
 	float *planeSide = static_cast<float *>( _alloca16( tri->numVerts * sizeof( float ) ) );
@@ -285,15 +284,13 @@ static bool	R_ClipTriangleToLight( const idVec3 &a, const idVec3 &b, const idVec
 
 /*
 ====================
-R_CreateLightTris
+CreateLightTris
 
 The resulting surface will be a subset of the original triangles,
 it will never clip triangles, but it may cull on a per-triangle basis.
 ====================
 */
-static srfTriangles_t *R_CreateLightTris( const idRenderEntityLocal *ent, 
-									 const srfTriangles_t *tri, const idRenderLightLocal *light,
-									 const idMaterial *shader, srfCullInfo_t &cullInfo ) 
+srfTriangles_t * crFrontend::CreateLightTris( const idRenderEntityLocal *ent, const srfTriangles_t *tri, const idRenderLightLocal *light, const idMaterial *shader, srfCullInfo_t &cullInfo ) 
 {
 	bool			includeBackFaces = false;
 	int				i = 0;
@@ -319,14 +316,14 @@ static srfTriangles_t *R_CreateLightTris( const idRenderEntityLocal *ent,
 		includeBackFaces = false;
 
 	// allocate a new surface for the lit triangles
-	newTri = R_AllocStaticTriSurf();
+	newTri = AllocStaticTriSurf();
 
 	// save a reference to the original surface
 	newTri->ambientSurface = const_cast<srfTriangles_t *>(tri);
 
 	// the light surface references the verts of the ambient surface
 	newTri->numVerts = tri->numVerts;
-	R_ReferenceStaticTriSurfVerts( newTri, tri );
+	ReferenceStaticTriSurfVerts( newTri, tri );
 
 	// calculate cull information
 	if ( !includeBackFaces ) 
@@ -342,7 +339,7 @@ static srfTriangles_t *R_CreateLightTris( const idRenderEntityLocal *ent,
 		if ( includeBackFaces ) 
 		{
 			// the whole surface is lit so the light surface just references the indexes of the ambient surface
-			R_ReferenceStaticTriSurfIndexes( newTri, tri );
+			ReferenceStaticTriSurfIndexes( newTri, tri );
 			numIndexes = tri->numIndexes;
 			bounds = tri->bounds;
 
@@ -351,7 +348,7 @@ static srfTriangles_t *R_CreateLightTris( const idRenderEntityLocal *ent,
 		{
 			// the light tris indexes are going to be a subset of the original indexes so we generally
 			// allocate too much memory here but we decrease the memory block when the number of indexes is known
-			R_AllocStaticTriSurfIndexes( newTri, tri->numIndexes );
+			AllocStaticTriSurfIndexes( newTri, tri->numIndexes );
 
 			// back face cull the individual triangles
 			indexes = newTri->indexes;
@@ -374,7 +371,7 @@ static srfTriangles_t *R_CreateLightTris( const idRenderEntityLocal *ent,
 			SIMDProcessor->MinMax( bounds[0], bounds[1], tri->verts, indexes, numIndexes );
 
 			// decrease the size of the memory block to the size of the number of used indexes
-			R_ResizeStaticTriSurfIndexes( newTri, numIndexes );
+			ResizeStaticTriSurfIndexes( newTri, numIndexes );
 		}
 
 	} 
@@ -383,7 +380,7 @@ static srfTriangles_t *R_CreateLightTris( const idRenderEntityLocal *ent,
 
 		// the light tris indexes are going to be a subset of the original indexes so we generally
 		// allocate too much memory here but we decrease the memory block when the number of indexes is known
-		R_AllocStaticTriSurfIndexes( newTri, tri->numIndexes );
+		AllocStaticTriSurfIndexes( newTri, tri->numIndexes );
 
 		// cull individual triangles
 		indexes = newTri->indexes;
@@ -440,12 +437,12 @@ static srfTriangles_t *R_CreateLightTris( const idRenderEntityLocal *ent,
 		SIMDProcessor->MinMax( bounds[0], bounds[1], tri->verts, indexes, numIndexes );
 
 		// decrease the size of the memory block to the size of the number of used indexes
-		R_ResizeStaticTriSurfIndexes( newTri, numIndexes );
+		ResizeStaticTriSurfIndexes( newTri, numIndexes );
 	}
 
 	if ( !numIndexes ) 
 	{
-		R_ReallyFreeStaticTriSurf( newTri );
+		ReallyFreeStaticTriSurf( newTri );
 		return nullptr;
 	}
 
@@ -552,7 +549,7 @@ void idInteraction::FreeSurfaces( void )
 			if ( sint->lightTris ) 
 			{
 				if ( sint->lightTris != LIGHT_TRIS_DEFERRED ) 
-					R_FreeStaticTriSurf( sint->lightTris );
+					tr.frontend->FreeStaticTriSurf( sint->lightTris );
 				
 				sint->lightTris = nullptr;
 			}
@@ -563,7 +560,7 @@ void idInteraction::FreeSurfaces( void )
 				// model, not a generated interaction
 				if ( this->entityDef ) 
 				{
-					R_FreeStaticTriSurf( sint->shadowTris );
+					tr.frontend->FreeStaticTriSurf( sint->shadowTris );
 					sint->shadowTris = nullptr;
 				}
 			}
@@ -705,8 +702,8 @@ int idInteraction::MemoryUsed( void )
 	{
 		surfaceInteraction_t *inter = &surfaces[i];
 
-		total += R_TriSurfMemory( inter->lightTris );
-		total += R_TriSurfMemory( inter->shadowTris );
+		total += crFrontend::TriSurfMemory( inter->lightTris );
+		total += crFrontend::TriSurfMemory( inter->shadowTris );
 	}
 
 	return total;
@@ -931,7 +928,7 @@ void idInteraction::CreateInteraction( const idRenderModel *model )
 		if ( shader->ReceivesLighting() ) 
 		{
 			if ( tri->ambientViewCount == tr.frontend->GetViewCount() ) 
-				sint->lightTris = R_CreateLightTris( entityDef, tri, lightDef, shader, sint->cullInfo );
+				sint->lightTris = tr.frontend->CreateLightTris( entityDef, tri, lightDef, shader, sint->cullInfo );
 			else 
 				sint->lightTris = LIGHT_TRIS_DEFERRED; // this will be calculated when sint->ambientTris is actually in view
 	
@@ -1133,7 +1130,7 @@ void idInteraction::AddActiveInteraction( void )
 			// on a previous use that only needed the shadow
 			if ( sint->lightTris == LIGHT_TRIS_DEFERRED ) 
 			{
-				sint->lightTris = R_CreateLightTris( vEntity->entityDef, sint->ambientTris, vLight->lightDef, sint->shader, sint->cullInfo );
+				sint->lightTris = tr.frontend->CreateLightTris( vEntity->entityDef, sint->ambientTris, vLight->lightDef, sint->shader, sint->cullInfo );
 				R_FreeInteractionCullInfo( sint->cullInfo );
 			}
 
@@ -1172,8 +1169,12 @@ void idInteraction::AddActiveInteraction( void )
 //						vertexCache.Touch( lightTris->lightingCache );
 				
 					if ( !lightTris->indexCache ) 
-						lightTris->indexCache = vertexCache.AllocElement( lightTris->numIndexes * sizeof( lightTris->indexes[0] ), lightTris->indexes );
-					
+					{
+						size_t indexCacheSize = lightTris->numIndexes * sizeof( glIndex_t );
+						lightTris->indexCache = vertexCache.Alloc( indexCacheSize, CACHE_TYPE_INDEX_STATIC );
+						lightTris->indexCache->Upload( lightTris->indexes, indexCacheSize );
+					}
+
 					if ( lightTris->indexCache ) 
 						vertexCache.Touch( lightTris->indexCache );
 					
@@ -1251,7 +1252,9 @@ void idInteraction::AddActiveInteraction( void )
 
 			if ( !shadowTris->indexCache ) 
 			{
-				shadowTris->indexCache = vertexCache.AllocElement( shadowTris->numIndexes * sizeof( shadowTris->indexes[0] ), shadowTris->indexes );
+				size_t indexCacheSize = shadowTris->numIndexes * sizeof( glIndex_t );
+				shadowTris->indexCache = vertexCache.Alloc( indexCacheSize, CACHE_TYPE_INDEX_STATIC );
+				shadowTris->indexCache->Upload( shadowTris->indexes, indexCacheSize );
 				vertexCache.Touch( shadowTris->indexCache );
 			}
 

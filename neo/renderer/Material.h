@@ -31,6 +31,10 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "renderer/Draw.h"
 
+// BEATO Begin:
+class crvkPipeline;
+// BEATO End
+
 /*
 ===============================================================================
 

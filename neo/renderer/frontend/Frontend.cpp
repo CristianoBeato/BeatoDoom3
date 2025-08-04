@@ -614,7 +614,7 @@ void crFrontend::RenderView( viewDefptr_t parms )
 	}
 
 	// add the rendering commands for this viewDef
-	tr.drawQueue->AddDrawViewCmd( parms );
+	tr.drawCommand->AddDrawViewCmd( parms );
 
 	// restore view in case we are a subview
 	viewDef = oldView;

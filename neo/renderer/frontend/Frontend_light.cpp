@@ -1017,8 +1017,12 @@ void crFrontend::AddLightSurfaces( void )
 			vertexCache.Touch( tri->shadowCache );
 
 			if ( !tri->indexCache )
-				tri->indexCache = vertexCache.AllocElement( tri->numIndexes * sizeof( tri->indexes[0] ), tri->indexes );
-			
+			{
+				size_t indexCache = tri->numIndexes * sizeof( glIndex_t );
+				tri->indexCache = vertexCache.Alloc( indexCache, CACHE_TYPE_INDEX_STATIC );
+				tri->indexCache->Upload( tri->indexes, indexCache ); 
+			}
+
 			if ( tri->indexCache ) 
 				vertexCache.Touch( tri->indexCache );
 
@@ -1417,9 +1421,13 @@ void crFrontend::AddAmbientDrawsurfs( viewEntity_t *vEntity )
 			// touch it so it won't get purged
 			vertexCache.Touch( tri->ambientCache );
 
-			if ( !tri->indexCache ) 
-				tri->indexCache = vertexCache.AllocElement( tri->numIndexes * sizeof( tri->indexes[0] ), tri->indexes );
-
+			if ( !tri->indexCache )
+			{ 
+				size_t indexCacheSize = tri->numIndexes * sizeof( glIndex_t );
+				tri->indexCache = vertexCache.Alloc( indexCacheSize, CACHE_TYPE_INDEX_STATIC );
+				tri->indexCache->Upload( tri->indexes, indexCacheSize );
+			}
+			
 			if ( tri->indexCache ) 
 				vertexCache.Touch( tri->indexCache );
 
