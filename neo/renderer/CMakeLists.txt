@@ -23,55 +23,6 @@ SET( RENDERER_SOURCES
 	
 source_group("" FILES ${RENDERER_SOURCES} )
 
-#
-# Backend OpenGL
-#
-SET ( RENDERER_BACKEND_OPENGL_SOURCES 
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/opengl/glBuffer.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/opengl/glBuffer.h
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/opengl/glCommandQueue.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/opengl/glCommandQueue.h
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/opengl/glContext.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/opengl/glContext.h
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/opengl/glFence.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/opengl/glFence.h
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/opengl/glFramebuffer.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/opengl/glFramebuffer.h
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/opengl/glPipeline.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/opengl/glPipeline.h
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/opengl/glShaderStorage.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/opengl/glShaderStorage.h
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/opengl/glTexture.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/opengl/glTexture.h
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/opengl/qgl.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/opengl/qgl.h
-	)
-
-#
-# Backend Vulkan
-#	
-SET ( RENDERER_BACKEND_VULKAN_SOURCES
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/vulkan/vkBuffer.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/vulkan/vkBuffer.h
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/vulkan/vkCommandQueue.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/vulkan/vkCommandQueue.h
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/vulkan/vkContext.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/vulkan/vkContext.h
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/vulkan/vkFence.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/vulkan/vkFence.h
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/vulkan/vkFramebuffer.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/vulkan/vkFramebuffer.h
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/vulkan/vkPipeline.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/vulkan/vkPipeline.h
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/vulkan/vkShaderStorage.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/vulkan/vkShaderStorage.h
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/vulkan/vkSwapChain.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/vulkan/vkSwapChain.h
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/vulkan/vkTexture.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/vulkan/vkTexture.h
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/vulkan/qvk.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/backend/vulkan/qvk.h
-	)
 ##
 ## Backend
 ## 
