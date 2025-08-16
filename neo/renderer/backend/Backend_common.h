@@ -24,30 +24,10 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #ifndef __BACKEND_COMMON_H__
 #define __BACKEND_COMMON_H__
 
+#include <crvkCore.hpp>
 #include "Backend_apiwrapper.h"
+#include "ShaderStorage.hpp"
 
-#if CR_USE_VULKAN
-#include "vulkan/qvk.h"
-#include "vulkan/vkFence.h"
-#include "vulkan/vkBuffer.h"
-#include "vulkan/vkTexture.h"
-#include "vulkan/vkFramebuffer.h"
-#include "vulkan/vkShaderStorage.h"
-#include "vulkan/vkPipeline.h"
-#include "vulkan/vkCommandQueue.h"
-#include "vulkan/vkSwapChain.h"
-#endif // CR_USE_VULKAN
-
-#if CR_USE_OPENGL
-#include "opengl/qgl.h"
-#include "opengl/glFence.h"
-#include "opengl/glBuffer.h"
-#include "opengl/glTexture.h"
-#include "opengl/glFramebuffer.h"
-#include "opengl/glShaderStorage.h"
-#include "opengl/glPipeline.h"
-#include "opengl/glCommandQueue.h"
-#endif // CR_USE_OPENGL
 
 typedef struct backEndCounters_s
 {
@@ -132,31 +112,38 @@ protected:
     crAutoPointer<crShaderStorage>  GetShaderStorage( void );
 
 private:
-    bool				            currentRenderCopied;	    // true if any material has already referenced _currentRender
-    uint32_t                        currentTextureUnit;
-    uint32_t                        frameCount;		            // used to track all images used in a frame
-    backEndCounters_t	            pc;
-    int					            c_copyFrameBuffer;
-//	int					            depthFunc;			        // GLS_DEPTHFUNC_EQUAL, or GLS_DEPTHFUNC_LESS for translucent
-    float				            lightScale;			        // Every light color calaculation will be multiplied by this,
-                                                                // which will guarantee that the result is < tr.backEndRendererMaxLight
-                                                                // A card with high dynamic range will have this set to 1.0
-    float				            overBright;			        // The amount that all light interactions must be multiplied by
-                                                                // with post processing to get the desired total light level.
-                                                                // A high dynamic range card will have this set to 1.0.
-    float				            lightTextureMatrix[16];	    // only if lightStage->texture.hasMatrix
-	float				            lightColor[4];		        // evaluation of current light's color stage
-	idScreenRect		            currentScissor;             // for scissor clipping, local inside renderView viewport
-	const viewEntity_t*             currentSpace;		        // for detecting when a matrix must change
-	crAutoPointer<viewLight_t>      viewLight;                  //
-	viewDefptr_t                    viewDef;                    //
-    crAutoPointer<crSwapChain>      m_swapChain;                //
-    crAutoPointer<crShaderStorage>  m_uniforms;                 //
-    crAutoPointer<crFramebuffer>    m_currentFrameBuffer;       //
-    crAutoPointer<crPipeline>       m_currentPipeline;          //
-    crAutoPointer<crFramebuffer>    m_framebuffers[FRAMEBUFFER_COUNT];
-    crAutoPointer<crPipeline>       m_pipelines[PIPE_COUNT];      // the render pipelines 
+    bool				                currentRenderCopied;	    // true if any material has already referenced _currentRender
+    uint32_t                            currentTextureUnit;
+    uint32_t                            frameCount;		            // used to track all images used in a frame
+    backEndCounters_t	                pc;
+    int					                c_copyFrameBuffer;
+//	int					                depthFunc;			        // GLS_DEPTHFUNC_EQUAL, or GLS_DEPTHFUNC_LESS for translucent
+    float				                lightScale;			        // Every light color calaculation will be multiplied by this,
+                                                                    // which will guarantee that the result is < tr.backEndRendererMaxLight
+                                                                    // A card with high dynamic range will have this set to 1.0
+    float				                overBright;			        // The amount that all light interactions must be multiplied by
+                                                                    // with post processing to get the desired total light level.
+                                                                    // A high dynamic range card will have this set to 1.0.
+    float				                lightTextureMatrix[16];	    // only if lightStage->texture.hasMatrix
+	float				                lightColor[4];		        // evaluation of current light's color stage
+	idScreenRect		                currentScissor;             // for scissor clipping, local inside renderView viewport
+	const viewEntity_t*                 currentSpace;		        // for detecting when a matrix must change
+	crAutoPointer<viewLight_t>          viewLight;                  //
+	viewDefptr_t                        viewDef;                    //
+    crAutoPointer<crvkSwapchain>        m_swapChain;                // swap chain
+    crAutoPointer<crShaderStorage>      m_uniforms;                 // uniform manager 
 
+    /// uniform blocks 
+    crAutoPointer<crUniformBlock>       m_vertexUniformBlock;       // store the vertex uniform block
+    crAutoPointer<crUniformBlock>       m_fragmentUniformBlock;     // store the fragment uniform block
+    crAutoPointer<crUniformBlock>       m_samplersUniformBlock;     // store the samplers binding block 
+    crAutoPointer<crUniformBlock>       m_lightUniformBlock;        // store the light uniform block
+    
+    // render commands 
+    crAutoPointer<crvkCommandBuffer>    m_currentCommandBuffer;
+    crAutoPointer<crvkCommandBuffer>    m_depthPassCommandBuffer;   // store the depth pass commands  
+    crAutoPointer<crvkCommandBuffer>    m_interactionCommandBuffer; // store the light interation commands
+        
     void    CreatePipelines( void );
     void    DestroyPipelines( void );
     void    CreateFrameBuffers( void );
@@ -203,12 +190,17 @@ private:
     void        BeginDrawingView (void);
     void        RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs, std::function<void( const drawSurf_t *)> triFunc_ );
     void        CreateSingleDrawInteractions( const drawSurf_t *surf,  std::function<void(const drawInteraction_t *)> DrawInteraction );
-  
+    static void SubmittInteraction( drawInteraction_t *din, std::function<void(const drawInteraction_t *)> DrawInteraction );
+
     // Backend_draw.cpp
     void        BakeTextureMatrixIntoTexgen( idPlane lightProject[3], const float *textureMatrix ); 
     void        PrepareStageTexturing( const shaderStage_t *pStage,  const drawSurf_t *surf, idDrawVert *ac );
     void        FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *surf, idDrawVert *ac );
-    
+    void        SetProgramEnvironment( void );
+    void        SetProgramEnvironmentSpace( void );
+    void        RenderShaderPasses( const drawSurf_t *surf );
+    void        SetVertexColorParms( stageVertexColor_t svc );
+
     // Backend_draw_interactions.cpp
     void        DrawInteraction( const drawInteraction_t *din );
     void        CreateDrawInteractions( const drawSurf_t *surf );
@@ -218,6 +210,7 @@ private:
     void                            SetBuffer( const void *data );
     void                            SwapBuffers( const void *data );
     void                            CopyRender( const void *data ); 
+    void                            SetCull( const cullType_t culling );
 };
 
 #endif //!__BACKEND_COMMON_H__

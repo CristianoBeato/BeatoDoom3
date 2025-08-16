@@ -321,14 +321,16 @@ public:
 	class idGuiModel *		guiModel;
 	class idGuiModel *		demoGuiModel;
 
-	unsigned short			gammaTable[256];	// brightness / gamma modify this
+	uint16_t				gammaTable[256];	// brightness / gamma modify this
 
 // BEATO Begin: 
 	crAutoPointer<crContext>			m_renderContext;
-	crAutoPointer<crDrawFrameData>		frameData;		// alloc frame temporary data 
-	crAutoPointer<crDrawCommandQueue>	drawCommand;	// draw queue interface
-	crAutoPointer<crFrontend>			frontend;		// frontend interface
-	crAutoPointer<crBackend>			backend;		// backend interface
+	crAutoPointer<crDrawFrameData>		frameData;			// alloc frame temporary data 
+	crAutoPointer<crDrawCommandQueue>	drawCommand;		// draw queue interface
+	crAutoPointer<crFrontend>			frontend;			// frontend interface
+	crAutoPointer<crBackend>			backend;			// backend interface
+	crAutoPointer<crvkContext>			m_renderContext;
+	crvkDevice*							m_renderDevice;
 // BEATO End
 };
 
