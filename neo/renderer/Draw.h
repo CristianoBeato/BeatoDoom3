@@ -65,7 +65,7 @@ typedef struct
 {
 	renderCommand_t		commandId, *next;
 	uint32_t			buffer;
-	uint32_t			frameCount;
+	uint64_t			frameCount;
 } setBufferCommand_t;
 
 typedef struct 

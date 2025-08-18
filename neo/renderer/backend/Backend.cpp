@@ -56,6 +56,7 @@ void RB_SetDefaultGLState( void )
 
 	RB_LogComment( "--- R_SetDefaultGLState ---\n" );
 
+#if 0
 	glClearDepth( 1.0f );
 
 	//
@@ -107,6 +108,7 @@ void RB_SetDefaultGLState( void )
 			glDisable( GL_TEXTURE_CUBE_MAP );
 		}
 	}
+#endif
 }
 
 
@@ -117,6 +119,7 @@ RB_LogComment
 */
 void RB_LogComment( const char *comment, ... ) 
 {
+#if 0 //todo: input for std::stream 
    va_list marker;
 
 	if ( !tr.logFile ) 
@@ -128,6 +131,7 @@ void RB_LogComment( const char *comment, ... )
 	va_start( marker, comment );
 	vfprintf( tr.logFile, comment, marker );
 	va_end( marker );
+#endif
 }
 
 //=============================================================================
@@ -138,34 +142,102 @@ crBackend::SetBuffer
 =============
 */
 void crBackend::SetBuffer( const void *data ) 
-{
+{ 
+	VkResult result = VK_SUCCESS;
+    
 	// see which draw buffer we want to render the frame to
 	const setBufferCommand_t	*cmd = static_cast<const setBufferCommand_t*>( data );
 
 	frameCount = cmd->frameCount;
+	frameID = frameCount % SMP_FRAMES; 
 
-	// swap uniform buffer, and swap chain and prepare for a new frame
-	m_uniforms->Begin( frameCount ); 
-	m_swapChain->Begin( frameCount );
+	/// BEATO Begin:
+
+	// get the current output image
+	m_swapChain->AcquireImage();
+
+	// Wait for previous render frame to finish ( replaced the fence )
+    VkSemaphoreWaitInfo waitRenderFinis{};
+    waitRenderFinis.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO,
+    waitRenderFinis.semaphoreCount = 1,
+    waitRenderFinis.pSemaphores = &m_renderFinished;
+    waitRenderFinis.pValues = &frameCount;
+    result = vkWaitSemaphores( m_renderDevice->Device(), &waitRenderFinis, UINT64_MAX );
+	if ( result != VK_SUCCESS && result == VK_TIMEOUT ) 
+	{
+		// TODO:
+	}
+
+	// reset last command buffer state
+	result = vkResetCommandBuffer( m_commandBuffers[frameID], VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT );
+    if( result != VK_SUCCESS )
+	{
+		common->Warning( "crBackend::SetBuffer::vkResetCommandBuffer: failed" );
+	}
+    
+	// begin register frame execution commands
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    result = vkBeginCommandBuffer( m_commandBuffers[frameID], &beginInfo );
+	if( result != VK_SUCCESS )
+	{
+		common->Warning( "crBackend::SetBuffer::vkBeginCommandBuffer: failed" );
+	}
 
 	// clear screen for debugging
 	// automatically enable this with several other debug tools
 	// that might leave unrendered portions of the screen
+	VkClearColorValue clearColor{};
 	if ( r_clear.GetFloat() || idStr::Length( r_clear.GetString() ) != 1 || r_lockSurfaces.GetBool() || r_singleArea.GetBool() || r_showOverDraw.GetBool() ) 
 	{
 		float c[3];
-		if ( sscanf( r_clear.GetString(), "%f %f %f", &c[0], &c[1], &c[2] ) == 3 ) 
-			m_currentPipeline->ClearColor( c[0], c[1], c[2], 1 );
+		if ( sscanf( r_clear.GetString(), "%f %f %f", &c[0], &c[1], &c[2] ) == 3 )
+		{
+			clearColor.float32[0] = c[0];
+			clearColor.float32[1] = c[1];
+			clearColor.float32[2] = c[2];
+			clearColor.float32[3] = 1.0f;
+		} 
 		else if ( r_clear.GetInteger() == 2 ) 
-			m_currentPipeline->ClearColor( 0.0f, 0.0f,  0.0f, 1.0f );
-		else if ( r_showOverDraw.GetBool() ) 
-			m_currentPipeline->ClearColor( 1.0f, 1.0f, 1.0f, 1.0f );
-		else 
-			m_currentPipeline->ClearColor( 0.4f, 0.0f, 0.25f, 1.0f );
-		
-		// clear current frame buffer 
-		m_currentPipeline->Clear();
+		{
+			clearColor.float32[0] = 0.0f;
+			clearColor.float32[1] = 0.0f;
+			clearColor.float32[2] = 0.0f;
+			clearColor.float32[3] = 1.0f;
+		}
+		else if ( r_showOverDraw.GetBool() )
+		{
+			clearColor.float32[0] = 1.0f;
+			clearColor.float32[1] = 1.0f;
+			clearColor.float32[2] = 1.0f;
+			clearColor.float32[3] = 1.0f;			
+		} 
+		else
+		{
+			clearColor.float32[0] = 0.4f;
+			clearColor.float32[1] = 1.0f;
+			clearColor.float32[2] = 0.25f;
+			clearColor.float32[3] = 1.0f;			
+		}
 	}
+
+	// clear color attachament
+    VkRenderingAttachmentInfo colorAttachment{};
+    colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+    colorAttachment.imageView = m_swapChain->CurrentImageView();
+    colorAttachment.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR;
+    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    colorAttachment.clearValue.color = clearColor;
+
+    VkRenderingInfo renderingInfo{};
+    renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
+    renderingInfo.renderArea = { {0, 0}, m_swapChain->Extent() };
+    renderingInfo.layerCount = 1;
+    renderingInfo.colorAttachmentCount = 1;
+    renderingInfo.pColorAttachments = &colorAttachment;
+    vkCmdBeginRendering( m_commandBuffers[frameID], &renderingInfo );
 }
 
 #if 0
@@ -238,21 +310,61 @@ crBackend::SwapBuffers
 */
 void crBackend::SwapBuffers( const void *data ) 
 {
+	VkResult result = VK_SUCCESS;
+	crvkDeviceQueue* graphicQueue = m_renderDevice->GetQueue( CRVK_DEVICE_QUEUE_GRAPHICS );
+
 #if 0 // TODO:
 	// texture swapping test
 	if ( r_showImages.GetInteger() != 0 ) 
 		RB_ShowImages();
 #endif 
 
+	/// End rendenring to swapchain image
+	vkCmdEndRendering( m_commandBuffers[frameID] );
+
+	/// finish command buffer recording
+	vkEndCommandBuffer( m_commandBuffers[frameID] );
+
+	/// submit current frame command buffer 
+	VkCommandBufferSubmitInfo commandBufferSubmit{};
+	commandBufferSubmit.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
+	commandBufferSubmit.pNext = nullptr;
+	commandBufferSubmit.commandBuffer = m_commandBuffers[frameID];
+	commandBufferSubmit.deviceMask = 0;
+
+	/// wait for current swap chain image be available 
+	VkSemaphoreSubmitInfo wait{};
+	wait.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+	wait.pNext = nullptr;
+	wait.semaphore = m_swapChain->CurrentSemaphore();
+	wait.value = 0;
+    wait.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+	wait.deviceIndex = 0;
+
+	/// signal that the current command buffer is done
+	VkSemaphoreSubmitInfo signal{};
+	signal.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+	signal.pNext = nullptr;
+	signal.semaphore = m_renderFinished;
+	signal.value = frameCount + SMP_FRAMES; // frame N + 3 ( singal that our buffer are ready again at next 3 framess )
+	signal.stageMask = /* VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT */ VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
+	signal.deviceIndex = 0;
+
+	// submit command buffer 
+	graphicQueue->Submit( &wait, 1, &commandBufferSubmit, 1, &signal, 1, nullptr );
+
 	// force a sync if requested
 	if ( r_finish.GetBool() )
-		m_swapChain->Flush();
+		graphicQueue->WaitIdle();
+		
+	// present to window the current image
+	m_swapChain->PresentImage( nullptr, 0 );
 
     RB_LogComment( "***************** RB_SwapBuffers *****************\n\n\n" );
 
 	// don't flip if drawing to front buffer
-	if ( !r_frontBuffer.GetBool() )
-		m_swapChain->SwapBuffers(); 
+	// if ( !r_frontBuffer.GetBool() )
+	// 	m_swapChain->SwapBuffers(); 
 }
 
 /*
@@ -271,8 +383,108 @@ void crBackend::CopyRender( const void *data )
 
     RB_LogComment( "***************** RB_CopyRender *****************\n" );
 
+#if 0
+#if 0
 	m_currentFrameBuffer->CopyToImage( &cmd->image->GetTextureHandler(), cmd->x, cmd->y, cmd->imageWidth, cmd->imageHeight, 0 );
+#else
+	VkImage srcImage = nullptr; //TODO:
+
+	// source image state
+	VkImageSubresourceRange subresourceRangeSrc{};
+	subresourceRangeSrc.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	subresourceRangeSrc.baseMipLevel = 0;
+	subresourceRangeSrc.levelCount = 1;
+	subresourceRangeSrc.baseArrayLayer = 0;
+	subresourceRangeSrc.layerCount = 1;
+	
+	VkImageMemoryBarrier2 barrierSrc{};
+	barrierSrc.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+	barrierSrc.pNext = nullptr;
+	barrierSrc.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+	barrierSrc.srcAccessMask = VK_ACCESS_2_MEMORY_READ_BIT;
+	barrierSrc.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+	barrierSrc.dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT;
+	barrierSrc.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED; 
+	barrierSrc.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+	barrierSrc.srcQueueFamilyIndex = 0;
+	barrierSrc.dstQueueFamilyIndex = 0;
+	barrierSrc.image = srcImage;
+	barrierSrc.subresourceRange = subresourceRangeSrc;
+
+	// destine image 
+	VkImageSubresourceRange subresourceRangeDst{};
+	subresourceRangeSrc.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	subresourceRangeSrc.baseMipLevel = 0;
+	subresourceRangeSrc.levelCount = 1;
+	subresourceRangeSrc.baseArrayLayer = 0;
+	subresourceRangeSrc.layerCount = 1;
+
+	VkImageMemoryBarrier2 barrierDst{};
+	barrierSrc.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+	barrierDst.pNext = nullptr;
+	barrierDst.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+	barrierDst.srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT;
+	barrierDst.dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT;
+	barrierDst.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+	barrierDst.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	barrierDst.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	barrierDst.srcQueueFamilyIndex = 0;
+	barrierDst.dstQueueFamilyIndex = 0;
+	barrierDst.image = ;
+	barrierDst.subresourceRange = ;
+
+
+	// change the image state
+	VkDependencyInfo barrierDependency{};
+	barrierDependency.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+	barrierDependency.pNext = nullptr;
+	barrierDependency.dependencyFlags = ;
+	barrierDependency.memoryBarrierCount = ;
+	barrierDependency.pMemoryBarriers = ;
+	barrierDependency.bufferMemoryBarrierCount = ;
+	barrierDependency.pBufferMemoryBarriers = ;
+	barrierDependency.imageMemoryBarrierCount = ;
+	barrierDependency.pImageMemoryBarriers = ;
+
+	vkCmdPipelineBarrier2( m_commandBuffers[frameID], &barrierDependency );
+
+	VkCopyImageInfo2 copyImageInfo{};
+	copyImageInfo.sType = VK_STRUCTURE_TYPE_COPY_IMAGE_INFO_2;
+	copyImageInfo.pNext = nullptr;
+	copyImageInfo.srcImage ;
+	copyImageInfo.srcImageLayout ;
+	copyImageInfo.dstImage ;
+	copyImageInfo.dstImageLayout ;
+	copyImageInfo.regionCount ;
+	copyImageInfo.pRegions ;
+	
+	auto dstImage = cmd->image->GetTextureHandler();
+	vkCmdCopyImage2( m_commandBuffers[frameID], &copyImageInfo );
+#endif
+#endif 
 	c_copyFrameBuffer++;
+}
+
+void crBackend::SetCull( const cullType_t culling )
+{
+	VkCullModeFlags cullMode; 
+	switch ( culling )
+	{
+		case CT_FRONT_SIDED:
+			cullMode = VK_CULL_MODE_FRONT_BIT;
+			break;
+		case CT_BACK_SIDED:
+			cullMode = VK_CULL_MODE_BACK_BIT;
+			break;
+		case CT_TWO_SIDED:
+			cullMode = VK_CULL_MODE_FRONT_AND_BACK;
+			break;	
+	default: // TODO: defalt state 
+		break;
+	}
+
+	// change the face culling 
+	vkCmdSetCullMode( m_commandBuffers[frameID], cullMode );
 }
 
 /*
@@ -307,7 +519,7 @@ void crBackend::ExecuteBackEndCommands( const emptyCommand_t *cmds )
 	backEndStartTime = Sys_Milliseconds();
 
 	// needed for editor rendering
-	Pipeline( PIPE_DEFAULT );
+	//Pipeline( PIPE_DEFAULT );
 
 	// upload any image loads that have completed
 	globalImages->CompleteBackgroundImageLoads();
@@ -349,38 +561,44 @@ void crBackend::ExecuteBackEndCommands( const emptyCommand_t *cmds )
 
 	if ( r_debugRenderToTexture.GetInteger() == 1 ) 
 	{
-		common->Printf( "3d: %i, 2d: %i, SetBuf: %i, SwpBuf: %i, CpyRenders: %i, CpyFrameBuf: %i\n", c_draw3d, c_draw2d, c_setBuffers, c_swapBuffers, c_copyRenders, backEnd.c_copyFrameBuffer );
+		common->Printf( "3d: %i, 2d: %i, SetBuf: %i, SwpBuf: %i, CpyRenders: %i, CpyFrameBuf: %i\n", c_draw3d, c_draw2d, c_setBuffers, c_swapBuffers, c_copyRenders, c_copyFrameBuffer );
 		c_copyFrameBuffer = 0;
 	}
 }
 
-void crBackend::Pipeline( const uint32_t pipelineID )
-{
-	if ( pipelineID > PIPE_INVALID && pipelineID < PIPE_COUNT )
-		m_currentPipeline = m_pipelines[pipelineID];
-	else
-		m_currentPipeline = nullptr;
-}
-
 void crBackend::Framebuffer( const uint32_t framebufferID )
 {
-	if ( framebufferID > FRAMEBUFFER_INVALID && framebufferID < FRAMEBUFFER_COUNT )
-		m_currentFrameBuffer = m_framebuffers[framebufferID];
-	else
-		m_currentFrameBuffer = nullptr;
+	// DO nothin ( right now )
 }
 
 void crBackend::Viewport( const int x, const int y, const int width, const int height )
 {
-	m_currentPipeline->SetViewport( x, y, width, height );
+	VkViewport viewport{};
+	viewport.x = x;
+	viewport.y = y;
+	viewport.width = width;
+	viewport.height = height;
+	viewport.minDepth = -1.0f;
+	viewport.maxDepth = 1.0f;
+	vkCmdSetViewport( m_commandBuffers[frameID], 0, 1, &viewport );
 }
 
-void crBackend::Scissor( const int x, const int y, const int width, const int height )
+void crBackend::Scissor( const idScreenRect &in_scissor )
 {
+	if( currentScissor.Equals( in_scissor ) )
+		return;
+
+	currentScissor = in_scissor;
+
 #if CR_USE_CLIP_AS_SCISSOR
 	float scissor[4] = { static_cast<float>(x), static_cast<float>(y), static_cast<float>(width), static_cast<float>(height) };
 	m_uniforms->SetUniform( scissor, VERTEX_UNIFORM_LOCATION_CLIP_BOUDS );
 #else
-	m_currentPipeline->SetScissor( x, y, width, height );
+	VkRect2D scissor{};
+	scissor.offset.x = viewDef->viewport.x1 + currentScissor.x1;
+	scissor.offset.y = viewDef->viewport.y1 + currentScissor.y1;
+	scissor.extent.width = currentScissor.x2 + 1 - currentScissor.x1;
+	scissor.extent.height = currentScissor.y2 + 1 - currentScissor.y1;
+	vkCmdSetScissor( m_commandBuffers[frameID], 0, 1, &scissor );
 #endif
 }
