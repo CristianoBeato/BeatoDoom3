@@ -207,7 +207,8 @@ typedef struct
 	idImage *			fragmentProgramImages[MAX_FRAGMENT_IMAGES];
 } newShaderStage_t;
 
-typedef struct {
+typedef struct 
+{
 	int					conditionRegister;	// if registers[conditionRegister] == 0, skip stage
 	stageLighting_t		lighting;			// determines which passes interact with lights
 	int					drawStateBits;
@@ -223,7 +224,7 @@ typedef struct {
 	newShaderStage_t	*newStage;			// vertex / fragment program based stage
 
 // BEATO Begin: crvkLib Vulkan implementation, material pipeline
-	crvkPipeline*		m_pipe;
+	crAutoPointer<crvkPipeline>	pipeline;
 // BEATO End
 } shaderStage_t;
 

@@ -100,8 +100,9 @@ public:
 
     //
     void                            SelectTexture( const uint32_t unit ) { currentTextureUnit = unit; }
-    uint32_t                        SwapChainImages( void ) const { return m_swapChain->GetImageCount(); }
+    uint32_t                        SwapChainImages( void ) const { return m_swapChain->ImageCount(); }
     uint32_t                        GetFrameCount( void ) const { return frameCount; }
+    crAutoPointer<crvkDevice>       GetRenderDevice( void ) const { return m_renderDevice; }
 
     viewDefptr_t                    GetViewDef( void ) const { return viewDef; };
     backEndCounters_t               &GetPerformanceCounters( void ) { return pc; }
@@ -109,12 +110,12 @@ public:
 protected:
     friend class idImage;
     uint32_t                        GetCurrentTextureUnit( void ) { return currentTextureUnit; }
-    crAutoPointer<crShaderStorage>  GetShaderStorage( void );
-
+    
 private:
     bool				                currentRenderCopied;	    // true if any material has already referenced _currentRender
     uint32_t                            currentTextureUnit;
-    uint32_t                            frameCount;		            // used to track all images used in a frame
+    uint64_t                            frameCount;		            // used to track all images used in a frame
+    uint32_t                            frameID;
     backEndCounters_t	                pc;
     int					                c_copyFrameBuffer;
 //	int					                depthFunc;			        // GLS_DEPTHFUNC_EQUAL, or GLS_DEPTHFUNC_LESS for translucent
@@ -130,29 +131,31 @@ private:
 	const viewEntity_t*                 currentSpace;		        // for detecting when a matrix must change
 	crAutoPointer<viewLight_t>          viewLight;                  //
 	viewDefptr_t                        viewDef;                    //
+
+    crAutoPointer<crvkDevice>           m_renderDevice;
     crAutoPointer<crvkSwapchain>        m_swapChain;                // swap chain
-    crAutoPointer<crShaderStorage>      m_uniforms;                 // uniform manager 
 
     /// uniform blocks 
-    crAutoPointer<crUniformBlock>       m_vertexUniformBlock;       // store the vertex uniform block
-    crAutoPointer<crUniformBlock>       m_fragmentUniformBlock;     // store the fragment uniform block
-    crAutoPointer<crUniformBlock>       m_samplersUniformBlock;     // store the samplers binding block 
-    crAutoPointer<crUniformBlock>       m_lightUniformBlock;        // store the light uniform block
+    crAutoPointer<crUniformBlock>               m_vertexUniformBlock;       // store the vertex uniform block
+    crAutoPointer<crUniformBlock>               m_fragmentUniformBlock;     // store the fragment uniform block
+    crAutoPointer<crUniformBlock>               m_samplersUniformBlock;     // store the samplers binding block 
+    crAutoPointer<crUniformBlock>               m_lightUniformBlock;        // store the light uniform block
     
-    // render commands 
-    crAutoPointer<crvkCommandBuffer>    m_currentCommandBuffer;
-    crAutoPointer<crvkCommandBuffer>    m_depthPassCommandBuffer;   // store the depth pass commands  
-    crAutoPointer<crvkCommandBuffer>    m_interactionCommandBuffer; // store the light interation commands
-        
-    void    CreatePipelines( void );
-    void    DestroyPipelines( void );
+    // render commands
+    VkSemaphore                                 m_renderFinished;
+    idStaticList<VkCommandBuffer, SMP_FRAMES>   m_commandBuffers;
+    crAutoPointer<crvkPipeline>                 m_currentPipeline;
+
+    // these pipelines are used for post passes, that don't use material/shader pipelines
+    crAutoPointer<crvkGraphicPipeline>          m_blendLightPipeline;
+    crAutoPointer<crvkGraphicPipeline>          m_fogLightPipeline;
+ 
     void    CreateFrameBuffers( void );
     void    DestroyFrameBuffers( void );
 
-    void    Pipeline( const uint32_t pipelineID );
     void    Framebuffer( const uint32_t framebufferID );
     void    Viewport( const int x, const int y, const int width, const int height );
-    void    Scissor( const int x, const int y, const int width, const int height );
+    void    Scissor( const idScreenRect &in_scissor );
 
     //  Backend_render.cpp
     void    DrawView( const void *data );
@@ -180,7 +183,7 @@ private:
     void        DrawShadowElementsWithCounters( const srfTriangles_t *tri, int numIndexes );
     void        EnterWeaponDepthHack( void );
     void        EnterModelDepthHack( float depth );
-    void        RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs, void (*triFunc_)( const drawSurf_t *) );
+    void        RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs, std::function<void( const drawSurf_t *)> triFunc_ );
     void        GetShaderTextureMatrix( const float *shaderRegisters, const textureStage_t *texture, float matrix[16] );
     void        LoadShaderTextureMatrix( const float *shaderRegisters, const textureStage_t *texture );
     void        BindVariableStageImage( const textureStage_t *texture, const float *shaderRegisters );
@@ -194,12 +197,20 @@ private:
 
     // Backend_draw.cpp
     void        BakeTextureMatrixIntoTexgen( idPlane lightProject[3], const float *textureMatrix ); 
-    void        PrepareStageTexturing( const shaderStage_t *pStage,  const drawSurf_t *surf, idDrawVert *ac );
-    void        FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *surf, idDrawVert *ac );
+    void        PrepareStageTexturing( const shaderStage_t *pStage,  const drawSurf_t *surf );
+    void        FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *surf );
     void        SetProgramEnvironment( void );
     void        SetProgramEnvironmentSpace( void );
+    int         STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ); 
     void        RenderShaderPasses( const drawSurf_t *surf );
     void        SetVertexColorParms( stageVertexColor_t svc );
+    void        SetPipeline( const crAutoPointer<crvkPipeline> m_pipeline );
+    void        T_BlendLight( const drawSurf_t *surf );
+    void        BlendLight( const drawSurf_t *drawSurfs,  const drawSurf_t *drawSurfs2 );
+    void        T_BasicFog( const drawSurf_t *surf ); 
+    void        FogPass( const drawSurf_t *drawSurfs,  const drawSurf_t *drawSurfs2 );
+    void        STD_FogAllLights( void );
+    void        STD_LightScale( void );
 
     // Backend_draw_interactions.cpp
     void        DrawInteraction( const drawInteraction_t *din );

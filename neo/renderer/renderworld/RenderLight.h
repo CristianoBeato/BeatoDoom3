@@ -41,7 +41,7 @@ typedef struct srfTriangles_s srfTriangles_t;
 // but should never exist if its volume does not intersect the view frustum
 typedef struct viewLight_s 
 {
-	struct viewLight_s *	next;
+	crAutoPointer<viewLight_s>	next;
 
 	// back end should NOT reference the lightDef, because it can change when running SMP
 	idRenderLightLocal *	lightDef;

@@ -48,9 +48,6 @@ This should never happen if the vertex cache is operating properly.
 */
 void crBackend::DrawElementsImmediate( const srfTriangles_t *tri ) 
 {
-	// submit uniforms blocks
-	m_uniforms->Submit();
-
 	pc.c_drawElements++;
 	pc.c_drawIndexes += tri->numIndexes;
 	pc.c_drawVertexes += tri->numVerts;
@@ -64,12 +61,11 @@ void crBackend::DrawElementsImmediate( const srfTriangles_t *tri )
 			pc.c_drawRefVertexes += tri->numVerts;
 	}
 
-	// send uniforms to buffer
-	m_uniforms->Submit();
+	uint32_t numTriangles = r_singleTriangle.GetBool() ? 3 : tri->numIndexes;
+	uint32_t firstIndex = tri->indexCache->Offset() / sizeof( uint16_t );
+	int32_t vertexOffset = tri->ambientCache->Offset() / sizeof( idDrawVert );
+	vkCmdDrawIndexed( m_commandBuffers[frameID], numTriangles, 1, firstIndex, vertexOffset, 1 );
 
-	// TODO: draw on this thread ? of flush commands 
-	m_graphicQueue->SubmitDrawCommand( r_singleTriangle.GetBool() ? 3 : tri->numIndexes, vertexCache.Position( tri->indexCache ) );
-	//glDrawElementsBaseVertex( GL_TRIANGLES, tri->numIndexes, GL_INDEX_TYPE, (int *)vertexCache.Position( tri->indexCache ), (GLint *)vertexCache.Position( tri->ambientCache ) );
 }
 
 /*
@@ -92,10 +88,11 @@ void crBackend::DrawElementsWithCounters( const srfTriangles_t *tri )
 			pc.c_drawRefVertexes += tri->numVerts;
 	}
 
-	// Submit uniforms to draw
-	m_uniforms->Submit();
+	uint32_t numTriangles = r_singleTriangle.GetBool() ? 3 : tri->numIndexes;
+	uint32_t firstIndex = tri->indexCache->Offset() / sizeof( uint16_t );
+	int32_t vertexOffset = tri->ambientCache->Offset() / sizeof( idDrawVert );
+	vkCmdDrawIndexed( m_commandBuffers[frameID], numTriangles, 1, firstIndex, vertexOffset, 1 );
 
-	m_graphicQueue->SubmitDrawCommand( r_singleTriangle.GetBool() ? 3 : tri->numIndexes, vertexCache.Position( tri->indexCache ) );
 	pc.c_vboIndexes += tri->numIndexes;
 }
 
@@ -112,11 +109,13 @@ void crBackend::DrawShadowElementsWithCounters( const srfTriangles_t *tri, int n
 	pc.c_shadowIndexes += numIndexes;
 	pc.c_shadowVertexes += tri->numVerts;
 
-	// Submit uniforms 
-	m_uniforms->Submit();
-
 	assert( tri->indexCache );
-	m_graphicQueue->SubmitDrawCommand( r_singleTriangle.GetBool() ? 3 : numIndexes, vertexCache.Position( tri->indexCache ) );
+
+	uint32_t numTriangles = r_singleTriangle.GetBool() ? 3 : tri->numIndexes;
+	uint32_t firstIndex = tri->indexCache->Offset() / sizeof( uint16_t );
+	int32_t vertexOffset = tri->ambientCache->Offset() / sizeof( idDrawVert );
+	vkCmdDrawIndexed( m_commandBuffers[frameID], numTriangles, 1, firstIndex, vertexOffset, 1 );
+
 	pc.c_vboIndexes += numIndexes;
 }
 
@@ -145,15 +144,11 @@ crBackend::EnterWeaponDepthHack
 */
 void crBackend::EnterWeaponDepthHack( void ) 
 {
-	glDepthRange( 0, 0.5 );
-
 	float	matrix[16];
-
+	vkCmdSetDepthBounds( m_commandBuffers[frameID], 0.0f, 0.5f ); // glDepthRange( 0, 0.5 );
 	memcpy( matrix, &viewDef->projectionMatrix, sizeof( matrix ) );
-
 	matrix[14] *= 0.25;
-
-	m_uniforms->SetUniform( matrix, VERTEX_UNIFORM_LOCATION_PROJECTION_MATRIX );
+	m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_PROJMATRIX_X, 4, matrix );
 }
 
 /*
@@ -163,15 +158,13 @@ crBackend::EnterModelDepthHack
 */
 void crBackend::EnterModelDepthHack( float depth ) 
 {
-	glDepthRange( 0.0f, 1.0f );
-
-	float	matrix[16];
-
-	memcpy( matrix, &viewDef->projectionMatrix, sizeof( matrix ) );
-
+	float	matrix[16]{};
+	
+	//
+	vkCmdSetDepthBounds( m_commandBuffers[frameID], 0.0f, 1.0f ); // glDepthRange( 0.0f, 1.0f );
+	std::memcpy( matrix, &viewDef->projectionMatrix, sizeof( matrix ) );
 	matrix[14] -= depth;
-
-	m_uniforms->SetUniform( matrix, VERTEX_UNIFORM_LOCATION_PROJECTION_MATRIX );
+	m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_PROJMATRIX_X, 4, matrix );
 }
 
 /*
@@ -181,8 +174,8 @@ crBackend::LeaveDepthHack
 */
 void crBackend::LeaveDepthHack( void ) 
 {
-	glDepthRange( 0.0f, 1.0f );
-	m_uniforms->SetUniform( &viewDef->projectionMatrix, VERTEX_UNIFORM_LOCATION_PROJECTION_MATRIX );
+	vkCmdSetDepthBounds( m_commandBuffers[frameID], 0.0f, 1.0f ); // glDepthRange( 0.0f, 1.0f );
+	m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_PROJMATRIX_X, 4, &viewDef->projectionMatrix );
 }
 
 /*
@@ -208,7 +201,7 @@ void crBackend::RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numD
 
 		// change the matrix if needed
 		if ( drawSurf->space != currentSpace )
-			m_uniforms->SetUniform( &drawSurf->space->modelViewMatrix, VERTEX_UNIFORM_LOCATION_VIEW_MATRIX ); 
+			m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_MODELVIEWMATRIX_X, 4, &drawSurf->space->modelViewMatrix );
 		
 		if ( drawSurf->space->weaponDepthHack ) 
 			EnterWeaponDepthHack();
@@ -219,8 +212,9 @@ void crBackend::RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numD
 		// change the scissor if needed
 		if ( r_useScissor.GetBool() && !currentScissor.Equals( drawSurf->scissorRect ) ) 
 		{
-			currentScissor = drawSurf->scissorRect;
-			Scissor( viewDef->viewport.x1 + currentScissor.x1, viewDef->viewport.y1 + currentScissor.y1, currentScissor.x2 + 1 - currentScissor.x1, currentScissor.y2 + 1 - currentScissor.y1 );
+			//currentScissor = drawSurf->scissorRect;
+			// Scissor( viewDef->viewport.x1 + currentScissor.x1, viewDef->viewport.y1 + currentScissor.y1, currentScissor.x2 + 1 - currentScissor.x1, currentScissor.y2 + 1 - currentScissor.y1 );
+			Scissor( drawSurf->scissorRect );
 		}
 
 		// render it
@@ -238,7 +232,7 @@ void crBackend::RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numD
 crBackend::RenderDrawSurfChainWithFunction
 ======================
 */
-void crBackend::RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs, void (*triFunc_)( const drawSurf_t *) ) 
+void crBackend::RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs, std::function<void( const drawSurf_t *)> triFunc_ ) 
 {
 	const drawSurf_t		*drawSurf;
 
@@ -248,7 +242,7 @@ void crBackend::RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs, vo
 	{
 		// change the matrix if needed
 		if ( drawSurf->space != currentSpace )
-			m_uniforms->SetUniform( &drawSurf->space->modelViewMatrix, VERTEX_UNIFORM_LOCATION_VIEW_MATRIX );
+				m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_MODELVIEWMATRIX_X, 4, &drawSurf->space->modelViewMatrix ); // qglLoadMatrixf( drawSurf->space->modelViewMatrix );	
 
 		if ( drawSurf->space->weaponDepthHack ) 
 			EnterWeaponDepthHack();
@@ -259,8 +253,9 @@ void crBackend::RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs, vo
 		// change the scissor if needed
 		if ( r_useScissor.GetBool() && !currentScissor.Equals( drawSurf->scissorRect ) ) 
 		{
-			currentScissor = drawSurf->scissorRect;
-			Scissor( viewDef->viewport.x1 + currentScissor.x1, viewDef->viewport.y1 + currentScissor.y1,currentScissor.x2 + 1 - currentScissor.x1,currentScissor.y2 + 1 - currentScissor.y1 );
+			//currentScissor = drawSurf->scissorRect;
+			//Scissor( viewDef->viewport.x1 + currentScissor.x1, viewDef->viewport.y1 + currentScissor.y1,currentScissor.x2 + 1 - currentScissor.x1,currentScissor.y2 + 1 - currentScissor.y1 );
+			Scissor( drawSurf->scissorRect );
 		}
 
 		// render it
@@ -316,10 +311,9 @@ crBackend::LoadShaderTextureMatrix
 void crBackend::LoadShaderTextureMatrix( const float *shaderRegisters, const textureStage_t *texture ) 
 {
 	float	matrix[16];
-
 	GetShaderTextureMatrix( shaderRegisters, texture, matrix );
-	
-	m_uniforms->SetUniform( matrix, VERTEX_UNIFORM_LOCATION_TEXTURE_MATRIX );}
+	m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_TEXTUREMATRIX_S, 2, matrix );
+}
 
 /*
 ======================
@@ -422,7 +416,14 @@ void crBackend::FinishStageTexture( const textureStage_t *texture, const drawSur
 		glMatrixMode( GL_MODELVIEW );
 	}
 #else
-	// TODO: set the texture matrix 
+	static float identity[8] = 
+	{
+		1.0f, 0.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f, 0.0f
+	};
+
+	if ( texture->hasMatrix )
+		m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_TEXTUREMATRIX_S, 2, identity ); 
 #endif
 }
 
@@ -510,36 +511,49 @@ to actually render the visible surfaces for this view
 void crBackend::BeginDrawingView( void ) 
 {
 	// set the modelview matrix for the viewer
-	m_uniforms->SetUniform( &viewDef->projectionMatrix, VERTEX_UNIFORM_LOCATION_PROJECTION_MATRIX );
+	m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_PROJMATRIX_X, 4, &viewDef->projectionMatrix );
 	
 	// set the window clipping
 	Viewport( tr.viewportOffset[0] + viewDef->viewport.x1, tr.viewportOffset[1] + viewDef->viewport.y1, viewDef->viewport.x2 + 1 - viewDef->viewport.x1, viewDef->viewport.y2 + 1 - viewDef->viewport.y1 );
 
 	// the scissor may be smaller than the viewport for subviews
+#if 0
 	Scissor( tr.viewportOffset[0] + viewDef->viewport.x1 + viewDef->scissor.x1, tr.viewportOffset[1] + viewDef->viewport.y1 + viewDef->scissor.y1, viewDef->scissor.x2 + 1 - viewDef->scissor.x1, viewDef->scissor.y2 + 1 - viewDef->scissor.y1 );
+#else
+	VkRect2D scissor{};
+	scissor.offset.x = tr.viewportOffset[0] + viewDef->viewport.x1 + viewDef->scissor.x1;
+	scissor.offset.y = tr.viewportOffset[1] + viewDef->viewport.y1 + viewDef->scissor.y1;
+	scissor.extent.width = viewDef->scissor.x2 + 1 - viewDef->scissor.x1;
+	scissor.extent.height = viewDef->scissor.y2 + 1 - viewDef->scissor.y1;
+	vkCmdSetScissor( m_commandBuffers[frameID], 0, 1, &scissor );
+#endif 
 	currentScissor = viewDef->scissor;
 
 	// ensures that depth writes are enabled for the depth clear
 	// GL_State( GLS_DEFAULT );
 
-	//// we don't have to clear the depth / stencil buffer for 2D rendering
-	//if ( viewDef->viewEntitys ) 
-	//{
-	//	glStencilMask( 0xff );
-	//	// some cards may have 7 bit stencil buffers, so don't assume this
-	//	// should be 128
-	//	glClearStencil( 1<<(glConfig.stencilBits-1) );
-	//	glClear( GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
-	//	glEnable( GL_DEPTH_TEST );
-	//} 
-	//else 
-	//{
+	// we don't have to clear the depth / stencil buffer for 2D rendering
+	if ( viewDef->viewEntitys ) 
+	{
+		// some cards may have 7 bit stencil buffers, so don't assume this
+		// should be 128
+		uint32_t stencilClearValue = 1 << ( glConfig.stencilBits - 1);
+
+		vkCmdSetStencilWriteMask( m_commandBuffers[frameID], VK_STENCIL_FACE_FRONT_BIT, 0xff ); //	glStencilMask( 0xff );
+		
+		// glClearStencil( 1<<(glConfig.stencilBits-1) );
+		// glClear( GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
+		// glEnable( GL_DEPTH_TEST );
+	} 
+	else 
+	{
 	//	glDisable( GL_DEPTH_TEST );
 	//	glDisable( GL_STENCIL_TEST );
-	//}
+	}
 //
 	//glState.faceCulling = -1;		// force face culling to set next time
 	//GL_Cull( CT_FRONT_SIDED );
+	SetCull( CT_FRONT_SIDED ); // TODO: check if are set in shader pipeline
 
 }
 
@@ -603,10 +617,10 @@ static void R_SetDrawInteraction( const shaderStage_t *surfaceStage, const float
 
 /*
 =================
-RB_SubmittInteraction
+crBackend::	SubmittInteraction
 =================
 */
-static void RB_SubmittInteraction( drawInteraction_t *din, std::function<void(const drawInteraction_t *)> DrawInteraction ) 
+void crBackend::SubmittInteraction( drawInteraction_t *din, std::function<void(const drawInteraction_t *)> DrawInteraction ) 
 {
 	if ( !din->bumpImage ) 
 		return;
@@ -656,22 +670,22 @@ void crBackend::CreateSingleDrawInteractions( const drawSurf_t *surf, std::funct
 	if ( r_skipInteractions.GetBool() || !surf->geo || !surf->geo->ambientCache )
 		return;
 
-	if ( tr.logFile ) 
-		RB_LogComment( "---------- RB_CreateSingleDrawInteractions %s on %s ----------\n", lightShader->GetName(), surfaceShader->GetName() );
+	///if ( tr.logFile ) 
+	RB_LogComment( "---------- RB_CreateSingleDrawInteractions %s on %s ----------\n", lightShader->GetName(), surfaceShader->GetName() );
 	
-
 	// change the matrix and light projection vectors if needed
 	if ( surf->space != currentSpace ) 
 	{
 		currentSpace = surf->space;
-		m_uniforms->SetUniform( &surf->space->modelViewMatrix, VERTEX_UNIFORM_LOCATION_VIEW_MATRIX );
+		m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_MODELVIEWMATRIX_X, 4, &surf->space->modelViewMatrix ); // qglLoadMatrixf( surf->space->modelViewMatrix );
 	}
 
 	// change the scissor if needed
 	if ( r_useScissor.GetBool() && !currentScissor.Equals( surf->scissorRect ) ) 
 	{
-		currentScissor = surf->scissorRect;
-		Scissor( viewDef->viewport.x1 + currentScissor.x1, viewDef->viewport.y1 + currentScissor.y1, currentScissor.x2 + 1 - currentScissor.x1, currentScissor.y2 + 1 - currentScissor.y1 );
+		//currentScissor = surf->scissorRect;
+		//Scissor( viewDef->viewport.x1 + currentScissor.x1, viewDef->viewport.y1 + currentScissor.y1, currentScissor.x2 + 1 - currentScissor.x1, currentScissor.y2 + 1 - currentScissor.y1 );
+		Scissor( surf->scissorRect );
 	}
 
 	// hack depth range if needed
@@ -747,7 +761,7 @@ void crBackend::CreateSingleDrawInteractions( const drawSurf_t *surf, std::funct
 						break;
 				
 					// draw any previous interaction
-					RB_SubmittInteraction( &inter, DrawInteraction );
+					SubmittInteraction( &inter, DrawInteraction );
 					inter.diffuseImage = nullptr;
 					inter.specularImage = nullptr;
 					R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.bumpImage, inter.bumpMatrix, nullptr );
@@ -760,7 +774,7 @@ void crBackend::CreateSingleDrawInteractions( const drawSurf_t *surf, std::funct
 						break;
 					
 					if ( inter.diffuseImage ) 
-						RB_SubmittInteraction( &inter, DrawInteraction );
+						SubmittInteraction( &inter, DrawInteraction );
 					
 					R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.diffuseImage, inter.diffuseMatrix, inter.diffuseColor.ToFloatPtr() );
 					
@@ -778,7 +792,7 @@ void crBackend::CreateSingleDrawInteractions( const drawSurf_t *surf, std::funct
 						break;
 					
 					if ( inter.specularImage ) 
-						RB_SubmittInteraction( &inter, DrawInteraction );
+						SubmittInteraction( &inter, DrawInteraction );
 					
 					R_SetDrawInteraction( surfaceStage, surfaceRegs, &inter.specularImage, inter.specularMatrix, inter.specularColor.ToFloatPtr() );
 					
@@ -793,7 +807,7 @@ void crBackend::CreateSingleDrawInteractions( const drawSurf_t *surf, std::funct
 		}
 
 		// draw the final interaction
-		RB_SubmittInteraction( &inter, DrawInteraction );
+		SubmittInteraction( &inter, DrawInteraction );
 	}
 
 	// unhack depth range if needed
@@ -930,6 +944,6 @@ void crBackend::DrawView( const void *data )
 	STD_DrawView();
 
 	// restore the context for 2D drawing if we were stubbing it out
-	if ( r_skipRenderContext.GetBool() && viewDef->viewEntitys )
-		Pipeline( PIPE_DEFAULT );
+//	if ( r_skipRenderContext.GetBool() && viewDef->viewEntitys )
+//		Pipeline( PIPE_DEFAULT );
 }

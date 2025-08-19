@@ -68,7 +68,7 @@ typedef struct renderView_s
 // A single entityDef can generate multiple viewEntity_t in a single frame, as when seen in a mirror
 typedef struct viewEntity_s 
 {
-	struct viewEntity_s	*next;
+	crAutoPointer<viewEntity_s>	next;
 
 	// back end should NOT reference the entityDef, because it can change when running SMP
 	idRenderEntityLocal	*entityDef;
@@ -132,12 +132,12 @@ typedef struct viewDef_s
 
 	// drawSurfs are the visible surfaces of the viewEntities, sorted
 	// by the material sort parameter
-	drawSurf_t **		drawSurfs;				// we don't use an idList for this, because
-	int					numDrawSurfs;			// it is allocated in frame temporary memory
-	int					maxDrawSurfs;			// may be resized
+	drawSurf_t **				drawSurfs;				// we don't use an idList for this, because
+	int							numDrawSurfs;			// it is allocated in frame temporary memory
+	int							maxDrawSurfs;			// may be resized
 
-	struct viewLight_s	*viewLights;			// chain of all viewLights effecting view
-	struct viewEntity_s	*viewEntitys;			// chain of all viewEntities effecting view, including off screen ones casting shadows
+	crAutoPointer<viewLight_s>	viewLights;			// chain of all viewLights effecting view
+	crAutoPointer<viewEntity_s>	viewEntitys;			// chain of all viewEntities effecting view, including off screen ones casting shadows
 	// we use viewEntities as a check to see if a given view consists solely
 	// of 2D rendering, which we can optimize in certain ways.  A 2D view will
 	// not have any viewEntities

@@ -264,6 +264,10 @@ public:
 	virtual void			UnCrop();
 	virtual bool			UploadImage( const char *imageName, const byte *data, int width, int height );
 
+// BEATO Begin:
+	crAutoPointer<crvkDevice>	GetRenderDevice( void ) const;
+// BEATO End
+
 public:
 	// internal functions
 							idRenderSystemLocal( void );
@@ -330,7 +334,6 @@ public:
 	crAutoPointer<crFrontend>			frontend;			// frontend interface
 	crAutoPointer<crBackend>			backend;			// backend interface
 	crAutoPointer<crvkContext>			m_renderContext;
-	crvkDevice*							m_renderDevice;
 // BEATO End
 };
 
@@ -619,20 +622,6 @@ DRAW_*
 
 ============================================================
 */
-typedef enum 
-{
-	PIPE_INVALID = -1,
-	PIPE_DEFAULT,
-	PIPE_DEPTH_BUFFER,
-	PIPE_INTERACTION,
-	PIPE_ENVIRONMENT,
-	PIPE_STENCIL_SHADOW,
-	PIPE_TEST,
-	PIPE_AMBIENT,
-	PIPE_GLASSWARP,
-	PIPE_COUNT
-} program_t;
-
 typedef enum
 {
 	FRAMEBUFFER_INVALID = -1,

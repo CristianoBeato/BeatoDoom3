@@ -29,6 +29,15 @@ If you have questions concerning this license or the applicable additional terms
 #pragma hdrstop
 
 #include "renderer/renderer_common.h"
+#include "Backend_common.h"
+
+static const float k_IDENTITY_MAXTRIX[16] = 
+{
+	1.0f, 0.0f, 0.0f, 0.0f,
+	0.0f, 1.0f, 0.0f, 0.0f,
+	0.0f, 0.0f, 1.0f, 0.0f,
+	0.0f, 0.0f, 0.0f, 1.0f
+};
 
 /*
 =====================
@@ -78,11 +87,13 @@ void crBackend::BakeTextureMatrixIntoTexgen( idPlane lightProject[3], const floa
 RB_PrepareStageTexturing
 ================
 */
-void crBackend::PrepareStageTexturing( const shaderStage_t *pStage,  const drawSurf_t *surf, idDrawVert *ac ) 
+void crBackend::PrepareStageTexturing( const shaderStage_t *pStage,  const drawSurf_t *surf ) 
 {
+	static int32_t texgen[4] = { 1, 1, 1, 1 }; // all one to enable texgen
+
 	// set privatePolygonOffset if necessary
-	if ( pStage->privatePolygonOffset ) 
-		m_currentPipeline->DepthBias( r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * pStage->privatePolygonOffset );
+	if ( pStage->privatePolygonOffset ) // todo: set this direct on shader 
+		vkCmdSetDepthBias( m_commandBuffers[frameID], r_offsetFactor.GetFloat(), 0.0f, r_offsetUnits.GetFloat() * pStage->privatePolygonOffset );
 
 	// set the texture matrix if needed
 	if ( pStage->texture.hasMatrix ) 
@@ -104,12 +115,42 @@ void crBackend::PrepareStageTexturing( const shaderStage_t *pStage,  const drawS
 	case TG_SCREEN:
 	case TG_SCREEN2:
 	{
+		float plane[4]{ 0.0f, 0.0f, 0.0f, 0.0f };
+		m_vertexUniformBlock->ProgramParameter4iv( VERTEX_RENDERPARM_TEXGEN_0_ENABLED, 1, texgen );
+
 		crRenderMatrix textureMatrix = surf->space->modelViewMatrix * viewDef->projectionMatrix;
-		m_uniforms->SetUniform( &textureMatrix, VERTEX_UNIFORM_LOCATION_TEXTURE_MATRIX );
+		
+		// S face plane
+		plane[0] = textureMatrix[0];
+		plane[1] = textureMatrix[4];
+		plane[2] = textureMatrix[8];
+		plane[3] = textureMatrix[12];
+		m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_TEXGEN_0_S, 1, plane ); // glTexGenfv( GL_S, GL_OBJECT_PLANE, plane );
+
+		// T face plane
+		plane[0] = textureMatrix[1];
+		plane[1] = textureMatrix[5];
+		plane[2] = textureMatrix[9];
+		plane[3] = textureMatrix[13];
+		m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_TEXGEN_0_T, 1, plane ); // glTexGenfv( GL_T, GL_OBJECT_PLANE, plane );
+
+		// Q face plane 
+		plane[0] = textureMatrix[3];
+		plane[1] = textureMatrix[7];
+		plane[2] = textureMatrix[11];
+		plane[3] = textureMatrix[15];
+		m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_TEXGEN_0_Q, 1, plane ); // qglTexGenfv( GL_Q, GL_OBJECT_PLANE, plane );
 	} break;
 	case TG_GLASSWARP:
 	{
+		float plane[4]{ 1.0f, 1.0f, 1.0f, 1.0f }; // all one to enable texgen
 		crRenderMatrix textureMatrix;
+	
+		// glEnable( GL_TEXTURE_GEN_S );
+		// glEnable( GL_TEXTURE_GEN_T );
+		// glEnable( GL_TEXTURE_GEN_Q ); 
+		m_vertexUniformBlock->ProgramParameter4iv( VERTEX_RENDERPARM_TEXGEN_0_ENABLED, 1, texgen );
+	
 		SelectTexture( 2 );
 		globalImages->scratchImage->Bind();
 
@@ -117,8 +158,24 @@ void crBackend::PrepareStageTexturing( const shaderStage_t *pStage,  const drawS
 		globalImages->scratchImage2->Bind();
 
 		textureMatrix = surf->space->modelViewMatrix * viewDef->projectionMatrix; 
-		m_uniforms->SetUniform( &textureMatrix, VERTEX_UNIFORM_LOCATION_TEXTURE_MATRIX );
+		plane[0] = textureMatrix[0];
+		plane[1] = textureMatrix[4];
+		plane[2] = textureMatrix[8];
+		plane[3] = textureMatrix[12];
+		m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_TEXGEN_0_S, 1, plane ); //glTexGenfv( GL_S, GL_OBJECT_PLANE, plane );
 
+		plane[0] = textureMatrix[1];
+		plane[1] = textureMatrix[5];
+		plane[2] = textureMatrix[9];
+		plane[3] = textureMatrix[13];
+		m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_TEXGEN_0_T, 1, plane ); //glTexGenfv( GL_T, GL_OBJECT_PLANE, plane );
+
+		plane[0] = textureMatrix[3];
+		plane[1] = textureMatrix[7];
+		plane[2] = textureMatrix[11];
+		plane[3] = textureMatrix[15];
+		m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_TEXGEN_0_S, 1, plane ); //glTexGenfv( GL_Q, GL_OBJECT_PLANE, plane );
+		
 		SelectTexture( 0 );
 	} break;
 	case TG_REFLECT_CUBE:
@@ -144,8 +201,9 @@ void crBackend::PrepareStageTexturing( const shaderStage_t *pStage,  const drawS
 crBackend::FinishStageTexturing
 ================
 */
-void crBackend::FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *surf, idDrawVert *ac ) 
+void crBackend::FinishStageTexturing( const shaderStage_t *pStage, const drawSurf_t *surf ) 
 {
+	static int32_t texgen[4] { 0, 0, 0, 0 };
 	// unset privatePolygonOffset if necessary
 	if ( pStage->privatePolygonOffset && !surf->material->TestMaterialFlag(MF_POLYGONOFFSET) ) 
 	{
@@ -162,14 +220,20 @@ void crBackend::FinishStageTexturing( const shaderStage_t *pStage, const drawSur
 	} break;
 
 	case TG_SCREEN:
-	{
-	} break;
-
 	case TG_SCREEN2:
 	{
-	} break;
+		// glDisable( GL_TEXTURE_GEN_S );
+		// glDisable( GL_TEXTURE_GEN_T );
+		// glDisable( GL_TEXTURE_GEN_Q ); 
+		m_vertexUniformBlock->ProgramParameter4iv( VERTEX_RENDERPARM_TEXGEN_0_ENABLED, 1, texgen );
+	}
 	case TG_GLASSWARP:
 	{
+		// glDisable( GL_TEXTURE_GEN_S );
+		// glDisable( GL_TEXTURE_GEN_T );
+		// glDisable( GL_TEXTURE_GEN_Q ); 
+		m_vertexUniformBlock->ProgramParameter4iv( VERTEX_RENDERPARM_TEXGEN_0_ENABLED, 1, texgen );
+
 		SelectTexture( 2 );
 		globalImages->BindNull();
 
@@ -196,13 +260,12 @@ void crBackend::FinishStageTexturing( const shaderStage_t *pStage, const drawSur
 		break;
 	}
 
-
 	if ( pStage->texture.hasMatrix ) 
 	{
-		// TODO:
 		// glMatrixMode( GL_TEXTURE );
 		// glLoadIdentity();
 		// glMatrixMode( GL_MODELVIEW );
+		m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_TEXTUREMATRIX_S, 2, k_IDENTITY_MAXTRIX );
 	}
 }
 
@@ -238,9 +301,11 @@ void crBackend::FillDepthBuffer( const drawSurf_t *surf )
 		
 		idPlane	plane = surf->space->modelMatrix.GlobalPlaneToLocal( viewDef->clipPlanes[0] );
 
-		crTransform::GlobalPlaneToLocal( surf->space->modelMatrix, viewDef->clipPlanes[0], plane );
+		//crTransform::GlobalPlaneToLocal( surf->space->modelMatrix, viewDef->clipPlanes[0], plane );
+		surf->space->modelMatrix.GlobalPlaneToLocal( plane );
+		
 		plane[3] += 0.5;	// the notch is in the middle
-		// glTexGenfv( GL_S, GL_OBJECT_PLANE, plane.ToFloatPtr() );
+		m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_TEXGEN_0_S, 1, plane.ToFloatPtr() ); // glTexGenfv( GL_S, GL_OBJECT_PLANE, plane.ToFloatPtr() );
 		SelectTexture( 0 );
 	}
 
@@ -278,8 +343,8 @@ void crBackend::FillDepthBuffer( const drawSurf_t *surf )
 		return;
 
 	// set polygon offset if necessary
-	if ( shader->TestMaterialFlag(MF_POLYGONOFFSET) ) 
-		m_currentPipeline->DepthBias( r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * shader->GetPolygonOffset() );
+	if ( shader->TestMaterialFlag(MF_POLYGONOFFSET) ) // todo: set this direct on shader 
+		vkCmdSetDepthBias( m_commandBuffers[frameID], r_offsetFactor.GetFloat(), 0.0f, r_offsetUnits.GetFloat() * shader->GetPolygonOffset() );
 
 	// subviews will just down-modulate the color buffer by overbright
 	if ( shader->GetSort() == SS_SUBVIEW ) 
@@ -329,21 +394,26 @@ void crBackend::FillDepthBuffer( const drawSurf_t *surf )
 			if ( color[3] <= 0 )
 				continue;
 
-			m_uniforms->SetUniform( color, FRAGMENT_UNIFORM_LOCATION_DIFUSE_COLOR );
-
+			m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_COLOR, 1, color );
+			
 			// TODO: shader unifrorm alphaRef "if( color.a <= alphaRef ) discard"
-			//glAlphaFunc( GL_GREATER, regs[ pStage->alphaTestRegister ] );
+			float alphaf[4] = { regs[ pStage->alphaTestRegister ], 0.0f, 0.0f, 0.0f };
+			m_vertexUniformBlock->ProgramParameter4fv( FRAGMENT_RENDERPARM_ALPHA_TEST, 1, alphaf ); //glAlphaFunc( GL_GREATER, regs[ pStage->alphaTestRegister ] );
+
+			// BEATO Begin: bind the shader stage pipeline
+			SetPipeline( pStage->pipeline );
+			// BEATO End
 
 			// bind the texture
 			pStage->texture.image->Bind();
 
 			// set texture matrix and texGens
-			PrepareStageTexturing( pStage, surf, ac );
+			PrepareStageTexturing( pStage, surf );
 
 			// draw it
 			DrawElementsWithCounters( tri );
 
-			FinishStageTexturing( pStage, surf, ac );
+			FinishStageTexturing( pStage, surf );
 		}
 
 		if ( !didDraw ) 
@@ -353,7 +423,7 @@ void crBackend::FillDepthBuffer( const drawSurf_t *surf )
 	// draw the entire surface solid
 	if ( drawSolid ) 
 	{
-		m_uniforms->SetUniform(	color, FRAGMENT_UNIFORM_LOCATION_DIFUSE_COLOR );
+		m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_COLOR, 1, color );
 		globalImages->whiteImage->Bind();
 
 		// draw it
@@ -387,7 +457,6 @@ void crBackend::STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs )
 	RB_LogComment( "---------- RB_STD_FillDepthBuffer ----------\n" );
 
 // BEATO Begin:
-	Pipeline( PIPE_DEPTH_BUFFER );
 	Framebuffer( FRAMEBUFFER_DEPTH_PASS );
 // BEATO End
 
@@ -401,7 +470,7 @@ void crBackend::STD_FillDepthBuffer( drawSurf_t **drawSurfs, int numDrawSurfs )
 	// the first texture will be used for alpha tested surfaces
 	SelectTexture( 0 );
 	
-	RenderDrawSurfListWithFunction( drawSurfs, numDrawSurfs, FillDepthBuffer );
+	RenderDrawSurfListWithFunction( drawSurfs, numDrawSurfs, std::bind(&crBackend::FillDepthBuffer, this, std::placeholders::_1) );
 
 	if ( viewDef->numClipPlanes ) 
 	{
@@ -427,13 +496,10 @@ RB_SetProgramEnvironment
 Sets variables that can be used by all vertex programs
 ==================
 */
-void RB_SetProgramEnvironment( void ) {
-	float	parm[4];
-	int		pot;
-
-	if ( !glConfig.ARBVertexProgramAvailable ) {
-		return;
-	}
+void crBackend::SetProgramEnvironment( void ) 
+{
+	float	parm[4]{};
+	int		pot = 0;
 
 #if 0
 	// screen power of two correction factor, one pixel in so we don't get a bilerp
@@ -456,42 +522,40 @@ void RB_SetProgramEnvironment( void ) {
 
 	parm[2] = 0;
 	parm[3] = 1;
-	glProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
+	qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
 #else
 	// screen power of two correction factor, assuming the copy to _currentRender
 	// also copied an extra row and column for the bilerp
-	int	 w = backEnd.viewDef->viewport.x2 - backEnd.viewDef->viewport.x1 + 1;
+	int	 w = viewDef->viewport.x2 - viewDef->viewport.x1 + 1;
 	pot = globalImages->currentRenderImage->uploadWidth;
 	parm[0] = (float)w / pot;
 
-	int	 h = backEnd.viewDef->viewport.y2 - backEnd.viewDef->viewport.y1 + 1;
+	int	 h = viewDef->viewport.y2 - viewDef->viewport.y1 + 1;
 	pot = globalImages->currentRenderImage->uploadHeight;
 	parm[1] = (float)h / pot;
 
 	parm[2] = 0;
 	parm[3] = 1;
-	glProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
+	m_fragmentUniformBlock->ProgramParameter4fv( FRAGMENT_RENDERPARM_SCREENCORRECTIONFACTOR, 1, parm );
+	//qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 0, parm );
+	//qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, 0, parm );
 #endif
-
-	glProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, 0, parm );
 
 	// window coord to 0.0 to 1.0 conversion
 	parm[0] = 1.0 / w;
 	parm[1] = 1.0 / h;
 	parm[2] = 0;
 	parm[3] = 1;
-	glProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, 1, parm );
+	m_fragmentUniformBlock->ProgramParameter4fv( FRAGMENT_RENDERPARM_WINDOWCOORD, 1, parm ); //qglProgramEnvParameter4fvARB( GL_FRAGMENT_PROGRAM_ARB, 1, parm );
 
 	//
 	// set eye position in global space
 	//
-	parm[0] = backEnd.viewDef->renderView.vieworg[0];
-	parm[1] = backEnd.viewDef->renderView.vieworg[1];
-	parm[2] = backEnd.viewDef->renderView.vieworg[2];
+	parm[0] = viewDef->renderView.vieworg[0];
+	parm[1] = viewDef->renderView.vieworg[1];
+	parm[2] = viewDef->renderView.vieworg[2];
 	parm[3] = 1.0;
-	glProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 1, parm );
-
-
+	m_fragmentUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_GLOBALEYEPOS, 1, parm ); //qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 1, parm );
 }
 
 /*
@@ -501,19 +565,18 @@ RB_SetProgramEnvironmentSpace
 Sets variables related to the current space that can be used by all vertex programs
 ==================
 */
-void RB_SetProgramEnvironmentSpace( void ) 
+void crBackend::SetProgramEnvironmentSpace( void ) 
 {
-	if ( !glConfig.ARBVertexProgramAvailable )
-		return;
-	
-
-	const struct viewEntity_s *space = backEnd.currentSpace;
-	float	parm[4];
+	float	parm[4]{};
+	const struct viewEntity_s *space = currentSpace;
 
 	// set eye position in local space
-	crTransform::GlobalPointToLocal( space->modelMatrix, backEnd.viewDef->renderView.vieworg, *(idVec3 *)parm );
-	parm[3] = 1.0;
-	glProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 5, parm );
+	idVec3 localeye = space->modelMatrix.GlobalPointToLocal( viewDef->renderView.vieworg );
+	parm[0] = localeye[0];
+	parm[1] = localeye[1];
+	parm[2] = localeye[2];
+	parm[3] = 1.0f;
+	m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_VIEWORIGIN, 1, parm ); // glProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 5, parm );
 
 	// we need the model matrix without it being combined with the view matrix
 	// so we can transform local vectors to global coordinates
@@ -521,27 +584,27 @@ void RB_SetProgramEnvironmentSpace( void )
 	parm[1] = space->modelMatrix[4];
 	parm[2] = space->modelMatrix[8];
 	parm[3] = space->modelMatrix[12];
-	glProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 6, parm );
+	m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_MODELMATRIX_X, 1, parm ); // glProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 6, parm );
 	parm[0] = space->modelMatrix[1];
 	parm[1] = space->modelMatrix[5];
 	parm[2] = space->modelMatrix[9];
 	parm[3] = space->modelMatrix[13];
-	glProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 7, parm );
+	m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_MODELMATRIX_Y, 1, parm ); // glProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 7, parm );
 	parm[0] = space->modelMatrix[2];
 	parm[1] = space->modelMatrix[6];
 	parm[2] = space->modelMatrix[10];
 	parm[3] = space->modelMatrix[14];
-	glProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 8, parm );
+	m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_MODELMATRIX_Z, 1, parm ); // glProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, 8, parm );
 }
 
 /*
 ==================
-RB_STD_T_RenderShaderPasses
+crBackend::RenderShaderPasses
 
 This is also called for the generated 2D rendering
 ==================
 */
-void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf ) 
+void crBackend::RenderShaderPasses( const drawSurf_t *surf ) 
 {
 	int						stage = 0;
 	const idMaterial*		shader = nullptr;
@@ -559,24 +622,18 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf )
 	if ( shader->IsPortalSky() ) 
 		return;
 	
-
 	// change the matrix if needed
-	if ( surf->space != backEnd.currentSpace ) 
+	if ( surf->space != currentSpace ) 
 	{
-		glLoadMatrixf( surf->space->modelViewMatrix );
-		backEnd.currentSpace = surf->space;
-		RB_SetProgramEnvironmentSpace();
+		// qglLoadMatrixf( surf->space->modelViewMatrix );
+		m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_MODELVIEWMATRIX_X, 4, &surf->space->modelViewMatrix );
+		currentSpace = surf->space;
+		SetProgramEnvironmentSpace();
 	}
 
 	// change the scissor if needed
-	if ( r_useScissor.GetBool() && !backEnd.currentScissor.Equals( surf->scissorRect ) ) 
-	{
-		backEnd.currentScissor = surf->scissorRect;
-		glScissor( backEnd.viewDef->viewport.x1 + backEnd.currentScissor.x1, 
-			backEnd.viewDef->viewport.y1 + backEnd.currentScissor.y1,
-			backEnd.currentScissor.x2 + 1 - backEnd.currentScissor.x1,
-			backEnd.currentScissor.y2 + 1 - backEnd.currentScissor.y1 );
-	}
+	if ( r_useScissor.GetBool() && !currentScissor.Equals( surf->scissorRect ) ) 
+		Scissor( surf->scissorRect );
 
 	// some deforms may disable themselves by setting numIndexes = 0
 	if ( !tri->numIndexes ) 
@@ -592,42 +649,37 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf )
 	regs = surf->shaderRegisters;
 
 	// set face culling appropriately
-	GL_Cull( shader->GetCullType() );
+	SetCull( shader->GetCullType() );
 
 	// set polygon offset if necessary
-	if ( shader->TestMaterialFlag(MF_POLYGONOFFSET) ) 
+	if ( shader->TestMaterialFlag( MF_POLYGONOFFSET ) )
 	{
-		glEnable( GL_POLYGON_OFFSET_FILL );
-		glPolygonOffset( r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * shader->GetPolygonOffset() );
+		// glEnable( GL_POLYGON_OFFSET_FILL );
+		// glPolygonOffset( r_offsetFactor.GetFloat(), r_offsetUnits.GetFloat() * shader->GetPolygonOffset() );
+		vkCmdSetDepthBias( m_commandBuffers[frameID], r_offsetFactor.GetFloat(), 0.0f, r_offsetUnits.GetFloat() * shader->GetPolygonOffset() );
 	}
 	
 	if ( surf->space->weaponDepthHack )
-		RB_EnterWeaponDepthHack();
+		EnterWeaponDepthHack();
 
 	if ( surf->space->modelDepthHack != 0.0f ) 
-		RB_EnterModelDepthHack( surf->space->modelDepthHack );
+		EnterModelDepthHack( surf->space->modelDepthHack );
 
-	idDrawVert *ac = static_cast<idDrawVert*>( vertexCache.Position( tri->ambientCache ) );
-	glVertexPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
-	glTexCoordPointer( 2, GL_FLOAT, sizeof( idDrawVert ), reinterpret_cast<void *>(&ac->st) );
-
-	for ( stage = 0; stage < shader->GetNumStages() ; stage++ ) {		
+	for ( stage = 0; stage < shader->GetNumStages() ; stage++ ) 
+	{		
 		pStage = shader->GetStage(stage);
 
 		// check the enable condition
-		if ( regs[ pStage->conditionRegister ] == 0 ) {
+		if ( regs[ pStage->conditionRegister ] == 0 ) 
 			continue;
-		}
 
 		// skip the stages involved in lighting
-		if ( pStage->lighting != SL_AMBIENT ) {
+		if ( pStage->lighting != SL_AMBIENT ) 
 			continue;
-		}
 
 		// skip if the stage is ( GL_ZERO, GL_ONE ), which is used for some alpha masks
-		if ( ( pStage->drawStateBits & (GLS_SRCBLEND_BITS|GLS_DSTBLEND_BITS) ) == ( GLS_SRCBLEND_ZERO | GLS_DSTBLEND_ONE ) ) {
+		if ( ( pStage->drawStateBits & (GLS_SRCBLEND_BITS|GLS_DSTBLEND_BITS) ) == ( GLS_SRCBLEND_ZERO | GLS_DSTBLEND_ONE ) ) 
 			continue;
-		}
 
 		// see if we are a new-style stage
 		newShaderStage_t *newStage = pStage->newStage;
@@ -637,30 +689,15 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf )
 			//
 			// new style stages
 			//
-			//--------------------------
-
-			// completely skip the stage if we don't have the capability
-			if ( tr.backEndRenderer != BE_ARB2 ) 
-				continue;
-			
+			//--------------------------	
 			if ( r_skipNewAmbient.GetBool() )
 				continue;
-			
-			glColorPointer( 4, GL_UNSIGNED_BYTE, sizeof( idDrawVert ), (void *)&ac->color );
-			glVertexAttribPointer( 9, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[0].ToFloatPtr() );
-			glVertexAttribPointer( 10, 3, GL_FLOAT, false, sizeof( idDrawVert ), ac->tangents[1].ToFloatPtr() );
-			glNormalPointer( GL_FLOAT, sizeof( idDrawVert ), ac->normal.ToFloatPtr() );
-
-			glEnableClientState( GL_COLOR_ARRAY );
-			glEnableVertexAttribArray( 9 );
-			glEnableVertexAttribArray( 10 );
-			glEnableClientState( GL_NORMAL_ARRAY );
-
-			GL_State( pStage->drawStateBits );
-			
-			glBindProgramARB( GL_VERTEX_PROGRAM_ARB, newStage->vertexProgram );
-			glEnable( GL_VERTEX_PROGRAM_ARB );
-
+		
+			///
+			//SeState( pStage->drawStateBits );
+	
+// TODO: get rid of megatextures 
+#if 0
 			// megaTextures bind a lot of images and set a lot of parameters
 			if ( newStage->megaTexture ) 
 			{
@@ -669,7 +706,10 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf )
 				crTransform::GlobalPointToLocal( surf->space->modelMatrix, backEnd.viewDef->renderView.vieworg, localViewer );
 				newStage->megaTexture->BindForViewOrigin( localViewer );
 			}
+#endif
 
+// TODO: fix custom shader parms
+#if 0 
 			for ( int i = 0 ; i < newStage->numVertexParms ; i++ ) 
 			{
 				float	parm[4];
@@ -679,47 +719,44 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf )
 				parm[3] = regs[ newStage->vertexParms[i][3] ];
 				glProgramLocalParameter4fvARB( GL_VERTEX_PROGRAM_ARB, i, parm );
 			}
+#endif 
 
 			for ( int i = 0 ; i < newStage->numFragmentProgramImages ; i++ ) 
 			{
 				if ( newStage->fragmentProgramImages[i] ) 
 				{
-					GL_SelectTexture( i );
+					SelectTexture( i );
 					newStage->fragmentProgramImages[i]->Bind();
 				}
 			}
 
-			glBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, newStage->fragmentProgram );
-			glEnable( GL_FRAGMENT_PROGRAM_ARB );
+			// BEATO Begin: bind the shader stage pipeline
+			//glBindProgramARB( GL_FRAGMENT_PROGRAM_ARB, newStage->fragmentProgram );
+			//glEnable( GL_FRAGMENT_PROGRAM_ARB );
+			SetPipeline( pStage->pipeline );
+			// BEATO End
 
 			// draw it
-			RB_DrawElementsWithCounters( tri );
+			DrawElementsWithCounters( tri );
 
 			for ( int i = 1 ; i < newStage->numFragmentProgramImages ; i++ ) 
 			{
 				if ( newStage->fragmentProgramImages[i] ) 
 				{
-					GL_SelectTexture( i );
+					SelectTexture( i );
 					globalImages->BindNull();
 				}
 			}
 
+// BEATO Begin:
+#if 0
 			if ( newStage->megaTexture ) 
 			{
 				newStage->megaTexture->Unbind();
 			}
-
-			GL_SelectTexture( 0 );
-
-			glDisable( GL_VERTEX_PROGRAM_ARB );
-			glDisable( GL_FRAGMENT_PROGRAM_ARB );
-			// Fixme: Hack to get around an apparent bug in ATI drivers.  Should remove as soon as it gets fixed.
-			glBindProgramARB( GL_VERTEX_PROGRAM_ARB, 0 );
-
-			glDisableClientState( GL_COLOR_ARRAY );
-			glDisableVertexAttribArray( 9 );
-			glDisableVertexAttribArray( 10 );
-			glDisableClientState( GL_NORMAL_ARRAY );
+#endif 
+// BEATO End
+			SelectTexture( 0 );
 			continue;
 		}
 
@@ -746,30 +783,23 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf )
 		// select the vertex color source
 		if ( pStage->vertexColor == SVC_IGNORE ) 
 		{
-			glColor4fv( color );
-		} 
+			m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_COLOR, 1, color );
+		}
 		else 
 		{
-			glColorPointer( 4, GL_UNSIGNED_BYTE, sizeof( idDrawVert ), (void *)&ac->color );
-			glEnableClientState( GL_COLOR_ARRAY );
-
-			if ( pStage->vertexColor == SVC_INVERSE_MODULATE ) 
-			{
-				GL_TexEnv( GL_COMBINE_ARB );
-				glTexEnvi( GL_TEXTURE_ENV, GL_COMBINE_RGB_ARB, GL_MODULATE );
-				glTexEnvi( GL_TEXTURE_ENV, GL_SOURCE0_RGB_ARB, GL_TEXTURE );
-				glTexEnvi( GL_TEXTURE_ENV, GL_SOURCE1_RGB_ARB, GL_PRIMARY_COLOR_ARB );
-				glTexEnvi( GL_TEXTURE_ENV, GL_OPERAND0_RGB_ARB, GL_SRC_COLOR );
-				glTexEnvi( GL_TEXTURE_ENV, GL_OPERAND1_RGB_ARB, GL_ONE_MINUS_SRC_COLOR );
-				glTexEnvi( GL_TEXTURE_ENV, GL_RGB_SCALE_ARB, 1 );
-			}
+			
+			// BEATO BFG work arround
+			SetVertexColorParms( pStage->vertexColor );
+			// BEATO End
 
 			// for vertex color and modulated color, we need to enable a second
 			// texture stage
-			if ( color[0] != 1 || color[1] != 1 || color[2] != 1 || color[3] != 1 ) {
-				GL_SelectTexture( 1 );
+			if ( color[0] != 1 || color[1] != 1 || color[2] != 1 || color[3] != 1 ) 
+			{
+				SelectTexture( 1 );
 
 				globalImages->whiteImage->Bind();
+#if 0
 				GL_TexEnv( GL_COMBINE_ARB );
 
 				glTexEnvfv( GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, color );
@@ -787,57 +817,87 @@ void RB_STD_T_RenderShaderPasses( const drawSurf_t *surf )
 				glTexEnvi( GL_TEXTURE_ENV, GL_OPERAND0_ALPHA_ARB, GL_SRC_ALPHA );
 				glTexEnvi( GL_TEXTURE_ENV, GL_OPERAND1_ALPHA_ARB, GL_SRC_ALPHA );
 				glTexEnvi( GL_TEXTURE_ENV, GL_ALPHA_SCALE, 1 );
-
-				GL_SelectTexture( 0 );
+#endif
+				SelectTexture( 0 );
 			}
 		}
 
 		// bind the texture
-		RB_BindVariableStageImage( &pStage->texture, regs );
+		BindVariableStageImage( &pStage->texture, regs );
 
 		// set the state
-		GL_State( pStage->drawStateBits );
-		
-		RB_PrepareStageTexturing( pStage, surf, ac );
+		// BEATO Begin: bind the shader stage pipeline
+		SetPipeline( pStage->pipeline ); //SetState( pStage->drawStateBits );
+		// BEATO End
+
+		PrepareStageTexturing( pStage, surf );
 
 		// draw it
-		RB_DrawElementsWithCounters( tri );
+		DrawElementsWithCounters( tri );
 
-		RB_FinishStageTexturing( pStage, surf, ac );
+		FinishStageTexturing( pStage, surf );
 		
-		if ( pStage->vertexColor != SVC_IGNORE ) {
-			glDisableClientState( GL_COLOR_ARRAY );
-
-			GL_SelectTexture( 1 );
-			GL_TexEnv( GL_MODULATE );
-			globalImages->BindNull();
-			GL_SelectTexture( 0 );
-			GL_TexEnv( GL_MODULATE );
-		}
+		SetVertexColorParms(  pStage->vertexColor );
 	}
 
 	// reset polygon offset
-	if ( shader->TestMaterialFlag(MF_POLYGONOFFSET) ) {
-		glDisable( GL_POLYGON_OFFSET_FILL );
-	}
-	if ( surf->space->weaponDepthHack || surf->space->modelDepthHack != 0.0f ) {
-		RB_LeaveDepthHack();
-	}
+//	if ( shader->TestMaterialFlag(MF_POLYGONOFFSET) ) 
+//		glDisable( GL_POLYGON_OFFSET_FILL );
+
+	if ( surf->space->weaponDepthHack || surf->space->modelDepthHack != 0.0f ) 
+		LeaveDepthHack();
 }
+
+static const float zero[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+static const float one[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+static const float negOne[4] = { -1.0f, -1.0f, -1.0f, -1.0f };
 
 /*
 =====================
-RB_STD_DrawShaderPasses
-
-Draw non-light dependent passes
+crBackend::SetVertexColorParms
 =====================
 */
-int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) 
+void crBackend::SetVertexColorParms(stageVertexColor_t svc)
+{
+	switch ( svc )
+	{
+		case SVC_IGNORE:
+			m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_COLOR_MODULATE, 1, zero );
+			m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_COLOR_ADD, 1, one );
+			break;
+
+		case SVC_MODULATE:
+			m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_COLOR_MODULATE, 1, one );
+			m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_COLOR_ADD, 1, zero );
+			break;
+
+		case SVC_INVERSE_MODULATE:
+			m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_COLOR_MODULATE, 1, negOne );
+			m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_COLOR_ADD, 1, one );
+			break;
+	}
+}
+
+void crBackend::SetPipeline(const crAutoPointer<crvkPipeline> m_pipeline)
+{
+	assert( m_pipeline );
+	m_currentPipeline = m_pipeline;
+}
+
+/*
+ =====================
+ crBackend::STD_DrawShaderPasses
+
+ Draw non-light dependent passes
+ =====================
+ */
+int crBackend::STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) 
 {
 	int				i;
 
 	// only obey skipAmbient if we are rendering a view
-	if ( backEnd.viewDef->viewEntitys && r_skipAmbient.GetBool() ) {
+	if ( viewDef->viewEntitys && r_skipAmbient.GetBool() ) 
+	{
 		return numDrawSurfs;
 	}
 
@@ -851,32 +911,33 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs )
 		}
 
 		// only dump if in a 3d view
-		if ( backEnd.viewDef->viewEntitys && tr.backEndRenderer == BE_ARB2 ) {
-			globalImages->currentRenderImage->CopyFramebuffer( backEnd.viewDef->viewport.x1,
-				backEnd.viewDef->viewport.y1,  backEnd.viewDef->viewport.x2 -  backEnd.viewDef->viewport.x1 + 1,
-				backEnd.viewDef->viewport.y2 -  backEnd.viewDef->viewport.y1 + 1, true );
+		if ( viewDef->viewEntitys ) 
+		{
+			globalImages->currentRenderImage->CopyFramebuffer( viewDef->viewport.x1,
+				viewDef->viewport.y1,  viewDef->viewport.x2 -  viewDef->viewport.x1 + 1,
+				viewDef->viewport.y2 -  viewDef->viewport.y1 + 1, true );
 		}
-		backEnd.currentRenderCopied = true;
+		currentRenderCopied = true;
 	}
 
-	GL_SelectTexture( 1 );
+	SelectTexture( 1 );
 	globalImages->BindNull();
 
-	GL_SelectTexture( 0 );
-	glEnableClientState( GL_TEXTURE_COORD_ARRAY );
-
-	RB_SetProgramEnvironment();
+	SelectTexture( 0 );
+	
+	
+	SetProgramEnvironment();
 
 	// we don't use RB_RenderDrawSurfListWithFunction()
 	// because we want to defer the matrix load because many
 	// surfaces won't draw any ambient passes
-	backEnd.currentSpace = nullptr;
+	currentSpace = nullptr;
 	for (i = 0  ; i < numDrawSurfs ; i++ ) 
 	{
 		if ( drawSurfs[i]->material->SuppressInSubview() ) 
 			continue;
 
-		if ( backEnd.viewDef->isXraySubview && drawSurfs[i]->space->entityDef ) 
+		if ( viewDef->isXraySubview && drawSurfs[i]->space->entityDef ) 
 		{
 			if ( drawSurfs[i]->space->entityDef->parms.xrayIndex != 2 ) 
 				continue;
@@ -884,15 +945,17 @@ int RB_STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs )
 		}
 
 		// we need to draw the post process shaders after we have drawn the fog lights
-		if ( drawSurfs[i]->material->GetSort() >= SS_POST_PROCESS && !backEnd.currentRenderCopied ) 
+		if ( drawSurfs[i]->material->GetSort() >= SS_POST_PROCESS && !currentRenderCopied ) 
 			break;
 		
 
-		RB_STD_T_RenderShaderPasses( drawSurfs[i] );
+		RenderShaderPasses( drawSurfs[i] );
 	}
 
-	GL_Cull( CT_FRONT_SIDED );
-	glColor3f( 1, 1, 1 );
+	SetCull( CT_FRONT_SIDED );
+	float color[4]{ 1.0f, 1.0f, 1.0f, 1.0f };
+	m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_COLOR, 1, color );
+	// glColor3f( 1, 1, 1 );
 
 	return i;
 }
@@ -907,6 +970,7 @@ BACK END RENDERING OF STENCIL SHADOWS
 ==============================================================================
 */
 
+#if 0
 /*
 =====================
 RB_T_Shadow
@@ -916,10 +980,10 @@ the shadow volumes face INSIDE
 */
 static void RB_T_Shadow( const drawSurf_t *surf ) 
 {
-	const srfTriangles_t	*tri;
+	const srfTriangles_t* tri = nullptr;
 
 	// set the light position if we are using a vertex program to project the rear surfaces
-	if ( tr.backEndRendererHasVertexPrograms && r_useShadowVertexProgram.GetBool()
+	if ( r_useShadowVertexProgram.GetBool()
 		&& surf->space != backEnd.currentSpace ) {
 		idVec4 localLight;
 
@@ -1032,7 +1096,9 @@ static void RB_T_Shadow( const drawSurf_t *surf )
 	GL_Cull( CT_BACK_SIDED );
 	RB_DrawShadowElementsWithCounters( tri, numIndexes );
 }
+#endif
 
+#if 0
 /*
 =====================
 RB_StencilShadowPass
@@ -1106,7 +1172,7 @@ void RB_StencilShadowPass( const drawSurf_t *drawSurfs )
 	glStencilFunc( GL_GEQUAL, 128, 255 );
 	glStencilOp( GL_KEEP, GL_KEEP, GL_KEEP );
 }
-
+#endif 
 /*
 =============================================================================================
 
@@ -1117,132 +1183,151 @@ BLEND LIGHT PROJECTION
 
 /*
 =====================
-RB_T_BlendLight
-
+T_BlendLight
 =====================
 */
-static void RB_T_BlendLight( const drawSurf_t *surf ) 
+void crBackend::T_BlendLight( const drawSurf_t *surf )
 {
 	const srfTriangles_t *tri;
 
 	tri = surf->geo;
 
-	if ( backEnd.currentSpace != surf->space ) 
+	if ( currentSpace != surf->space ) 
 	{
 		idPlane	lightProject[4];
 		int		i;
 
 		for ( i = 0 ; i < 4 ; i++ ) 
 		{
-			crTransform::GlobalPlaneToLocal( surf->space->modelMatrix, backEnd.vLight->lightProject[i], lightProject[i] );
+			//crTransform::GlobalPlaneToLocal( surf->space->modelMatrix, backEnd.vLight->lightProject[i], lightProject[i] );
+			lightProject[i] = surf->space->modelMatrix.GlobalPlaneToLocal( viewLight->lightProject[i] );
 		}
 
-		GL_SelectTexture( 0 );
-		glTexGenfv( GL_S, GL_OBJECT_PLANE, lightProject[0].ToFloatPtr() );
-		glTexGenfv( GL_T, GL_OBJECT_PLANE, lightProject[1].ToFloatPtr() );
-		glTexGenfv( GL_Q, GL_OBJECT_PLANE, lightProject[2].ToFloatPtr() );
+		SelectTexture( 0 );
+		// glTexGenfv( GL_S, GL_OBJECT_PLANE, lightProject[0].ToFloatPtr() );
+		m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_TEXGEN_0_S, 1, lightProject[0].ToFloatPtr() );
+		// glTexGenfv( GL_T, GL_OBJECT_PLANE, lightProject[1].ToFloatPtr() );
+		m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_TEXGEN_0_T, 1, lightProject[1].ToFloatPtr() );
+		// glTexGenfv( GL_Q, GL_OBJECT_PLANE, lightProject[2].ToFloatPtr() );
+		m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_TEXGEN_0_Q, 1, lightProject[2].ToFloatPtr() );
 
-		GL_SelectTexture( 1 );
-		glTexGenfv( GL_S, GL_OBJECT_PLANE, lightProject[3].ToFloatPtr() );
+		SelectTexture( 1 );
+		// glTexGenfv( GL_S, GL_OBJECT_PLANE, lightProject[3].ToFloatPtr() );
+		m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_TEXGEN_1_S, 1, lightProject[0].ToFloatPtr() );
 	}
 
 	// this gets used for both blend lights and shadow draws
+	VkBuffer buffer = nullptr;
+	VkDeviceSize size = 0;
+	VkDeviceSize offset = 0;
+	VkDeviceSize stride = sizeof( idDrawVert );
 	if ( tri->ambientCache ) 
 	{
-		idDrawVert	*ac = (idDrawVert *)vertexCache.Position( tri->ambientCache );
-		glVertexPointer( 3, GL_FLOAT, sizeof( idDrawVert ), ac->xyz.ToFloatPtr() );
+		offset = tri->ambientCache->Offset();
+		size = tri->ambientCache->Size();
 	} 
 	else if ( tri->shadowCache ) 
 	{
-		shadowCache_t	*sc = (shadowCache_t *)vertexCache.Position( tri->shadowCache );
-		glVertexPointer( 3, GL_FLOAT, sizeof( shadowCache_t ), sc->xyz.ToFloatPtr() );
+		offset = tri->shadowCache->Offset();
+		size = tri->shadowCache->Size();
 	}
-
-	RB_DrawElementsWithCounters( tri );
+	
+	vkCmdBindVertexBuffers2( m_commandBuffers[frameID], 0, 1, &buffer, &offset, &size, &stride );
+	DrawElementsWithCounters( tri );
 }
-
 
 /*
 =====================
-RB_BlendLight
+crBackend::BlendLight
 
 Dual texture together the falloff and projection texture with a blend
 mode to the framebuffer, instead of interacting with the surface texture
 =====================
 */
-static void RB_BlendLight( const drawSurf_t *drawSurfs,  const drawSurf_t *drawSurfs2 ) {
-	const idMaterial	*lightShader;
-	const shaderStage_t	*stage;
-	int					i;
+void crBackend::BlendLight( const drawSurf_t *drawSurfs,  const drawSurf_t *drawSurfs2 )
+{
+	const idMaterial	*lightShader = nullptr;
+	const shaderStage_t	*stage = nullptr;
+	int					i = 0;
 	const float	*regs;
 
-	if ( !drawSurfs ) {
+	if ( !drawSurfs ) 
 		return;
-	}
-	if ( r_skipBlendLights.GetBool() ) {
+	
+	if ( r_skipBlendLights.GetBool() ) 
 		return;
-	}
+	
 	RB_LogComment( "---------- RB_BlendLight ----------\n" );
 
-	lightShader = backEnd.vLight->lightShader;
-	regs = backEnd.vLight->shaderRegisters;
+	lightShader = viewLight->lightShader;
+	regs = viewLight->shaderRegisters;
 
 	// texture 1 will get the falloff texture
-	GL_SelectTexture( 1 );
-	glDisableClientState( GL_TEXTURE_COORD_ARRAY );
-	glEnable( GL_TEXTURE_GEN_S );
-	glTexCoord2f( 0, 0.5 );
-	backEnd.vLight->falloffImage->Bind();
+	SelectTexture( 1 ); 
+	
+	// glDisableClientState( GL_TEXTURE_COORD_ARRAY );
+	//glEnable( GL_TEXTURE_GEN_S );
+	// TODO: glTexCoord2f( 0, 0.5 );
+	viewLight->falloffImage->Bind();
 
 	// texture 0 will get the projected texture
-	GL_SelectTexture( 0 );
-	glDisableClientState( GL_TEXTURE_COORD_ARRAY );
-	glEnable( GL_TEXTURE_GEN_S );
-	glEnable( GL_TEXTURE_GEN_T );
-	glEnable( GL_TEXTURE_GEN_Q );
+	SelectTexture( 0 );
+	//glDisableClientState( GL_TEXTURE_COORD_ARRAY );
+	//glEnable( GL_TEXTURE_GEN_S );
+	//glEnable( GL_TEXTURE_GEN_T );
+	//glEnable( GL_TEXTURE_GEN_Q );
+	float enable[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_TEXGEN_0_ENABLED, 1, enable );
 
-	for ( i = 0 ; i < lightShader->GetNumStages() ; i++ ) {
+	for ( i = 0 ; i < lightShader->GetNumStages() ; i++ ) 
+	{
 		stage = lightShader->GetStage(i);
 
-		if ( !regs[ stage->conditionRegister ] ) {
+		if ( !regs[ stage->conditionRegister ] ) 
 			continue;
-		}
 
-		GL_State( GLS_DEPTHMASK | stage->drawStateBits | GLS_DEPTHFUNC_EQUAL );
+		// TODO: 
+		// GL_State( GLS_DEPTHMASK | stage->drawStateBits | GLS_DEPTHFUNC_EQUAL );
 
-		GL_SelectTexture( 0 );
+		SelectTexture( 0 );
 		stage->texture.image->Bind();
 
-		if ( stage->texture.hasMatrix ) {
-			RB_LoadShaderTextureMatrix( regs, &stage->texture );
-		}
+		if ( stage->texture.hasMatrix )
+			LoadShaderTextureMatrix( regs, &stage->texture );
 
 		// get the modulate values from the light, including alpha, unlike normal lights
-		backEnd.lightColor[0] = regs[ stage->color.registers[0] ];
-		backEnd.lightColor[1] = regs[ stage->color.registers[1] ];
-		backEnd.lightColor[2] = regs[ stage->color.registers[2] ];
-		backEnd.lightColor[3] = regs[ stage->color.registers[3] ];
-		glColor4fv( backEnd.lightColor );
+		lightColor[0] = regs[ stage->color.registers[0] ];
+		lightColor[1] = regs[ stage->color.registers[1] ];
+		lightColor[2] = regs[ stage->color.registers[2] ];
+		lightColor[3] = regs[ stage->color.registers[3] ];
+		
+		//glColor4fv( backEnd.lightColor );
 
-		RB_RenderDrawSurfChainWithFunction( drawSurfs, RB_T_BlendLight );
-		RB_RenderDrawSurfChainWithFunction( drawSurfs2, RB_T_BlendLight );
 
-		if ( stage->texture.hasMatrix ) {
-			GL_SelectTexture( 0 );
-			glMatrixMode( GL_TEXTURE );
-			glLoadIdentity();
-			glMatrixMode( GL_MODELVIEW );
+		RenderDrawSurfChainWithFunction( drawSurfs, std::bind(&crBackend::T_BlendLight, this, std::placeholders::_1) );
+		RenderDrawSurfChainWithFunction( drawSurfs2, std::bind(&crBackend::T_BlendLight, this, std::placeholders::_1) );
+
+		if ( stage->texture.hasMatrix ) 
+		{
+			SelectTexture( 0 );
+			// glMatrixMode( GL_TEXTURE );
+			// glLoadIdentity();
+			// glMatrixMode( GL_MODELVIEW );
+			m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_TEXTUREMATRIX_S, 2, k_IDENTITY_MAXTRIX );
+			m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_TEXGEN_0_S, 3, k_IDENTITY_MAXTRIX );
 		}
 	}
 
-	GL_SelectTexture( 1 );
-	glDisable( GL_TEXTURE_GEN_S );
+	SelectTexture( 1 );
+	//glDisable( GL_TEXTURE_GEN_S );
 	globalImages->BindNull();
 
-	GL_SelectTexture( 0 );
-	glDisable( GL_TEXTURE_GEN_S );
-	glDisable( GL_TEXTURE_GEN_T );
-	glDisable( GL_TEXTURE_GEN_Q );
+	SelectTexture( 0 );
+	float texten[4] { 0.0f, 0.0f, 0.0f, 0.0f };
+	// glDisable( GL_TEXTURE_GEN_S );
+	// glDisable( GL_TEXTURE_GEN_T );
+	// glDisable( GL_TEXTURE_GEN_Q );
+	m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_TEXGEN_0_ENABLED, 1, texten );
 }
 
 
@@ -1256,35 +1341,33 @@ RB_T_BasicFog
 
 =====================
 */
-static void RB_T_BasicFog( const drawSurf_t *surf ) 
+void crBackend::T_BasicFog( const drawSurf_t *surf ) 
 {
-	if ( backEnd.currentSpace != surf->space ) 
+	if ( currentSpace != surf->space ) 
 	{
 		idPlane	local;
 
-		GL_SelectTexture( 0 );
+		SelectTexture( 0 );
 
-		crTransform::GlobalPlaneToLocal( surf->space->modelMatrix, fogPlanes[0], local );
+		local = surf->space->modelMatrix.GlobalPlaneToLocal( fogPlanes[0] );
 		local[3] += 0.5;
-		glTexGenfv( GL_S, GL_OBJECT_PLANE, local.ToFloatPtr() );
+		m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_TEXGEN_0_S, 1, local.ToFloatPtr() );//glTexGenfv( GL_S, GL_OBJECT_PLANE, local.ToFloatPtr() );
 
-//		R_GlobalPlaneToLocal( surf->space->modelMatrix, fogPlanes[1], local );
-//		local[3] += 0.5;
-local[0] = local[1] = local[2] = 0; local[3] = 0.5;
-		glTexGenfv( GL_T, GL_OBJECT_PLANE, local.ToFloatPtr() );
+		local[0] = local[1] = local[2] = 0; local[3] = 0.5;
+		m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_TEXGEN_0_T, 1, local.ToFloatPtr() ); // glTexGenfv( GL_T, GL_OBJECT_PLANE, local.ToFloatPtr() );
 
-		GL_SelectTexture( 1 );
+		SelectTexture( 1 );
 
 		// GL_S is constant per viewer
-		crTransform::GlobalPlaneToLocal( surf->space->modelMatrix, fogPlanes[2], local );
+		local = surf->space->modelMatrix.GlobalPlaneToLocal( fogPlanes[2] );
 		local[3] += FOG_ENTER;
-		glTexGenfv( GL_T, GL_OBJECT_PLANE, local.ToFloatPtr() );
+		m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_TEXGEN_1_T, 1, local.ToFloatPtr() ); // glTexGenfv( GL_T, GL_OBJECT_PLANE, local.ToFloatPtr() );
 
-		crTransform::GlobalPlaneToLocal( surf->space->modelMatrix, fogPlanes[3], local );
-		glTexGenfv( GL_S, GL_OBJECT_PLANE, local.ToFloatPtr() );
+		local = surf->space->modelMatrix.GlobalPlaneToLocal( fogPlanes[3] );
+		m_vertexUniformBlock->ProgramParameter4fv( VERTEX_RENDERPARM_TEXGEN_1_S, 1, local.ToFloatPtr() ); // glTexGenfv( GL_S, GL_OBJECT_PLANE, local.ToFloatPtr() );
 	}
 
-	RB_T_RenderTriangleSurface( surf );
+	RenderTriangleSurface( surf );
 }
 
 
@@ -1294,143 +1377,149 @@ local[0] = local[1] = local[2] = 0; local[3] = 0.5;
 RB_FogPass
 ==================
 */
-static void RB_FogPass( const drawSurf_t *drawSurfs,  const drawSurf_t *drawSurfs2 ) {
-	const srfTriangles_t*frustumTris;
-	drawSurf_t			ds;
-	const idMaterial	*lightShader;
-	const shaderStage_t	*stage;
-	const float			*regs;
+void crBackend::FogPass( const drawSurf_t *drawSurfs,  const drawSurf_t *drawSurfs2 ) 
+{
+	drawSurf_t				ds;
+	int32_t texgens[4] { 0, 0, 0, 0 };
+	const srfTriangles_t* 	frustumTris = nullptr;
+	const idMaterial*		lightShader = nullptr;
+	const shaderStage_t*	stage = nullptr;
+	const float*			regs = nullptr;
 
 	RB_LogComment( "---------- RB_FogPass ----------\n" );
 
 	// create a surface for the light frustom triangles, which are oriented drawn side out
-	frustumTris = backEnd.vLight->frustumTris;
+	frustumTris = viewLight->frustumTris;
 
 	// if we ran out of vertex cache memory, skip it
-	if ( !frustumTris->ambientCache ) {
+	if ( !frustumTris->ambientCache ) 
 		return;
-	}
+
 	memset( &ds, 0, sizeof( ds ) );
-	ds.space = &backEnd.viewDef->worldSpace;
+	ds.space = &viewDef->worldSpace;
 	ds.geo = frustumTris;
-	ds.scissorRect = backEnd.viewDef->scissor;
+	ds.scissorRect = viewDef->scissor;
 
 	// find the current color and density of the fog
-	lightShader = backEnd.vLight->lightShader;
-	regs = backEnd.vLight->shaderRegisters;
+	lightShader = viewLight->lightShader;
+	regs = viewLight->shaderRegisters;
 	// assume fog shaders have only a single stage
 	stage = lightShader->GetStage(0);
 
-	backEnd.lightColor[0] = regs[ stage->color.registers[0] ];
-	backEnd.lightColor[1] = regs[ stage->color.registers[1] ];
-	backEnd.lightColor[2] = regs[ stage->color.registers[2] ];
-	backEnd.lightColor[3] = regs[ stage->color.registers[3] ];
-
-	glColor3fv( backEnd.lightColor );
+	lightColor[0] = regs[ stage->color.registers[0] ];
+	lightColor[1] = regs[ stage->color.registers[1] ];
+	lightColor[2] = regs[ stage->color.registers[2] ];
+	lightColor[3] = regs[ stage->color.registers[3] ];
+	m_vertexUniformBlock->ProgramParameter4fv( LIGHT_RENDERPARM_LIGHTCOLOR, 1, lightColor ); // glColor3fv( backEnd.lightColor );
 
 	// calculate the falloff planes
-	float	a;
+	float a = 0.0f;
 
 	// if they left the default value on, set a fog distance of 500
-	if ( backEnd.lightColor[3] <= 1.0 ) {
+	if ( lightColor[3] <= 1.0 ) 
 		a = -0.5f / DEFAULT_FOG_DISTANCE;
-	} else {
+	else 
 		// otherwise, distance = alpha color
-		a = -0.5f / backEnd.lightColor[3];
-	}
+		a = -0.5f / lightColor[3];
 
-	GL_State( GLS_DEPTHMASK | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_DEPTHFUNC_EQUAL );
+	//GL_State( GLS_DEPTHMASK | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_DEPTHFUNC_EQUAL );
 
 	// texture 0 is the falloff image
-	GL_SelectTexture( 0 );
+	SelectTexture( 0 );
 	globalImages->fogImage->Bind();
+	
 	//GL_Bind( tr.whiteImage );
-	glDisableClientState( GL_TEXTURE_COORD_ARRAY );
-	glEnable( GL_TEXTURE_GEN_S );
-	glEnable( GL_TEXTURE_GEN_T );
-	glTexCoord2f( 0.5f, 0.5f );		// make sure Q is set
+	texgens[0] = 1; // glEnable( GL_TEXTURE_GEN_S );
+	texgens[1] = 1; // glEnable( GL_TEXTURE_GEN_T );
+	m_vertexUniformBlock->ProgramParameter4iv( VERTEX_RENDERPARM_TEXGEN_1_ENABLED, 1, texgens );
+	// glDisableClientState( GL_TEXTURE_COORD_ARRAY );
 
-	fogPlanes[0][0] = a * backEnd.viewDef->worldSpace.modelViewMatrix[2];
-	fogPlanes[0][1] = a * backEnd.viewDef->worldSpace.modelViewMatrix[6];
-	fogPlanes[0][2] = a * backEnd.viewDef->worldSpace.modelViewMatrix[10];
-	fogPlanes[0][3] = a * backEnd.viewDef->worldSpace.modelViewMatrix[14];
+	// TODO:
+	// glTexCoord2f( 0.5f, 0.5f );		// make sure Q is set
 
-	fogPlanes[1][0] = a * backEnd.viewDef->worldSpace.modelViewMatrix[0];
-	fogPlanes[1][1] = a * backEnd.viewDef->worldSpace.modelViewMatrix[4];
-	fogPlanes[1][2] = a * backEnd.viewDef->worldSpace.modelViewMatrix[8];
-	fogPlanes[1][3] = a * backEnd.viewDef->worldSpace.modelViewMatrix[12];
+	fogPlanes[0][0] = a * viewDef->worldSpace.modelViewMatrix[2];
+	fogPlanes[0][1] = a * viewDef->worldSpace.modelViewMatrix[6];
+	fogPlanes[0][2] = a * viewDef->worldSpace.modelViewMatrix[10];
+	fogPlanes[0][3] = a * viewDef->worldSpace.modelViewMatrix[14];
+
+	fogPlanes[1][0] = a * viewDef->worldSpace.modelViewMatrix[0];
+	fogPlanes[1][1] = a * viewDef->worldSpace.modelViewMatrix[4];
+	fogPlanes[1][2] = a * viewDef->worldSpace.modelViewMatrix[8];
+	fogPlanes[1][3] = a * viewDef->worldSpace.modelViewMatrix[12];
 
 
 	// texture 1 is the entering plane fade correction
-	GL_SelectTexture( 1 );
+	SelectTexture( 1 );
 	globalImages->fogEnterImage->Bind();
-	glDisableClientState( GL_TEXTURE_COORD_ARRAY );
-	glEnable( GL_TEXTURE_GEN_S );
-	glEnable( GL_TEXTURE_GEN_T );
+	//glDisableClientState( GL_TEXTURE_COORD_ARRAY );
+	texgens[0] = 1; //glEnable( GL_TEXTURE_GEN_S );
+	texgens[1] = 1; //glEnable( GL_TEXTURE_GEN_T );
+	m_vertexUniformBlock->ProgramParameter4iv( VERTEX_RENDERPARM_TEXGEN_0_ENABLED, 1, texgens );
 
 	// T will get a texgen for the fade plane, which is always the "top" plane on unrotated lights
-	fogPlanes[2][0] = 0.001f * backEnd.vLight->fogPlane[0];
-	fogPlanes[2][1] = 0.001f * backEnd.vLight->fogPlane[1];
-	fogPlanes[2][2] = 0.001f * backEnd.vLight->fogPlane[2];
-	fogPlanes[2][3] = 0.001f * backEnd.vLight->fogPlane[3];
+	fogPlanes[2][0] = 0.001f * viewLight->fogPlane[0];
+	fogPlanes[2][1] = 0.001f * viewLight->fogPlane[1];
+	fogPlanes[2][2] = 0.001f * viewLight->fogPlane[2];
+	fogPlanes[2][3] = 0.001f * viewLight->fogPlane[3];
 
 	// S is based on the view origin
-	float s = backEnd.viewDef->renderView.vieworg * fogPlanes[2].Normal() + fogPlanes[2][3];
+	float s = viewDef->renderView.vieworg * fogPlanes[2].Normal() + fogPlanes[2][3];
 
 	fogPlanes[3][0] = 0;
 	fogPlanes[3][1] = 0;
 	fogPlanes[3][2] = 0;
 	fogPlanes[3][3] = FOG_ENTER + s;
 
-	glTexCoord2f( FOG_ENTER + s, FOG_ENTER );
-
+	// TODO:
+	// glTexCoord2f( FOG_ENTER + s, FOG_ENTER );
 
 	// draw it
-	RB_RenderDrawSurfChainWithFunction( drawSurfs, RB_T_BasicFog );
-	RB_RenderDrawSurfChainWithFunction( drawSurfs2, RB_T_BasicFog );
+	RenderDrawSurfChainWithFunction( drawSurfs, std::bind( &crBackend::T_BasicFog, this, std::placeholders::_1 ) );
+	RenderDrawSurfChainWithFunction( drawSurfs2, std::bind( &crBackend::T_BasicFog, this, std::placeholders::_1 ) );
 
 	// the light frustum bounding planes aren't in the depth buffer, so use depthfunc_less instead
 	// of depthfunc_equal
-	GL_State( GLS_DEPTHMASK | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_DEPTHFUNC_LESS );
-	GL_Cull( CT_BACK_SIDED );
-	RB_RenderDrawSurfChainWithFunction( &ds, RB_T_BasicFog );
-	GL_Cull( CT_FRONT_SIDED );
+	//GL_State( GLS_DEPTHMASK | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA | GLS_DEPTHFUNC_LESS );
+	//GL_Cull( CT_BACK_SIDED );
+	RenderDrawSurfChainWithFunction( &ds, std::bind( &crBackend::T_BasicFog, this, std::placeholders::_1) );
+	//GL_Cull( CT_FRONT_SIDED );
 
-	GL_SelectTexture( 1 );
-	glDisable( GL_TEXTURE_GEN_S );
-	glDisable( GL_TEXTURE_GEN_T );
+
+	SelectTexture( 1 );
 	globalImages->BindNull();
+	SelectTexture( 0 );
 
-	GL_SelectTexture( 0 );
-	glDisable( GL_TEXTURE_GEN_S );
-	glDisable( GL_TEXTURE_GEN_T );
+	texgens[0]= 0; // glDisable( GL_TEXTURE_GEN_S );
+	texgens[1]= 0; // glDisable( GL_TEXTURE_GEN_T );
+	m_vertexUniformBlock->ProgramParameter4iv( VERTEX_RENDERPARM_TEXGEN_1_ENABLED, 1, texgens );
+	m_vertexUniformBlock->ProgramParameter4iv( VERTEX_RENDERPARM_TEXGEN_0_ENABLED, 1, texgens );
 }
-
 
 /*
 ==================
-RB_STD_FogAllLights
+crBackend::STD_FogAllLights
 ==================
 */
-void RB_STD_FogAllLights( void ) {
-	viewLight_t	*vLight;
+void crBackend::STD_FogAllLights( void )
+{
+	crAutoPointer<viewLight_t>	vLight;
 
 	if ( r_skipFogLights.GetBool() || r_showOverDraw.GetInteger() != 0 
-		 || backEnd.viewDef->isXraySubview /* dont fog in xray mode*/
+		 || viewDef->isXraySubview /* dont fog in xray mode*/
 		 ) {
 		return;
 	}
 
 	RB_LogComment( "---------- RB_STD_FogAllLights ----------\n" );
 
-	glDisable( GL_STENCIL_TEST );
+	// glDisable( GL_STENCIL_TEST );
 
-	for ( vLight = backEnd.viewDef->viewLights ; vLight ; vLight = vLight->next ) {
-		backEnd.vLight = vLight;
+	for ( vLight = viewDef->viewLights ; vLight ; vLight = vLight->next ) 
+	{
+		viewLight = vLight;
 
-		if ( !vLight->lightShader->IsFogLight() && !vLight->lightShader->IsBlendLight() ) {
+		if ( !vLight->lightShader->IsFogLight() && !vLight->lightShader->IsBlendLight() )
 			continue;
-		}
 
 #if 0 // _D3XP disabled that
 		if ( r_ignore.GetInteger() ) {
@@ -1457,86 +1546,80 @@ void RB_STD_FogAllLights( void ) {
 		}
 #endif
 
-		if ( vLight->lightShader->IsFogLight() ) {
-			RB_FogPass( vLight->globalInteractions, vLight->localInteractions );
-		} else if ( vLight->lightShader->IsBlendLight() ) {
-			RB_BlendLight( vLight->globalInteractions, vLight->localInteractions );
-		}
-		glDisable( GL_STENCIL_TEST );
+		if ( vLight->lightShader->IsFogLight() )
+			FogPass( vLight->globalInteractions, vLight->localInteractions );
+		else if ( vLight->lightShader->IsBlendLight() ) 
+			BlendLight( vLight->globalInteractions, vLight->localInteractions );
+		
+		// glDisable( GL_STENCIL_TEST );
 	}
 
-	glEnable( GL_STENCIL_TEST );
+	// glEnable( GL_STENCIL_TEST );
 }
 
 //=========================================================================================
 
 /*
 ==================
-RB_STD_LightScale
+crBackend::STD_LightScale
 
 Perform extra blending passes to multiply the entire buffer by
 a floating point value
 ==================
 */
-void RB_STD_LightScale( void ) {
-	float	v, f;
+void crBackend::STD_LightScale( void ) 
+{
+	float	v = 0.0f, f = 0.0f;
 
-	if ( backEnd.overBright == 1.0f ) {
+	if ( overBright == 1.0f ) 
 		return;
-	}
 
-	if ( r_skipLightScale.GetBool() ) {
+	if ( r_skipLightScale.GetBool() )
 		return;
-	}
 
 	RB_LogComment( "---------- RB_STD_LightScale ----------\n" );
 
 	// the scissor may be smaller than the viewport for subviews
 	if ( r_useScissor.GetBool() ) 
-	{
-		glScissor( backEnd.viewDef->viewport.x1 + backEnd.viewDef->scissor.x1, 
-			backEnd.viewDef->viewport.y1 + backEnd.viewDef->scissor.y1, 
-			backEnd.viewDef->scissor.x2 - backEnd.viewDef->scissor.x1 + 1,
-			backEnd.viewDef->scissor.y2 - backEnd.viewDef->scissor.y1 + 1 );
-		backEnd.currentScissor = backEnd.viewDef->scissor;
-	}
+		Scissor( viewDef->scissor );
 
 	// full screen blends
-	glLoadIdentity();
-	glMatrixMode( GL_PROJECTION );
-	glPushMatrix();
-	glLoadIdentity(); 
-    glOrtho( 0, 1, 0, 1, -1, 1 );
+	// glLoadIdentity();
+	// glMatrixMode( GL_PROJECTION );
+	// glPushMatrix();
+	// glLoadIdentity(); 
+    // glOrtho( 0, 1, 0, 1, -1, 1 );
 
-	GL_State( GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_SRC_COLOR );
-	GL_Cull( CT_TWO_SIDED );	// so mirror views also get it
+	// GL_State( GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_SRC_COLOR );
+	// GL_Cull( CT_TWO_SIDED );	// so mirror views also get it
 	globalImages->BindNull();
-	glDisable( GL_DEPTH_TEST );
-	glDisable( GL_STENCIL_TEST );
+	// glDisable( GL_DEPTH_TEST );
+	// glDisable( GL_STENCIL_TEST );
 
 	v = 1;
-	while ( idMath::Fabs( v - backEnd.overBright ) > 0.01 ) {	// a little extra slop
-		f = backEnd.overBright / v;
+	while ( idMath::Fabs( v - overBright ) > 0.01 ) // a little extra slop
+	{	
+		f = overBright / v;
 		f /= 2;
-		if ( f > 1 ) {
+		if ( f > 1 )
 			f = 1;
-		}
-		glColor3f( f, f, f );
+		
+		// glColor3f( f, f, f );
 		v = v * f * 2;
 
-		glBegin( GL_QUADS );
-		glVertex2f( 0,0 );	
-		glVertex2f( 0,1 );
-		glVertex2f( 1,1 );	
-		glVertex2f( 1,0 );	
-		glEnd();
+		//glBegin( GL_QUADS );
+		//glVertex2f( 0,0 );	
+		//glVertex2f( 0,1 );
+		//glVertex2f( 1,1 );	
+		//glVertex2f( 1,0 );	
+		//glEnd();
 	}
 
 
-	glPopMatrix();
-	glEnable( GL_DEPTH_TEST );
-	glMatrixMode( GL_MODELVIEW );
-	GL_Cull( CT_FRONT_SIDED );
+	// glPopMatrix();
+	// glEnable( GL_DEPTH_TEST );
+	// glMatrixMode( GL_MODELVIEW );
+	// GL_Cull( CT_FRONT_SIDED );
 }
 
 //=========================================================================================
@@ -1553,8 +1636,8 @@ void crBackend::STD_DrawView( void )
 
 	RB_LogComment( "---------- RB_STD_DrawView ----------\n" );
 
-	drawSurfs = (drawSurf_t **)&backEnd.viewDef->drawSurfs[0];
-	numDrawSurfs = backEnd.viewDef->numDrawSurfs;
+	drawSurfs = (drawSurf_t **)&viewDef->drawSurfs[0];
+	numDrawSurfs = viewDef->numDrawSurfs;
 
 	// clear the z buffer, set the projection matrix, etc
 	BeginDrawingView();
@@ -1570,20 +1653,21 @@ void crBackend::STD_DrawView( void )
 	DrawInteractions();
 	
 	// disable stencil shadow test
-	glStencilFunc( GL_ALWAYS, 128, 255 );
+	vkCmdSetStencilCompareMask( m_commandBuffers[frameID], VK_STENCIL_FACE_FRONT_AND_BACK, 255 ); // glStencilFunc( GL_ALWAYS, 128, 255 );
 
 	// uplight the entire screen to crutch up not having better blending range
 	STD_LightScale();
 
 	// now draw any non-light dependent shading passes
-	int	processed = RB_STD_DrawShaderPasses( drawSurfs, numDrawSurfs );
+	int	processed = STD_DrawShaderPasses( drawSurfs, numDrawSurfs );
 
 	// fob and blend lights
 	STD_FogAllLights();
 
 	// now draw any post-processing effects using _currentRender
-	if ( processed < numDrawSurfs ) {
-		RB_STD_DrawShaderPasses( drawSurfs+processed, numDrawSurfs-processed );
+	if ( processed < numDrawSurfs ) 
+	{
+		STD_DrawShaderPasses( drawSurfs+processed, numDrawSurfs-processed );
 	}
 
 	RB_RenderDebugTools( drawSurfs, numDrawSurfs );
