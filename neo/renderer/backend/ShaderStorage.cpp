@@ -44,6 +44,7 @@ crUniformBlock::Create
 */
 void crUniformBlock::Create( const uint32_t in_blockElements, const uint32_t in_blockCount )
 {
+    auto renderer = tr.GetRenderDevice();
     static const VkMemoryPropertyFlags k_staginProperties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     static const VkMemoryPropertyFlags k_localProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
@@ -52,12 +53,12 @@ void crUniformBlock::Create( const uint32_t in_blockElements, const uint32_t in_
 
     // Vertex shader buffer object
     m_shaderStorageBuffer = crAutoPointer<crvkBufferStatic>::New();
-    m_shaderStorageBuffer->Create( tr.m_renderDevice, m_bufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, k_localProperties );
+    m_shaderStorageBuffer->Create( &renderer, m_bufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, k_localProperties );
     
     // Staging vertex shader buffer object
     m_shaderStorageBufferStagin = crAutoPointer<crvkBuffer>::New();
-    m_shaderStorageBufferStagin->Create( tr.m_renderDevice, m_bufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, k_staginProperties );
-    m_bufferMap = static_cast<float*>( m_shaderStorageBufferStagin->Map( 0, m_bufferSize, CRVK_BUFFER_MAP_ACCESS_WRITE ) );
+    m_shaderStorageBufferStagin->Create( &renderer, m_bufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, k_staginProperties );
+    m_bufferMap = static_cast<uniformVec4_t*>( m_shaderStorageBufferStagin->Map( 0, m_bufferSize, CRVK_BUFFER_MAP_ACCESS_WRITE ) );
 
     m_region.head = 0;
     m_region.tail = 0;
@@ -65,9 +66,9 @@ void crUniformBlock::Create( const uint32_t in_blockElements, const uint32_t in_
 
 /*
 =======================
+crUniformBlock::Destoy
 =======================
 */
-
 void crUniformBlock::Destoy( void )
 {
     if( m_shaderStorageBuffer )
@@ -80,6 +81,11 @@ void crUniformBlock::Destoy( void )
     }
 }
 
+/*
+=======================
+crUniformBlock::Flush
+=======================
+*/
 void crUniformBlock::Flush( void )
 {
     // copy content from staging buffer to the device buffer
@@ -93,6 +99,11 @@ void crUniformBlock::Flush( void )
     m_region.tail = m_region.head;
 }
 
+/*
+=======================
+crUniformBlock::Submit
+=======================
+*/
 void crUniformBlock::Submit( void )
 {
     std::memcpy( &m_bufferMap[m_region.head], m_block, m_blockSize );
@@ -110,8 +121,13 @@ void crUniformBlock::Submit( void )
     }
 }
 
+/*
+=======================
+crUniformBlock::ProgramParameter4fv
+=======================
+*/
 void crUniformBlock::ProgramParameter4fv( const renderParms_t in_renderParm, const uint32_t in_count, const float* in_parms )
 {
-    uint32_t offset = in_renderParm * 4;
-    std::memcpy( &m_block[offset], in_parms, ( sizeof( float ) * 4 ) * in_count );
+    assert( in_renderParm < m_blockSize );
+    std::memcpy( &m_block[in_renderParm], in_parms, sizeof( uniformVec4_t ) * in_count );
 }
