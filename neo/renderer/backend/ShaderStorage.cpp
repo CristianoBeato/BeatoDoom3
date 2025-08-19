@@ -131,3 +131,14 @@ void crUniformBlock::ProgramParameter4fv( const renderParms_t in_renderParm, con
     assert( in_renderParm < m_blockSize );
     std::memcpy( &m_block[in_renderParm], in_parms, sizeof( uniformVec4_t ) * in_count );
 }
+
+/*
+=======================
+crUniformBlock::ProgramParameter4iv
+=======================
+*/
+void crUniformBlock::ProgramParameter4iv(const renderParms_t in_renderParm, const uint32_t in_count, const int32_t *in_parms )
+{
+    assert( in_renderParm < m_blockSize );
+    std::memcpy( &m_block[in_renderParm], in_parms, sizeof( uniformVec4_t ) * in_count );
+}

@@ -116,6 +116,7 @@ public:
     void    Flush( void );
     void    Submit( void );
     void    ProgramParameter4fv( const renderParms_t in_renderParm, const uint32_t in_count, const float* in_parms );
+	void	ProgramParameter4iv( const renderParms_t in_renderParm, const uint32_t in_count, const int32_t* in_parms );
 
 private:
     struct uniformVec4_t
