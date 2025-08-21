@@ -91,9 +91,11 @@ void crBackend::PrepareStageTexturing( const shaderStage_t *pStage,  const drawS
 {
 	static int32_t texgen[4] = { 1, 1, 1, 1 }; // all one to enable texgen
 
+#if 0 // todo: set this direct on shader pipeline
 	// set privatePolygonOffset if necessary
-	if ( pStage->privatePolygonOffset ) // todo: set this direct on shader 
+	if ( pStage->privatePolygonOffset ) 
 		vkCmdSetDepthBias( m_commandBuffers[frameID], r_offsetFactor.GetFloat(), 0.0f, r_offsetUnits.GetFloat() * pStage->privatePolygonOffset );
+#endif
 
 	// set the texture matrix if needed
 	if ( pStage->texture.hasMatrix ) 
@@ -878,7 +880,7 @@ void crBackend::SetVertexColorParms(stageVertexColor_t svc)
 	}
 }
 
-void crBackend::SetPipeline(const crAutoPointer<crvkPipeline> m_pipeline)
+void crBackend::SetPipeline(const crAutoPointer<crvkGraphicPipeline> m_pipeline)
 {
 	assert( m_pipeline );
 	m_currentPipeline = m_pipeline;
@@ -893,13 +895,11 @@ void crBackend::SetPipeline(const crAutoPointer<crvkPipeline> m_pipeline)
  */
 int crBackend::STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ) 
 {
-	int				i;
+	int i = 0;
 
 	// only obey skipAmbient if we are rendering a view
 	if ( viewDef->viewEntitys && r_skipAmbient.GetBool() ) 
-	{
 		return numDrawSurfs;
-	}
 
 	RB_LogComment( "---------- RB_STD_DrawShaderPasses ----------\n" );
 
@@ -922,9 +922,7 @@ int crBackend::STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs )
 
 	SelectTexture( 1 );
 	globalImages->BindNull();
-
 	SelectTexture( 0 );
-	
 	
 	SetProgramEnvironment();
 
@@ -1653,6 +1651,7 @@ void crBackend::STD_DrawView( void )
 	DrawInteractions();
 	
 	// disable stencil shadow test
+	vkCmdSetStencilTestEnable( m_commandBuffers[frameID], VK_TRUE );
 	vkCmdSetStencilCompareMask( m_commandBuffers[frameID], VK_STENCIL_FACE_FRONT_AND_BACK, 255 ); // glStencilFunc( GL_ALWAYS, 128, 255 );
 
 	// uplight the entire screen to crutch up not having better blending range

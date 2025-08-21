@@ -466,12 +466,12 @@ void crFrontend::ConstrainViewFrustum( void )
 
 	// constrain the view frustum to the total bounds of all visible lights and visible entities
 	bounds.Clear();
-	for ( viewLight_t *vLight = viewDef->viewLights; vLight; vLight = vLight->next )
+	for ( crAutoPointer<viewLight_t> vLight = viewDef->viewLights; vLight; vLight = vLight->next )
 	{
 		bounds.AddBounds( vLight->lightDef->frustumTris->bounds );
 	}
 	
-	for ( viewEntity_t *vEntity = viewDef->viewEntitys; vEntity; vEntity = vEntity->next ) 
+	for ( crAutoPointer<viewEntity_t> vEntity = viewDef->viewEntitys; vEntity; vEntity = vEntity->next ) 
 	{
 		bounds.AddBounds( vEntity->entityDef->referenceBounds );
 	}
@@ -524,7 +524,7 @@ crFrontend::SortDrawSurfs
 void crFrontend::SortDrawSurfs( void )
 {
 	// sort the drawsurfs by sort type, then orientation, then shader
-	qsort( viewDef->drawSurfs, viewDef->numDrawSurfs, sizeof( viewDef->drawSurfs[0] ), QsortSurfaces );
+	std::qsort( viewDef->drawSurfs, viewDef->numDrawSurfs, sizeof( viewDef->drawSurfs[0] ), QsortSurfaces );
 }
 
 

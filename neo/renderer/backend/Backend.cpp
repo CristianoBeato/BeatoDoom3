@@ -465,6 +465,8 @@ void crBackend::CopyRender( const void *data )
 	c_copyFrameBuffer++;
 }
 
+// BEATO Begin: Set on material
+#if 0
 void crBackend::SetCull( const cullType_t culling )
 {
 	VkCullModeFlags cullMode; 
@@ -486,6 +488,8 @@ void crBackend::SetCull( const cullType_t culling )
 	// change the face culling 
 	vkCmdSetCullMode( m_commandBuffers[frameID], cullMode );
 }
+#endif 
+// BEATO End
 
 /*
 ====================

@@ -451,10 +451,10 @@ overbright past 1.0
 void crBackend::DetermineLightScale( void ) 
 {
 	int					i = 0, j = 0, numStages = 0;
-	float				max;
-	viewLight_t			*vLight = nullptr;
-	const idMaterial	*shader = nullptr;
+	float				max = 0.0f;
 	const shaderStage_t	*stage = nullptr;
+	const idMaterial	*shader = nullptr;
+	crAutoPointer<viewLight_t> vLight;
 
 	// the light scale will be based on the largest color component of any surface
 	// that will be drawn.
@@ -538,22 +538,25 @@ void crBackend::BeginDrawingView( void )
 		// some cards may have 7 bit stencil buffers, so don't assume this
 		// should be 128
 		uint32_t stencilClearValue = 1 << ( glConfig.stencilBits - 1);
-
 		vkCmdSetStencilWriteMask( m_commandBuffers[frameID], VK_STENCIL_FACE_FRONT_BIT, 0xff ); //	glStencilMask( 0xff );
 		
 		// glClearStencil( 1<<(glConfig.stencilBits-1) );
 		// glClear( GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
-		// glEnable( GL_DEPTH_TEST );
+		vkCmdSetDepthTestEnable( m_commandBuffers[frameID], VK_TRUE ); // glEnable( GL_DEPTH_TEST );
 	} 
 	else 
 	{
-	//	glDisable( GL_DEPTH_TEST );
-	//	glDisable( GL_STENCIL_TEST );
+		vkCmdSetDepthTestEnable( m_commandBuffers[frameID], VK_FALSE ); // glDisable( GL_DEPTH_TEST );
+		vkCmdSetStencilTestEnable( m_commandBuffers[frameID], VK_FALSE ); // glDisable( GL_STENCIL_TEST );
 	}
-//
+
+#if 0
 	//glState.faceCulling = -1;		// force face culling to set next time
 	//GL_Cull( CT_FRONT_SIDED );
 	SetCull( CT_FRONT_SIDED ); // TODO: check if are set in shader pipeline
+#else
+	vkCmdSetCullMode( m_commandBuffers[frameID], VK_CULL_MODE_BACK_BIT );
+#endif
 
 }
 
@@ -722,7 +725,7 @@ void crBackend::CreateSingleDrawInteractions( const drawSurf_t *surf, std::funct
 		
 		inter.lightImage = lightStage->texture.image;
 
-		memcpy( inter.lightProjection, lightProject, sizeof( inter.lightProjection ) );
+		std::memcpy( inter.lightProjection, lightProject, sizeof( inter.lightProjection ) );
 		// now multiply the texgen by the light texture matrix
 		if ( lightStage->texture.hasMatrix ) 
 		{
@@ -827,7 +830,7 @@ void crBackend::ShowOverdraw( void )
 	const idMaterial *	material = nullptr;
 	drawSurf_t * *		drawSurfs = nullptr;
 	const drawSurf_t *	surf = nullptr;
-	viewLight_t *		vLight = nullptr;
+	crAutoPointer<viewLight_t>		vLight;
 
 	if ( r_showOverDraw.GetInteger() == 0 ) 
 		return;

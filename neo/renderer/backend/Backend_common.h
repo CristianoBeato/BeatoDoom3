@@ -144,7 +144,7 @@ private:
     // render commands
     VkSemaphore                                 m_renderFinished;
     idStaticList<VkCommandBuffer, SMP_FRAMES>   m_commandBuffers;
-    crAutoPointer<crvkPipeline>                 m_currentPipeline;
+    crAutoPointer<crvkGraphicPipeline>          m_currentPipeline;
 
     // these pipelines are used for post passes, that don't use material/shader pipelines
     crAutoPointer<crvkGraphicPipeline>          m_blendLightPipeline;
@@ -204,7 +204,7 @@ private:
     int         STD_DrawShaderPasses( drawSurf_t **drawSurfs, int numDrawSurfs ); 
     void        RenderShaderPasses( const drawSurf_t *surf );
     void        SetVertexColorParms( stageVertexColor_t svc );
-    void        SetPipeline( const crAutoPointer<crvkPipeline> m_pipeline );
+    void        SetPipeline( const crAutoPointer<crvkGraphicPipeline> m_pipeline );
     void        T_BlendLight( const drawSurf_t *surf );
     void        BlendLight( const drawSurf_t *drawSurfs,  const drawSurf_t *drawSurfs2 );
     void        T_BasicFog( const drawSurf_t *surf ); 
@@ -221,7 +221,11 @@ private:
     void                            SetBuffer( const void *data );
     void                            SwapBuffers( const void *data );
     void                            CopyRender( const void *data ); 
+
+    // now set on material
+#if 0
     void                            SetCull( const cullType_t culling );
+#endif
 };
 
 #endif //!__BACKEND_COMMON_H__
