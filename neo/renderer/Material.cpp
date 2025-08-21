@@ -29,6 +29,11 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
+// BEATO Begin:
+#include <crvkPipeline.hpp>
+// BEATO End
+
+#include "Material.h"
 #include "renderer_common.h"
 
 /*
@@ -70,12 +75,54 @@ typedef struct mtrParsingData_s
 } mtrParsingData_t;
 
 
+// BEATO Begin:
+// these are static and never change
+
+// vertex buffer binding 
+static const uint32_t	k_vertexInputBindingCount = 1;
+static const VkVertexInputBindingDescription k_vertexInputBinding[k_vertexInputBindingCount]
+{
+	{ 0, sizeof(idDrawVert), VK_VERTEX_INPUT_RATE_VERTEX }
+};
+
+// vertex structure 
+static const uint32_t k_vertexInputAttributeCount = 6;
+static const VkVertexInputAttributeDescription k_vertexInputAttribute[k_vertexInputAttributeCount]
+{
+	{ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof( idDrawVert, xyz ) }, // xyz
+	{ 1, 0, VK_FORMAT_R32G32_SFLOAT, offsetof( idDrawVert, st ) }, // st
+	{ 2, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof( idDrawVert, normal ) }, // normal
+	{ 3, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof( idDrawVert, tangents[0] ) }, // tangents[0]
+	{ 4, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof( idDrawVert, tangents[1] ) },// tangents[1]
+	{ 5, 0, VK_FORMAT_R8G8B8A8_UNORM, offsetof( idDrawVert, normal ) } // color
+};
+
+// the pipeline dynamic states
+// states that change along the rendering
+static const uint32_t		k_dynamicStatesCount = 9;
+static const VkDynamicState k_dynamicStates[k_dynamicStatesCount]
+{
+	VK_DYNAMIC_STATE_VIEWPORT,				// change viewport along the render view
+	VK_DYNAMIC_STATE_SCISSOR,				// change the scizor based on mesh lights 
+	VK_DYNAMIC_STATE_LINE_WIDTH,			//
+//	VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE,		// enable disable depth test
+	VK_DYNAMIC_STATE_DEPTH_BIAS,			//
+	VK_DYNAMIC_STATE_DEPTH_BOUNDS,			//
+//	VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE,
+	VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK,	//
+	VK_DYNAMIC_STATE_STENCIL_WRITE_MASK,	//
+	VK_DYNAMIC_STATE_CULL_MODE,
+	VK_DYNAMIC_STATE_FRONT_FACE
+};
+// BEATO End
+
 /*
 =============
 idMaterial::CommonInit
 =============
 */
-void idMaterial::CommonInit() {
+void idMaterial::CommonInit() 
+{
 	desc = "<none>";
 	renderBump = "";
 	contentFlags = CONTENTS_SOLID;
@@ -144,7 +191,8 @@ idMaterial::idMaterial( void )
 idMaterial::~idMaterial
 =============
 */
-idMaterial::~idMaterial() {
+idMaterial::~idMaterial( void ) 
+{
 }
 
 /*
@@ -154,8 +202,7 @@ idMaterial::FreeData
 */
 void idMaterial::FreeData( void ) 
 {
-	int i;
-
+	int i = 0;
 	if ( stages ) 
 	{
 		// delete any idCinematic textures
@@ -195,6 +242,14 @@ void idMaterial::FreeData( void )
 		tr.frameData->StaticFree( ops );
 		ops = nullptr;
 	}
+
+	// BEATO Begin: Destroy Pipeline
+	if( m_pipeline )
+	{
+		m_pipeline->Destroy();
+		crAutoPointer<crvkGraphicPipeline>::Delete( m_pipeline );
+	}
+	// BEATO End
 }
 
 /*
@@ -417,19 +472,25 @@ void idMaterial::ParseDecalInfo( idLexer &src ) {
 idMaterial::GetExpressionConstant
 =============
 */
-int idMaterial::GetExpressionConstant( float f ) {
-	int		i;
+int idMaterial::GetExpressionConstant( float f ) 
+{
+	int i = 0;
 
-	for ( i = EXP_REG_NUM_PREDEFINED ; i < numRegisters ; i++ ) {
-		if ( !pd->registerIsTemporary[i] && pd->shaderRegisters[i] == f ) {
+	for ( i = EXP_REG_NUM_PREDEFINED ; i < numRegisters ; i++ ) 
+	{
+		if ( !pd->registerIsTemporary[i] && pd->shaderRegisters[i] == f ) 
+		{
 			return i;
 		}
 	}
-	if ( numRegisters == MAX_EXPRESSION_REGISTERS ) {
+
+	if ( numRegisters == MAX_EXPRESSION_REGISTERS ) 
+	{
 		common->Warning( "GetExpressionConstant: material '%s' hit MAX_EXPRESSION_REGISTERS", GetName() );
 		SetMaterialFlag( MF_DEFAULTED );
 		return 0;
 	}
+
 	pd->registerIsTemporary[i] = false;
 	pd->shaderRegisters[i] = f;
 	numRegisters++;
@@ -442,12 +503,15 @@ int idMaterial::GetExpressionConstant( float f ) {
 idMaterial::GetExpressionTemporary
 =============
 */
-int idMaterial::GetExpressionTemporary( void ) {
-	if ( numRegisters == MAX_EXPRESSION_REGISTERS ) {
+int idMaterial::GetExpressionTemporary( void ) 
+{
+	if ( numRegisters == MAX_EXPRESSION_REGISTERS ) 
+	{
 		common->Warning( "GetExpressionTemporary: material '%s' hit MAX_EXPRESSION_REGISTERS", GetName() );
 		SetMaterialFlag( MF_DEFAULTED );
 		return 0;
 	}
+	
 	pd->registerIsTemporary[numRegisters] = true;
 	numRegisters++;
 	return numRegisters - 1;
@@ -458,8 +522,10 @@ int idMaterial::GetExpressionTemporary( void ) {
 idMaterial::GetExpressionOp
 =============
 */
-expOp_t	*idMaterial::GetExpressionOp( void ) {
-	if ( numOps == MAX_EXPRESSION_OPS ) {
+expOp_t	*idMaterial::GetExpressionOp( void ) 
+{
+	if ( numOps == MAX_EXPRESSION_OPS ) 
+	{
 		common->Warning( "GetExpressionOp: material '%s' hit MAX_EXPRESSION_OPS", GetName() );
 		SetMaterialFlag( MF_DEFAULTED );
 		return &pd->shaderOps[0];
@@ -771,7 +837,8 @@ int idMaterial::ParseExpression( idLexer &src ) {
 idMaterial::ClearStage
 ===============
 */
-void idMaterial::ClearStage( shaderStage_t *ss ) {
+void idMaterial::ClearStage( shaderStage_t *ss ) 
+{
 	ss->drawStateBits = 0;
 	ss->conditionRegister = GetExpressionConstant( 1 );
 	ss->color.registers[0] =
@@ -785,26 +852,26 @@ void idMaterial::ClearStage( shaderStage_t *ss ) {
 idMaterial::NameToSrcBlendMode
 ===============
 */
-int idMaterial::NameToSrcBlendMode( const idStr &name ) {
-	if ( !name.Icmp( "GL_ONE" ) ) {
+int idMaterial::NameToSrcBlendMode( const idStr &name ) 
+{
+	if ( !name.Icmp( "GL_ONE" ) ) 
 		return GLS_SRCBLEND_ONE;
-	} else if ( !name.Icmp( "GL_ZERO" ) ) {
+	else if ( !name.Icmp( "GL_ZERO" ) ) 
 		return GLS_SRCBLEND_ZERO;
-	} else if ( !name.Icmp( "GL_DST_COLOR" ) ) {
+	else if ( !name.Icmp( "GL_DST_COLOR" ) ) 
 		return GLS_SRCBLEND_DST_COLOR;
-	} else if ( !name.Icmp( "GL_ONE_MINUS_DST_COLOR" ) ) {
+	else if ( !name.Icmp( "GL_ONE_MINUS_DST_COLOR" ) ) 
 		return GLS_SRCBLEND_ONE_MINUS_DST_COLOR;
-	} else if ( !name.Icmp( "GL_SRC_ALPHA" ) ) {
+	else if ( !name.Icmp( "GL_SRC_ALPHA" ) ) 
 		return GLS_SRCBLEND_SRC_ALPHA;
-	} else if ( !name.Icmp( "GL_ONE_MINUS_SRC_ALPHA" ) ) {
+	else if ( !name.Icmp( "GL_ONE_MINUS_SRC_ALPHA" ) )
 		return GLS_SRCBLEND_ONE_MINUS_SRC_ALPHA;
-	} else if ( !name.Icmp( "GL_DST_ALPHA" ) ) {
+	else if ( !name.Icmp( "GL_DST_ALPHA" ) ) 
 		return GLS_SRCBLEND_DST_ALPHA;
-	} else if ( !name.Icmp( "GL_ONE_MINUS_DST_ALPHA" ) ) {
+	else if ( !name.Icmp( "GL_ONE_MINUS_DST_ALPHA" ) ) 
 		return GLS_SRCBLEND_ONE_MINUS_DST_ALPHA;
-	} else if ( !name.Icmp( "GL_SRC_ALPHA_SATURATE" ) ) {
+	else if ( !name.Icmp( "GL_SRC_ALPHA_SATURATE" ) ) 
 		return GLS_SRCBLEND_ALPHA_SATURATE;
-	}
 
 	common->Warning( "unknown blend mode '%s' in material '%s'", name.c_str(), GetName() );
 	SetMaterialFlag( MF_DEFAULTED );
@@ -817,25 +884,25 @@ int idMaterial::NameToSrcBlendMode( const idStr &name ) {
 idMaterial::NameToDstBlendMode
 ===============
 */
-int idMaterial::NameToDstBlendMode( const idStr &name ) {
-	if ( !name.Icmp( "GL_ONE" ) ) {
+int idMaterial::NameToDstBlendMode( const idStr &name ) 
+{
+	if ( !name.Icmp( "GL_ONE" ) ) 
 		return GLS_DSTBLEND_ONE;
-	} else if ( !name.Icmp( "GL_ZERO" ) ) {
+	else if ( !name.Icmp( "GL_ZERO" ) ) 
 		return GLS_DSTBLEND_ZERO;
-	} else if ( !name.Icmp( "GL_SRC_ALPHA" ) ) {
+	else if ( !name.Icmp( "GL_SRC_ALPHA" ) ) 
 		return GLS_DSTBLEND_SRC_ALPHA;
-	} else if ( !name.Icmp( "GL_ONE_MINUS_SRC_ALPHA" ) ) {
+	else if ( !name.Icmp( "GL_ONE_MINUS_SRC_ALPHA" ) ) 
 		return GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA;
-	} else if ( !name.Icmp( "GL_DST_ALPHA" ) ) {
+	else if ( !name.Icmp( "GL_DST_ALPHA" ) ) 
 		return GLS_DSTBLEND_DST_ALPHA;
-	} else if ( !name.Icmp( "GL_ONE_MINUS_DST_ALPHA" ) ) {
+	else if ( !name.Icmp( "GL_ONE_MINUS_DST_ALPHA" ) ) 
 		return GLS_DSTBLEND_ONE_MINUS_DST_ALPHA;
-	} else if ( !name.Icmp( "GL_SRC_COLOR" ) ) {
+	else if ( !name.Icmp( "GL_SRC_COLOR" ) ) 
 		return GLS_DSTBLEND_SRC_COLOR;
-	} else if ( !name.Icmp( "GL_ONE_MINUS_SRC_COLOR" ) ) {
+	else if ( !name.Icmp( "GL_ONE_MINUS_SRC_COLOR" ) ) 
 		return GLS_DSTBLEND_ONE_MINUS_SRC_COLOR;
-	}
-
+	
 	common->Warning( "unknown blend mode '%s' in material '%s'", name.c_str(), GetName() );
 	SetMaterialFlag( MF_DEFAULTED );
 
@@ -847,42 +914,53 @@ int idMaterial::NameToDstBlendMode( const idStr &name ) {
 idMaterial::ParseBlend
 ================
 */
-void idMaterial::ParseBlend( idLexer &src, shaderStage_t *stage ) {
+void idMaterial::ParseBlend( idLexer &src, shaderStage_t *stage ) 
+{
 	idToken token;
 	int		srcBlend, dstBlend;
 
-	if ( !src.ReadToken( &token ) ) {
+	if ( !src.ReadToken( &token ) ) 
 		return;
-	}
 
 	// blending combinations
-	if ( !token.Icmp( "blend" ) ) {
+	if ( !token.Icmp( "blend" ) ) 
+	{
 		stage->drawStateBits = GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA;
 		return;
 	}
+
 	if ( !token.Icmp( "add" ) ) 
 	{
 		stage->drawStateBits = GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE;
 		return;
 	}
-	if ( !token.Icmp( "filter" ) || !token.Icmp( "modulate" ) ) {
+	
+	if ( !token.Icmp( "filter" ) || !token.Icmp( "modulate" ) ) 
+	{
 		stage->drawStateBits = GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO;
 		return;
 	}
-	if (  !token.Icmp( "none" ) ) {
+	
+	if (  !token.Icmp( "none" ) ) 
+	{
 		// none is used when defining an alpha mask that doesn't draw
 		stage->drawStateBits = GLS_SRCBLEND_ZERO | GLS_DSTBLEND_ONE;
 		return;
 	}
-	if ( !token.Icmp( "bumpmap" ) ) {
+	
+	if ( !token.Icmp( "bumpmap" ) ) 
+	{
 		stage->lighting = SL_BUMP;
 		return;
 	}
-	if ( !token.Icmp( "diffusemap" ) ) {
+	if ( !token.Icmp( "diffusemap" ) ) 
+	{
 		stage->lighting = SL_DIFFUSE;
 		return;
 	}
-	if ( !token.Icmp( "specularmap" ) ) {
+	
+	if ( !token.Icmp( "specularmap" ) ) 
+	{
 		stage->lighting = SL_SPECULAR;
 		return;
 	}
@@ -907,7 +985,8 @@ If there are two values, 3 = 0.0, 4 = 1.0
 if there are three values, 4 = 1.0
 ================
 */
-void idMaterial::ParseVertexParm( idLexer &src, newShaderStage_t *newStage ) {
+void idMaterial::ParseVertexParm( idLexer &src, newShaderStage_t *newStage ) 
+{
 	idToken				token;
 
 	src.ReadTokenOnLine( &token );
@@ -1112,22 +1191,24 @@ An open brace has been parsed
 
 =================
 */
-void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
-	idToken				token;
-	const char			*str;
-	shaderStage_t		*ss;
-	textureStage_t		*ts;
-	textureFilter_t		tf;
-	textureRepeat_t		trp;
-	textureDepth_t		td;
-	cubeFiles_t			cubeMap;
-	bool				allowPicmip;
+void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) 
+{
+	bool				allowPicmip = false;
 	char				imageName[MAX_IMAGE_NAME];
 	int					a, b;
 	int					matrix[2][3];
 	newShaderStage_t	newStage;
+	cubeFiles_t			cubeMap = CF_2D;
+	textureFilter_t		tf = TF_LINEAR;
+	textureRepeat_t		trp = TR_CLAMP;
+	textureDepth_t		td = TD_SPECULAR;
+	idToken				token;
+	const char			*str = nullptr;
+	shaderStage_t		*ss = nullptr;
+	textureStage_t		*ts = nullptr;
 
-	if ( numStages >= MAX_SHADER_STAGES ) {
+	if ( numStages >= MAX_SHADER_STAGES ) 
+	{
 		SetMaterialFlag( MF_DEFAULTED );
 		common->Warning( "material '%s' exceeded %i stages", GetName(), MAX_SHADER_STAGES );
 	}
@@ -1147,46 +1228,54 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 
 	ClearStage( ss );
 
-	while ( 1 ) {
+	while ( 1 ) 
+	{
 		if ( TestMaterialFlag( MF_DEFAULTED ) ) {	// we have a parse error
 			return;
 		}
-		if ( !src.ExpectAnyToken( &token ) ) {
+		if ( !src.ExpectAnyToken( &token ) ) 
+		{
 			SetMaterialFlag( MF_DEFAULTED );
 			return;
 		}
 
 		// the close brace for the entire material ends the draw block
-		if ( token == "}" ) {
+		if ( token == "}" ) 
+		{
 			break;
 		}
 
 		//BSM Nerve: Added for stage naming in the material editor
-		if( !token.Icmp( "name") ) {
+		if( !token.Icmp( "name") ) 
+		{
 			src.SkipRestOfLine();
 			continue;
 		}
 
 		// image options
-		if ( !token.Icmp( "blend" ) ) {
+		if ( !token.Icmp( "blend" ) ) 
+		{
 			ParseBlend( src, ss );
 			continue;
 		}
 
-		if (  !token.Icmp( "map" ) ) {
+		if (  !token.Icmp( "map" ) ) 
+		{
 			str = R_ParsePastImageProgram( src );
 			idStr::Copynz( imageName, str, sizeof( imageName ) );
 			continue;
 		}
 
-		if (  !token.Icmp( "remoteRenderMap" ) ) {
+		if (  !token.Icmp( "remoteRenderMap" ) ) 
+		{
 			ts->dynamic = DI_REMOTE_RENDER;
 			ts->width = src.ParseInt();
 			ts->height = src.ParseInt();
 			continue;
 		}
 
-		if (  !token.Icmp( "mirrorRenderMap" ) ) {
+		if (  !token.Icmp( "mirrorRenderMap" ) ) 
+		{
 			ts->dynamic = DI_MIRROR_RENDER;
 			ts->width = src.ParseInt();
 			ts->height = src.ParseInt();
@@ -1194,127 +1283,169 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 			continue;
 		}
 
-		if (  !token.Icmp( "xrayRenderMap" ) ) {
+		if (  !token.Icmp( "xrayRenderMap" ) ) 
+		{
 			ts->dynamic = DI_XRAY_RENDER;
 			ts->width = src.ParseInt();
 			ts->height = src.ParseInt();
 			ts->texgen = TG_SCREEN;
 			continue;
 		}
-		if (  !token.Icmp( "screen" ) ) {
+		if (  !token.Icmp( "screen" ) ) 
+		{
 			ts->texgen = TG_SCREEN;
 			continue;
 		}
-		if (  !token.Icmp( "screen2" ) ) {
+		
+		if (  !token.Icmp( "screen2" ) ) 
+		{
 			ts->texgen = TG_SCREEN2;
 			continue;
 		}
-		if (  !token.Icmp( "glassWarp" ) ) {
+		if (  !token.Icmp( "glassWarp" ) ) 
+		{
 			ts->texgen = TG_GLASSWARP;
 			continue;
 		}
 
-		if ( !token.Icmp( "videomap" ) ) {
+		if ( !token.Icmp( "videomap" ) ) 
+		{
 			// note that videomaps will always be in clamp mode, so texture
 			// coordinates had better be in the 0 to 1 range
-			if ( !src.ReadToken( &token ) ) {
+			if ( !src.ReadToken( &token ) ) 
+			{
 				common->Warning( "missing parameter for 'videoMap' keyword in material '%s'", GetName() );
 				continue;
 			}
 			bool loop = false;
-			if ( !token.Icmp( "loop" ) ) {
+			if ( !token.Icmp( "loop" ) ) 
+			{
 				loop = true;
-				if ( !src.ReadToken( &token ) ) {
+				if ( !src.ReadToken( &token ) ) 
+				{
 					common->Warning( "missing parameter for 'videoMap' keyword in material '%s'", GetName() );
 					continue;
 				}
 			}
+
 			ts->cinematic = idCinematic::Alloc();
 			ts->cinematic->InitFromFile( token.c_str(), loop );
 			continue;
 		}
 
-		if ( !token.Icmp( "soundmap" ) ) {
-			if ( !src.ReadToken( &token ) ) {
+		if ( !token.Icmp( "soundmap" ) ) 
+		{
+			if ( !src.ReadToken( &token ) ) 
+			{
 				common->Warning( "missing parameter for 'soundmap' keyword in material '%s'", GetName() );
 				continue;
 			}
+
 			ts->cinematic = new idSndWindow();
 			ts->cinematic->InitFromFile( token.c_str(), true );
 			continue;
 		}
 
-		if ( !token.Icmp( "cubeMap" ) ) {
+		if ( !token.Icmp( "cubeMap" ) ) 
+		{
 			str = R_ParsePastImageProgram( src );
 			idStr::Copynz( imageName, str, sizeof( imageName ) );
 			cubeMap = CF_NATIVE;
 			continue;
 		}
 
-		if ( !token.Icmp( "cameraCubeMap" ) ) {
+		if ( !token.Icmp( "cameraCubeMap" ) ) 
+		{
 			str = R_ParsePastImageProgram( src );
 			idStr::Copynz( imageName, str, sizeof( imageName ) );
 			cubeMap = CF_CAMERA;
 			continue;
 		}
 
-		if ( !token.Icmp( "ignoreAlphaTest" ) ) {
+		if ( !token.Icmp( "ignoreAlphaTest" ) ) 
+		{
 			ss->ignoreAlphaTest = true;
 			continue;
 		}
-		if ( !token.Icmp( "nearest" ) ) {
+
+		if ( !token.Icmp( "nearest" ) ) 
+		{
 			tf = TF_NEAREST;
 			continue;
 		}
-		if ( !token.Icmp( "linear" ) ) {
+		
+		if ( !token.Icmp( "linear" ) ) 
+		{
 			tf = TF_LINEAR;
 			continue;
 		}
-		if ( !token.Icmp( "clamp" ) ) {
+		
+		if ( !token.Icmp( "clamp" ) ) 
+		{
 			trp = TR_CLAMP;
 			continue;
 		}
-		if ( !token.Icmp( "noclamp" ) ) {
+		
+		if ( !token.Icmp( "noclamp" ) ) 
+		{
 			trp = TR_REPEAT;
 			continue;
 		}
-		if ( !token.Icmp( "zeroclamp" ) ) {
+		
+		if ( !token.Icmp( "zeroclamp" ) ) 
+		{
 			trp = TR_CLAMP_TO_ZERO;
 			continue;
 		}
-		if ( !token.Icmp( "alphazeroclamp" ) ) {
+		
+		if ( !token.Icmp( "alphazeroclamp" ) ) 
+		{
 			trp = TR_CLAMP_TO_ZERO_ALPHA;
 			continue;
 		}
-		if ( !token.Icmp( "uncompressed" ) || !token.Icmp( "highquality" ) ) {
-			if ( !globalImages->image_ignoreHighQuality.GetInteger() ) {
+		
+		if ( !token.Icmp( "uncompressed" ) || !token.Icmp( "highquality" ) ) 
+		{
+			if ( !globalImages->image_ignoreHighQuality.GetInteger() ) 
+			{
 				td = TD_HIGH_QUALITY;
 			}
 			continue;
 		}
-		if ( !token.Icmp( "forceHighQuality" ) ) {
+
+		if ( !token.Icmp( "forceHighQuality" ) ) 
+		{
 			td = TD_HIGH_QUALITY;
 			continue;
 		}
-		if ( !token.Icmp( "nopicmip" ) ) {
+		
+		if ( !token.Icmp( "nopicmip" ) ) 
+		{
 			allowPicmip = false;
 			continue;
 		}
-		if ( !token.Icmp( "vertexColor" ) ) {
+		
+		if ( !token.Icmp( "vertexColor" ) ) 
+		{
 			ss->vertexColor = SVC_MODULATE;
 			continue;
 		}
-		if ( !token.Icmp( "inverseVertexColor" ) ) {
+		
+		if ( !token.Icmp( "inverseVertexColor" ) ) 
+		{
 			ss->vertexColor = SVC_INVERSE_MODULATE;
 			continue;
 		}
 
 		// privatePolygonOffset
-		else if ( !token.Icmp( "privatePolygonOffset" ) ) {
-			if ( !src.ReadTokenOnLine( &token ) ) {
+		else if ( !token.Icmp( "privatePolygonOffset" ) ) 
+		{
+			if ( !src.ReadTokenOnLine( &token ) ) 
+			{
 				ss->privatePolygonOffset = 1;
 				continue;
 			}
+
 			// explict larger (or negative) offset
 			src.UnreadToken( &token );
 			ss->privatePolygonOffset = src.ParseFloat();
@@ -1322,26 +1453,37 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 		}
 
 		// texture coordinate generation
-		if ( !token.Icmp( "texGen" ) ) {
+		if ( !token.Icmp( "texGen" ) ) 
+		{
 			src.ExpectAnyToken( &token );
-			if ( !token.Icmp( "normal" ) ) {
+			if ( !token.Icmp( "normal" ) ) 
+			{
 				ts->texgen = TG_DIFFUSE_CUBE;
-			} else if ( !token.Icmp( "reflect" ) ) {
+			} 
+			else if ( !token.Icmp( "reflect" ) ) 
+			{
 				ts->texgen = TG_REFLECT_CUBE;
-			} else if ( !token.Icmp( "skybox" ) ) {
+			} 
+			else if ( !token.Icmp( "skybox" ) ) 
+			{
 				ts->texgen = TG_SKYBOX_CUBE;
-			} else if ( !token.Icmp( "wobbleSky" ) ) {
+			} 
+			else if ( !token.Icmp( "wobbleSky" ) ) 
+			{
 				ts->texgen = TG_WOBBLESKY_CUBE;
 				texGenRegisters[0] = ParseExpression( src );
 				texGenRegisters[1] = ParseExpression( src );
 				texGenRegisters[2] = ParseExpression( src );
-			} else {
+			} 
+			else 
+			{
 				common->Warning( "bad texGen '%s' in material %s", token.c_str(), GetName() );
 				SetMaterialFlag( MF_DEFAULTED );
 			}
 			continue;
 		}
-		if ( !token.Icmp( "scroll" ) || !token.Icmp( "translate" ) ) {
+		if ( !token.Icmp( "scroll" ) || !token.Icmp( "translate" ) ) 
+		{
 			a = ParseExpression( src );
 			MatchToken( src, "," );
 			b = ParseExpression( src );
@@ -1355,7 +1497,8 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 			MultiplyTextureMatrix( ts, matrix );
 			continue;
 		}
-		if ( !token.Icmp( "scale" ) ) {
+		if ( !token.Icmp( "scale" ) ) 
+		{
 			a = ParseExpression( src );
 			MatchToken( src, "," );
 			b = ParseExpression( src );
@@ -1370,7 +1513,8 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 			MultiplyTextureMatrix( ts, matrix );
 			continue;
 		}
-		if ( !token.Icmp( "centerScale" ) ) {
+		if ( !token.Icmp( "centerScale" ) ) 
+		{
 			a = ParseExpression( src );
 			MatchToken( src, "," );
 			b = ParseExpression( src );
@@ -1385,7 +1529,8 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 			MultiplyTextureMatrix( ts, matrix );
 			continue;
 		}
-		if ( !token.Icmp( "shear" ) ) {
+		if ( !token.Icmp( "shear" ) ) 
+		{
 			a = ParseExpression( src );
 			MatchToken( src, "," );
 			b = ParseExpression( src );
@@ -1400,7 +1545,8 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 			MultiplyTextureMatrix( ts, matrix );
 			continue;
 		}
-		if ( !token.Icmp( "rotate" ) ) {
+		if ( !token.Icmp( "rotate" ) ) 
+		{
 			const idDeclTable *table;
 			int		sinReg, cosReg;
 
@@ -1441,31 +1587,44 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 		}
 
 		// color mask options
-		if ( !token.Icmp( "maskRed" ) ) {
+		if ( !token.Icmp( "maskRed" ) ) 
+		{
 			ss->drawStateBits |= GLS_REDMASK;
 			continue;
 		}		
-		if ( !token.Icmp( "maskGreen" ) ) {
+
+		if ( !token.Icmp( "maskGreen" ) ) 
+		{
 			ss->drawStateBits |= GLS_GREENMASK;
 			continue;
-		}		
-		if ( !token.Icmp( "maskBlue" ) ) {
+		}
+
+		if ( !token.Icmp( "maskBlue" ) ) 
+		{
 			ss->drawStateBits |= GLS_BLUEMASK;
 			continue;
-		}		
-		if ( !token.Icmp( "maskAlpha" ) ) {
+		}
+
+		if ( !token.Icmp( "maskAlpha" ) ) 
+		{
 			ss->drawStateBits |= GLS_ALPHAMASK;
 			continue;
 		}		
-		if ( !token.Icmp( "maskColor" ) ) {
+		
+		if ( !token.Icmp( "maskColor" ) ) 
+		{
 			ss->drawStateBits |= GLS_COLORMASK;
 			continue;
 		}		
-		if ( !token.Icmp( "maskDepth" ) ) {
+		
+		if ( !token.Icmp( "maskDepth" ) ) 
+		{
 			ss->drawStateBits |= GLS_DEPTHMASK;
 			continue;
-		}		
-		if ( !token.Icmp( "alphaTest" ) ) {
+		}	
+
+		if ( !token.Icmp( "alphaTest" ) ) 
+		{
 			ss->hasAlphaTest = true;
 			ss->alphaTestRegister = ParseExpression( src );
 			coverage = MC_PERFORATED;
@@ -1586,12 +1745,14 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 		}
 #endif 
 // BEATO End
-		if ( !token.Icmp( "vertexParm" ) ) {
+		if ( !token.Icmp( "vertexParm" ) ) 
+		{
 			ParseVertexParm( src, &newStage );
 			continue;
 		}
 
-		if (  !token.Icmp( "fragmentMap" ) ) {	
+		if (  !token.Icmp( "fragmentMap" ) ) 
+		{	
 			ParseFragmentMap( src, &newStage );
 			continue;
 		}
@@ -1601,7 +1762,6 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 		SetMaterialFlag( MF_DEFAULTED );
 		return;
 	}
-
 
 	// if we are using newStage, allocate a copy of it
 	if ( newStage.fragmentProgram || newStage.vertexProgram ) 
@@ -1614,8 +1774,10 @@ void idMaterial::ParseStage( idLexer &src, const textureRepeat_t trpDefault ) {
 	numStages++;
 
 	// select a compressed depth based on what the stage is
-	if ( td == TD_DEFAULT ) {
-		switch( ss->lighting ) {
+	if ( td == TD_DEFAULT ) 
+	{
+		switch( ss->lighting ) 
+		{
 		case SL_BUMP:
 			td = TD_BUMP;
 			break;
@@ -1898,7 +2060,8 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 
 
 		// polygonOffset
-		else if ( !token.Icmp( "polygonOffset" ) ) {
+		else if ( !token.Icmp( "polygonOffset" ) ) 
+		{
 			SetMaterialFlag( MF_POLYGONOFFSET );
 			if ( !src.ReadTokenOnLine( &token ) ) {
 				polygonOffset = 1;
@@ -1967,12 +2130,14 @@ void idMaterial::ParseMaterial( idLexer &src ) {
 			continue;
 		}
 		// forceOpaque is used for skies-behind-windows
-		else if ( !token.Icmp( "forceOpaque" ) ) {
+		else if ( !token.Icmp( "forceOpaque" ) ) 
+		{
 			coverage = MC_OPAQUE;
 			continue;
 		}
 		// twoSided
-		else if ( !token.Icmp( "twoSided" ) ) {
+		else if ( !token.Icmp( "twoSided" ) ) 
+		{
 			cullType = CT_TWO_SIDED;
 			// twoSided implies no-shadows, because the shadow
 			// volume would be coplanar with the surface, giving depth fighting
@@ -2206,7 +2371,8 @@ bool idMaterial::Parse( const char *text, const int textLength )
 	ParseMaterial( src );
 
 	// if we are doing an fs_copyfiles, also reference the editorImage
-	if ( cvarSystem->GetCVarInteger( "fs_copyFiles" ) ) {
+	if ( cvarSystem->GetCVarInteger( "fs_copyFiles" ) ) 
+	{
 		GetEditorImage();
 	}
 
@@ -2214,8 +2380,10 @@ bool idMaterial::Parse( const char *text, const int textLength )
 	// count non-lit stages
 	numAmbientStages = 0;
 	int i;
-	for ( i = 0 ; i < numStages ; i++ ) {
-		if ( pd->parseStages[i].lighting == SL_AMBIENT ) {
+	for ( i = 0 ; i < numStages ; i++ ) 
+	{
+		if ( pd->parseStages[i].lighting == SL_AMBIENT ) 
+		{
 			numAmbientStages++;
 		}
 	}
@@ -2233,13 +2401,17 @@ bool idMaterial::Parse( const char *text, const int textLength )
 	}
 
 	// automatically determine coverage if not explicitly set
-	if ( coverage == MC_BAD ) {
+	if ( coverage == MC_BAD ) 
+	{
 		// automatically set MC_TRANSLUCENT if we don't have any interaction stages and 
 		// the first stage is blended and not an alpha test mask or a subview
-		if ( !numStages ) {
+		if ( !numStages ) 
+		{
 			// non-visible
 			coverage = MC_TRANSLUCENT;
-		} else if ( numStages != numAmbientStages ) {
+		} 
+		else if ( numStages != numAmbientStages ) 
+		{
 			// we have an interaction draw
 			coverage = MC_OPAQUE;
 		} else if ( 
@@ -2257,47 +2429,51 @@ bool idMaterial::Parse( const char *text, const int textLength )
 	}
 
 	// translucent automatically implies noshadows
-	if ( coverage == MC_TRANSLUCENT ) {
+	if ( coverage == MC_TRANSLUCENT ) 
 		SetMaterialFlag( MF_NOSHADOWS );
-	} else {
+	else 
 		// mark the contents as opaque
 		contentFlags |= CONTENTS_OPAQUE;
-	}
 
 	// if we are translucent, draw with an alpha in the editor
-	if ( coverage == MC_TRANSLUCENT ) {
+	if ( coverage == MC_TRANSLUCENT )
 		editorAlpha = 0.5;
-	} else {
+	else 
 		editorAlpha = 1.0;
-	}
 
 	// the sorts can make reasonable defaults
-	if ( sort == SS_BAD ) {
-		if ( TestMaterialFlag(MF_POLYGONOFFSET) ) {
+	if ( sort == SS_BAD ) 
+	{
+		if ( TestMaterialFlag(MF_POLYGONOFFSET) ) 
 			sort = SS_DECAL;
-		} else if ( coverage == MC_TRANSLUCENT ) {
+		else if ( coverage == MC_TRANSLUCENT ) 
 			sort = SS_MEDIUM;
-		} else {
+		else 
 			sort = SS_OPAQUE;
-		}
 	}
 
 	// anything that references _currentRender will automatically get sort = SS_POST_PROCESS
 	// and coverage = MC_TRANSLUCENT
 
-	for ( i = 0 ; i < numStages ; i++ ) {
+	for ( i = 0 ; i < numStages ; i++ ) 
+	{
 		shaderStage_t	*pStage = &pd->parseStages[i];
-		if ( pStage->texture.image == globalImages->currentRenderImage ) {
-			if ( sort != SS_PORTAL_SKY ) {
+		if ( pStage->texture.image == globalImages->currentRenderImage ) 
+		{
+			if ( sort != SS_PORTAL_SKY ) 
+			{
 				sort = SS_POST_PROCESS;
 				coverage = MC_TRANSLUCENT;
 			}
 			break;
 		}
 		if ( pStage->newStage ) {
-			for ( int j = 0 ; j < pStage->newStage->numFragmentProgramImages ; j++ ) {
-				if ( pStage->newStage->fragmentProgramImages[j] == globalImages->currentRenderImage ) {
-					if ( sort != SS_PORTAL_SKY ) {
+			for ( int j = 0 ; j < pStage->newStage->numFragmentProgramImages ; j++ ) 
+			{
+				if ( pStage->newStage->fragmentProgramImages[j] == globalImages->currentRenderImage ) 
+				{
+					if ( sort != SS_PORTAL_SKY ) 
+					{
 						sort = SS_POST_PROCESS;
 						coverage = MC_TRANSLUCENT;
 					}
@@ -2309,16 +2485,22 @@ bool idMaterial::Parse( const char *text, const int textLength )
 	}
 
 	// set the drawStateBits depth flags
-	for ( i = 0 ; i < numStages ; i++ ) {
+	for ( i = 0 ; i < numStages ; i++ ) 
+	{
 		shaderStage_t	*pStage = &pd->parseStages[i];
-		if ( sort == SS_POST_PROCESS ) {
+		if ( sort == SS_POST_PROCESS ) 
+		{
 			// post-process effects fill the depth buffer as they draw, so only the
 			// topmost post-process effect is rendered
 			pStage->drawStateBits |= GLS_DEPTHFUNC_LESS;
-		} else if ( coverage == MC_TRANSLUCENT || pStage->ignoreAlphaTest ) {
+		} 
+		else if ( coverage == MC_TRANSLUCENT || pStage->ignoreAlphaTest ) 
+		{
 			// translucent surfaces can extend past the exactly marked depth buffer
 			pStage->drawStateBits |= GLS_DEPTHFUNC_LESS | GLS_DEPTHMASK;
-		} else {
+		} 
+		else 
+		{
 			// opaque and perforated surfaces must exactly match the depth buffer,
 			// which gets alpha test correct
 			pStage->drawStateBits |= GLS_DEPTHFUNC_EQUAL | GLS_DEPTHMASK;
@@ -2327,19 +2509,22 @@ bool idMaterial::Parse( const char *text, const int textLength )
 
 	// determine if this surface will accept overlays / decals
 
-	if ( pd->forceOverlays ) {
+	if ( pd->forceOverlays ) 
+	{
 		// explicitly flaged in material definition
 		allowOverlays = true;
-	} else {
-		if ( !IsDrawn() ) {
+	} 
+	else 
+	{
+		if ( !IsDrawn() ) 
 			allowOverlays = false;
-		}
-		if ( Coverage() != MC_OPAQUE ) {
+		
+		if ( Coverage() != MC_OPAQUE ) 
 			allowOverlays = false;
-		}
-		if ( GetSurfaceFlags() & SURF_NOIMPACT ) {
+
+		if ( GetSurfaceFlags() & SURF_NOIMPACT ) 
 			allowOverlays = false;
-		}
+		
 	}
 
 	// add a tiny offset to the sort orders, so that different materials
@@ -2358,7 +2543,7 @@ bool idMaterial::Parse( const char *text, const int textLength )
 	}
 */
 
-	if (numStages) 
+	if ( numStages ) 
 	{
 		stages = static_cast<shaderStage_t*>( tr.frameData->StaticAlloc( numStages * sizeof( stages[0] ) ) );
 		std::memcpy( stages, pd->parseStages, numStages * sizeof( stages[0] ) );
@@ -2380,7 +2565,7 @@ bool idMaterial::Parse( const char *text, const int textLength )
 	// per-surface
 	CheckForConstantRegisters();
 
-	pd = NULL;	// the pointer will be invalid after exiting this function
+	pd = nullptr;	// the pointer will be invalid after exiting this function
 
 	// finish things up
 	if ( TestMaterialFlag( MF_DEFAULTED ) ) 
@@ -2388,6 +2573,284 @@ bool idMaterial::Parse( const char *text, const int textLength )
 		MakeDefault();
 		return false;
 	}
+
+
+// BEATO Begin: vulkan pipeline descriptions
+	VkDescriptorSetLayout					descriptorSetLayou{};
+	VkPushConstantRange pushConstantRange{};
+	pushConstantRange.stageFlags = ;
+	pushConstantRange.offset = ;
+	pushConstantRange.size = ;
+
+#if 0
+	VkPipelineShaderStageCreateInfo shaderStageCI{};
+	shaderStageCI.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	shaderStageCI.pNext = nullptr;
+	shaderStageCI.flags = 0;
+	shaderStageCI.stage = ;
+	shaderStageCI.module = ;
+	shaderStageCI.pName = ;
+	shaderStageCI.pSpecializationInfo = ;
+#endif
+
+	VkPipelineVertexInputStateCreateInfo	vertexInputStateCI{};
+	vertexInputStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+	vertexInputStateCI.pNext = nullptr;
+	vertexInputStateCI.flags = 0;
+	vertexInputStateCI.vertexBindingDescriptionCount = k_vertexInputBindingCount;
+	vertexInputStateCI.pVertexBindingDescriptions = k_vertexInputBinding;
+	vertexInputStateCI.vertexAttributeDescriptionCount = k_vertexInputAttributeCount;
+	vertexInputStateCI.pVertexAttributeDescriptions = k_vertexInputAttribute;
+
+	VkPipelineInputAssemblyStateCreateInfo	inputAssemblyStateCI;
+	inputAssemblyStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+	inputAssemblyStateCI.pNext = nullptr;
+	inputAssemblyStateCI.flags = 0;
+	inputAssemblyStateCI.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	inputAssemblyStateCI.primitiveRestartEnable = VK_FALSE;
+
+	VkPipelineTessellationStateCreateInfo 	tessellationStateCI{};
+	tessellationStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
+	tessellationStateCI.pNext = nullptr;
+	tessellationStateCI.flags = 0;
+	tessellationStateCI.patchControlPoints = 2;
+
+	// we are using dynamic viewport and scissor, so only set the count 
+	VkPipelineViewportStateCreateInfo 		viewportStateCI{};
+	viewportStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+	viewportStateCI.pNext = nullptr;
+	viewportStateCI.flags = 0;
+	viewportStateCI.viewportCount = 1;
+	viewportStateCI.pViewports = nullptr;
+	viewportStateCI.scissorCount = 1;
+	viewportStateCI.pScissors = nullptr;
+
+	VkPipelineRasterizationStateCreateInfo	rasterizationStateCI{};
+	rasterizationStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+	rasterizationStateCI.pNext = nullptr;
+	rasterizationStateCI.flags = 0;
+	rasterizationStateCI.depthClampEnable = VK_FALSE;
+	rasterizationStateCI.rasterizerDiscardEnable = VK_FALSE;
+	rasterizationStateCI.polygonMode = VK_POLYGON_MODE_FILL;
+	rasterizationStateCI.cullMode = VK_CULL_MODE_BACK_BIT;
+	rasterizationStateCI.frontFace = VK_FRONT_FACE_CLOCKWISE;
+	rasterizationStateCI.depthBiasEnable = VK_FALSE;
+	rasterizationStateCI.depthBiasConstantFactor = 0.0f;
+	rasterizationStateCI.depthBiasClamp = 0.0f;
+	rasterizationStateCI.depthBiasSlopeFactor = 0.0f;
+	rasterizationStateCI.lineWidth = 1.0f;
+
+	switch ( cullType )
+	{
+		case CT_FRONT_SIDED:
+			rasterizationStateCI.cullMode = VK_CULL_MODE_BACK_BIT; // cull the back face 
+			break;
+		case CT_BACK_SIDED:
+			rasterizationStateCI.cullMode = VK_CULL_MODE_FRONT_BIT; // cull the front face 
+			break;
+		case CT_TWO_SIDED:
+			rasterizationStateCI.cullMode = VK_CULL_MODE_NONE; // don't cull 
+			break;
+	}
+	
+	if( materialFlags & MF_POLYGONOFFSET ) // enable Depth Bias, and configure the value
+	{
+		rasterizationStateCI.depthBiasEnable = VK_TRUE;
+		rasterizationStateCI.depthBiasConstantFactor = r_offsetFactor.GetFloat();
+		rasterizationStateCI.depthBiasClamp = 0.0f;
+		rasterizationStateCI.depthBiasSlopeFactor = r_offsetUnits.GetFloat() * polygonOffset;
+	}
+
+	VkPipelineMultisampleStateCreateInfo	multisampleStateCI{};
+	multisampleStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+	multisampleStateCI.pNext = nullptr;
+	multisampleStateCI.flags = 0;
+	multisampleStateCI.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT; // TODO: suport for multisampling 
+	multisampleStateCI.sampleShadingEnable = VK_FALSE;
+	multisampleStateCI.minSampleShading = 1.0f;
+	multisampleStateCI.pSampleMask = nullptr;;
+	multisampleStateCI.alphaToCoverageEnable = VK_FALSE;;
+	multisampleStateCI.alphaToOneEnable = VK_FALSE;;
+
+	VkStencilOpState	stencilOpStateFront{};
+	stencilOpStateFront.failOp = VK_STENCIL_OP_KEEP;
+	stencilOpStateFront.passOp = VK_STENCIL_OP_KEEP;
+	stencilOpStateFront.depthFailOp = VK_STENCIL_OP_KEEP;
+	stencilOpStateFront.compareOp = VK_COMPARE_OP_ALWAYS;
+	stencilOpStateFront.compareMask = 0xFF;
+	stencilOpStateFront.writeMask = 0xFF;
+	stencilOpStateFront.reference  = 0x00;
+
+	VkStencilOpState	stencilOpStateBack{};
+	stencilOpStateBack.failOp = VK_STENCIL_OP_KEEP;
+	stencilOpStateBack.passOp = VK_STENCIL_OP_KEEP;
+	stencilOpStateBack.depthFailOp = VK_STENCIL_OP_KEEP;
+	stencilOpStateBack.compareOp = VK_COMPARE_OP_ALWAYS;
+	stencilOpStateBack.compareMask = 0xFF;
+	stencilOpStateBack.writeMask = 0xFF;
+	stencilOpStateBack.reference  = 0x00;
+
+	//
+	VkPipelineDepthStencilStateCreateInfo	depthStencilStateCI{};
+	depthStencilStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+	depthStencilStateCI.pNext = nullptr;
+	depthStencilStateCI.flags = 0;
+	depthStencilStateCI.depthTestEnable = VK_FALSE;
+	depthStencilStateCI.depthWriteEnable = VK_FALSE;
+	depthStencilStateCI.depthCompareOp = VK_COMPARE_OP_GREATER;
+	depthStencilStateCI.depthBoundsTestEnable = VK_FALSE;
+	depthStencilStateCI.stencilTestEnable = VK_FALSE;
+	depthStencilStateCI.front = stencilOpStateFront;
+	depthStencilStateCI.back = stencilOpStateBack;
+	depthStencilStateCI.minDepthBounds = -1.0f;
+	depthStencilStateCI.maxDepthBounds = 1.0f;
+
+	// atachaments blending
+	VkPipelineColorBlendAttachmentState		colorBlendAttachmentState{};
+	colorBlendAttachmentState.blendEnable = VK_FALSE;
+	colorBlendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+	colorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+	colorBlendAttachmentState.colorBlendOp = VK_BLEND_OP_ADD;
+	colorBlendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+	colorBlendAttachmentState.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+	colorBlendAttachmentState.alphaBlendOp = VK_BLEND_OP_ADD;
+	colorBlendAttachmentState.colorWriteMask = 0; //VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+
+	// blending properties
+	VkPipelineColorBlendStateCreateInfo		colorBlendStateCreateInfo{};
+	colorBlendStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+	colorBlendStateCreateInfo.pNext = nullptr;
+	colorBlendStateCreateInfo.flags = 0;
+	colorBlendStateCreateInfo.logicOpEnable = VK_FALSE;
+	colorBlendStateCreateInfo.logicOp = VK_LOGIC_OP_COPY;
+	colorBlendStateCreateInfo.attachmentCount = 1;
+	colorBlendStateCreateInfo.pAttachments = &colorBlendAttachmentState;
+	colorBlendStateCreateInfo.blendConstants[0] = 0.0f;
+	colorBlendStateCreateInfo.blendConstants[1] = 0.0f;
+	colorBlendStateCreateInfo.blendConstants[2] = 0.0f;
+	colorBlendStateCreateInfo.blendConstants[3] = 0.0f;
+
+	/// dynamic state, thigs that we can change while rendering
+	VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo{};
+	dynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+	dynamicStateCreateInfo.pNext = nullptr;
+	dynamicStateCreateInfo.flags = 0;
+	dynamicStateCreateInfo.dynamicStateCount = k_dynamicStatesCount;
+	dynamicStateCreateInfo.pDynamicStates = k_dynamicStates;
+
+	colorBlendAttachmentState.colorWriteMask |= VK_COLOR_COMPONENT_A_BIT;
+	colorBlendAttachmentState.colorWriteMask |= VK_COLOR_COMPONENT_R_BIT;
+	colorBlendAttachmentState.colorWriteMask |=  VK_COLOR_COMPONENT_G_BIT;
+	colorBlendAttachmentState.colorWriteMask |= VK_COLOR_COMPONENT_B_BIT;
+	colorBlendAttachmentState.colorWriteMask |= VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT;
+
+	GetSort()
+	if( )
+
+	// Vulkan Source blending 
+	switch ( ss->drawStateBits & GLS_SRCBLEND_BITS )
+	{
+	case GLS_SRCBLEND_ZERO:
+	{
+		colorBlendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+		colorBlendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+	} break;
+	case GLS_SRCBLEND_ONE:
+	{
+		colorBlendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+		colorBlendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+	} break;
+	case GLS_SRCBLEND_DST_COLOR:
+	{
+		colorBlendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_DST_COLOR;
+		colorBlendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_DST_ALPHA;
+	} break;
+	case GLS_SRCBLEND_ONE_MINUS_DST_COLOR:
+	{
+		colorBlendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
+		colorBlendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+	} break;
+	case GLS_SRCBLEND_SRC_ALPHA:
+	{
+		colorBlendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+		colorBlendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+	} break;
+	case GLS_SRCBLEND_ONE_MINUS_SRC_ALPHA:
+	{
+		colorBlendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+		colorBlendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+	} break;
+	case GLS_SRCBLEND_DST_ALPHA:
+	{
+		colorBlendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_DST_ALPHA;
+		colorBlendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_DST_ALPHA;
+	} break;
+	case GLS_SRCBLEND_ONE_MINUS_DST_ALPHA:
+	{
+		colorBlendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+		colorBlendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+	} break;
+	case GLS_SRCBLEND_ALPHA_SATURATE:
+	{
+		colorBlendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA_SATURATE;
+		colorBlendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+	} break;
+		default:
+		// TODO: call a error
+		break;
+	}
+			
+	// Vulkan destine blending
+	switch ( ss->drawStateBits & GLS_DSTBLEND_BITS )
+	{
+		case GLS_DSTBLEND_ZERO:
+		{
+			colorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+			colorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+		} break;
+		case GLS_DSTBLEND_ONE:
+		{
+			colorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE;
+			colorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE;
+		} break;
+		case GLS_DSTBLEND_SRC_COLOR:
+		{
+			colorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_SRC_COLOR;
+			colorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+		} break;
+		case GLS_DSTBLEND_ONE_MINUS_SRC_COLOR:
+		{
+			colorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+			colorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+		} break;
+		case GLS_DSTBLEND_SRC_ALPHA:
+		{
+			colorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+			colorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+		} break;
+		case GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA:
+		{
+			colorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+			colorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+		} break;
+		case GLS_DSTBLEND_DST_ALPHA:
+		{
+			colorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_DST_ALPHA;
+			colorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_DST_ALPHA;
+		} break;
+		case GLS_DSTBLEND_ONE_MINUS_DST_ALPHA:
+		{
+			colorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+			colorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+		} break;
+	default:
+		// TODO: call a error
+		break;
+	};
+
+	
+	// BEATO End
+
 	return true;
 }
 

@@ -32,7 +32,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "renderer/Draw.h"
 
 // BEATO Begin:
-class crvkPipeline;
+class crvkGraphicPipeline;
 // BEATO End
 
 /*
@@ -142,16 +142,19 @@ typedef enum {
 	EXP_REG_NUM_PREDEFINED
 } expRegister_t;
 
-typedef struct {
+typedef struct 
+{
 	expOpType_t		opType;	
 	int				a, b, c;
 } expOp_t;
 
-typedef struct {
+typedef struct 
+{
 	int				registers[4];
 } colorStage_t;
 
-typedef enum {
+typedef enum 
+{
 	TG_EXPLICIT,
 	TG_DIFFUSE_CUBE,
 	TG_REFLECT_CUBE,
@@ -162,7 +165,8 @@ typedef enum {
 	TG_GLASSWARP
 } texgen_t;
 
-typedef struct {
+typedef struct 
+{
 	idCinematic *		cinematic;
 	idImage *			image;
 	texgen_t			texgen;
@@ -198,11 +202,10 @@ static const int	MAX_VERTEX_PARMS = 4;
 
 typedef struct 
 {
-	int					vertexProgram;
+	int					vertexProgram;		// TODO: load vulkan module
+	int					fragmentProgram;	// TODO: load vulkan module
 	int					numVertexParms;
 	int					vertexParms[MAX_VERTEX_PARMS][4];	// evaluated register indexes
-
-	int					fragmentProgram;
 	int					numFragmentProgramImages;
 	idImage *			fragmentProgramImages[MAX_FRAGMENT_IMAGES];
 } newShaderStage_t;
@@ -211,7 +214,7 @@ typedef struct
 {
 	int					conditionRegister;	// if registers[conditionRegister] == 0, skip stage
 	stageLighting_t		lighting;			// determines which passes interact with lights
-	int					drawStateBits;
+	uint32_t			drawStateBits;
 	colorStage_t		color;
 	bool				hasAlphaTest;
 	int					alphaTestRegister;
@@ -222,10 +225,6 @@ typedef struct
 	float				privatePolygonOffset;	// a per-stage polygon offset
 
 	newShaderStage_t	*newStage;			// vertex / fragment program based stage
-
-// BEATO Begin: crvkLib Vulkan implementation, material pipeline
-	crAutoPointer<crvkPipeline>	pipeline;
-// BEATO End
 } shaderStage_t;
 
 typedef enum 
@@ -365,7 +364,7 @@ public:
 	virtual void		Print( void ) const;
 
 	//BSM Nerve: Added for material editor
-	bool				Save( const char *fileName = NULL );
+	bool				Save( const char *fileName = nullptr );
 
 						// returns the internal image name for stage 0, which can be used
 						// for the renderer CaptureRenderToImage() call
@@ -471,10 +470,10 @@ public:
 	bool				IsFogLight() const { return fogLight; }
 
 						// perform simple blending of the projection, instead of interacting with bumps and textures
-	bool				IsBlendLight() const { return blendLight; }
+	bool				IsBlendLight( void ) const { return blendLight; }
 
 						// an ambient light has non-directional bump mapping and no specular
-	bool				IsAmbientLight() const { return ambientLight; }
+	bool				IsAmbientLight( void ) const { return ambientLight; }
 
 						// implicitly no-shadows lights (ambients, fogs, etc) will never cast shadows
 						// but individual light entities can also override this value
@@ -487,15 +486,15 @@ public:
 						// sides, making everything "noSelfShadow", but that would make noshadow lights
 						// potentially slower than normal lights, which detracts from their optimization
 						// ability, so they currently do not.
-	bool				LightEffectsBackSides() const { return fogLight || ambientLight || blendLight; }
+	bool				LightEffectsBackSides( void ) const { return fogLight || ambientLight || blendLight; }
 
 						// NULL unless an image is explicitly specified in the shader with "lightFalloffShader <image>"
-	idImage	*			LightFalloffImage() const { return lightFalloffImage; }
+	idImage	*			LightFalloffImage( void ) const { return lightFalloffImage; }
 
 	//------------------------------------------------------------------
 
 						// returns the renderbump command line for this shader, or an empty string if not present
-	const char *		GetRenderBump() const { return renderBump; };
+	const char *		GetRenderBump( void ) const { return renderBump; };
 
 						// set specific material flag(s)
 	void				SetMaterialFlag( const int flag ) const { materialFlags |= flag; }
@@ -519,11 +518,12 @@ public:
 	const char *		GetDescription( void ) const { return desc; }
 
 						// get sort order
-	const float			GetSort( void ) const { return sort; }
+	const int32_t		GetSort( void ) const { return sort; }
+	
 						// this is only used by the gui system to force sorting order
 						// on images referenced from tga's instead of materials. 
 						// this is done this way as there are 2000 tgas the guis use
-	void				SetSort( float s ) const { sort = s; };
+	void				SetSort( const int32_t s ) const { sort = s; };
 
 						// DFRM_NONE, DFRM_SPRITE, etc
 	deform_t			Deform( void ) const { return deform; }
@@ -593,15 +593,15 @@ public:
 						// if a material only uses constants (no entityParm or globalparm references), this
 						// will return a pointer to an internal table, and EvaluateRegisters will not need
 						// to be called.  If NULL is returned, EvaluateRegisters must be used.
-	const float *		ConstantRegisters() const;
+	const float *		ConstantRegisters( void ) const;
 
-	bool				SuppressInSubview() const				{ return suppressInSubview; };
-	bool				IsPortalSky() const						{ return portalSky; };
-	void				AddReference();
+	bool				SuppressInSubview( void ) const				{ return suppressInSubview; };
+	bool				IsPortalSky( void ) const						{ return portalSky; };
+	void				AddReference( void );
 
 private:
 	// parse the entire material
-	void				CommonInit();
+	void				CommonInit( void );
 	void				ParseMaterial( idLexer &src );
 	bool				MatchToken( idLexer &src, const char *match );
 	void				ParseSort( idLexer &src );
@@ -651,7 +651,7 @@ private:
 	decalInfo_t			decalInfo;
 
 
-	mutable	float		sort;				// lower numbered shaders draw before higher numbered
+	mutable	int32_t		sort;				// lower numbered shaders draw before higher numbered
 	deform_t			deform;
 	int					deformRegisters[4];		// numeric parameter for deforms
 	const idDecl		*deformDecl;			// for surface emitted particle deforms and tables
@@ -681,6 +681,10 @@ private:
 	int					numAmbientStages;
 																										
 	shaderStage_t *		stages;
+
+// BEATO Begin: crvkLib Vulkan implementation, material pipeline
+	crAutoPointer<crvkGraphicPipeline>	m_pipeline;
+// BEATO End
 
 	struct mtrParsingData_s	*pd;			// only used during parsing
 
