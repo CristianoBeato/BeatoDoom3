@@ -26,14 +26,16 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #ifndef _SYS_PLATFORM_H_
 #define _SYS_PLATFORM_H_
 
-#define BT_USE_SDL_MALLOC 1
+#include <SDL3/SDL_stdinc.h>
+#include <SDL3/SDL_assert.h>
+#include <SDL3/SDL_cpuinfo.h>
+#include <SDL3/SDL_loadso.h>
+#include <SDL3/SDL_cpuinfo.h>
+#include <SDL3/SDL_endian.h>
 
-#include <SDL_stdinc.h>	
-#include <SDL_assert.h>
-#include <SDL_cpuinfo.h>
-#include <SDL_loadso.h>
-#include <SDL_cpuinfo.h>
-#include <SDL_endian.h>
+#include <cstdint>
+#include <cstdarg>
+#include <algorithm>
 
 /*
 #define _ARCH_x86_32_

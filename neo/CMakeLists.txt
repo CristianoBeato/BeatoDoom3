@@ -61,20 +61,10 @@ endif()
 ###########################
 ##   	 Libraries     	 ##
 ###########################
-find_package( OPENGL REQUIRED )
-find_package( SDL REQUIRED )
+find_package( SDL3 REQUIRED )
 find_package( ZLIB REQUIRED )
-find_package( OPENAL REQUIRED )
-find_package( OGG REQUIRED )
-find_package( VORBIS REQUIRED )
-find_package( JPEG REQUIRED )
 
-include_directories(
-				${CMAKE_SOURCE_DIR}
-				${CMAKE_SOURCE_DIR}/contrib/OpenGL
-				${SDL_INCLUDE_DIR}
-				${ZLIB_INCLUDE_DIR}
-					)
+include_directories( ${CMAKE_SOURCE_DIR} )
 			
 ###########################
 ##		 Engine 		 ##

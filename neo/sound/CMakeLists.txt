@@ -15,7 +15,6 @@ SET( SOUND_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/snd_system.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/snd_wavefile.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/snd_world.cpp
-
 	${CMAKE_CURRENT_SOURCE_DIR}/efxlib.h
 	${CMAKE_CURRENT_SOURCE_DIR}/snd_local.h
 	${CMAKE_CURRENT_SOURCE_DIR}/sound.h
@@ -23,12 +22,7 @@ SET( SOUND_SOURCES
 	
 source_group("" FILES ${SOUND_SOURCES} )
 
-include_directories( 
-					${OPENAL_INCLUDE_DIR}
-					${OGG_INCLUDE_DIR}
-					${VORBIS_INCLUDE_DIR}
-					)
-
 add_library( sound STATIC ${SOUND_SOURCES} )
 add_dependencies( sound idlib )
+target_include_directories( sound PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} )
 target_precompile_headers( sound PUBLIC ${CMAKE_SOURCE_DIR}/idlib/precompiled.h  )
