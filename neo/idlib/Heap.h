@@ -54,11 +54,12 @@ static ID_INLINE const void* _alloca16( const size_t size )
 
 // BEATO End
 
-typedef struct {
-	int		num;
-	int		minSize;
-	int		maxSize;
-	int		totalSize;
+typedef struct 
+{
+	uintptr_t num;
+	size_t		minSize;
+	size_t		maxSize;
+	size_t		totalSize;
 } memoryStats_t;
 
 
@@ -75,26 +76,33 @@ void		Mem_AllocDefragBlock( void );
 
 #ifndef ID_DEBUG_MEMORY
 
-void *		Mem_Alloc( const size_t size );
-void *		Mem_ClearedAlloc( const size_t size );
-void		Mem_Free( void *ptr );
-char *		Mem_CopyString( const char *in );
-void *		Mem_Alloc16( const size_t size );
-void		Mem_Free16( void *ptr );
+ID_INLINE void*	Mem_Alloc( const size_t size ) { return SDL_malloc( size );}
+ID_INLINE void*	Mem_Realloc( void* &mem, size_t size ) { return SDL_realloc( mem, size ); }
+ID_INLINE void*	Mem_ClearedAlloc( const size_t size ) { return memset( SDL_malloc( size ), 0x00, size ); }
+ID_INLINE void	Mem_Free( void *ptr ) { SDL_free( ptr ); }
+ID_INLINE char*	Mem_CopyString( const char *in );
+ID_INLINE void*	Mem_Alloc16( const size_t size ) { return SDL_aligned_alloc( 16, size ); }
+ID_INLINE void	Mem_Free16( void *ptr ) { SDL_aligned_free( ptr ); }
 
-__inline void *operator new( size_t s ) {
+__inline void *operator new( size_t s ) 
+{
 	return Mem_Alloc( s );
 }
-__inline void operator delete( void *p ) {
-	Mem_Free( p );
-}
-__inline void *operator new[]( size_t s ) {
-	return Mem_Alloc( s );
-}
-__inline void operator delete[]( void *p ) {
+
+__inline void operator delete( void *p ) 
+{
 	Mem_Free( p );
 }
 
+__inline void *operator new[]( size_t s ) 
+{
+	return Mem_Alloc( s );
+}
+
+__inline void operator delete[]( void *p ) 
+{
+	Mem_Free( p );
+}
 
 #else /* ID_DEBUG_MEMORY */
 
@@ -153,10 +161,6 @@ ID_INLINE t_* Mem_AllocType( const unsigned int count = 1 )
 {
 	return static_cast<t_*>(Mem_Alloc( sizeof( t_ ) * count ));
 }
-
-
-ID_INLINE void * Mem_Realloc( void* &mem, size_t size );
-
 
 //BEATO End
 
