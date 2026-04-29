@@ -52,8 +52,9 @@ reflect the addition of 16 longwords of new data.  MD5Update blocks
 the data and converts bytes into longwords for this routine.
 =================
 */
-void MD5_Transform( unsigned int state[4], unsigned int in[16] ) {
-    register unsigned int a, b, c, d;
+void MD5_Transform( unsigned int state[4], unsigned int in[16] ) 
+{
+    unsigned int a, b, c, d;
 
     a = state[0];
     b = state[1];

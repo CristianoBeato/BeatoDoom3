@@ -383,24 +383,15 @@ ID_INLINE float idMath::Cos16( float a ) {
 	return d * ( ( ( ( ( -2.605e-07f * s + 2.47609e-05f ) * s - 1.3888397e-03f ) * s + 4.16666418e-02f ) * s - 4.999999963e-01f ) * s + 1.0f );
 }
 
-ID_INLINE double idMath::Cos64( float a ) {
-	return cos( a );
+ID_INLINE double idMath::Cos64( float a ) 
+{
+	return std::cos( a );
 }
 
-ID_INLINE void idMath::SinCos( float a, float &s, float &c ) {
-#ifdef _WIN32
-	_asm {
-		fld		a
-		fsincos
-		mov		ecx, c
-		mov		edx, s
-		fstp	dword ptr [ecx]
-		fstp	dword ptr [edx]
-	}
-#else
-	s = sinf( a );
-	c = cosf( a );
-#endif
+ID_INLINE void idMath::SinCos( float a, float &s, float &c )
+{
+	s = std::sin( a );
+	c = std::cos( a );
 }
 
 ID_INLINE void idMath::SinCos16( float a, float &s, float &c ) {
@@ -440,24 +431,15 @@ ID_INLINE void idMath::SinCos16( float a, float &s, float &c ) {
 	c = d * ( ( ( ( ( -2.605e-07f * t + 2.47609e-05f ) * t - 1.3888397e-03f ) * t + 4.16666418e-02f ) * t - 4.999999963e-01f ) * t + 1.0f );
 }
 
-ID_INLINE void idMath::SinCos64( float a, double &s, double &c ) {
-#ifdef _WIN32
-	_asm {
-		fld		a
-		fsincos
-		mov		ecx, c
-		mov		edx, s
-		fstp	qword ptr [ecx]
-		fstp	qword ptr [edx]
-	}
-#else
-	s = sin( a );
-	c = cos( a );
-#endif
+ID_INLINE void idMath::SinCos64( float a, double &s, double &c ) 
+{
+	s = std::sin( a );
+	c = std::cos( a );
 }
 
-ID_INLINE float idMath::Tan( float a ) {
-	return tanf( a );
+ID_INLINE float idMath::Tan( float a ) 
+{
+	return std::tan( a );
 }
 
 ID_INLINE float idMath::Tan16( float a ) {
@@ -502,22 +484,26 @@ ID_INLINE float idMath::Tan16( float a ) {
 	}
 }
 
-ID_INLINE double idMath::Tan64( float a ) {
-	return tan( a );
+ID_INLINE double idMath::Tan64( float a ) 
+{
+	return std::tan( a );
 }
 
-ID_INLINE float idMath::ASin( float a ) {
-	if ( a <= -1.0f ) {
+ID_INLINE float idMath::ASin( float a ) 
+{
+	if ( a <= -1.0f ) 
 		return -HALF_PI;
-	}
-	if ( a >= 1.0f ) {
+	
+	if ( a >= 1.0f ) 
 		return HALF_PI;
-	}
-	return asinf( a );
+	
+	return std::asin( a );
 }
 
-ID_INLINE float idMath::ASin16( float a ) {
-	if ( FLOATSIGNBITSET( a ) ) {
+ID_INLINE float idMath::ASin16( float a ) 
+{
+	if ( FLOATSIGNBITSET( a ) ) 
+	{
 		if ( a <= -1.0f ) {
 			return -HALF_PI;
 		}
@@ -531,24 +517,26 @@ ID_INLINE float idMath::ASin16( float a ) {
 	}
 }
 
-ID_INLINE double idMath::ASin64( float a ) {
-	if ( a <= -1.0f ) {
+ID_INLINE double idMath::ASin64( float a ) 
+{
+	if ( a <= -1.0f ) 
 		return -HALF_PI;
-	}
-	if ( a >= 1.0f ) {
+	
+	if ( a >= 1.0f ) 
 		return HALF_PI;
-	}
-	return asin( a );
+	
+	return std::asin( a );
 }
 
-ID_INLINE float idMath::ACos( float a ) {
-	if ( a <= -1.0f ) {
+ID_INLINE float idMath::ACos( float a ) 
+{
+	if ( a <= -1.0f ) 
 		return PI;
-	}
-	if ( a >= 1.0f ) {
+	
+	if ( a >= 1.0f ) 
 		return 0.0f;
-	}
-	return acosf( a );
+	
+	return std::acos( a );
 }
 
 ID_INLINE float idMath::ACos16( float a ) {
@@ -795,92 +783,36 @@ ID_INLINE float idMath::Rint( float f ) {
 }
 
 ID_INLINE int idMath::Ftoi( float f ) {
-	return (int) f;
+	return static_cast<int>( f );
 }
 
-ID_INLINE int idMath::FtoiFast( float f ) {
-#ifdef _WIN32
-	int i;
-	__asm fld		f
-	__asm fistp		i		// use default rouding mode (round nearest)
-	return i;
-#elif 0						// round chop (C/C++ standard)
-	int i, s, e, m, shift;
-	i = *reinterpret_cast<int *>(&f);
-	s = i >> IEEE_FLT_SIGN_BIT;
-	e = ( ( i >> IEEE_FLT_MANTISSA_BITS ) & ( ( 1 << IEEE_FLT_EXPONENT_BITS ) - 1 ) ) - IEEE_FLT_EXPONENT_BIAS;
-	m = ( i & ( ( 1 << IEEE_FLT_MANTISSA_BITS ) - 1 ) ) | ( 1 << IEEE_FLT_MANTISSA_BITS );
-	shift = e - IEEE_FLT_MANTISSA_BITS;
-	return ( ( ( ( m >> -shift ) | ( m << shift ) ) & ~( e >> 31 ) ) ^ s ) - s;
-//#elif defined( __i386__ )
-#elif 0
-	int i = 0;
-	__asm__ __volatile__ (
-						  "fld %1\n" \
-						  "fistp %0\n" \
-						  : "=m" (i) \
-						  : "m" (f) );
-	return i;
-#else
-	return (int) f;
-#endif
+ID_INLINE int idMath::FtoiFast( float f ) 
+{
+	return _mm_cvtss_si32( _mm_set_ss( f ) );
 }
 
-ID_INLINE unsigned long idMath::Ftol( float f ) {
-	return (unsigned long) f;
+ID_INLINE unsigned long idMath::Ftol( float f ) 
+{
+	return static_cast<unsigned long>( f );
 }
 
-ID_INLINE unsigned long idMath::FtolFast( float f ) {
-#ifdef _WIN32
-	// FIXME: this overflows on 31bits still .. same as FtoiFast
-	unsigned long i;
-	__asm fld		f
-	__asm fistp		i		// use default rouding mode (round nearest)
-	return i;
-#elif 0						// round chop (C/C++ standard)
-	int i, s, e, m, shift;
-	i = *reinterpret_cast<int *>(&f);
-	s = i >> IEEE_FLT_SIGN_BIT;
-	e = ( ( i >> IEEE_FLT_MANTISSA_BITS ) & ( ( 1 << IEEE_FLT_EXPONENT_BITS ) - 1 ) ) - IEEE_FLT_EXPONENT_BIAS;
-	m = ( i & ( ( 1 << IEEE_FLT_MANTISSA_BITS ) - 1 ) ) | ( 1 << IEEE_FLT_MANTISSA_BITS );
-	shift = e - IEEE_FLT_MANTISSA_BITS;
-	return ( ( ( ( m >> -shift ) | ( m << shift ) ) & ~( e >> 31 ) ) ^ s ) - s;
-//#elif defined( __i386__ )
-#elif 0
-	// for some reason, on gcc I need to make sure i == 0 before performing a fistp
-	int i = 0;
-	__asm__ __volatile__ (
-						  "fld %1\n" \
-						  "fistp %0\n" \
-						  : "=m" (i) \
-						  : "m" (f) );
-	return i;
-#else
-	return (unsigned long) f;
-#endif
+ID_INLINE unsigned long idMath::FtolFast( float f ) 
+{
+	return static_cast<unsigned long>( std::lrintf( f ) );
 }
 
-ID_INLINE signed char idMath::ClampChar( int i ) {
-	if ( i < -128 ) {
-		return -128;
-	}
-	if ( i > 127 ) {
-		return 127;
-	}
-	return i;
+ID_INLINE signed char idMath::ClampChar( int i ) 
+{
+	return std::clamp<int>( i, INT8_MIN, INT8_MAX );
 }
 
-ID_INLINE signed short idMath::ClampShort( int i ) {
-	if ( i < -32768 ) {
-		return -32768;
-	}
-	if ( i > 32767 ) {
-		return 32767;
-	}
-	return i;
+ID_INLINE signed short idMath::ClampShort( int i ) 
+{
+	return std::clamp<int>( i, INT16_MIN, INT16_MAX );
 }
 
-ID_INLINE int idMath::ClampInt( int min, int max, int value ) {
+ID_INLINE int idMath::ClampInt( int min, int max, int value ) 
+{
 	if ( value < min ) {
 		return min;
 	}
