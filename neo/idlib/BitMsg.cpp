@@ -793,7 +793,8 @@ void idBitMsgDelta::WriteString( const char *s, int maxLength ) {
 idBitMsgDelta::WriteData
 ================
 */
-void idBitMsgDelta::WriteData( const void *data, int length ) {
+void idBitMsgDelta::WriteData( const void *data, int length ) 
+{
 	if ( newBase ) {
 		newBase->WriteData( data, length );
 	}

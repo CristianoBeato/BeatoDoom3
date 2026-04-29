@@ -645,8 +645,8 @@ idDict::ShowMemoryUsage_f
 ================
 */
 void idDict::ShowMemoryUsage_f( const idCmdArgs &args ) {
-	idLib::common->Printf( "%5u KB in %i keys\n", globalKeys.Size() >> 10, globalKeys.Num() );
-	idLib::common->Printf( "%5u KB in %i values\n", globalValues.Size() >> 10, globalValues.Num() );
+	idLib::common->Printf( "%5llu KB in %i keys\n", globalKeys.Size() >> 10, globalKeys.Num() );
+	idLib::common->Printf( "%5llu KB in %i values\n", globalValues.Size() >> 10, globalValues.Num() );
 }
 
 /*

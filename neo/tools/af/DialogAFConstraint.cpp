@@ -43,8 +43,8 @@ If you have questions concerning this license or the applicable additional terms
 
 #ifdef ID_DEBUG_MEMORY
 #undef new
-#undef DEBUG_NEW
-#define DEBUG_NEW new
+#undef ID_DEBUG_NEW
+#define ID_DEBUG_NEW new
 #endif
 
 

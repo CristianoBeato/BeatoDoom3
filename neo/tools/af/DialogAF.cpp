@@ -40,8 +40,8 @@ If you have questions concerning this license or the applicable additional terms
 
 #ifdef ID_DEBUG_MEMORY
 #undef new
-#undef DEBUG_NEW
-#define DEBUG_NEW new
+#undef ID_DEBUG_NEW
+#define ID_DEBUG_NEW new
 #endif
 
 // DialogAF
@@ -51,7 +51,8 @@ If you have questions concerning this license or the applicable additional terms
 #define AFTAB_BODIES			0x03
 #define AFTAB_CONSTRAINTS		0x04
 
-toolTip_t DialogAF::toolTips[] = {
+toolTip_t DialogAF::toolTips[] = 
+{
 	{ IDC_COMBO_AF, "select an articulated figure for editing" },
 	{ IDC_BUTTON_AF_NEW, "create a new articulated figure" },
 	{ IDC_BUTTON_AF_DELETE, "delete the selected articulated figure" },

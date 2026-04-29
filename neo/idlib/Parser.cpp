@@ -709,9 +709,9 @@ int idParser::ExpandBuiltinDefine( idToken *deftoken, define_t *define, idToken 
 			curtime = ctime(&t);
 			(*token) = "\"";
 			token->Append( curtime+4 );
-			token[7] = '\0';
+			token[7] = nullptr;
 			token->Append( curtime+20 );
-			token[10] = '\0';
+			token[10] = nullptr;
 			token->Append( "\"" );
 			free(curtime);
 			token->type = TT_STRING;
@@ -723,12 +723,13 @@ int idParser::ExpandBuiltinDefine( idToken *deftoken, define_t *define, idToken 
 			*lasttoken = token;
 			break;
 		}
-		case BUILTIN_TIME: {
+		case BUILTIN_TIME: 
+		{
 			t = time(NULL);
 			curtime = ctime(&t);
 			(*token) = "\"";
 			token->Append( curtime+11 );
-			token[8] = '\0';
+			token[8] = nullptr;
 			token->Append( "\"" );
 			free(curtime);
 			token->type = TT_STRING;
@@ -1365,7 +1366,8 @@ int PC_OperatorPriority(int op) {
 
 #define FreeOperator(op)
 
-int idParser::EvaluateTokens( idToken *tokens, signed long int *intvalue, double *floatvalue, int integer ) {
+int idParser::EvaluateTokens( idToken *tokens, signed long int *intvalue, double *floatvalue, int integer ) 
+{
 	operator_t *o, *firstoperator, *lastoperator;
 	value_t *v, *firstvalue, *lastvalue, *v1, *v2;
 	idToken *t;
@@ -1377,7 +1379,7 @@ int idParser::EvaluateTokens( idToken *tokens, signed long int *intvalue, double
 	int questmarkintvalue = 0;
 	double questmarkfloatvalue = 0;
 	int gotquestmarkvalue = false;
-	int lastoperatortype = 0;
+	
 	//
 	operator_t operator_heap[MAX_OPERATORS];
 	int numoperators = 0;
@@ -1736,7 +1738,7 @@ int idParser::EvaluateTokens( idToken *tokens, signed long int *intvalue, double
 #endif //DEBUG_EVAL
 		if (error)
 			break;
-		lastoperatortype = o->op;
+		
 		//if not an operator with arity 1
 		if (o->op != P_LOGIC_NOT && o->op != P_BIN_NOT) {
 			//remove the second value if not question mark operator
@@ -2100,7 +2102,8 @@ void idParser::UnreadSignToken( void ) {
 idParser::Directive_eval
 ================
 */
-int idParser::Directive_eval( void ) {
+int idParser::Directive_eval( void )
+{
 	signed long int value;
 	idToken token;
 	char buf[128];
@@ -2114,7 +2117,7 @@ int idParser::Directive_eval( void ) {
 	token.whiteSpaceEnd_p = NULL;
 	token.linesCrossed = 0;
 	token.flags = 0;
-	sprintf(buf, "%d", abs(value));
+	sprintf(buf, "%ld", std::abs(value));
 	token = buf;
 	token.type = TT_NUMBER;
 	token.subtype = TT_INTEGER|TT_LONG|TT_DECIMAL;
@@ -2253,7 +2256,7 @@ int idParser::DollarDirective_evalint( void ) {
 	token.whiteSpaceEnd_p = NULL;
 	token.linesCrossed = 0;
 	token.flags = 0;
-	sprintf( buf, "%d", abs( value ) );
+	sprintf( buf, "%ld", std::abs( value ) );
 	token = buf;
 	token.type = TT_NUMBER;
 	token.subtype = TT_INTEGER | TT_LONG | TT_DECIMAL | TT_VALUESVALID;

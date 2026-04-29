@@ -29,8 +29,8 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
-#if !defined( ID_REDIRECT_NEWDELETE ) && !defined( MACOS_X )
-	#define USE_STRING_DATA_ALLOCATOR
+#if !defined( ID_REDIRECT_NEWDELETE )
+#define USE_STRING_DATA_ALLOCATOR
 #endif
 
 #ifdef USE_STRING_DATA_ALLOCATOR
@@ -1640,7 +1640,8 @@ void idStr::ShutdownMemory( void ) {
 idStr::PurgeMemory
 ================
 */
-void idStr::PurgeMemory( void ) {
+void idStr::PurgeMemory( void ) 
+{
 #ifdef USE_STRING_DATA_ALLOCATOR
 	stringDataAllocator.FreeEmptyBaseBlocks();
 #endif

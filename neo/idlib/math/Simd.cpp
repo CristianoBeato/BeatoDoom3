@@ -3967,7 +3967,7 @@ void idSIMD::Test_f( const idCmdArgs &args )
 {
 
 // BEATO Begin:
-	SDL_SetThreadPriority( SDL_THREAD_PRIORITY_TIME_CRITICAL ); // May need require you to be an administrator account
+	SDL_SetCurrentThreadPriority( SDL_THREAD_PRIORITY_TIME_CRITICAL ); // May need require you to be an administrator account
 // BEATO End
 
 	p_simd = processor;
@@ -4089,6 +4089,6 @@ void idSIMD::Test_f( const idCmdArgs &args )
 	p_generic = NULL;
 
 // BEATO Begin:
-	SDL_SetThreadPriority( SDL_THREAD_PRIORITY_NORMAL ); // May need require you to be an administrator account
+	SDL_SetCurrentThreadPriority( SDL_THREAD_PRIORITY_NORMAL ); // May need require you to be an administrator account
 // BEATO End
 }

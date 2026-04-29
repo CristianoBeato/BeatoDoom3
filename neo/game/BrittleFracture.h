@@ -39,7 +39,8 @@ of the render model which can fracture.
 ===============================================================================
 */
 
-typedef struct shard_s {
+typedef struct shard_s 
+{
 	idClipModel *				clipModel;
 	idFixedWinding				winding;
 	idList<idFixedWinding *>	decals;

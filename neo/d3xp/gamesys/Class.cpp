@@ -497,7 +497,8 @@ void * idClass::operator new( size_t s, int, int, char *, int ) {
 idClass::delete
 ================
 */
-void idClass::operator delete( void *ptr ) {
+void idClass::operator delete( void *ptr ) 
+{
 	int *p;
 
 	if ( ptr ) {

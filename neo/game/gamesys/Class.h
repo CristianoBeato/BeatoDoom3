@@ -54,19 +54,20 @@ struct idEventFunc {
 #define END_CLASS					{ NULL, NULL } };
 
 
-class idEventArg {
+class idEventArg 
+{
 public:
 	int			type;
-	int			value;
+	uintptr_t	value;
 
-	idEventArg()								{ type = D_EVENT_INTEGER; value = 0; };
+	idEventArg( void )							{ type = D_EVENT_INTEGER; value = 0; };
 	idEventArg( int data )						{ type = D_EVENT_INTEGER; value = data; };
-	idEventArg( float data )					{ type = D_EVENT_FLOAT; value = *reinterpret_cast<int *>( &data ); };
-	idEventArg( idVec3 &data )					{ type = D_EVENT_VECTOR; value = reinterpret_cast<int>( &data ); };
-	idEventArg( const idStr &data )				{ type = D_EVENT_STRING; value = reinterpret_cast<int>( data.c_str() ); };
-	idEventArg( const char *data )				{ type = D_EVENT_STRING; value = reinterpret_cast<int>( data ); };
-	idEventArg( const class idEntity *data )	{ type = D_EVENT_ENTITY; value = reinterpret_cast<int>( data ); };
-	idEventArg( const struct trace_s *data )	{ type = D_EVENT_TRACE; value = reinterpret_cast<int>( data ); };
+	idEventArg( float data )					{ type = D_EVENT_FLOAT; value = *reinterpret_cast<int*>( &data ); };
+	idEventArg( idVec3 &data )					{ type = D_EVENT_VECTOR; value = reinterpret_cast<uintptr_t>( &data ); };
+	idEventArg( const idStr &data )				{ type = D_EVENT_STRING; value = reinterpret_cast<uintptr_t>( data.c_str() ); };
+	idEventArg( const char *data )				{ type = D_EVENT_STRING; value = reinterpret_cast<uintptr_t>( data ); };
+	idEventArg( const class idEntity *data )	{ type = D_EVENT_ENTITY; value = reinterpret_cast<uintptr_t>( data ); };
+	idEventArg( const struct trace_s *data )	{ type = D_EVENT_TRACE; value = reinterpret_cast<uintptr_t>( data ); };
 };
 
 class idAllocError : public idException {
@@ -171,7 +172,12 @@ typedef void ( idClass::*classSpawnFunc_t )( void );
 class idSaveGame;
 class idRestoreGame;
 
-class idClass {
+#ifdef ID_REDIRECT_NEWDELETE
+#define new ID_DEBUG_NEW
+#endif
+
+class idClass 
+{
 public:
 	ABSTRACT_PROTOTYPE( idClass );
 
@@ -182,10 +188,6 @@ public:
 	void *						operator new( size_t s, int, int, char *, int );
 	void						operator delete( void * );
 	void						operator delete( void *, int, int, char *, int );
-#ifdef ID_REDIRECT_NEWDELETE
-#define new ID_DEBUG_NEW
-#endif
-
 	virtual						~idClass();
 
 	void						Spawn( void );
