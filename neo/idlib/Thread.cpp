@@ -26,7 +26,7 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #include "idlib/precompiled.h"
 #include "Thread.h"
 
-#include <SDL_thread.h>
+#include <SDL3/SDL_thread.h>
 #include "sys/sys_main.h"
 
 btThreadExecution::btThreadExecution( const char* _name ) : name( _name )

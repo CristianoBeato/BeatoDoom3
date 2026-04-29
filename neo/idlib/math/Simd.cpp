@@ -29,7 +29,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "../precompiled.h"
 #pragma hdrstop
 
-#include <SDL_thread.h>
+#include <SDL3/SDL_thread.h>
 
 #include "Simd_Generic.h"
 
@@ -44,9 +44,9 @@ If you have questions concerning this license or the applicable additional terms
 #endif
 // BEATO End
 
-idSIMDProcessor	*	processor = NULL;			// pointer to SIMD processor
-idSIMDProcessor *	generic = NULL;				// pointer to generic SIMD implementation
-idSIMDProcessor *	SIMDProcessor = NULL;
+idSIMDProcessor	*	processor = nullptr;			// pointer to SIMD processor
+idSIMDProcessor *	generic = nullptr;				// pointer to generic SIMD implementation
+idSIMDProcessor *	SIMDProcessor = nullptr;
 
 
 /*
@@ -57,7 +57,7 @@ idSIMD::Init
 void idSIMD::Init( void ) {
 	generic = new idSIMD_Generic;
 	generic->cpuid = CPUID_GENERIC;
-	processor = NULL;
+	processor = nullptr;
 	SIMDProcessor = generic;
 }
 
@@ -107,12 +107,14 @@ void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 #endif
 // BEATO end
 
-	if ( newProcessor != SIMDProcessor ) {
+	if ( newProcessor != SIMDProcessor ) 
+	{
 		SIMDProcessor = newProcessor;
 		idLib::common->Printf( "%s using %s for SIMD processing\n", module, SIMDProcessor->GetName() );
 	}
 
-	if ( cpuid & CPUID_FTZ ) {
+	if ( cpuid & CPUID_FTZ ) 
+	{
 		idLib::sys->FPU_SetFTZ( true );
 		idLib::common->Printf( "enabled Flush-To-Zero mode\n" );
 	}
@@ -128,14 +130,15 @@ void idSIMD::InitProcessor( const char *module, bool forceGeneric ) {
 idSIMD::Shutdown
 ================
 */
-void idSIMD::Shutdown( void ) {
-	if ( processor != generic ) {
+void idSIMD::Shutdown( void ) 
+{
+	if ( processor != generic ) 
 		delete processor;
-	}
+	
 	delete generic;
-	generic = NULL;
-	processor = NULL;
-	SIMDProcessor = NULL;
+	generic = nullptr;
+	processor = nullptr;
+	SIMDProcessor = nullptr;
 }
 
 
@@ -154,165 +157,11 @@ idSIMDProcessor *p_simd;
 idSIMDProcessor *p_generic;
 long baseClocks = 0;
 
-#ifdef _WIN32
+#define TIME_TYPE unsigned __int64
 
-#define TIME_TYPE int
+#define StartRecordTime( start ) start =__rdtsc()
 
-#pragma warning(disable : 4731)     // frame pointer register 'ebx' modified by inline assembly code
-
-long saved_ebx = 0;
-
-#define StartRecordTime( start )			\
-	__asm mov saved_ebx, ebx				\
-	__asm xor eax, eax						\
-	__asm cpuid								\
-	__asm rdtsc								\
-	__asm mov start, eax					\
-	__asm xor eax, eax						\
-	__asm cpuid
-
-#define StopRecordTime( end )				\
-	__asm xor eax, eax						\
-	__asm cpuid								\
-	__asm rdtsc								\
-	__asm mov end, eax						\
-	__asm mov ebx, saved_ebx				\
-	__asm xor eax, eax						\
-	__asm cpuid
-
-#elif MACOS_X
-
-#include <stdlib.h>
-#include <unistd.h>			// this is for sleep()
-#include <sys/time.h>
-#include <sys/resource.h>
-#include <mach/mach_time.h>
-
-double ticksPerNanosecond;
-
-#define TIME_TYPE uint64_t
-
-#ifdef __MWERKS__ //time_in_millisec is missing
-/*
-
-    .text
-	.align 2
-	.globl _GetTB
-_GetTB:
-
-loop:
-	        mftbu   r4	;  load from TBU
-	        mftb    r5	;  load from TBL
-	        mftbu   r6	;  load from TBU
-	        cmpw    r6, r4	;  see if old == new
-	        bne     loop	;  if not, carry occured, therefore loop
-
-	        stw     r4, 0(r3)
-	        stw     r5, 4(r3)
-
-done:
-	        blr		;  return
-
-*/
-typedef struct {
-	unsigned int hi;
-	unsigned int lo;
-} U64;
-
-
-asm void GetTB(U64 *in)
-{
-	nofralloc			// suppress prolog
-	machine 603			// allows the use of mftb & mftbu functions
-	
-loop:	
-	mftbu	r5			// grab the upper time base register (TBU)
-	mftb	r4			// grab the lower time base register (TBL)
-	mftbu	r6			// grab the upper time base register (TBU) again 
-	
-	cmpw	r6,r5		// see if old TBU == new TBU
-	bne-	loop		// loop if carry occurred (predict branch not taken)
-	
-	stw  	r4,4(r3)	// store TBL in the low 32 bits of the return value
-	stw  	r5,0(r3)	// store TBU in the high 32 bits of the return value
-
-	blr
-}
-
-
-
-
-double TBToDoubleNano( U64 startTime, U64 stopTime, double ticksPerNanosecond );
-
-#if __MWERKS__
-asm void GetTB( U64 * );
-#else
-void GetTB( U64 * );
-#endif
-
-double TBToDoubleNano( U64 startTime, U64 stopTime, double ticksPerNanosecond ) {
-	#define K_2POWER32 4294967296.0
-	#define TICKS_PER_NANOSECOND 0.025
-	double nanoTime;
-	U64 diffTime;
-
-	// calc the difference in TB ticks
-	diffTime.hi = stopTime.hi - startTime.hi;
-	diffTime.lo = stopTime.lo - startTime.lo;
-
-	// convert TB ticks into time
-	nanoTime = (double)(diffTime.hi)*((double)K_2POWER32) + (double)(diffTime.lo);
-	nanoTime = nanoTime/ticksPerNanosecond;
-	return (nanoTime);
-}       
-
-TIME_TYPE time_in_millisec( void ) {
-	#define K_2POWER32 4294967296.0
-	#define TICKS_PER_NANOSECOND 0.025
-
-	U64 the_time;
-	double nanoTime, milliTime;
-
-	GetTB( &the_time );
-
-	// convert TB ticks into time
-	nanoTime = (double)(the_time.hi)*((double)K_2POWER32) + (double)(the_time.lo);
-	nanoTime = nanoTime/ticksPerNanosecond;
-
-	// nanoseconds are 1 billionth of a second. I want milliseconds
-	milliTime = nanoTime * 1000000.0;
-
-	printf( "ticks per nanosec -- %lf\n", ticksPerNanosecond );
-	printf( "nanoTime is %lf -- milliTime is %lf -- as int is %i\n", nanoTime, milliTime, (int)milliTime );
-
-	return (int)milliTime;
-}
-
-#define StartRecordTime( start )			\
-	start = time_in_millisec(); 
-
-#define StopRecordTime( end )				\
-	end = time_in_millisec();
-
-
-#else
-#define StartRecordTime( start )			\
-	start = mach_absolute_time(); 
-
-#define StopRecordTime( end )				\
-	end = mach_absolute_time();
-#endif
-#else
-
-#define TIME_TYPE int
-
-#define StartRecordTime( start )			\
-	start = 0;
-
-#define StopRecordTime( end )				\
-	end = 1;
-
-#endif
+#define StopRecordTime( end ) end = __rdtsc()
 
 #define GetBest( start, end, best )			\
 	if ( !best || end - start < best ) {	\
@@ -347,11 +196,13 @@ void PrintClocks( const char *string, int dataCount, int clocks, int otherClocks
 GetBaseClocks
 ============
 */
-void GetBaseClocks( void ) {
-	int i, start, end, bestClocks;
+void GetBaseClocks( void ) 
+{
+	unsigned __int64 i, start, end, bestClocks;
 
 	bestClocks = 0;
-	for ( i = 0; i < NUMTESTS; i++ ) {
+	for ( i = 0; i < NUMTESTS; i++ ) 
+	{
 		StartRecordTime( start );
 		StopRecordTime( end );
 		GetBest( start, end, bestClocks );

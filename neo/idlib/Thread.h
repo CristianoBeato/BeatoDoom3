@@ -26,8 +26,8 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #ifndef _THREAD_H_
 #define _THREAD_H_
 
-#include <SDL_atomic.h>
-#include <SDL_mutex.h>
+#include <SDL3/SDL_atomic.h>
+#include <SDL3/SDL_mutex.h>
 
 struct btAtommicCounter
 {
@@ -37,40 +37,40 @@ public:
 	// 
 	const int	Set( int val )
 	{
-		return SDL_AtomicSet( &m_atomic, val );
+		return SDL_SetAtomicInt( &m_atomic, val );
 	}
 
 	//
 	//
 	const int	Get( void ) const
 	{
-		return SDL_AtomicGet( (SDL_atomic_t*)&m_atomic );
+		return SDL_GetAtomicInt( const_cast<SDL_AtomicInt*>( &m_atomic ) );
 	}
 
 	//
 	//
 	const int	Add( int val )
 	{
-		return SDL_AtomicAdd( &m_atomic, val );
+		return SDL_AddAtomicInt( &m_atomic, val );
 	}
 
 	const int Sub( int val )
 	{
-		return SDL_AtomicAdd( &m_atomic, -val );
+		return SDL_AddAtomicInt( &m_atomic, -val );
 	}
 
 	//
 	//
 	const int	Increment( void )
 	{
-		return SDL_AtomicAdd( &m_atomic, 1 ) + 1;
+		return SDL_AddAtomicInt( &m_atomic, 1 ) + 1;
 	}
 
 	//
 	//
 	const int	Decrement( void )
 	{
-		return SDL_AtomicAdd( &m_atomic, -1 ) - 1;
+		return SDL_AddAtomicInt( &m_atomic, -1 ) - 1;
 	}
 
 	ID_INLINE btAtommicCounter operator = ( int & v )
@@ -83,24 +83,24 @@ public:
 	//
 	ID_INLINE int operator ++ ( void )
 	{
-		return SDL_AtomicAdd( &m_atomic, 1 );
+		return SDL_AddAtomicInt( &m_atomic, 1 );
 	}
 
 	ID_INLINE int operator ++( int v )
 	{
-		return SDL_AtomicAdd( &m_atomic, v );
+		return SDL_AddAtomicInt( &m_atomic, v );
 	}
 
 	//
 	//
 	ID_INLINE int operator -- ( void )
 	{
-		return SDL_AtomicAdd( &m_atomic, -1 );
+		return SDL_AddAtomicInt( &m_atomic, -1 );
 	}
 
 	ID_INLINE int operator --( int v )
 	{
-		return SDL_AtomicAdd( &m_atomic, -v );
+		return SDL_AddAtomicInt( &m_atomic, -v );
 	}
 
 	//
@@ -123,7 +123,7 @@ public:
 	}
 
 private:
-	SDL_atomic_t	m_atomic;
+	SDL_AtomicInt	m_atomic;
 
 };
 
@@ -155,13 +155,13 @@ public:
 	}
 
 private:
-	// Acesso ao ponteiro do  mutex, para trava de condição
+	// Acesso ao ponteiro do  mutex, para trava de condiï¿½ï¿½o
 	// Mutex pointer acess, for condition lock
 	friend class btCondition;
-	SDL_mutex*	m_mtxhnd;
+	SDL_Mutex*	m_mtxhnd;
 
 	// prevent object copy
-	btMutex( const btCondition & s ) {}
+	btMutex( const btMutex & s ) {}
 	void			operator=( const btMutex & s ) {}
 };
 
@@ -189,14 +189,14 @@ class btCondition
 public:
 	btCondition( void ) : m_cndhnd( nullptr )
 	{
-		m_cndhnd = SDL_CreateCond();
+		m_cndhnd = SDL_CreateCondition();
 	}
 
 	ID_INLINE ~btCondition( void )
 	{
-		if (m_cndhnd != nullptr)
+		if ( m_cndhnd != nullptr )
 		{
-			SDL_DestroyCond( m_cndhnd );
+			SDL_DestroyCondition( m_cndhnd );
 			m_cndhnd = nullptr;
 		}
 	}
@@ -205,17 +205,17 @@ public:
 	// Unlock one thread 
 	ID_INLINE void	Signal( void ) const
 	{
-		SDL_CondSignal( m_cndhnd );
+		SDL_SignalCondition( m_cndhnd );
 	}
 
 	// Destrava todas as threads esperando pelo sinal
 	// Unlock all thread waiting for the signal
 	ID_INLINE void	SignalAll( void ) const
 	{
-		SDL_CondBroadcast( m_cndhnd );
+		SDL_BroadcastCondition( m_cndhnd );
 	}
 
-	// Trava a execução da atual thread
+	// Trava a execuï¿½ï¿½o da atual thread
 	// Lock the current thread execution
 	ID_INLINE void	Wait( const btMutex * lock, const Uint32 timeout = 0 ) const
 	{
@@ -224,13 +224,13 @@ public:
 		// Must be locked before 
 		lock->Lock();
 		if (timeout > 0)
-			SDL_CondWaitTimeout( m_cndhnd, lock->m_mtxhnd, timeout );
+			SDL_WaitConditionTimeout( m_cndhnd, lock->m_mtxhnd, timeout );
 		else
-			SDL_CondWait( m_cndhnd, lock->m_mtxhnd );
+			SDL_WaitCondition( m_cndhnd, lock->m_mtxhnd );
 	}
 
 private:
-	SDL_cond*	m_cndhnd;
+	SDL_Condition*	m_cndhnd;
 
 	// prevent object copy
 	btCondition( const btCondition & s ) {}
@@ -240,9 +240,9 @@ private:
 class btSemaphore
 {
 public:
-	btSemaphore( void ) : m_sem(nullptr)
+	btSemaphore( const int initial  ) : m_sem(nullptr)
 	{
-		m_sem = SDL_CreateSemaphore( 1 );
+		m_sem = SDL_CreateSemaphore( initial );
 	}
 
 	~btSemaphore( void )
@@ -258,19 +258,19 @@ public:
 	{
 		assert( m_sem );
 		if (timeout > 0)
-			SDL_SemWaitTimeout( m_sem, timeout );
+			SDL_WaitSemaphoreTimeout( m_sem, timeout );
 		else
-			SDL_SemWait( m_sem );
+			SDL_WaitSemaphore( m_sem );
 	}
 
 	SDL_INLINE void	Trigger( void )
 	{
 		assert( m_sem );
-		SDL_SemPost( m_sem );
+		SDL_SignalSemaphore( m_sem );
 	}
 
 private:
-	SDL_semaphore*	m_sem;
+	SDL_Semaphore*	m_sem;
 };
 
 
