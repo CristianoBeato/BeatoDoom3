@@ -29,6 +29,10 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __FILESYSTEM_H__
 #define __FILESYSTEM_H__
 
+#ifdef FILE_OPEN
+#undef FILE_OPEN
+#endif 
+
 /*
 ===============================================================================
 
@@ -57,25 +61,29 @@ static const int		MAX_PURE_PAKS				= 128;
 static const int		MAX_OSPATH					= 256;
 
 // modes for OpenFileByMode. used as bit mask internally
-typedef enum {
+typedef enum 
+{
 	FS_READ		= 0,
 	FS_WRITE	= 1,
 	FS_APPEND	= 2
 } fsMode_t;
 
-typedef enum {
+typedef enum 
+{
 	PURE_OK,		// we are good to connect as-is
 	PURE_RESTART,	// restart required
 	PURE_MISSING,	// pak files missing on the client
 	PURE_NODLL		// no DLL could be extracted
 } fsPureReply_t;
 
-typedef enum {
+typedef enum 
+{
 	DLTYPE_URL,
 	DLTYPE_FILE
 } dlType_t;
 
-typedef enum {
+typedef enum 
+{
 	DL_WAIT,		// waiting in the list for beginning of the download
 	DL_INPROGRESS,	// in progress
 	DL_DONE,		// download completed, success
@@ -83,12 +91,14 @@ typedef enum {
 	DL_FAILED
 } dlStatus_t;
 
-typedef enum {
+typedef enum 
+{
 	FILE_EXEC,
 	FILE_OPEN
 } dlMime_t;
 
-typedef enum {
+typedef enum 
+{
 	FIND_NO,
 	FIND_YES,
 	FIND_ADDON
