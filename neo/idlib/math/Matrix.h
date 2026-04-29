@@ -2277,10 +2277,11 @@ ID_INLINE void idMatX::SetTempSize( int rows, int columns ) {
 
 ID_INLINE void idMatX::SetData( int rows, int columns, float *data ) {
 	assert( mat < idMatX::tempPtr || mat > idMatX::tempPtr + MATX_MAX_TEMP );
-	if ( mat != NULL && alloced != -1 ) {
+	if ( mat != NULL && alloced != -1 )
+	{
 		Mem_Free16( mat );
 	}
-	assert( ( ( (int) data ) & 15 ) == 0 ); // data must be 16 byte aligned
+	assert( ( reinterpret_cast<uintptr_t>( data ) & 15 ) == 0 ); // data must be 16 byte aligned
 	mat = data;
 	alloced = -1;
 	numRows = rows;

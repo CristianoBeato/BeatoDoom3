@@ -1753,11 +1753,14 @@ ID_INLINE void idVecX::SetTempSize( int newSize ) {
 	VECX_CLEAREND();
 }
 
-ID_INLINE void idVecX::SetData( int length, float *data ) {
-	if ( p && ( p < idVecX::tempPtr || p >= idVecX::tempPtr + VECX_MAX_TEMP ) && alloced != -1 ) {
+ID_INLINE void idVecX::SetData( int length, float *data ) 
+{
+	if ( p && ( p < idVecX::tempPtr || p >= idVecX::tempPtr + VECX_MAX_TEMP ) && alloced != -1 ) 
+	{
 		Mem_Free16( p );
 	}
-	assert( ( ( (int) data ) & 15 ) == 0 ); // data must be 16 byte aligned
+
+	assert( ( reinterpret_cast<uintptr_t>( data ) & 15 ) == 0 ); // data must be 16 byte aligned
 	p = data;
 	size = length;
 	alloced = -1;
