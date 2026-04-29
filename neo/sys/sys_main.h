@@ -54,8 +54,6 @@ typedef struct
 	class btInputEvent*		input;		// Event Input Manager
 	class btConsoleLog*		console;	// Console/Dedicate mode log window
 
-	static idCVar sys_viewlog;			// Enable Log Console in game
-	static idCVar sys_outputEditString; 
 } sysVars_t;
 static sysVars_t sysVars;
 

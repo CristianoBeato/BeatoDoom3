@@ -93,9 +93,11 @@ typedef enum {
 } speakerLabel;
 
 
-class idSIMDProcessor {
+class idSIMDProcessor 
+{
 public:
-									idSIMDProcessor( void ) { cpuid = CPUID_NONE; }
+	idSIMDProcessor( void ) { cpuid = CPUID_NONE; }
+	~idSIMDProcessor( void ) { cpuid = CPUID_NONE; }
 
 	cpuid_t							cpuid;
 

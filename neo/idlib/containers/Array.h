@@ -88,9 +88,9 @@ public:
 	// Return the allocated size
 	ID_INLINE const size_t	Size( void ) const { return m_arraySize; }
 
-	// Verdadeiro se a lista está vazia
+	// Verdadeiro se a lista esta vazia
 	// True if the array is empty
-	ID_INLINE const bool		IsEmpty( void ) const { return m_elementArray == nullptr }
+	ID_INLINE const bool		IsEmpty( void ) const { return m_elementArray == nullptr; }
 
 	//
 	// 
