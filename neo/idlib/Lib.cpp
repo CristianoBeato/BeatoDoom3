@@ -29,12 +29,6 @@ If you have questions concerning this license or the applicable additional terms
 #include "precompiled.h"
 #pragma hdrstop
 
-#if defined( MACOS_X )
-#include <signal.h>
-#include <sys/types.h>
-#include <unistd.h>
-#endif
-
 /*
 ===============================================================================
 
@@ -43,10 +37,10 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
-idSys *			idLib::sys			= NULL;
-idCommon *		idLib::common		= NULL;
-idCVarSystem *	idLib::cvarSystem	= NULL;
-idFileSystem *	idLib::fileSystem	= NULL;
+idSys *			idLib::sys			= nullptr;
+idCommon *		idLib::common		= nullptr;
+idCVarSystem *	idLib::cvarSystem	= nullptr;
+idFileSystem *	idLib::fileSystem	= nullptr;
 int				idLib::frameNumber	= 0;
 
 /*
@@ -54,12 +48,9 @@ int				idLib::frameNumber	= 0;
 idLib::Init
 ================
 */
-void idLib::Init( void ) {
-
+void idLib::Init( void ) 
+{
 	assert( sizeof( bool ) == 1 );
-
-	// initialize little/big endian conversion
-	Swap_Init();
 
 	// initialize memory manager
 	Mem_Init();
@@ -243,7 +234,8 @@ void idLib::Error( const char *fmt, ... ) {
 idLib::Warning
 ===============
 */
-void idLib::Warning( const char *fmt, ... ) {
+void idLib::Warning( const char *fmt, ... ) 
+{
 	va_list		argptr;
 	char		text[MAX_STRING_CHARS];
 
@@ -261,108 +253,50 @@ void idLib::Warning( const char *fmt, ... ) {
 
 ===============================================================================
 */
+static void RevBytesSwap( void *bp, size_t elsize, uint32_t elcount );
+static void RevBitFieldSwap( void *bp, size_t elsize );
+static void SixtetsForIntLittle( byte *out, int src);
+static void SixtetsForIntBig( byte *out, int src );
+static int IntForSixtetsBig( byte *in );
+static int IntForSixtetsLittle( byte *in );
 
-// can't just use function pointers, or dll linkage can mess up
-static short	(*_BigShort)( short l );
-static short	(*_LittleShort)( short l );
-static int		(*_BigLong)( int l );
-static int		(*_LittleLong)( int l );
-static float	(*_BigFloat)( float l );
-static float	(*_LittleFloat)( float l );
-static void		(*_BigRevBytes)( void *bp, int elsize, int elcount );
-static void		(*_LittleRevBytes)( void *bp, int elsize, int elcount );
-static void     (*_LittleBitField)( void *bp, int elsize );
-static void		(*_SixtetsForInt)( byte *out, int src );
-static int		(*_IntForSixtets)( byte *in );
-
-short	BigShort( short l ) { return _BigShort( l ); }
-short	LittleShort( short l ) { return _LittleShort( l ); }
-int		BigLong( int l ) { return _BigLong( l ); }
-int		LittleLong( int l ) { return _LittleLong( l ); }
-float	BigFloat( float l ) { return _BigFloat( l ); }
-float	LittleFloat( float l ) { return _LittleFloat( l ); }
-void	BigRevBytes( void *bp, int elsize, int elcount ) { _BigRevBytes( bp, elsize, elcount ); }
-void	LittleRevBytes( void *bp, int elsize, int elcount ){ _LittleRevBytes( bp, elsize, elcount ); }
-void	LittleBitField( void *bp, int elsize ){ _LittleBitField( bp, elsize ); }
-
-void	SixtetsForInt( byte *out, int src) { _SixtetsForInt( out, src ); }
-int		IntForSixtets( byte *in ) { return _IntForSixtets( in ); }
-
-/*
-================
-ShortSwap
-================
-*/
-short ShortSwap( short l ) {
-	byte    b1,b2;
-
-	b1 = l&255;
-	b2 = (l>>8)&255;
-
-	return (b1<<8) + b2;
+void	BigRevBytes( void *bp, const size_t elsize, const uint32_t elcount ) 
+{ 
+#if SDL_BYTEORDER == SDL_LIL_ENDIAN 
+	RevBytesSwap( bp, elsize, elcount ); 
+#endif
 }
 
-/*
-================
-ShortNoSwap
-================
-*/
-short ShortNoSwap( short l ) {
-	return l;
+void	LittleRevBytes( void *bp, const size_t elsize, const uint32_t elcount )
+{
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+	RevBytesSwap( bp, elsize, elcount ); 
+#endif
 }
 
-/*
-================
-LongSwap
-================
-*/
-int LongSwap ( int l ) {
-	byte    b1,b2,b3,b4;
-
-	b1 = l&255;
-	b2 = (l>>8)&255;
-	b3 = (l>>16)&255;
-	b4 = (l>>24)&255;
-
-	return ((int)b1<<24) + ((int)b2<<16) + ((int)b3<<8) + b4;
+void	LittleBitField( void *bp, const size_t elsize )
+{
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN 
+	RevBitFieldSwap( bp, elsize ); 
+#endif
 }
 
-/*
-================
-LongNoSwap
-================
-*/
-int	LongNoSwap( int l ) {
-	return l;
+void	SixtetsForInt( byte *out, int src) 
+{ 
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+	SixtetsForIntBig( out, src );
+#else
+	SixtetsForIntBig( out, src );
+#endif
 }
 
-/*
-================
-FloatSwap
-================
-*/
-float FloatSwap( float f ) {
-	union {
-		float	f;
-		byte	b[4];
-	} dat1, dat2;
-	
-	
-	dat1.f = f;
-	dat2.b[0] = dat1.b[3];
-	dat2.b[1] = dat1.b[2];
-	dat2.b[2] = dat1.b[1];
-	dat2.b[3] = dat1.b[0];
-	return dat2.f;
-}
-
-/*
-================
-FloatNoSwap
-================
-*/
-float FloatNoSwap( float f ) {
-	return f;
+int		IntForSixtets( byte *in ) 
+{ 
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+	return IntForSixtetsBig( in );
+#else
+	return IntForSixtetsLittle( in );
+#endif
 }
 
 /*
@@ -379,14 +313,16 @@ INPUTS
 RESULTS
    Reverses the byte order in each of elcount elements.
 ===================================================================== */
-void RevBytesSwap( void *bp, int elsize, int elcount ) {
+void RevBytesSwap( void *bp, size_t elsize, uint32_t elcount )
+{
 	unsigned char *p, *q;
-
 	p = ( unsigned char * ) bp;
 
-	if ( elsize == 2 ) {
+	if ( elsize == 2 ) 
+	{
 		q = p + 1;
-		while ( elcount-- ) {
+		while ( elcount-- ) 
+		{
 			*p ^= *q;
 			*q ^= *p;
 			*p ^= *q;
@@ -422,17 +358,20 @@ void RevBytesSwap( void *bp, int elsize, int elcount ) {
  RESULTS
  Reverses the bitfield of size elsize.
  ===================================================================== */
-void RevBitFieldSwap( void *bp, int elsize) {
-	int i;
+void RevBitFieldSwap( void *bp, size_t elsize ) 
+{
+	size_t i = 0;
 	unsigned char *p, t, v;
 	
 	LittleRevBytes( bp, elsize, 1 );
 	
 	p = (unsigned char *) bp;
-	while ( elsize-- ) {
+	while ( elsize-- ) 
+	{
 		v = *p;
 		t = 0;
-		for (i = 7; i; i--) {
+		for (i = 7; i; i--) 
+		{
 			t <<= 1;
 			v >>= 1;
 			t |= v & 1;
@@ -443,28 +382,11 @@ void RevBitFieldSwap( void *bp, int elsize) {
 
 /*
 ================
-RevBytesNoSwap
-================
-*/
-void RevBytesNoSwap( void *bp, int elsize, int elcount ) {
-	return;
-}
-
-/*
- ================
- RevBytesNoSwap
- ================
- */
-void RevBitFieldNoSwap( void *bp, int elsize ) {
-	return;
-}
-
-/*
-================
 SixtetsForIntLittle
 ================
 */
-void SixtetsForIntLittle( byte *out, int src) {
+void SixtetsForIntLittle( byte *out, int src) 
+{
 	byte *b = (byte *)&src;
 	out[0] = ( b[0] & 0xfc ) >> 2;
 	out[1] = ( ( b[0] & 0x3 ) << 4 ) + ( ( b[1] & 0xf0 ) >> 4 );
@@ -478,7 +400,8 @@ SixtetsForIntBig
 TTimo: untested - that's the version from initial base64 encode
 ================
 */
-void SixtetsForIntBig( byte *out, int src) {
+void SixtetsForIntBig( byte *out, int src) 
+{
 	for( int i = 0 ; i < 4 ; i++ ) {
 		out[i] = src & 0x3f;
 		src >>= 6;
@@ -490,7 +413,8 @@ void SixtetsForIntBig( byte *out, int src) {
 IntForSixtetsLittle
 ================
 */
-int IntForSixtetsLittle( byte *in ) {
+int IntForSixtetsLittle( byte *in ) 
+{
 	int ret = 0;
 	byte *b = (byte *)&ret;
 	b[0] |= in[0] << 2;
@@ -508,61 +432,14 @@ IntForSixtetsBig
 TTimo: untested - that's the version from initial base64 decode
 ================
 */
-int IntForSixtetsBig( byte *in ) {
+int IntForSixtetsBig( byte *in ) 
+{
 	int ret = 0;
 	ret |= in[0];
 	ret |= in[1] << 6;
 	ret |= in[2] << 2*6;
 	ret |= in[3] << 3*6;
 	return ret;
-}
-
-/*
-================
-Swap_Init
-================
-*/
-void Swap_Init( void ) {
-	byte	swaptest[2] = {1,0};
-
-	// set the byte swapping variables in a portable manner	
-	if ( *(short *)swaptest == 1) {
-		// little endian ex: x86
-		_BigShort = ShortSwap;
-		_LittleShort = ShortNoSwap;
-		_BigLong = LongSwap;
-		_LittleLong = LongNoSwap;
-		_BigFloat = FloatSwap;
-		_LittleFloat = FloatNoSwap;
-		_BigRevBytes = RevBytesSwap;
-		_LittleRevBytes = RevBytesNoSwap;
-		_LittleBitField = RevBitFieldNoSwap;
-		_SixtetsForInt = SixtetsForIntLittle;
-		_IntForSixtets = IntForSixtetsLittle;
-	} else {
-		// big endian ex: ppc
-		_BigShort = ShortNoSwap;
-		_LittleShort = ShortSwap;
-		_BigLong = LongNoSwap;
-		_LittleLong = LongSwap;
-		_BigFloat = FloatNoSwap;
-		_LittleFloat = FloatSwap;
-		_BigRevBytes = RevBytesNoSwap;
-		_LittleRevBytes = RevBytesSwap;
-		_LittleBitField = RevBitFieldSwap;
-		_SixtetsForInt = SixtetsForIntBig;
-		_IntForSixtets = IntForSixtetsBig;
-	}
-}
-
-/*
-==========
-Swap_IsBigEndian
-==========
-*/
-bool Swap_IsBigEndian( void ) {
-	byte	swaptest[2] = {1,0};
-	return *(short *)swaptest != 1;
 }
 
 #if 0

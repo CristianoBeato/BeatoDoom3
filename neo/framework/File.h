@@ -80,30 +80,140 @@ public:
 	virtual int				WriteFloatString( const char *fmt, ... ) id_attribute((format(printf,2,3)));
 	
 	// Endian portable alternatives to Read(...)
-	virtual int				ReadInt( int &value );
-	virtual int				ReadUnsignedInt( unsigned int &value );
-	virtual int				ReadShort( short &value );
-	virtual int				ReadUnsignedShort( unsigned short &value );
-	virtual int				ReadChar( char &value );
-	virtual int				ReadUnsignedChar( unsigned char &value );
-	virtual int				ReadFloat( float &value );
-	virtual int				ReadBool( bool &value );
-	virtual int				ReadString( idStr &string );
-	virtual int				ReadVec2( idVec2 &vec );
-	virtual int				ReadVec3( idVec3 &vec );
-	virtual int				ReadVec4( idVec4 &vec );
-	virtual int				ReadVec6( idVec6 &vec );
-	virtual int				ReadMat3( idMat3 &mat );
+	ID_INLINE size_t		ReadLong( int64_t &value )
+	{
+		size_t l = Read( &value, sizeof( int64_t ) );
+		value = SDL_Swap64LE( value );
+		return l;
+	}
+
+	ID_INLINE size_t		ReadUnsignedLong( uint64_t &value )
+	{
+		size_t l = Read( &value, sizeof( uint64_t ) );
+		value = SDL_Swap64LE( value );
+		return l;
+	}
+
+	ID_INLINE size_t	ReadInt( int32_t &value )
+	{
+		size_t l = Read( &value, sizeof( int32_t ) );
+		value = SDL_Swap32LE( value );
+		return l;
+	}
+
+	ID_INLINE size_t	ReadUnsignedInt( uint32_t &value )
+	{
+		size_t result = Read( &value, sizeof( uint32_t ) );
+		value = SDL_Swap32LE( value );
+		return result;
+	}
+
+	ID_INLINE size_t	ReadShort( int16_t &value )
+	{
+		size_t result = Read( &value, sizeof( int16_t ) );
+		value = SDL_Swap16LE( value );
+		return result;
+	}
+
+	ID_INLINE size_t	ReadUnsignedShort( uint16_t &value )
+	{
+		size_t result = Read( &value, sizeof( uint16_t ) );
+		value = LittleShort(value);
+		return result;
+	}
+
+	ID_INLINE size_t	ReadFloat( float &value )
+	{
+		size_t result = Read( &value, sizeof( float ) );
+		value = SDL_SwapFloatLE( value );
+		return result;
+	}
+
+	ID_INLINE size_t	ReadChar( char &value )
+	{
+		return Read( &value, sizeof( char ) );
+	}
+
+
+	ID_INLINE size_t	ReadUnsignedChar( unsigned char &value )
+	{
+		return Read( &value, sizeof( unsigned char ) );
+	}
+
+	ID_INLINE size_t		ReadBool( bool &value )
+	{
+		unsigned char c;
+		size_t result = Read( &c, sizeof( unsigned char ) );
+		value = c != 0;
+		return result;
+	}
+
+	virtual size_t		ReadString( idStr &string );
+	virtual size_t		ReadVec2( idVec2 &vec );
+	virtual size_t		ReadVec3( idVec3 &vec );
+	virtual size_t		ReadVec4( idVec4 &vec );
+	virtual size_t		ReadVec6( idVec6 &vec );
+	virtual size_t		ReadMat3( idMat3 &mat );
 	
 	// Endian portable alternatives to Write(...)
-	virtual int				WriteInt( const int value );
-	virtual int				WriteUnsignedInt( const unsigned int value );
-	virtual int				WriteShort( const short value );
-	virtual int				WriteUnsignedShort( unsigned short value );
-	virtual int				WriteChar( const char value );
-	virtual int				WriteUnsignedChar( const unsigned char value );
-	virtual int				WriteFloat( const float value );
-	virtual int				WriteBool( const bool value );
+	ID_INLINE size_t	WriteLong( const int64_t value )
+	{
+		int64_t v = SDL_Swap64LE( value );
+		return Write( &v, sizeof( int64_t ) );
+	}
+
+	ID_INLINE size_t	WriteUnsignedLong( const uint64_t value )
+	{
+		uint64_t v = SDL_Swap64LE( value );
+		return Write( &v, sizeof( uint64_t ) );
+	}
+	
+	ID_INLINE size_t	WriteInt( const int32_t value )
+	{
+		int32_t v = SDL_Swap32LE( value );
+		return Write( &v, sizeof( int32_t ) );
+	}
+
+	ID_INLINE size_t	WriteUnsignedInt( const uint32_t value )
+	{
+		uint32_t v = SDL_Swap32LE( value );
+		return Write( &v, sizeof( uint32_t ) );
+	}
+
+	ID_INLINE size_t	WriteShort( const int16_t value )
+	{
+		int16_t v = SDL_Swap16LE( value );
+		return Write( &v, sizeof( int16_t ) );
+	}
+	
+	ID_INLINE size_t	WriteUnsignedShort( unsigned short value )
+	{
+		uint16_t v = SDL_Swap16LE( value );
+		return Write( &v, sizeof( uint16_t ) );
+	}
+	
+	ID_INLINE size_t	WriteChar( const char value )
+	{
+		return Write( &value, sizeof( char ) );
+	}
+
+	ID_INLINE size_t	WriteUnsignedChar( const unsigned char value )
+	{
+		return Write( &value, sizeof( unsigned char ) );
+	}
+
+	ID_INLINE size_t	WriteFloat( const float value )
+	{
+		float f = SDL_SwapFloatLE( value );
+		return Write( &f, sizeof( float ) );
+	}
+
+	ID_INLINE size_t	WriteBool( const bool value )
+	{
+		unsigned char c = value;
+		return WriteUnsignedChar( c );
+	}
+
 	virtual int				WriteString( const char *string );
 	virtual int				WriteVec2( const idVec2 &vec );
 	virtual int				WriteVec3( const idVec3 &vec );

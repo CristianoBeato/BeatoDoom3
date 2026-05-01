@@ -122,19 +122,22 @@ void	UnpackColor( const dword color, idVec3 &unpackedColor );
 dword	PackColor( const idVec4 &color );
 void	UnpackColor( const dword color, idVec4 &unpackedColor );
 
-// little/big endian conversion
-short	BigShort( short l );
-short	LittleShort( short l );
-int		BigLong( int l );
-int		LittleLong( int l );
-float	BigFloat( float l );
-float	LittleFloat( float l );
-void	BigRevBytes( void *bp, int elsize, int elcount );
-void	LittleRevBytes( void *bp, int elsize, int elcount );
-void	LittleBitField( void *bp, int elsize );
-void	Swap_Init( void );
+// BEATO Begin: Use SDL for little/big endian conversion
+#define BigShort 		SDL_Swap16BE
+#define LittleShort		SDL_Swap16LE
+#define BigLong			SDL_Swap32BE
+#define LittleLong		SDL_Swap32LE
+#define BigFloat		SDL_SwapFloatBE
+#define LittleFloat		SDL_SwapFloatLE
 
-bool	Swap_IsBigEndian( void );
+void	BigRevBytes( void *bp, const size_t elsize, uint32_t elcount );
+void	LittleRevBytes( void *bp, const size_t elsize, uint32_t elcount );
+void	LittleBitField( void *bp, const size_t elsize );
+
+ID_INLINE bool	Swap_IsBigEndian( void )
+{
+	return SDL_BYTEORDER == SDL_BIG_ENDIAN;
+}
 
 // for base64
 void	SixtetsForInt( byte *out, int src);

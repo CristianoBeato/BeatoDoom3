@@ -305,88 +305,10 @@ int idFile::WriteFloatString( const char *fmt, ... ) {
 
 /*
  =================
- idFile::ReadInt
- =================
- */
-int idFile::ReadInt( int &value ) {
-	int result = Read( &value, sizeof( value ) );
-	value = LittleLong(value);
-	return result;
-}
-
-/*
- =================
- idFile::ReadUnsignedInt
- =================
- */
-int idFile::ReadUnsignedInt( unsigned int &value ) {
-	int result = Read( &value, sizeof( value ) );
-	value = LittleLong(value);
-	return result;
-}
-
-/*
- =================
- idFile::ReadShort
- =================
- */
-int idFile::ReadShort( short &value ) {
-	int result = Read( &value, sizeof( value ) );
-	value = LittleShort(value);
-	return result;
-}
-
-/*
- =================
- idFile::ReadUnsignedShort
- =================
- */
-int idFile::ReadUnsignedShort( unsigned short &value ) {
-	int result = Read( &value, sizeof( value ) );
-	value = LittleShort(value);
-	return result;
-}
-
-/*
- =================
- idFile::ReadChar
- =================
- */
-int idFile::ReadChar( char &value ) {
-	return Read( &value, sizeof( value ) );
-}
-
-/*
- =================
- idFile::ReadUnsignedChar
- =================
- */
-int idFile::ReadUnsignedChar( unsigned char &value ) {
-	return Read( &value, sizeof( value ) );
-}
-
-/*
- =================
- idFile::ReadFloat
- =================
- */
-int idFile::ReadFloat( float &value ) {
-	int result = Read( &value, sizeof( value ) );
-	value = LittleFloat(value);
-	return result;
-}
-
-/*
- =================
  idFile::ReadBool
  =================
  */
-int idFile::ReadBool( bool &value ) {
-	unsigned char c;
-	int result = ReadUnsignedChar( c );
-	value = c ? true : false;
-	return result;
-}
+int idFile::ReadBool( bool &value ) 
 
 /*
  =================
@@ -458,84 +380,6 @@ int idFile::ReadMat3( idMat3 &mat ) {
 	int result = Read( &mat, sizeof( mat ) );
 	LittleRevBytes( &mat, sizeof(float), sizeof(mat)/sizeof(float) );
 	return result;
-}
-
-/*
- =================
- idFile::WriteInt
- =================
- */
-int idFile::WriteInt( const int value ) {
-	int v = LittleLong(value);
-	return Write( &v, sizeof( v ) );
-}
-
-/*
- =================
- idFile::WriteUnsignedInt
- =================
- */
-int idFile::WriteUnsignedInt( const unsigned int value ) {
-	unsigned int v = LittleLong(value);
-	return Write( &v, sizeof( v ) );
-}
-
-/*
- =================
- idFile::WriteShort
- =================
- */
-int idFile::WriteShort( const short value ) {
-	short v = LittleShort(value);
-	return Write( &v, sizeof( v ) );
-}
-
-/*
- =================
- idFile::WriteUnsignedShort
- =================
- */
-int idFile::WriteUnsignedShort( const unsigned short value ) {
-	unsigned short v = LittleShort(value);
-	return Write( &v, sizeof( v ) );
-}
-
-/*
- =================
- idFile::WriteChar
- =================
- */
-int idFile::WriteChar( const char value ) {
-	return Write( &value, sizeof( value ) );
-}
-
-/*
- =================
- idFile::WriteUnsignedChar
- =================
- */
-int idFile::WriteUnsignedChar( const unsigned char value ) {
-	return Write( &value, sizeof( value ) );
-}
-
-/*
- =================
- idFile::WriteFloat
- =================
- */
-int idFile::WriteFloat( const float value ) {
-	float v = LittleFloat(value);
-	return Write( &v, sizeof( v ) );
-}
-
-/*
- =================
- idFile::WriteBool
- =================
- */
-int idFile::WriteBool( const bool value ) {
-	unsigned char c = value;
-	return WriteUnsignedChar( c );
 }
 
 /*
