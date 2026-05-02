@@ -209,7 +209,7 @@ idSessionLocal::MaybeWaitOnCDKey
 bool idSessionLocal::MaybeWaitOnCDKey( void ) {
 	if ( authEmitTimeout > 0 ) {
 		authWaitBox = true;
-		sessLocal.MessageBox( MSG_WAIT, common->GetLanguageDict()->GetString( "#str_07191" ), NULL, true, NULL, NULL, true );
+		sessLocal.MessageBox( MSG_WAIT, common->GetLanguageDict()->GetString( "#str_07191" ), nullptr, true, nullptr, nullptr, true );
 		return true;
 	}
 	return false;
@@ -244,7 +244,7 @@ static void Session_PromptKey_f( const idCmdArgs &args ) {
 		if ( prompt_msg[ 0 ] == '\0' ) {
 			prompt_msg = common->GetLanguageDict()->GetString( "#str_04308" );
 		}
-		retkey = sessLocal.MessageBox( MSG_CDKEY, prompt_msg, common->GetLanguageDict()->GetString( "#str_04305" ), true, NULL, NULL, true );
+		retkey = sessLocal.MessageBox( MSG_CDKEY, prompt_msg, common->GetLanguageDict()->GetString( "#str_04305" ), true, nullptr, nullptr, true );
 		if ( retkey ) {
 			if ( sessLocal.CheckKey( retkey, false, valid ) ) {
 				// if all went right, then we may have sent an auth request to the master ( unless the prompt is used during a net connect )
@@ -254,14 +254,14 @@ static void Session_PromptKey_f( const idCmdArgs &args ) {
 					if ( !sessLocal.CDKeysAreValid( true ) ) {
 						// server says key is invalid - MaybeWaitOnCDKey was interrupted by a CDKeysAuthReply call, which has set the right error message
 						// the invalid keys have also been cleared in the process
-						sessLocal.MessageBox( MSG_OK, sessLocal.GetAuthMsg(), common->GetLanguageDict()->GetString( "#str_04310" ), true, NULL, NULL, true );
+						sessLocal.MessageBox( MSG_OK, sessLocal.GetAuthMsg(), common->GetLanguageDict()->GetString( "#str_04310" ), true, nullptr, nullptr, true );
 						canExit = false;
 					}
 				}
 				if ( canExit ) {
 					// make sure that's saved on file
 					sessLocal.WriteCDKey();
-					sessLocal.MessageBox( MSG_OK, common->GetLanguageDict()->GetString( "#str_04307" ), common->GetLanguageDict()->GetString( "#str_04305" ), true, NULL, NULL, true );
+					sessLocal.MessageBox( MSG_OK, common->GetLanguageDict()->GetString( "#str_04307" ), common->GetLanguageDict()->GetString( "#str_04305" ), true, nullptr, nullptr, true );
 					break;
 				}
 			} else {
@@ -270,7 +270,7 @@ static void Session_PromptKey_f( const idCmdArgs &args ) {
 				// ( the keys may be valid, but user would have clicked on the dialog anyway, that kind of thing )
 				idStr msg;
 				idAsyncNetwork::BuildInvalidKeyMsg( msg, valid );
-				sessLocal.MessageBox( MSG_OK, msg, common->GetLanguageDict()->GetString( "#str_04310" ), true, NULL, NULL, true );
+				sessLocal.MessageBox( MSG_OK, msg, common->GetLanguageDict()->GetString( "#str_04310" ), true, nullptr, nullptr, true );
 			}
 		} else if ( args.Argc() == 2 && idStr::Icmp( args.Argv(1), "force" ) == 0 ) {
 			// cancelled in force mode
@@ -300,7 +300,7 @@ void idSessionLocal::Clear() {
 	insideExecuteMapChange = false;
 
 	loadingSaveGame = false;
-	savegameFile = NULL;
+	savegameFile = nullptr;
 	savegameVersion = 0;
 
 	currentMapName.Clear();
@@ -310,24 +310,24 @@ void idSessionLocal::Clear() {
 
 	timeHitch = 0;
 
-	rw = NULL;
-	sw = NULL;
-	menuSoundWorld = NULL;
-	readDemo = NULL;
-	writeDemo = NULL;
+	rw = nullptr;
+	sw = nullptr;
+	menuSoundWorld = nullptr;
+	readDemo = nullptr;
+	writeDemo = nullptr;
 	renderdemoVersion = 0;
-	cmdDemoFile = NULL;
+	cmdDemoFile = nullptr;
 
 	syncNextGameFrame = false;
 	mapSpawned = false;
-	guiActive = NULL;
+	guiActive = nullptr;
 	aviCaptureMode = false;
 	timeDemo = TD_NO;
 	waitingOnBind = false;
 	lastPacifierTime = 0;
 	
 	msgRunning = false;
-	guiMsgRestore = NULL;
+	guiMsgRestore = nullptr;
 	msgIgnoreButtons = false;
 
 	bytesNeededForMapLoad = 0;
@@ -343,6 +343,11 @@ void idSessionLocal::Clear() {
 	authEmitTimeout = 0;
 	authWaitBox = false;
 
+	delete asyncSygnal;
+	asyncSygnal = nullptr;
+	delete asyncLock;
+	asyncLock = nullptr;
+
 	authMsg.Clear();
 }
 
@@ -354,9 +359,9 @@ idSessionLocal::idSessionLocal
 idSessionLocal::idSessionLocal() {
 	guiInGame = guiMainMenu = guiIntro \
 		= guiRestartMenu = guiLoading = guiGameOver = guiActive \
-		= guiTest = guiMsg = guiMsgRestore = guiTakeNotes = NULL;	
+		= guiTest = guiMsg = guiMsgRestore = guiTakeNotes = nullptr;	
 	
-	menuSoundWorld = NULL;
+	menuSoundWorld = nullptr;
 	
 	Clear();
 }
@@ -396,7 +401,7 @@ void idSessionLocal::Stop() {
 	insideExecuteMapChange = false;
 
 	// drop all guis
-	SetGUI( NULL, NULL );
+	SetGUI( nullptr, nullptr );
 }
 
 /*
@@ -415,17 +420,17 @@ void idSessionLocal::Shutdown() {
 
 	if ( rw ) {
 		delete rw;
-		rw = NULL;
+		rw = nullptr;
 	}
 
 	if ( sw ) {
 		delete sw;
-		sw = NULL;
+		sw = nullptr;
 	}
 
 	if ( menuSoundWorld ) {
 		delete menuSoundWorld;
-		menuSoundWorld = NULL;
+		menuSoundWorld = nullptr;
 	}
 		
 	mapSpawnData.serverInfo.Clear();
@@ -435,10 +440,10 @@ void idSessionLocal::Shutdown() {
 		mapSpawnData.persistentPlayerInfo[i].Clear();
 	}
 
-	if ( guiMainMenu_MapList != NULL ) {
+	if ( guiMainMenu_MapList != nullptr ) {
 		guiMainMenu_MapList->Shutdown();
 		uiManager->FreeListGUI( guiMainMenu_MapList );
-		guiMainMenu_MapList = NULL;
+		guiMainMenu_MapList = nullptr;
 	}
 
 	Clear();
@@ -560,7 +565,7 @@ void idSessionLocal::TestGUI( const char *guiName ) {
 	if ( guiName && *guiName ) {
 		guiTest = uiManager->FindGui( guiName, true, false, true );
 	} else {
-		guiTest = NULL;
+		guiTest = nullptr;
 	}
 }
 
@@ -575,7 +580,7 @@ static idStr FindUnusedFileName( const char *format ) {
 
 	for ( i = 0 ; i < 999 ; i++ ) {
 		sprintf( filename, format, i );
-		int len = fileSystem->ReadFile( filename, NULL, NULL );
+		int len = fileSystem->ReadFile( filename, nullptr, nullptr );
 		if ( len <= 0 ) {
 			return filename;	// file doesn't exist
 		}
@@ -775,7 +780,7 @@ static void Session_ExitCmdDemo_f( const idCmdArgs &args ) {
 	}
 	fileSystem->CloseFile( sessLocal.cmdDemoFile );
 	common->Printf( "Command demo exited at logIndex %i\n", sessLocal.logIndex );
-	sessLocal.cmdDemoFile = NULL;
+	sessLocal.cmdDemoFile = nullptr;
 }
 
 /*
@@ -801,7 +806,7 @@ void idSessionLocal::StartRecordingRenderDemo( const char *demoName ) {
 	if ( !writeDemo->OpenForWriting( demoName ) ) {
 		common->Printf( "error opening %s\n", demoName );
 		delete writeDemo;
-		writeDemo = NULL;
+		writeDemo = nullptr;
 		return;
 	}
 
@@ -831,7 +836,7 @@ void idSessionLocal::StopRecordingRenderDemo() {
 	writeDemo->Close();
 	common->Printf( "stopped recording %s.\n", writeDemo->GetName() );
 	delete writeDemo;
-	writeDemo = NULL;
+	writeDemo = nullptr;
 }
 
 /*
@@ -859,7 +864,7 @@ void idSessionLocal::StopPlayingRenderDemo() {
 
 	common->Printf( "stopped playing %s.\n", readDemo->GetName() );
 	delete readDemo;
-	readDemo = NULL;
+	readDemo = nullptr;
 
 	if ( timeDemo ) {
 		// report the stats
@@ -927,7 +932,7 @@ void idSessionLocal::StartPlayingRenderDemo( idStr demoName ) {
 	if ( !readDemo->OpenForReading( demoName ) ) {
 		common->Printf( "couldn't open %s\n", demoName.c_str() );
 		delete readDemo;
-		readDemo = NULL;
+		readDemo = nullptr;
 		Stop();
 		StartMenu();
 		soundSystem->SetMute( false );
@@ -1232,7 +1237,7 @@ void idSessionLocal::MoveToNewMap( const char *mapName ) {
 		SaveGame( GetAutoSaveName( mapName ), true );
 	}
 
-	SetGUI( NULL, NULL );
+	SetGUI( nullptr, nullptr );
 }
 
 /*
@@ -1343,7 +1348,7 @@ void idSessionLocal::StartPlayingCmdDemo(const char *demoName) {
 	fullDemoName.DefaultFileExtension( ".cdemo" );
 	cmdDemoFile = fileSystem->OpenFileRead(fullDemoName);
 
-	if ( cmdDemoFile == NULL ) {
+	if ( cmdDemoFile == nullptr ) {
 		common->Printf( "Couldn't open %s\n", fullDemoName.c_str() );
 		return;
 	}
@@ -1420,7 +1425,7 @@ void idSessionLocal::UnloadMap() {
 
 	if ( cmdDemoFile ) {
 		fileSystem->CloseFile( cmdDemoFile );
-		cmdDemoFile = NULL;
+		cmdDemoFile = nullptr;
 	}
 
 	if ( writeDemo ) {
@@ -1522,7 +1527,7 @@ void idSessionLocal::ExecuteMapChange( bool noFadeWipe ) {
 	if ( IsMultiplayer() ) {
 		// make sure the mp GUI isn't up, or when players get back in the
 		// map, mpGame's menu and the gui will be out of sync.
-		SetGUI( NULL, NULL );
+		SetGUI( nullptr, nullptr );
 	}
 
 	// mute sound
@@ -1634,7 +1639,7 @@ void idSessionLocal::ExecuteMapChange( bool noFadeWipe ) {
 			// If the loadgame failed, restart the map with the player persistent data
 			loadingSaveGame = false;
 			fileSystem->CloseFile( savegameFile );
-			savegameFile = NULL;
+			savegameFile = nullptr;
 
 			game->SetServerInfo( mapSpawnData.serverInfo );
 			game->InitFromNewMap( fullMapName + ".map", rw, sw, idAsyncNetwork::server.IsActive(), idAsyncNetwork::client.IsActive(), Sys_Milliseconds() );
@@ -1822,7 +1827,7 @@ void idSessionLocal::TakeNotes( const char *p, bool extended ) {
 		guiTakeNotes = uiManager->FindGui( "guis/takeNotes.gui", true, false, true );
 	}
 
-	SetGUI( guiTakeNotes, NULL );
+	SetGUI( guiTakeNotes, nullptr );
 	guiActive->SetStateString( "note", "" );
 	guiActive->SetStateString( "notefile", p );
 	guiActive->SetStateBool( "extended", extended );
@@ -1924,7 +1929,7 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave ) {
 	idSoundWorld *pauseWorld = soundSystem->GetPlayingSoundWorld();
 	if ( pauseWorld ) {
 		pauseWorld->Pause();
-		soundSystem->SetPlayingSoundWorld( NULL );
+		soundSystem->SetPlayingSoundWorld( nullptr );
 	}
 
 	// setup up filenames and paths
@@ -1942,7 +1947,7 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave ) {
 
 	// Open savegame file
 	idFile *fileOut = fileSystem->OpenFileWrite( gameFile );
-	if ( fileOut == NULL ) {
+	if ( fileOut == nullptr ) {
 		common->Warning( "Failed to open save file '%s'\n", gameFile.c_str() );
 		if ( pauseWorld ) {
 			soundSystem->SetPlayingSoundWorld( pauseWorld );
@@ -1988,7 +1993,7 @@ bool idSessionLocal::SaveGame( const char *saveName, bool autosave ) {
 	// Write description, which is just a text file with
 	// the unclean save name on line 1, map name on line 2, screenshot on line 3
 	idFile *fileDesc = fileSystem->OpenFileWrite( descriptionFile );
-	if ( fileDesc == NULL ) {
+	if ( fileDesc == nullptr ) {
 		common->Warning( "Failed to open description file '%s'\n", descriptionFile.c_str() );
 		if ( pauseWorld ) {
 			soundSystem->SetPlayingSoundWorld( pauseWorld );
@@ -2063,9 +2068,9 @@ bool idSessionLocal::LoadGame( const char *saveName ) {
 	// Open savegame file
 	// only allow loads from the game directory because we don't want a base game to load
 	idStr game = cvarSystem->GetCVarString( "fs_game" );
-	savegameFile = fileSystem->OpenFileRead( in, true, game.Length() ? game : NULL );
+	savegameFile = fileSystem->OpenFileRead( in, true, game.Length() ? game : nullptr );
 
-	if ( savegameFile == NULL ) {
+	if ( savegameFile == nullptr ) {
 		common->Warning( "Couldn't open savegame file %s", in.c_str() );
 		return false;
 	}
@@ -2084,7 +2089,7 @@ bool idSessionLocal::LoadGame( const char *saveName ) {
 
 		loadingSaveGame = false;
 		fileSystem->CloseFile( savegameFile );
-		savegameFile = NULL;
+		savegameFile = nullptr;
 		return false;
 	}
 
@@ -2107,7 +2112,7 @@ bool idSessionLocal::LoadGame( const char *saveName ) {
 		common->Warning( "Savegame Version mismatch: aborting loadgame and starting level with persistent data" );
 		loadingSaveGame = false;
 		fileSystem->CloseFile( savegameFile );
-		savegameFile = NULL;
+		savegameFile = nullptr;
 	}
 
 	common->DPrintf( "loading a v%d savegame\n", savegameVersion );
@@ -2131,13 +2136,13 @@ bool idSessionLocal::LoadGame( const char *saveName ) {
 
 		ExecuteMapChange();
 
-		SetGUI( NULL, NULL );
+		SetGUI( nullptr, nullptr );
 	}
 
 	if ( loadingSaveGame ) {
 		fileSystem->CloseFile( savegameFile );
 		loadingSaveGame = false;
-		savegameFile = NULL;
+		savegameFile = nullptr;
 	}
 
 	return true;
@@ -2154,13 +2159,13 @@ bool idSessionLocal::ProcessEvent( const sysEvent_t *event ) {
 	if ( !guiActive && event->evType == SE_KEY && event->evValue2 == 1 && event->evValue == K_ESCAPE ) {
 		console->Close();
 		if ( game ) {
-			idUserInterface	*gui = NULL;
+			idUserInterface	*gui = nullptr;
 			escReply_t		op;
 			op = game->HandleESC( &gui );
 			if ( op == ESC_IGNORE ) {
 				return true;
 			} else if ( op == ESC_GUI ) {
-				SetGUI( gui, NULL );
+				SetGUI( gui, nullptr );
 				return true;
 			}
 		}
@@ -2177,7 +2182,7 @@ bool idSessionLocal::ProcessEvent( const sysEvent_t *event ) {
 	if ( guiTest ) {
 		// hitting escape exits the testgui
 		if ( event->evType == SE_KEY && event->evValue2 == 1 && event->evValue == K_ESCAPE ) {
-			guiTest = NULL;
+			guiTest = nullptr;
 			return true;
 		}
 		
@@ -2500,7 +2505,7 @@ void idSessionLocal::UpdateScreen( bool outOfSequence ) {
 	if ( com_speeds.GetBool() ) {
 		renderSystem->EndFrame( &time_frontend, &time_backend );
 	} else {
-		renderSystem->EndFrame( NULL, NULL );
+		renderSystem->EndFrame( nullptr, nullptr );
 	}
 
 	insideUpdateScreen = false;
@@ -2511,27 +2516,26 @@ void idSessionLocal::UpdateScreen( bool outOfSequence ) {
 idSessionLocal::Frame
 ===============
 */
-void idSessionLocal::Frame() {
+void idSessionLocal::Frame( void ) 
+{
 
-	if ( com_asyncSound.GetInteger() == 0 ) {
+	if ( com_asyncSound.GetInteger() == 0 ) 
 		soundSystem->AsyncUpdate( Sys_Milliseconds() );
-	}
 
 	// Editors that completely take over the game
-	if ( com_editorActive && ( com_editors & ( EDITOR_RADIANT | EDITOR_GUI ) ) ) {
+	if ( com_editorActive && ( com_editors & ( EDITOR_RADIANT | EDITOR_GUI ) ) ) 
 		return;
-	}
 
 	// if the console is down, we don't need to hold
 	// the mouse cursor
-	if ( console->Active() || com_editorActive ) {
+	if ( console->Active() || com_editorActive ) 
 		Sys_GrabMouseCursor( false );
-	} else {
+	else 
 		Sys_GrabMouseCursor( true );
-	}
 
 	// save the screenshot and audio from the last draw if needed
-	if ( aviCaptureMode ) {
+	if ( aviCaptureMode ) 
+	{
 		idStr	name;
 
 		name = va("demos/%s/%s_%05i.tga", aviDemoShortName.c_str(), aviDemoShortName.c_str(), aviTicStart );
@@ -2542,7 +2546,7 @@ void idSessionLocal::Frame() {
 			// skipped frames so write them out
 			int c = aviDemoFrameCount - aviTicStart;
 			while ( c-- ) {
-				renderSystem->TakeScreenshot( com_aviDemoWidth.GetInteger(), com_aviDemoHeight.GetInteger(), name, com_aviDemoSamples.GetInteger(), NULL );
+				renderSystem->TakeScreenshot( com_aviDemoWidth.GetInteger(), com_aviDemoHeight.GetInteger(), name, com_aviDemoSamples.GetInteger(), nullptr );
 				name = va("demos/%s/%s_%05i.tga", aviDemoShortName.c_str(), aviDemoShortName.c_str(), ++aviTicStart );
 			}
 		}
@@ -2552,7 +2556,7 @@ void idSessionLocal::Frame() {
 		console->ClearNotifyLines();
 
 		// this will call Draw, possibly multiple times if com_aviDemoSamples is > 1
-		renderSystem->TakeScreenshot( com_aviDemoWidth.GetInteger(), com_aviDemoHeight.GetInteger(), name, com_aviDemoSamples.GetInteger(), NULL );
+		renderSystem->TakeScreenshot( com_aviDemoWidth.GetInteger(), com_aviDemoHeight.GetInteger(), name, com_aviDemoSamples.GetInteger(), nullptr );
 	}
 
 	// at startup, we may be backwards
@@ -2579,49 +2583,52 @@ void idSessionLocal::Frame() {
 	}
 	
 	// fixedTic lets us run a forced number of usercmd each frame without timing
-	if ( com_fixedTic.GetInteger() ) {
+	if ( com_fixedTic.GetInteger() ) 
 		minTic = latchedTicNumber;
-	}
 
-	// FIXME: deserves a cleanup and abstraction
-#if defined( _WIN32 )
 	// Spin in place if needed.  The game should yield the cpu if
 	// it is running over 60 hz, because there is fundamentally
 	// nothing useful for it to do.
-	while( 1 ) {
+#if 0
+	while( 1 ) 
+	{
 		latchedTicNumber = com_ticNumber;
-		if ( latchedTicNumber >= minTic ) {
+		if ( latchedTicNumber >= minTic )
 			break;
-		}
-		Sys_Sleep( 1 );
+
+		// If the difference is large, sleep for 1ms to save energy/CPU.
+		if ( minTic - latchedTicNumber > 1 )
+			Sys_Sleep( 1 ); 
+		else
+			// If it's almost time, just give up the processor
+			// so you don't miss the exact timing of the next tick
+			Sys_Sleep( 0 );
 	}
 #else
-	while( 1 ) {
-		latchedTicNumber = com_ticNumber;
-		if ( latchedTicNumber >= minTic ) {
-			break;
-		}
-		Sys_WaitForEvent( TRIGGER_EVENT_ONE );
-	}
+	WaitForAsyncEvent( minTic );
 #endif
-
-	if ( authEmitTimeout ) {
+	
+	if ( authEmitTimeout ) 
+	{
 		// waiting for a game auth
-		if ( Sys_Milliseconds() > authEmitTimeout ) {
+		if ( Sys_Milliseconds() > authEmitTimeout ) 
+		{
 			// expired with no reply
 			// means that if a firewall is blocking the master, we will let through
 			common->DPrintf( "no reply from auth\n" );
-			if ( authWaitBox ) {
+			if ( authWaitBox ) 
+			{
 				// close the wait box
 				StopBox();
 				authWaitBox = false;
 			}
-			if ( cdkey_state == CDKEY_CHECKING ) {
+
+			if ( cdkey_state == CDKEY_CHECKING ) 
 				cdkey_state = CDKEY_OK;
-			}
-			if ( xpkey_state == CDKEY_CHECKING ) {
+			
+			if ( xpkey_state == CDKEY_CHECKING ) 
 				xpkey_state = CDKEY_OK;
-			}
+			
 			// maintain this empty as it's set by auth denials
 			authMsg.Empty();
 			authEmitTimeout = 0;
@@ -2746,7 +2753,7 @@ void idSessionLocal::RunGameTic() {
 		if ( !cmdDemoFile->Read( &logCmd, sizeof( logCmd ) ) ) {
 			common->Printf( "Command demo completed at logIndex %i\n", logIndex );
 			fileSystem->CloseFile( cmdDemoFile );
-			cmdDemoFile = NULL;
+			cmdDemoFile = nullptr;
 			if ( aviCaptureMode ) {
 				EndAVICapture();
 				Shutdown();
@@ -2827,7 +2834,7 @@ void idSessionLocal::RunGameTic() {
 		} else if ( !idStr::Icmp( args.Argv(0), "died" ) ) {
 			// restart on the same map
 			UnloadMap();
-			SetGUI(guiRestartMenu, NULL);
+			SetGUI(guiRestartMenu, nullptr);
 		} else if ( !idStr::Icmp( args.Argv(0), "disconnect" ) ) {
 			cmdSystem->BufferCommandText( CMD_EXEC_INSERT, "stoprecording ; disconnect" );
 		} else if ( !idStr::Icmp( args.Argv(0), "endOfDemo" ) ) {
@@ -2844,9 +2851,15 @@ Called in an orderly fashion at system startup,
 so commands, cvars, files, etc are all available
 ===============
 */
-void idSessionLocal::Init() {
+void idSessionLocal::Init( void ) 
+{
 
 	common->Printf( "-------- Initializing Session --------\n" );
+
+// BEATO Begin:
+	asyncLock = new btMutex();
+	asyncSygnal = new btCondition();
+// BEATO End
 
 	cmdSystem->AddCommand( "writePrecache", Sess_WritePrecache_f, CMD_FL_SYSTEM|CMD_FL_CHEAT, "writes precache commands" );
 
@@ -2919,11 +2932,11 @@ void idSessionLocal::Init() {
 
 	whiteMaterial = declManager->FindMaterial( "_white" );
 
-	guiInGame = NULL;
-	guiTest = NULL;
+	guiInGame = nullptr;
+	guiTest = nullptr;
 
-	guiActive = NULL;
-	guiHandle = NULL;
+	guiActive = nullptr;
+	guiHandle = nullptr;
 
 	ReadCDKey();
 
@@ -3083,7 +3096,7 @@ const char *idSessionLocal::GetCDKey( bool xp ) {
 	if ( xpkey_state == CDKEY_OK || xpkey_state == CDKEY_CHECKING ) {
 		return xpkey;
 	}
-	return NULL;
+	return nullptr;
 }
 
 // digits to letters table
@@ -3098,7 +3111,7 @@ we toggled some key state to CDKEY_CHECKING. send a standalone auth packet to va
 void idSessionLocal::EmitGameAuth( void ) {
 	// make sure the auth reply is empty, we use it to indicate an auth reply
 	authMsg.Empty();
-	if ( idAsyncNetwork::client.SendAuthCheck( cdkey_state == CDKEY_CHECKING ? cdkey : NULL, xpkey_state == CDKEY_CHECKING ? xpkey : NULL ) ) {		
+	if ( idAsyncNetwork::client.SendAuthCheck( cdkey_state == CDKEY_CHECKING ? cdkey : nullptr, xpkey_state == CDKEY_CHECKING ? xpkey : nullptr ) ) {		
 		authEmitTimeout = Sys_Milliseconds() + CDKEY_AUTH_TIMEOUT;
 		common->DPrintf( "authing with the master..\n" );
 	} else {
@@ -3322,3 +3335,48 @@ idSessionLocal::GetAuthMsg
 const char *idSessionLocal::GetAuthMsg( void ) {
 	return authMsg.c_str();
 }
+
+// BEATO Begin:
+
+/*
+===============
+idSessionLocal::LockAsyncEvent
+===============
+*/
+void idSessionLocal::LockAsyncEvent( void )
+{
+	asyncLock->Lock();
+}
+
+/*
+===============
+idSessionLocal::UnlockAsyncEvent
+===============
+*/
+void idSessionLocal::UnlockAsyncEvent( void )
+{
+	asyncLock->Unlock();
+}
+
+/*
+===============
+idSessionLocal::TriggerAsyncEvent
+===============
+*/
+void idSessionLocal::TriggerAsyncEvent( void )
+{
+	asyncSygnal->Signal();
+}
+
+/*
+===============
+idSessionLocal::WaitForAsyncEvent( void )
+===============
+*/
+void idSessionLocal::WaitForAsyncEvent( const int minTic )
+{
+	btScopeLock lock( asyncLock );
+	 if ( com_ticNumber < minTic )
+        asyncSygnal->Wait( asyncLock );
+}
+// BEATO End

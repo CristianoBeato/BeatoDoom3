@@ -86,19 +86,19 @@ public:
 						idSessionLocal();
 	virtual				~idSessionLocal();
 
-	virtual void		Init();
+	virtual void		Init( void );
 
-	virtual void		Shutdown();
+	virtual void		Shutdown( void );
 
-	virtual void		Stop();
+	virtual void		Stop( void );
 
 	virtual void		UpdateScreen( bool outOfSequence = true );
 
-	virtual void		PacifierUpdate();
+	virtual void		PacifierUpdate( void );
 
-	virtual void		Frame();
+	virtual void		Frame( void );
 
-	virtual bool		IsMultiplayer();
+	virtual bool		IsMultiplayer( void );
 
 	virtual bool		ProcessEvent( const sysEvent_t *event );
 
@@ -127,6 +127,13 @@ public:
 	virtual int			GetSaveGameVersion( void );
 
 	virtual const char *GetCurrentMapName();
+
+// BEATO Begin:
+	virtual void		LockAsyncEvent( void );
+	virtual void		UnlockAsyncEvent( void );
+	virtual void		TriggerAsyncEvent( void );
+	virtual void		WaitForAsyncEvent( const int minTic );
+// BEATO End
 
 	//=====================================
 
@@ -356,6 +363,11 @@ private:
 	bool				authWaitBox;
 
 	idStr				authMsg;
+
+/// BEATO Begin:
+	btMutex*			asyncLock;
+	btCondition*		asyncSygnal;
+/// BEATO End
 };
 
 extern idSessionLocal	sessLocal;

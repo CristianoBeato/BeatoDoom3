@@ -155,9 +155,10 @@ public:
 	idGuiScriptList*	mEvent;
 };
 
-struct idTransitionData {
+struct idTransitionData 
+{
 	idWinVar *data;
-	int	offset;
+	intptr_t offset;
 	idInterpolateAccelDecelLinear<idVec4> interp;
 };
 
@@ -167,7 +168,7 @@ class idWindow {
 public:
 	idWindow(idUserInterfaceLocal *gui);
 	idWindow(idDeviceContext *d, idUserInterfaceLocal *gui);
-	virtual ~idWindow();
+	virtual ~idWindow( void );
 
 	enum {
 		ON_MOUSEENTER = 0,
@@ -230,7 +231,7 @@ public:
 
 	virtual idWinVar *GetWinVarByName	(const char *_name, bool winLookup = false, drawWin_t** owner = NULL);
 
-	int  GetWinVarOffset( idWinVar *wv, drawWin_t *dw );
+	intptr_t  GetWinVarOffset( idWinVar *wv, drawWin_t *dw );
 	float GetMaxCharHeight();
 	float GetMaxCharWidth();
 	void SetFont();

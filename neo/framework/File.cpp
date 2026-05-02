@@ -26,10 +26,10 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "../idlib/precompiled.h"
+#include "idlib/precompiled.h"
 #pragma hdrstop
 
-#include "contrib/minizip/Unzip.h"
+#include "minizip/unzip.h"
 
 #define	MAX_PRINT_MSG		4096
 
@@ -291,7 +291,8 @@ int idFile::VPrintf( const char *fmt, va_list args ) {
 idFile::WriteFloatString
 =================
 */
-int idFile::WriteFloatString( const char *fmt, ... ) {
+int idFile::WriteFloatString( const char *fmt, ... ) 
+{
 	char buf[MAX_PRINT_MSG];
 	int len;
 	va_list argPtr;
@@ -305,17 +306,11 @@ int idFile::WriteFloatString( const char *fmt, ... ) {
 
 /*
  =================
- idFile::ReadBool
- =================
- */
-int idFile::ReadBool( bool &value ) 
-
-/*
- =================
  idFile::ReadString
  =================
  */
-int idFile::ReadString( idStr &string ) {
+size_t idFile::ReadString( idStr &string ) 
+{
 	int len;
 	int result = 0;
 	
@@ -332,9 +327,10 @@ int idFile::ReadString( idStr &string ) {
  idFile::ReadVec2
  =================
  */
-int idFile::ReadVec2( idVec2 &vec ) {
-	int result = Read( &vec, sizeof( vec ) );
-	LittleRevBytes( &vec, sizeof(float), sizeof(vec)/sizeof(float) );
+size_t idFile::ReadVec2( idVec2 &vec ) 
+{
+	size_t result = Read( &vec, sizeof( idVec2 ) );
+	LittleRevBytes( &vec, sizeof(float), sizeof( idVec2 ) / sizeof(float) );
 	return result;
 }
 
@@ -343,9 +339,10 @@ int idFile::ReadVec2( idVec2 &vec ) {
  idFile::ReadVec3
  =================
  */
-int idFile::ReadVec3( idVec3 &vec ) {
-	int result = Read( &vec, sizeof( vec ) );
-	LittleRevBytes( &vec, sizeof(float), sizeof(vec)/sizeof(float) );
+size_t idFile::ReadVec3( idVec3 &vec ) 
+{
+	int result = Read( &vec, sizeof( idVec2 ) );
+	LittleRevBytes( &vec, sizeof(float), sizeof( idVec2 ) / sizeof( float ) );
 	return result;
 }
 
@@ -354,9 +351,10 @@ int idFile::ReadVec3( idVec3 &vec ) {
  idFile::ReadVec4
  =================
  */
-int idFile::ReadVec4( idVec4 &vec ) {
-	int result = Read( &vec, sizeof( vec ) );
-	LittleRevBytes( &vec, sizeof(float), sizeof(vec)/sizeof(float) );
+size_t idFile::ReadVec4( idVec4 &vec ) 
+{
+	int result = Read( &vec, sizeof( idVec4 ) );
+	LittleRevBytes( &vec, sizeof(float), sizeof( idVec4 ) / sizeof( float ) );
 	return result;
 }
 
@@ -365,7 +363,8 @@ int idFile::ReadVec4( idVec4 &vec ) {
  idFile::ReadVec6
  =================
  */
-int idFile::ReadVec6( idVec6 &vec ) {
+size_t idFile::ReadVec6( idVec6 &vec ) 
+{
 	int result = Read( &vec, sizeof( vec ) );
 	LittleRevBytes( &vec, sizeof(float), sizeof(vec)/sizeof(float) );
 	return result;
@@ -376,8 +375,9 @@ int idFile::ReadVec6( idVec6 &vec ) {
  idFile::ReadMat3
  =================
  */
-int idFile::ReadMat3( idMat3 &mat ) {
-	int result = Read( &mat, sizeof( mat ) );
+size_t idFile::ReadMat3( idMat3 &mat ) 
+{
+	size_t result = Read( &mat, sizeof( mat ) );
 	LittleRevBytes( &mat, sizeof(float), sizeof(mat)/sizeof(float) );
 	return result;
 }

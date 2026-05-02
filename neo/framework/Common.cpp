@@ -98,14 +98,14 @@ int				com_editors;			// currently opened editor(s)
 bool			com_editorActive;		//  true if an editor has focus
 
 #ifdef _WIN32
-HWND			com_hwndMsg = NULL;
+HWND			com_hwndMsg = nullptr;
 bool			com_outputMsg = false;
 unsigned int	com_msgID = -1;
 #endif
 
 #ifdef __DOOM_DLL__
-idGame *		game = NULL;
-idGameEdit *	gameEdit = NULL;
+idGame *		game = nullptr;
+idGameEdit *	gameEdit = nullptr;
 #endif
 
 // writes si_version to the config file - in a kinda obfuscated way
@@ -203,8 +203,7 @@ private:
 	idStrList					errorList;
 
 // BEATO Begin
-	void*						gameDLL;
-
+	SDL_SharedObject*			gameDLL;
 	btMutex*					m_asyncMutex;
 // BEATO End
 
@@ -232,22 +231,21 @@ idCommonLocal::idCommonLocal( void ) : btThreadExecution( "AsyncThread" )
 	com_errorEntered = 0;
 	com_shuttingDown = false;
 
-	logFile = NULL;
+	logFile = nullptr;
 
 	strcpy( errorMessage, "" );
 
-	rd_buffer = NULL;
+	rd_buffer = nullptr;
 	rd_buffersize = 0;
-	rd_flush = NULL;
+	rd_flush = nullptr;
 
 // BEATO Begin
 	gameDLL = nullptr;
-
 	m_asyncMutex = nullptr;
 // BEATO End
 
 #ifdef ID_WRITE_VERSION
-	config_compressor = NULL;
+	config_compressor = nullptr;
 #endif
 }
 
@@ -272,57 +270,30 @@ void idCommonLocal::BeginRedirect( char *buffer, int buffersize, void (*flush)( 
 idCommonLocal::EndRedirect
 ==================
 */
-void idCommonLocal::EndRedirect( void ) {
-	if ( rd_flush && rd_buffer[ 0 ] ) {
+void idCommonLocal::EndRedirect( void ) 
+{
+	if ( rd_flush && rd_buffer[ 0 ] ) 
+	{
 		rd_flush( rd_buffer );
 	}
 
-	rd_buffer = NULL;
+	rd_buffer = nullptr;
 	rd_buffersize = 0;
-	rd_flush = NULL;
+	rd_flush = nullptr;
 }
-
-#ifdef _WIN32
-
-/*
-==================
-EnumWindowsProc
-==================
-*/
-BOOL CALLBACK EnumWindowsProc( HWND hwnd, LPARAM lParam ) {
-	char buff[1024];
-
-	::GetWindowText( hwnd, buff, sizeof( buff ) );
-	if ( idStr::Icmpn( buff, EDITOR_WINDOWTEXT, strlen( EDITOR_WINDOWTEXT ) ) == 0 ) {
-		com_hwndMsg = hwnd;
-		return FALSE;
-	}
-	return TRUE;
-}
-
-/*
-==================
-FindEditor
-==================
-*/
-bool FindEditor( void ) {
-	com_hwndMsg = NULL;
-	EnumWindows( EnumWindowsProc, 0 );
-	return !( com_hwndMsg == NULL );
-}
-
-#endif
 
 /*
 ==================
 idCommonLocal::CloseLogFile
 ==================
 */
-void idCommonLocal::CloseLogFile( void ) {
-	if ( logFile ) {
+void idCommonLocal::CloseLogFile( void ) 
+{
+	if ( logFile ) 
+	{
 		com_logFile.SetBool( false ); // make sure no further VPrintf attempts to open the log file again
 		fileSystem->CloseFile( logFile );
-		logFile = NULL;
+		logFile = nullptr;
 	}
 }
 
@@ -366,9 +337,10 @@ void idCommonLocal::VPrintf( const char *fmt, va_list args ) {
 	}
 
 	// don't overflow
-	if ( idStr::vsnPrintf( msg+timeLength, MAX_PRINT_MSG_SIZE-timeLength-1, fmt, args ) < 0 ) {
+	if ( idStr::vsnPrintf( msg+timeLength, MAX_PRINT_MSG_SIZE-timeLength-1, fmt, args ) < 0 ) 
+	{
 		msg[sizeof(msg)-2] = '\n'; msg[sizeof(msg)-1] = '\0'; // avoid output garbling
-		Sys_Printf( "idCommon::VPrintf: truncated to %d characters\n", strlen(msg)-1 );
+		Sys_Printf( "idCommon::VPrintf: truncated to %lu characters\n", strlen(msg)-1 );
 	}
 
 	if ( rd_buffer ) {
@@ -446,25 +418,6 @@ void idCommonLocal::VPrintf( const char *fmt, va_list args ) {
 		// let session redraw the animated loading screen if necessary
 		session->PacifierUpdate();
 	}
-
-#ifdef _WIN32
-
-	if ( com_outputMsg ) {
-		if ( com_msgID == -1 ) {
-			com_msgID = ::RegisterWindowMessage( DMAP_MSGID );
-			if ( !FindEditor() ) {
-				com_outputMsg = false;
-			} else {
-				Sys_ShowWindow( false );
-			}
-		}
-		if ( com_hwndMsg ) {
-			ATOM atom = ::GlobalAddAtom( msg );
-			::PostMessage( com_hwndMsg, com_msgID, 0, static_cast<LPARAM>(atom) );
-		}
-	}
-
-#endif
 }
 
 /*
@@ -928,7 +881,7 @@ void idCommonLocal::CheckToolMode( void ) {
 idCommonLocal::StartupVariable
 
 Searches for command line parameters that are set commands.
-If match is not NULL, only that cvar will be looked for.
+If match is not nullptr, only that cvar will be looked for.
 That is necessary because cddir and basedir need to be set
 before the filesystem is started, but all other sets should
 be after execing the config and default.
@@ -1068,7 +1021,7 @@ void idCommonLocal::WriteConfigToFile( const char *filename ) {
 
 #ifdef ID_WRITE_VERSION
 	assert( config_compressor );
-	t = time( NULL );
+	t = time( nullptr );
 	curtime = ctime( &t );
 	sprintf( runtag, "%s - %s", cvarSystem->GetCVarString( "si_version" ), curtime );
 	config_compressor->Init( &compressed, true, 8 );
@@ -1209,9 +1162,8 @@ This prints out memory debugging data
 ============
 */
 static void PrintMemInfo_f( const idCmdArgs &args ) {
-	MemInfo_t mi;
-
-	memset( &mi, 0, sizeof( mi ) );
+	MemInfo_t mi{};
+	//memset( &mi, 0, sizeof( mi ) );
 	mi.filebase = session->GetCurrentMapName();
 
 	renderSystem->PrintMemInfo( &mi );			// textures and models
@@ -1249,7 +1201,7 @@ Com_EditLights_f
 ==================
 */
 static void Com_EditLights_f( const idCmdArgs &args ) {
-	LightEditorInit( NULL );
+	LightEditorInit( nullptr );
 	cvarSystem->SetCVarInteger( "g_editEntityMode", 1 );
 }
 
@@ -1259,7 +1211,7 @@ Com_EditSounds_f
 ==================
 */
 static void Com_EditSounds_f( const idCmdArgs &args ) {
-	SoundEditorInit( NULL );
+	SoundEditorInit( nullptr );
 	cvarSystem->SetCVarInteger( "g_editEntityMode", 2 );
 }
 
@@ -1269,7 +1221,7 @@ Com_EditDecls_f
 ==================
 */
 static void Com_EditDecls_f( const idCmdArgs &args ) {
-	DeclBrowserInit( NULL );
+	DeclBrowserInit( nullptr );
 }
 
 /*
@@ -1278,7 +1230,7 @@ Com_EditAFs_f
 ==================
 */
 static void Com_EditAFs_f( const idCmdArgs &args ) {
-	AFEditorInit( NULL );
+	AFEditorInit( nullptr );
 }
 
 /*
@@ -1287,7 +1239,7 @@ Com_EditParticles_f
 ==================
 */
 static void Com_EditParticles_f( const idCmdArgs &args ) {
-	ParticleEditorInit( NULL );
+	ParticleEditorInit( nullptr );
 }
 
 /*
@@ -1296,7 +1248,7 @@ Com_EditScripts_f
 ==================
 */
 static void Com_EditScripts_f( const idCmdArgs &args ) {
-	ScriptEditorInit( NULL );
+	ScriptEditorInit( nullptr );
 }
 
 /*
@@ -1305,7 +1257,7 @@ Com_EditPDAs_f
 ==================
 */
 static void Com_EditPDAs_f( const idCmdArgs &args ) {
-	PDAEditorInit( NULL );
+	PDAEditorInit( nullptr );
 }
 #endif // ID_ALLOW_TOOLS
 
@@ -1707,7 +1659,7 @@ idCommonLocal::LocalizeMapData
 ===============
 */
 void idCommonLocal::LocalizeMapData( const char *fileName, idLangDict &langDict ) {
-	const char *buffer = NULL;
+	const char *buffer = nullptr;
 	idLexer src( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWBACKSLASHSTRINGCONCAT );
 
 	common->SetRefreshOnPrint( true );
@@ -1751,7 +1703,7 @@ idCommonLocal::LocalizeGui
 */
 void idCommonLocal::LocalizeGui( const char *fileName, idLangDict &langDict ) {
 	idStr out, ws, work;
-	const char *buffer = NULL;
+	const char *buffer = nullptr;
 	out.Empty();
 	int k;
 	char ch;
@@ -1845,7 +1797,7 @@ typedef idHashTable<idStrList> ListHash;
 void LoadMapLocalizeData(ListHash& listHash) {
 
 	idStr fileName = "map_localize.cfg";
-	const char *buffer = NULL;
+	const char *buffer = nullptr;
 	idLexer src( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWBACKSLASHSTRINGCONCAT );
 
 	if ( fileSystem->ReadFile( fileName, (void**)&buffer ) > 0 ) {
@@ -1879,7 +1831,7 @@ void LoadMapLocalizeData(ListHash& listHash) {
 void LoadGuiParmExcludeList(idStrList& list) {
 
 	idStr fileName = "guiparm_exclude.cfg";
-	const char *buffer = NULL;
+	const char *buffer = nullptr;
 	idLexer src( LEXFL_NOFATALERRORS | LEXFL_NOSTRINGCONCAT | LEXFL_ALLOWMULTICHARLITERALS | LEXFL_ALLOWBACKSLASHSTRINGCONCAT );
 
 	if ( fileSystem->ReadFile( fileName, (void**)&buffer ) > 0 ) {
@@ -2305,7 +2257,7 @@ Com_FinishBuild_f
 */
 void Com_FinishBuild_f( const idCmdArgs &args ) {
 	if ( game ) {
-		game->CacheDictionaryMedia( NULL );
+		game->CacheDictionaryMedia( nullptr );
 	}
 	globalImages->FinishBuild( ( args.Argc() > 1 ) );
 }
@@ -2437,7 +2389,7 @@ void idCommonLocal::PrintLoadingMessage( const char *msg ) {
 	renderSystem->DrawStretchPic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 1, 1, declManager->FindMaterial( "splashScreen" ) );
 	int len = strlen( msg );
 	renderSystem->DrawSmallStringExt( ( 640 - len * SMALLCHAR_WIDTH ) / 2, 410, msg, idVec4( 0.0f, 0.81f, 0.94f, 1.0f ), true, declManager->FindMaterial( "textures/bigchars" ) );
-	renderSystem->EndFrame( NULL, NULL );
+	renderSystem->EndFrame( nullptr, nullptr );
 }
 
 /*
@@ -2589,7 +2541,12 @@ void idCommonLocal::SingleAsyncTic( void )
 
 	// we update com_ticNumber after all the background tasks
 	// have completed their work for this tic
+	
+	session->LockAsyncEvent();
 	com_ticNumber++;
+	session->UnlockAsyncEvent();
+	session->TriggerAsyncEvent();
+
 
 	stat->timeConsumed = Sys_Milliseconds() - stat->milliseconds;
 
@@ -2715,9 +2672,9 @@ void idCommonLocal::LoadGameDLL( void )
 #endif
 
 	// initialize the game object
-	if ( game != NULL ) {
+	if ( game != nullptr ) 
 		game->Init();
-	}
+	
 }
 
 /*
@@ -2728,7 +2685,7 @@ idCommonLocal::UnloadGameDLL
 void idCommonLocal::UnloadGameDLL( void ) {
 
 	// shut down the game object
-	if ( game != NULL ) {
+	if ( game != nullptr ) {
 		game->Shutdown();
 	}
 
@@ -2737,10 +2694,10 @@ void idCommonLocal::UnloadGameDLL( void ) {
 	if ( gameDLL )
 	{
 		SDL_UnloadObject( gameDLL );//Sys_DLL_Unload( gameDLL );
-		gameDLL = NULL;
+		gameDLL = nullptr;
 	}
-	game = NULL;
-	gameEdit = NULL;
+	game = nullptr;
+	gameEdit = nullptr;
 
 #endif
 }
@@ -2848,7 +2805,7 @@ void idCommonLocal::Init( int argc, const char **argv, const char *cmdline ) {
 		Sys_InitNetworking();
 
 		// override cvars from command line
-		StartupVariable( NULL, false );
+		StartupVariable( nullptr, false );
 
 		if ( !idAsyncNetwork::serverDedicated.GetInteger() && Sys_AlreadyRunning() ) {
 			Sys_Quit();
@@ -2940,7 +2897,7 @@ void idCommonLocal::Shutdown( void ) {
 
 #ifdef ID_WRITE_VERSION
 	delete config_compressor;
-	config_compressor = NULL;
+	config_compressor = nullptr;
 #endif
 
 	// free any buffered warning messages
@@ -2978,7 +2935,7 @@ void idCommonLocal::InitGame( void ) {
 	CheckToolMode();
 
 	idFile *file = fileSystem->OpenExplicitFileRead( fileSystem->RelativePathToOSPath( CONFIG_SPEC, "fs_savepath" ) );
-	bool sysDetect = ( file == NULL );
+	bool sysDetect = ( file == nullptr );
 	if ( file ) {
 		fileSystem->CloseFile( file );
 	} else {
@@ -3025,7 +2982,7 @@ void idCommonLocal::InitGame( void ) {
 	cmdSystem->ExecuteCommandBuffer();
 
 	// re-override anything from the config files with command line args
-	StartupVariable( NULL, false );
+	StartupVariable( nullptr, false );
 
 	// if any archived cvars are modified after this, we will trigger a writing of the config file
 	cvarSystem->ClearModifiedFlags( CVAR_ARCHIVE );

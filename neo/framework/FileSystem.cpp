@@ -2877,7 +2877,7 @@ void idFileSystemLocal::Init( void )
 
 	// BEATO Begin
 	m_backgroundDownloadLock = new btMutex();
-	m_backgroundDownloadSemaphore = new btSemaphore();
+	m_backgroundDownloadSemaphore = new btSemaphore( 0 );
 	// BEATO end
 
 #if !ID_ALLOW_D3XP
@@ -3150,7 +3150,7 @@ idFile_InZip * idFileSystemLocal::ReadFileFromZip( pack_t *pak, fileInPack_t *pa
 	unz_file_info64	file_info;
 	int err = unzGetCurrentFileInfo64( uf, &file_info, filename_inzip, sizeof( filename_inzip ), NULL, 0, NULL, 0 );
 	if (err != UNZ_OK)
-		common->FatalError( "Couldn't get file info for %s in %s, pos %llu", relativePath, pak->pakFilename.c_str(), pakFile->pos );
+		common->FatalError( "Couldn't get file info for %s in %s, pos %lu", relativePath, pak->pakFilename.c_str(), pakFile->pos );
 
 	// create idFile_InZip and set fields accordingly
 	idFile_InZip *file = new idFile_InZip();

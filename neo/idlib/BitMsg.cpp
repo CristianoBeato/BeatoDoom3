@@ -795,20 +795,27 @@ idBitMsgDelta::WriteData
 */
 void idBitMsgDelta::WriteData( const void *data, int length ) 
 {
-	if ( newBase ) {
+	if ( newBase ) 
+	{
 		newBase->WriteData( data, length );
 	}
 
-	if ( !base ) {
+	if ( !base ) 
+	{
 		writeDelta->WriteData( data, length );
 		changed = true;
-	} else {
+	} 
+	else 
+	{
 		byte baseData[MAX_DATA_BUFFER];
 		assert( length < sizeof( baseData ) );
 		base->ReadData( baseData, length );
-		if ( memcmp( data, baseData, length ) == 0 ) {
+		if ( memcmp( data, baseData, length ) == 0 ) 
+		{
 			writeDelta->WriteBits( 0, 1 );
-		} else {
+		} 
+		else 
+		{
 			writeDelta->WriteBits( 1, 1 );
 			writeDelta->WriteData( data, length );
 			changed = true;

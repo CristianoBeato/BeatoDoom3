@@ -29,10 +29,11 @@ If you have questions concerning this license or the applicable additional terms
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
-typedef struct {
-	char	*name;
-	int		keynum;
-	char	*strId;	// localized string id
+typedef struct 
+{
+	const char	*name;
+	uint32_t	keynum;
+	const char	*strId;	// localized string id
 } keyname_t;
 
 // keys that can be set without a special name
@@ -176,10 +177,8 @@ keyname_t keynames[] =
 	{"SEMICOLON",		';',				"#str_07129"},	// because a raw semicolon separates commands
 	{"APOSTROPHE",		'\'',				"#str_07130"},	// because a raw apostrophe messes with parsing
 
-	{NULL,				0,					NULL}
+	{nullptr,				0,					nullptr}
 };
-
-
 
 static const int	MAX_KEYS = 256;
 
@@ -193,7 +192,7 @@ public:
 };
 
 bool		key_overstrikeMode = false;
-idKey *		keys = NULL;
+idKey *		keys = nullptr;
 
 #define ID_DOOM_LEGACY
 
@@ -220,7 +219,7 @@ char *		cheatCodes[] = {
 	"fhhall",		// Kill all enemies in level
 	"fhshh",		// Invisible to enemies until attack
 */
-	NULL
+	nullptr
 };
 char		lastKeys[32];
 int			lastKeyIndex;
@@ -523,7 +522,7 @@ void Key_Bind_f( const idCmdArgs &args ) {
 	}
 	
 	// copy the rest of the command line
-	cmd[0] = 0;		// start out with a null string
+	cmd[0] = 0;		// start out with a nullptr string
 	for ( i = 2; i < c; i++ ) {
 		strcat( cmd, args.Argv( i ) );
 		if ( i != (c-1) ) {
@@ -635,7 +634,7 @@ returns the binding for the localized name of the key
 const char *idKeyInput::BindingFromKey( const char *key ) {
 	const int keyNum = idKeyInput::StringToKeyNum( key );
 	if ( keyNum<0 || keyNum >= MAX_KEYS ) {
-		return NULL;
+		return nullptr;
 	}
 	return keys[keyNum].binding.c_str();
 }
@@ -706,7 +705,7 @@ void idKeyInput::PreliminaryKeyEvent( int keynum, bool down ) {
 		lastKeys[ 0 + ( lastKeyIndex & 15 )] = keynum;
 		lastKeys[16 + ( lastKeyIndex & 15 )] = keynum;
 		lastKeyIndex = ( lastKeyIndex + 1 ) & 15;
-		for ( int i = 0; cheatCodes[i] != NULL; i++ ) {
+		for ( int i = 0; cheatCodes[i] != nullptr; i++ ) {
 			int l = strlen( cheatCodes[i] );
 			assert( l <= 16 );
 			if ( idStr::Icmpn( lastKeys + 16 + ( lastKeyIndex & 15 ) - l, cheatCodes[i], l ) == 0 ) {
@@ -781,5 +780,5 @@ idKeyInput::Shutdown
 */
 void idKeyInput::Shutdown( void ) {
 	delete [] keys;
-	keys = NULL;
+	keys = nullptr;
 }

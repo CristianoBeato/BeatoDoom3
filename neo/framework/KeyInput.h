@@ -43,7 +43,8 @@ If you have questions concerning this license or the applicable additional terms
 // western european keyboards are inserted in this table so that those keys
 // are bindable (otherwise they get bound as one of the special keys in this
 // table)
-typedef enum {
+typedef enum 
+{
 	K_TAB = 9,
 	K_ENTER = 13,
 	K_ESCAPE = 27,
