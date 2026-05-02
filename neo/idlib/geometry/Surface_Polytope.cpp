@@ -40,12 +40,13 @@ idSurface_Polytope::FromPlanes
 void idSurface_Polytope::FromPlanes( const idPlane *planes, const int numPlanes ) {
 	int i, j, k, *windingVerts;
 	idFixedWinding w;
-	idDrawVert newVert;
+	idDrawVert newVert{};
 
 	windingVerts = (int *) _alloca( MAX_POINTS_ON_WINDING * sizeof( int ) );
-	memset( &newVert, 0, sizeof( newVert ) );
+	//memset( &newVert, 0, sizeof( newVert ) );
 
-	for ( i = 0; i < numPlanes; i++ ) {
+	for ( i = 0; i < numPlanes; i++ ) 
+	{
 
 		w.BaseForPlane( planes[i] );
 

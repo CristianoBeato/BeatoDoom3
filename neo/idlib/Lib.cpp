@@ -64,14 +64,16 @@ void idLib::Init( void )
 	// initialize math
 	idMath::Init();
 
+	// initialize the dictionary string pools
+	idDict::Init();
+
+#if defined( _DEBUG ) || defined( DEBUG )
 	// test idMatX
-	//idMatX::Test();
+	idMatX::Test();
 
 	// test idPolynomial
 	idPolynomial::Test();
-
-	// initialize the dictionary string pools
-	idDict::Init();
+#endif
 }
 
 /*

@@ -29,6 +29,7 @@ If you have questions concerning this license or the applicable additional terms
 #include "../precompiled.h"
 #pragma hdrstop
 
+#include <x86gprintrin.h>
 #include <SDL3/SDL_thread.h>
 
 #include "Simd_Generic.h"
@@ -157,11 +158,17 @@ idSIMDProcessor *p_simd;
 idSIMDProcessor *p_generic;
 long baseClocks = 0;
 
-#define TIME_TYPE unsigned __int64
+typedef unsigned long long TIME_TYPE;
 
-#define StartRecordTime( start ) start =__rdtsc()
+static inline  void StartRecordTime( TIME_TYPE &start ) 
+{
+	start =__rdtsc();
+}
 
-#define StopRecordTime( end ) end = __rdtsc()
+static inline void StopRecordTime( TIME_TYPE& end )
+{
+	end = __rdtsc();
+}
 
 #define GetBest( start, end, best )			\
 	if ( !best || end - start < best ) {	\
@@ -198,8 +205,8 @@ GetBaseClocks
 */
 void GetBaseClocks( void ) 
 {
-	unsigned __int64 i, start, end, bestClocks;
-
+	int i;
+	TIME_TYPE start, end, bestClocks;
 	bestClocks = 0;
 	for ( i = 0; i < NUMTESTS; i++ ) 
 	{
@@ -215,7 +222,8 @@ void GetBaseClocks( void )
 TestAdd
 ============
 */
-void TestAdd( void ) {
+void TestAdd( void ) 
+{
 	int i;
 	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
 	ALIGN16( float fdst0[COUNT] );
@@ -3909,7 +3917,10 @@ TestNegate
 // this wasn't previously in the test
 void TestNegate( void ) {
 	int i;
-	TIME_TYPE start, end, bestClocksGeneric, bestClocksSIMD;
+	TIME_TYPE start = 0;
+	TIME_TYPE end = 0;
+	TIME_TYPE bestClocksGeneric = 0;
+	TIME_TYPE bestClocksSIMD = 0;
 	ALIGN16( float fsrc0[COUNT] );
 	ALIGN16( float fsrc1[COUNT] );
 	ALIGN16( float fsrc2[COUNT] );
@@ -4082,7 +4093,8 @@ void idSIMD::Test_f( const idCmdArgs &args )
 
 	idLib::common->SetRefreshOnPrint( false );
 
-	if ( p_simd != processor ) {
+	if ( p_simd != processor ) 
+	{
 		delete p_simd;
 	}
 	p_simd = NULL;

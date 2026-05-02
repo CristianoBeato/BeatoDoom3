@@ -29,14 +29,8 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __MATH_MATH_H__
 #define __MATH_MATH_H__
 
-#ifdef MACOS_X
-// for square root estimate instruction
-#ifdef PPC_INTRINSICS
-#include <ppc_intrinsics.h>
-#endif
-// for FLT_MIN
-#include <float.h>
-#endif
+#include <xmmintrin.h>
+
 /*
 ===============================================================================
 

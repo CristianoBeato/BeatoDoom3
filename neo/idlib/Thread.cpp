@@ -29,6 +29,20 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #include <SDL3/SDL_thread.h>
 #include "sys/sys_main.h"
 
+#if SDL_PLATFORM_LINUX
+#include <sched.h> 
+#endif
+
+void Sys_ThreadYield( void )
+{
+#if SDL_PLATFORM_LINUX
+	sched_yield();
+#elif SDL_PLATFORM_WINDOWS
+	SwitchToThread();
+#endif
+}
+
+
 btThreadExecution::btThreadExecution( const char* _name ) : name( _name )
 {
 }

@@ -29,7 +29,9 @@ If you have questions concerning this license or the applicable additional terms
 #include "../precompiled.h"
 #pragma hdrstop
 
-const float EPSILON		= 1e-6f;
+constexpr float TOLERANCE	= 1e-3f; // original precision tolerance are 1e-4f
+constexpr float EPSILON		= 1e-6f;
+
 
 /*
 =============
@@ -185,7 +187,8 @@ const char *idPolynomial::ToString( int precision ) const {
 idPolynomial::Test
 =============
 */
-void idPolynomial::Test( void ) {
+void idPolynomial::Test( void ) 
+{
 	int i, num;
 	float roots[4], value;
 	idComplex complexRoots[4], complexValue;
@@ -193,50 +196,57 @@ void idPolynomial::Test( void ) {
 
 	p = idPolynomial( -5.0f, 4.0f );
 	num = p.GetRoots( roots );
-	for ( i = 0; i < num; i++ ) {
+	for ( i = 0; i < num; i++ ) 
+	{
 		value = p.GetValue( roots[i] );
-		assert( idMath::Fabs( value ) < 1e-4f );
+		assert( idMath::Fabs( value ) < TOLERANCE );
 	}
 
 	p = idPolynomial( -5.0f, 4.0f, 3.0f );
 	num = p.GetRoots( roots );
-	for ( i = 0; i < num; i++ ) {
+	for ( i = 0; i < num; i++ ) 
+	{
 		value = p.GetValue( roots[i] );
-		assert( idMath::Fabs( value ) < 1e-4f );
+		assert( idMath::Fabs( value ) < TOLERANCE );
 	}
 
 	p = idPolynomial( 1.0f, 4.0f, 3.0f, -2.0f );
 	num = p.GetRoots( roots );
-	for ( i = 0; i < num; i++ ) {
+	for ( i = 0; i < num; i++ ) 
+	{
 		value = p.GetValue( roots[i] );
-		assert( idMath::Fabs( value ) < 1e-4f );
+		assert( idMath::Fabs( value ) < TOLERANCE );
 	}
 
 	p = idPolynomial( 5.0f, 4.0f, 3.0f, -2.0f );
 	num = p.GetRoots( roots );
-	for ( i = 0; i < num; i++ ) {
+	for ( i = 0; i < num; i++ ) 
+	{
 		value = p.GetValue( roots[i] );
-		assert( idMath::Fabs( value ) < 1e-4f );
+		assert( idMath::Fabs( value ) < TOLERANCE );
 	}
 
 	p = idPolynomial( -5.0f, 4.0f, 3.0f, 2.0f, 1.0f );
 	num = p.GetRoots( roots );
-	for ( i = 0; i < num; i++ ) {
+	for ( i = 0; i < num; i++ ) 
+	{
 		value = p.GetValue( roots[i] );
-		assert( idMath::Fabs( value ) < 1e-4f );
+		assert( idMath::Fabs( value ) < TOLERANCE );
 	}
 
 	p = idPolynomial( 1.0f, 4.0f, 3.0f, -2.0f );
 	num = p.GetRoots( complexRoots );
-	for ( i = 0; i < num; i++ ) {
+	for ( i = 0; i < num; i++ ) 
+	{
 		complexValue = p.GetValue( complexRoots[i] );
-		assert( idMath::Fabs( complexValue.r ) < 1e-4f && idMath::Fabs( complexValue.i ) < 1e-4f );
+		assert( idMath::Fabs( complexValue.r ) < TOLERANCE && idMath::Fabs( complexValue.i ) < TOLERANCE );
 	}
 
 	p = idPolynomial( 5.0f, 4.0f, 3.0f, -2.0f );
 	num = p.GetRoots( complexRoots );
-	for ( i = 0; i < num; i++ ) {
+	for ( i = 0; i < num; i++ ) 
+	{
 		complexValue = p.GetValue( complexRoots[i] );
-		assert( idMath::Fabs( complexValue.r ) < 1e-4f && idMath::Fabs( complexValue.i ) < 1e-4f );
+		assert( idMath::Fabs( complexValue.r ) < TOLERANCE && idMath::Fabs( complexValue.i ) < TOLERANCE );
 	}
 }

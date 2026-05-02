@@ -82,11 +82,11 @@ void		Mem_AllocDefragBlock( void );
 
 #ifndef ID_DEBUG_MEMORY
 
+extern char*	Mem_CopyString( const char *in );
 ID_INLINE void*	Mem_Alloc( const size_t size ) { return SDL_malloc( size );}
 ID_INLINE void*	Mem_Realloc( void* &mem, size_t size ) { return SDL_realloc( mem, size ); }
 ID_INLINE void*	Mem_ClearedAlloc( const size_t size ) { return memset( SDL_malloc( size ), 0x00, size ); }
 ID_INLINE void	Mem_Free( void *ptr ) { SDL_free( ptr ); }
-ID_INLINE char*	Mem_CopyString( const char *in );
 ID_INLINE void*	Mem_Alloc16( const size_t size ) { return SDL_aligned_alloc( 16, size ); }
 ID_INLINE void	Mem_Free16( void *ptr ) { SDL_aligned_free( ptr ); }
 

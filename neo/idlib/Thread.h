@@ -29,6 +29,8 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #include <SDL3/SDL_atomic.h>
 #include <SDL3/SDL_mutex.h>
 
+extern void Sys_ThreadYield( void );
+
 struct btAtommicCounter
 {
 public:
