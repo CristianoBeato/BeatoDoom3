@@ -36,12 +36,12 @@ If you have questions concerning this license or the applicable additional terms
 /// latter is not entirely portable .Windows / Creative Labs does not by default put
 /// their headers in ``AL/`` and macOS uses the convention ``<OpenAL / al.h > ``.
 
-#include <al.h>
-#include <alc.h>
+#include <AL/al.h>
+#include <AL/alc.h>
 
 #if BT_USE_EFX
-#include <efx.h>
-#include <EFX-Util.h>
+#include <AL/efx.h>
+#include <AL/efx-creative.h>
 #endif // BT_USE_EFX
 
 #if BT_USE_EAX

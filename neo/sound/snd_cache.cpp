@@ -290,9 +290,9 @@ idSoundSample::idSoundSample() {
 	memset( &objectInfo, 0, sizeof(waveformatex_t) );
 	objectSize = 0;
 	objectMemSize = 0;
-	nonCacheData = NULL;
-	amplitudeData = NULL;
-	openalBuffer = NULL;
+	nonCacheData = nullptr;
+	amplitudeData = nullptr;
+	openalBuffer = 0;
 	hardwareBuffer = false;
 	defaultSound = false;
 	onDemand = false;

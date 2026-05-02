@@ -83,8 +83,8 @@ idCVar idSoundSystemLocal::s_decompressionLimit( "s_decompressionLimit", "6", CV
 #else
 idCVar idSoundSystemLocal::s_libOpenAL( "s_libOpenAL", "openal32.dll", CVAR_SOUND | CVAR_ARCHIVE, "OpenAL is not supported in this build" );
 idCVar idSoundSystemLocal::s_useOpenAL( "s_useOpenAL", "0", CVAR_SOUND | CVAR_BOOL | CVAR_ROM, "OpenAL is not supported in this build" );
-idCVar idSoundSystemLocal::s_useEAXReverb( "s_useEAXReverb", "0", CVAR_SOUND | CVAR_BOOL | CVAR_ROM, "EAX not available in this build" );
-idCVar idSoundSystemLocal::s_muteEAXReverb( "s_muteEAXReverb", "0", CVAR_SOUND | CVAR_BOOL | CVAR_ROM, "mute eax reverb" );
+//idCVar idSoundSystemLocal::s_useEAXReverb( "s_useEAXReverb", "0", CVAR_SOUND | CVAR_BOOL | CVAR_ROM, "EAX not available in this build" );
+//idCVar idSoundSystemLocal::s_muteEAXReverb( "s_muteEAXReverb", "0", CVAR_SOUND | CVAR_BOOL | CVAR_ROM, "mute eax reverb" );
 idCVar idSoundSystemLocal::s_decompressionLimit( "s_decompressionLimit", "6", CVAR_SOUND | CVAR_INTEGER | CVAR_ROM, "specifies maximum uncompressed sample length in seconds" );
 #endif
 
@@ -406,7 +406,7 @@ void idSoundSystemLocal::Init() {
 	}
 
 	// make a 16 byte aligned finalMixBuffer
-	finalMixBuffer = (float *) ( ( ( (int)realAccum ) + 15 ) & ~15 );
+	finalMixBuffer = reinterpret_cast<float *>( ( ( reinterpret_cast<uintptr_t>(realAccum) ) + 15 ) & ~15 );
 
 	graph = NULL;
 
@@ -1521,12 +1521,16 @@ ALuint idSoundSystemLocal::AllocOpenALSource( idSoundChannel *chan, bool looping
 idSoundSystemLocal::FreeOpenALSource
 ===================
 */
-void idSoundSystemLocal::FreeOpenALSource( ALuint handle ) {
+void idSoundSystemLocal::FreeOpenALSource( ALuint handle ) 
+{
 	ALsizei i;
-	for ( i = 0; i < openalSourceCount; i++ ) {
-		if ( openalSources[i].handle == handle ) {
-			if ( openalSources[i].chan ) {
-				openalSources[i].chan->openalSource = NULL;
+	for ( i = 0; i < openalSourceCount; i++ ) 
+	{
+		if ( openalSources[i].handle == handle ) 
+		{
+			if ( openalSources[i].chan ) 
+			{
+				openalSources[i].chan->openalSource = 0;
 			}
 #if BT_USE_EAX
 			// Reset source EAX ROOM level when freeing stereo source
@@ -1556,7 +1560,8 @@ SoundFX and misc effects
 idSoundSystemLocal::ProcessSample
 ===================
 */
-void SoundFX_Lowpass::ProcessSample( float* in, float* out ) {
+void SoundFX_Lowpass::ProcessSample( float* in, float* out ) 
+{
 	float c, a1, a2, a3, b1, b2;
 	float resonance = idSoundSystemLocal::s_enviroSuitCutoffQ.GetFloat();
 	float cutoffFrequency = idSoundSystemLocal::s_enviroSuitCutoffFreq.GetFloat();
@@ -1576,12 +1581,14 @@ void SoundFX_Lowpass::ProcessSample( float* in, float* out ) {
 	out[0] = a1 * in[0] + a2 * in[-1] + a3 * in[-2] - b1 * out[-1] - b2 * out[-2];
 }
 
-void SoundFX_LowpassFast::ProcessSample( float* in, float* out ) {
+void SoundFX_LowpassFast::ProcessSample( float* in, float* out ) 
+{
 	// compute output value
 	out[0] = a1 * in[0] + a2 * in[-1] + a3 * in[-2] - b1 * out[-1] - b2 * out[-2];
 }
 
-void SoundFX_LowpassFast::SetParms( float p1, float p2, float p3 ) {
+void SoundFX_LowpassFast::SetParms( float p1, float p2, float p3 ) 
+{
 	float c;
 
 	// set the vars
