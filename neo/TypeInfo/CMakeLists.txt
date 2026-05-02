@@ -8,8 +8,11 @@ add_definitions( -DID_TYPEINFO -D__DOOM_DLL__ )
 SET( TYPE_INFO
 	${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/TypeInfoGen.cpp
-
 	${CMAKE_CURRENT_SOURCE_DIR}/TypeInfoGen.h
+	)
+
+SET( TYPE_INFO_SYSTEM
+	${CMAKE_SOURCE_DIR}/sys/sys_fileSystem.cpp
 	)
 
 SET( TYPE_INFO_FRAMEWORK
@@ -17,7 +20,6 @@ SET( TYPE_INFO_FRAMEWORK
 	${CMAKE_SOURCE_DIR}/framework/CVarSystem.cpp
 	${CMAKE_SOURCE_DIR}/framework/File.cpp
 	${CMAKE_SOURCE_DIR}/framework/FileSystem.cpp
-
 	${CMAKE_SOURCE_DIR}/framework/CmdSystem.h
 	${CMAKE_SOURCE_DIR}/framework/CVarSystem.h
 	${CMAKE_SOURCE_DIR}/framework/File.h
@@ -29,7 +31,7 @@ SET( TYPE_INFO_FRAMEWORK
 source_group("" FILES ${TYPE_INFO})
 source_group("Framework" FILES ${TYPE_INFO_FRAMEWORK})
 
-add_executable( TypeInfo ${TYPE_INFO} ${TYPE_INFO_FRAMEWORK} )
-add_dependencies( TypeInfo idlib contrib )
-target_precompile_headers( TypeInfo PUBLIC ${CMAKE_SOURCE_DIR}/idlib/precompiled.h )
-target_link_libraries( TypeInfo idlib contrib ${SDL_LIBRARIES} ${ZLIB_LIBRARY})
+add_executable( idTypeInfo ${TYPE_INFO} ${TYPE_INFO_SYSTEM} ${TYPE_INFO_FRAMEWORK} )
+add_dependencies( idTypeInfo idlib contrib )
+target_precompile_headers( idTypeInfo PUBLIC ${CMAKE_SOURCE_DIR}/idlib/precompiled.h )
+target_link_libraries( idTypeInfo idlib contrib SDL3::SDL3 ZLIB::ZLIB )

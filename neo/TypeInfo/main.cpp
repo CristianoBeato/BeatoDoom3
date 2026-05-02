@@ -26,15 +26,15 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "../idlib/precompiled.h"
-#include "../sys/sys_local.h"
-#pragma hdrstop
-
+#include "idlib/precompiled.h"
+#include "sys/sys_local.h"
 #include "TypeInfoGen.h"
 
-idSession *			session = NULL;
-idDeclManager *		declManager = NULL;
-idEventLoop *		eventLoop = NULL;
+#include <SDL3/SDL.h>
+
+idSession *			session = nullptr;
+idDeclManager *		declManager = nullptr;
+idEventLoop *		eventLoop = nullptr;
 
 int idEventLoop::JournalLevel( void ) const { return 0; }
 
@@ -83,9 +83,9 @@ public:
 	virtual void			ClearWarnings( const char *reason ) {}
 	virtual void			Error( const char *fmt, ... ) { STDIO_PRINT( "ERROR: ", "\n" ); exit(0); }
 	virtual void			FatalError( const char *fmt, ... ) { STDIO_PRINT( "FATAL ERROR: ", "\n" ); exit(0); }
-	virtual const idLangDict *GetLanguageDict() { return NULL; }
-	virtual const char *	KeysFromBinding( const char *bind ) { return NULL; }
-	virtual const char *	BindingFromKey( const char *key ) { return NULL; }
+	virtual const idLangDict *GetLanguageDict() { return nullptr; }
+	virtual const char *	KeysFromBinding( const char *bind ) { return nullptr; }
+	virtual const char *	BindingFromKey( const char *key ) { return nullptr; }
 	virtual int				ButtonState( int key ) { return 0; }
 	virtual int				KeyState( int key ) { return 0; }
 };
@@ -102,92 +102,6 @@ idCommon *			common = &commonLocal;
 
 ==============================================================
 */
-
-void			Sys_Mkdir( const char *path ) {}
-ID_TIME_T			Sys_FileTimeStamp( FILE *fp ) { return 0; }
-
-#ifdef _WIN32
-
-#include <io.h>
-#include <direct.h>
-
-const char *Sys_Cwd( void ) {
-	static char cwd[1024];
-
-	_getcwd( cwd, sizeof( cwd ) - 1 );
-	cwd[sizeof( cwd ) - 1] = 0;
-
-	/*int i = idStr::FindText( cwd, CD_BASEDIR, false );
-	if ( i >= 0 ) {
-		cwd[i + strlen( CD_BASEDIR )] = '\0';
-	}*/
-
-	return cwd;
-}
-
-const char *Sys_DefaultCDPath( void ) {
-	return "";
-}
-
-const char *Sys_DefaultBasePath( void ) {
-	return Sys_Cwd();
-}
-
-const char *Sys_DefaultSavePath( void ) {
-	return cvarSystem->GetCVarString( "fs_basepath" );
-}
-
-const char *Sys_EXEPath( void ) {
-	return "";
-}
-
-int Sys_ListFiles( const char *directory, const char *extension, idStrList &list ) {
-	idStr		search;
-	struct _finddata_t findinfo;
-	int			findhandle;
-	int			flag;
-
-	if ( !extension) {
-		extension = "";
-	}
-
-	// passing a slash as extension will find directories
-	if ( extension[0] == '/' && extension[1] == 0 ) {
-		extension = "";
-		flag = 0;
-	} else {
-		flag = _A_SUBDIR;
-	}
-
-	sprintf( search, "%s\\*%s", directory, extension );
-
-	// search
-	list.Clear();
-
-	findhandle = _findfirst( search, &findinfo );
-	if ( findhandle == -1 ) {
-		return -1;
-	}
-
-	do {
-		if ( flag ^ ( findinfo.attrib & _A_SUBDIR ) ) {
-			list.Append( findinfo.name );
-		}
-	} while ( _findnext( findhandle, &findinfo ) != -1 );
-
-	_findclose( findhandle );
-
-	return list.Num();
-}
-
-#else
-
-const char *	Sys_DefaultCDPath( void ) { return ""; }
-const char *	Sys_DefaultBasePath( void ) { return ""; }
-const char *	Sys_DefaultSavePath( void ) { return ""; }
-int				Sys_ListFiles( const char *directory, const char *extension, idStrList &list ) { return 0; }
-
-#endif
 
 // BEATO Begin
 void	Sys_StartThread( const btThreadExecution* thread ) {};
@@ -240,7 +154,8 @@ idSys *			sys = &sysLocal;
 ==============================================================
 */
 
-int main( int argc, char** argv ) {
+int main( int argc, char** argv ) 
+{
 	idStr fileName, sourcePath;
 	idTypeInfoGen *generator;
 
