@@ -406,7 +406,8 @@ idMapBrush *idMapBrush::Parse( idLexer &src, const idVec3 &origin, bool newForma
 idMapBrush::ParseQ3
 =================
 */
-idMapBrush *idMapBrush::ParseQ3( idLexer &src, const idVec3 &origin ) {
+idMapBrush *idMapBrush::ParseQ3( idLexer &src, const idVec3 &origin ) 
+{
 	int i, shift[2], rotate;
 	float scale[2];
 	idVec3 planepts[3];

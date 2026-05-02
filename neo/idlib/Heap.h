@@ -44,12 +44,18 @@ If you have questions concerning this license or the applicable additional terms
 // BEATO Begin
 static ID_INLINE const size_t _alignedSize( const size_t size, const size_t align )
 {
-	return  ((size)+((align)-1)) & ~((align)-1);
+	return  ( size + ( align - 1u) ) & ~(align-1u);
 }
 
 static ID_INLINE const void* _alloca16( const size_t size )
 {
 	return _alloca( _alignedSize( size, 16 ) );
+}
+
+template< typename t_>
+static ID_INLINE t_* __align( t_* raw, const size_t align )
+{
+	return reinterpret_cast<t_*>( ( reinterpret_cast<uintptr_t>( raw ) + ( align - 1u ) & ~( align - 1u ) ) );
 }
 
 // BEATO End
@@ -240,7 +246,7 @@ type *idBlockAlloc<type,blockSize>::Alloc( void ) {
 template<class type, int blockSize>
 void idBlockAlloc<type,blockSize>::Free( type *t ) 
 {
-	element_t *element = (element_t *)( ( (unsigned char *) t ) - ( (int) &((element_t *)0)->t ) );
+	element_t *element = (element_t *)( ( (unsigned char *) t ) - ( (uintptr_t) &((element_t *)0)->t ) );
 	element->next = free;
 	free = element;
 	active--;

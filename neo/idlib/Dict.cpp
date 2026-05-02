@@ -644,9 +644,10 @@ void idDict::Shutdown( void ) {
 idDict::ShowMemoryUsage_f
 ================
 */
-void idDict::ShowMemoryUsage_f( const idCmdArgs &args ) {
-	idLib::common->Printf( "%5llu KB in %i keys\n", globalKeys.Size() >> 10, globalKeys.Num() );
-	idLib::common->Printf( "%5llu KB in %i values\n", globalValues.Size() >> 10, globalValues.Num() );
+void idDict::ShowMemoryUsage_f( const idCmdArgs &args ) 
+{
+	idLib::common->Printf( "%5lu KB in %i keys\n", globalKeys.Size() >> 10, globalKeys.Num() );
+	idLib::common->Printf( "%5lu KB in %i values\n", globalValues.Size() >> 10, globalValues.Num() );
 }
 
 /*
@@ -656,7 +657,8 @@ idDictStringSortCmp
 */
 // NOTE: the const wonkyness is required to make msvc happy
 template<>
-ID_INLINE int idListSortCompare( const idPoolStr * const *a, const idPoolStr * const *b ) {
+ID_INLINE int idListSortCompare( const idPoolStr * const *a, const idPoolStr * const *b ) 
+{
 	return (*a)->Icmp( **b );
 }
 
@@ -665,15 +667,19 @@ ID_INLINE int idListSortCompare( const idPoolStr * const *a, const idPoolStr * c
 idDict::ListKeys_f
 ================
 */
-void idDict::ListKeys_f( const idCmdArgs &args ) {
+void idDict::ListKeys_f( const idCmdArgs &args ) 
+{
 	int i;
 	idList<const idPoolStr *> keyStrings;
 
-	for ( i = 0; i < globalKeys.Num(); i++ ) {
+	for ( i = 0; i < globalKeys.Num(); i++ ) 
+	{
 		keyStrings.Append( globalKeys[i] );
 	}
+	
 	keyStrings.Sort();
-	for ( i = 0; i < keyStrings.Num(); i++ ) {
+	for ( i = 0; i < keyStrings.Num(); i++ ) 
+	{
 		idLib::common->Printf( "%s\n", keyStrings[i]->c_str() );
 	}
 	idLib::common->Printf( "%5d keys\n", keyStrings.Num() );

@@ -291,10 +291,11 @@ void idItem::Spawn( void ) {
 	giveTo = spawnArgs.GetString( "owner" );
 	if ( giveTo.Length() ) {
 		ent = gameLocal.FindEntity( giveTo );
-		if ( !ent ) {
+		if ( !ent ) 
+		{
 			gameLocal.Error( "Item couldn't find owner '%s'", giveTo.c_str() );
 		}
-		PostEventMS( &EV_Touch, 0, ent, NULL );
+		PostEventMS( &EV_Touch, 0, ent, 0 );
 	}
 
 	if ( spawnArgs.GetBool( "spin" ) || gameLocal.isMultiplayer ) {
