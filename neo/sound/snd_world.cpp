@@ -28,8 +28,8 @@ If you have questions concerning this license or the applicable additional terms
 
 //
 #if BT_USE_EFX
-#include <al.h>
-#include <efx.h>
+#include <AL/al.h>
+#include <AL/efx.h>
 #endif 
 //
 
@@ -727,13 +727,14 @@ void idSoundWorldLocal::AVIUpdate() {
 // BEATO End
 
 	float	mix[MIXBUFFER_SAMPLES*6+16];
-	float	*mix_p = (float *)((( int)mix + 15 ) & ~15);	// SIMD align
+	float	*mix_p = __align( (float*)mix , 16u );	// SIMD align
 
 	SIMDProcessor->Memset( mix_p, 0, MIXBUFFER_SAMPLES*sizeof(float)*numSpeakers );
 
 	MixLoop( lastAVI44kHz, numSpeakers, mix_p );
 
-	for ( int i = 0; i < numSpeakers; i++ ) {
+	for ( int i = 0; i < numSpeakers; i++ ) 
+	{
 		short outD[MIXBUFFER_SAMPLES];
 
 		for( int j = 0; j < MIXBUFFER_SAMPLES; j++ ) {
@@ -1336,7 +1337,8 @@ void idSoundWorldLocal::WriteToSaveGameSoundShaderParams( idFile *saveGame, soun
  idSoundWorldLocal::WriteToSaveGameSoundChannel
  ===================
  */
-void idSoundWorldLocal::WriteToSaveGameSoundChannel( idFile *saveGame, idSoundChannel *ch ) {
+void idSoundWorldLocal::WriteToSaveGameSoundChannel( idFile *saveGame, idSoundChannel *ch ) 
+{
 	saveGame->WriteBool( ch->triggerState );
 	saveGame->WriteUnsignedChar( 0 );
 	saveGame->WriteUnsignedChar( 0 );
@@ -1344,10 +1346,10 @@ void idSoundWorldLocal::WriteToSaveGameSoundChannel( idFile *saveGame, idSoundCh
 	saveGame->WriteInt( ch->trigger44kHzTime );
 	saveGame->WriteInt( ch->triggerGame44kHzTime );
 	WriteToSaveGameSoundShaderParams( saveGame, &ch->parms );
-	saveGame->WriteInt( (int)ch->leadinSample );
+	saveGame->WriteLong( reinterpret_cast<int64_t>( ch->leadinSample ) );
 	saveGame->WriteInt( ch->triggerChannel );
-	saveGame->WriteInt( (int)ch->soundShader );
-	saveGame->WriteInt( (int)ch->decoder );
+	saveGame->WriteLong( reinterpret_cast<int64_t>( ch->soundShader ) );
+	saveGame->WriteLong( reinterpret_cast<int64_t>( ch->decoder ) );
 	saveGame->WriteFloat(ch->diversity );
 	saveGame->WriteFloat(ch->lastVolume );
 	for (int m = 0; m < 6; m++)
@@ -1363,7 +1365,8 @@ void idSoundWorldLocal::WriteToSaveGameSoundChannel( idFile *saveGame, idSoundCh
 idSoundWorldLocal::ReadFromSaveGame
 ===================
 */
-void idSoundWorldLocal::ReadFromSaveGame( idFile *savefile ) {
+void idSoundWorldLocal::ReadFromSaveGame( idFile *savefile ) 
+{
 	int i, num, handle, listenerId, gameTime, channel;
 	int savedSoundTime, currentSoundTime, soundTimeOffset;
 	idSoundEmitterLocal *def;
@@ -1515,10 +1518,10 @@ void idSoundWorldLocal::ReadFromSaveGameSoundChannel( idFile *saveGame, idSoundC
 	saveGame->ReadInt( ch->trigger44kHzTime );
 	saveGame->ReadInt( ch->triggerGame44kHzTime );
 	ReadFromSaveGameSoundShaderParams( saveGame, &ch->parms );
-	saveGame->ReadInt( (int&)ch->leadinSample );
+	saveGame->ReadLong( (int64_t&)ch->leadinSample );
 	saveGame->ReadInt( ch->triggerChannel );
-	saveGame->ReadInt( (int&)ch->soundShader );
-	saveGame->ReadInt( (int&)ch->decoder );
+	saveGame->ReadLong( (int64_t&)ch->soundShader );
+	saveGame->ReadLong( (int64_t&)ch->decoder );
 	saveGame->ReadFloat(ch->diversity );
 	saveGame->ReadFloat(ch->lastVolume );
 	for (int m = 0; m < 6; m++)
@@ -1860,7 +1863,7 @@ void idSoundWorldLocal::AddChannelContribution( idSoundEmitterLocal *sound, idSo
 	//
 	int offset = current44kHz - chan->trigger44kHzTime;
 	float inputSamples[MIXBUFFER_SAMPLES*2+16];
-	float *alignedInputSamples = (float *) ( ( ( (int)inputSamples ) + 15 ) & ~15 );
+	float *alignedInputSamples = __align( (float*)inputSamples, 16u );
 
 	//
 	// allocate and initialize hardware source
