@@ -1222,7 +1222,8 @@ void idCinematicLocal::setupQuad( long xOff, long yOff ) {
 idCinematicLocal::readQuadInfo
 ==============
 */
-void idCinematicLocal::readQuadInfo( byte *qData ) {
+void idCinematicLocal::readQuadInfo( byte *qData ) 
+{
 	xsize    = qData[0]+qData[1]*256;
 	ysize    = qData[2]+qData[3]*256;
 	maxsize  = qData[4]+qData[5]*256;
@@ -1241,8 +1242,8 @@ void idCinematicLocal::readQuadInfo( byte *qData ) {
 	half = false;
 	smootheddouble = false;
 	
-	t[0] = (0 - (unsigned int)image)+(unsigned int)image+screenDelta;
-	t[1] = (0 - ((unsigned int)image + screenDelta))+(unsigned int)image;
+	t[0] = (0 - reinterpret_cast<uintptr_t>( image ))+ reinterpret_cast<uintptr_t>( image ) + screenDelta;
+	t[1] = (0 - ( reinterpret_cast<uintptr_t>( image ) + screenDelta))+ reinterpret_cast<uintptr_t>( image );
 
 	drawX = CIN_WIDTH;
 	drawY = CIN_HEIGHT;

@@ -223,8 +223,9 @@ idImage *idMaterial::GetEditorImage( void ) const {
 
 
 // info parms
-typedef struct {
-	char	*name;
+typedef struct 
+{
+	const char	*name;
 	int		clearSolid, surfaceFlags, contents;
 } infoParm_t;
 
@@ -2325,7 +2326,8 @@ bool idMaterial::Parse( const char *text, const int textLength ) {
 idMaterial::Print
 ===================
 */
-char *opNames[] = {
+const char *opNames[] = 
+{
 	"OP_TYPE_ADD",
 	"OP_TYPE_SUBTRACT",
 	"OP_TYPE_MULTIPLY",
@@ -2342,18 +2344,25 @@ char *opNames[] = {
 	"OP_TYPE_OR"
 };
 
-void idMaterial::Print() const {
+void idMaterial::Print() const 
+{
 	int			i;
 
-	for ( i = EXP_REG_NUM_PREDEFINED ; i < GetNumRegisters() ; i++ ) {
+	for ( i = EXP_REG_NUM_PREDEFINED ; i < GetNumRegisters() ; i++ ) 
+	{
 		common->Printf( "register %i: %f\n", i, expressionRegisters[i] );
 	}
+	
 	common->Printf( "\n" );
-	for ( i = 0 ; i < numOps ; i++ ) {
+	for ( i = 0 ; i < numOps ; i++ ) 
+	{
 		const expOp_t *op = &ops[i];
-		if ( op->opType == OP_TYPE_TABLE ) {
+		if ( op->opType == OP_TYPE_TABLE ) 
+		{
 			common->Printf( "%i = %s[ %i ]\n", op->c, declManager->DeclByIndex( DECL_TABLE, op->a )->GetName(), op->b );
-		} else {
+		} 
+		else 
+		{
 			common->Printf( "%i = %i %s %i\n", op->c, op->a, opNames[ op->opType ], op->b );
 		}
 	}
@@ -2364,7 +2373,8 @@ void idMaterial::Print() const {
 idMaterial::Save
 ===============
 */
-bool idMaterial::Save( const char *fileName ) {
+bool idMaterial::Save( const char *fileName ) 
+{
 	return ReplaceSourceFileText();
 }
 

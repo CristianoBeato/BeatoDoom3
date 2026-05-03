@@ -29,6 +29,10 @@ If you have questions concerning this license or the applicable additional terms
 #include "../idlib/precompiled.h"
 #pragma hdrstop
 
+#ifndef __cdecl
+#define __cdecl 
+#endif 
+
 #include "Model_lwo.h"
 
 /*
@@ -2684,7 +2688,8 @@ int lwResolvePolySurfaces( lwPolygonList *polygon, lwTagList *tlist,
    s = (lwSurface**)Mem_ClearedAlloc( tlist->count * sizeof( lwSurface * ) );
    if ( !s ) return 0;
 
-   for ( i = 0; i < tlist->count; i++ ) {
+   for ( i = 0; i < tlist->count; i++ ) 
+   {
       st = *surf;
       while ( st ) {
          if ( !strcmp( st->name, tlist->tag[ i ] )) {
@@ -2695,8 +2700,9 @@ int lwResolvePolySurfaces( lwPolygonList *polygon, lwTagList *tlist,
       }
    }
 
-   for ( i = 0; i < polygon->count; i++ ) {
-      index = ( int ) polygon->pol[ i ].surf;
+   for ( i = 0; i < polygon->count; i++ ) 
+   {
+      index = ( intptr_t ) polygon->pol[ i ].surf;
       if ( index < 0 || index > tlist->count ) return 0;
       if ( !s[ index ] ) {
          s[ index ] = lwDefaultSurface();
@@ -2943,7 +2949,8 @@ Free the memory used by an lwSurface.
 
 void lwFreeSurface( lwSurface *surf )
 {
-	if ( surf ) {
+	if ( surf ) 
+   {
 		if ( surf->name ) Mem_Free( surf->name );
 		if ( surf->srcname ) Mem_Free( surf->srcname );
 
