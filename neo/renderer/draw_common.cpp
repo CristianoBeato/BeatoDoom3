@@ -1663,7 +1663,8 @@ RB_STD_DrawView
 
 =============
 */
-void	RB_STD_DrawView( void ) {
+void	RB_STD_DrawView( void ) 
+{
 	drawSurf_t	 **drawSurfs;
 	int			numDrawSurfs;
 
@@ -1685,21 +1686,16 @@ void	RB_STD_DrawView( void ) {
 	RB_STD_FillDepthBuffer( drawSurfs, numDrawSurfs );
 
 	// main light renderer
-	switch( tr.backEndRenderer ) {
+	switch( tr.backEndRenderer ) 
+	{
 	case BE_ARB:
 		RB_ARB_DrawInteractions();
 		break;
 	case BE_ARB2:
 		RB_ARB2_DrawInteractions();
 		break;
-	case BE_NV20:
-		RB_NV20_DrawInteractions();
-		break;
-	case BE_NV10:
-		RB_NV10_DrawInteractions();
-		break;
-	case BE_R200:
-		RB_R200_DrawInteractions();
+	case BE_GLSL:
+		RB_ARB2_DrawInteractions();
 		break;
 	}
 
@@ -1716,10 +1712,10 @@ void	RB_STD_DrawView( void ) {
 	RB_STD_FogAllLights();
 
 	// now draw any post-processing effects using _currentRender
-	if ( processed < numDrawSurfs ) {
+	if ( processed < numDrawSurfs ) 
+	{
 		RB_STD_DrawShaderPasses( drawSurfs+processed, numDrawSurfs-processed );
 	}
 
 	RB_RenderDebugTools( drawSurfs, numDrawSurfs );
-
 }

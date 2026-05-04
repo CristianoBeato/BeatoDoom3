@@ -47,7 +47,8 @@ If you have questions concerning this license or the applicable additional terms
 ===============================================================================
 */
 
-class idLib {
+class idLib 
+{
 public:
 	static class idSys *		sys;
 	static class idCommon *		common;

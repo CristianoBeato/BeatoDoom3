@@ -26,19 +26,8 @@ If you have questions concerning this license or the applicable additional terms
 ===========================================================================
 */
 
-#include "../idlib/precompiled.h"
-#pragma hdrstop
-
+#include "idlib/precompiled.h"
 #include "tr_local.h"
-
-#include "cg_explicit.h"
-
-CGcontext cg_context;
-
-static void cg_error_callback( void ) {
-	CGerror i = cgGetError();
-	common->Printf( "Cg error (%d): %s\n", i, cgGetErrorString(i) );
-}
 
 /*
 =========================================================================================
@@ -53,7 +42,8 @@ GENERAL INTERACTION RENDERING
 GL_SelectTextureNoClient
 ====================
 */
-static void GL_SelectTextureNoClient( int unit ) {
+static void GL_SelectTextureNoClient( int unit ) 
+{
 	backEnd.glState.currenttmu = unit;
 	qglActiveTextureARB( GL_TEXTURE0_ARB + unit );
 	RB_LogComment( "glActiveTextureARB( %i )\n", unit );
@@ -89,7 +79,8 @@ void	RB_ARB2_DrawInteraction( const drawInteraction_t *din ) {
 	static const float one[4] = { 1, 1, 1, 1 };
 	static const float negOne[4] = { -1, -1, -1, -1 };
 
-	switch ( din->vertexColor ) {
+	switch ( din->vertexColor ) 
+	{
 	case SVC_IGNORE:
 		qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_COLOR_MODULATE, zero );
 		qglProgramEnvParameter4fvARB( GL_VERTEX_PROGRAM_ARB, PP_COLOR_ADD, one );
