@@ -26,8 +26,8 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #include "idlib/precompiled.h"
 #pragma hdrstop
 
-#include <SDL_mutex.h>
-#include <SDL_thread.h>
+#include <SDL3/SDL_mutex.h>
+#include <SDL3/SDL_thread.h>
 
 #include "sys_main.h"
 

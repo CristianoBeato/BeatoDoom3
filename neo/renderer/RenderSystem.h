@@ -88,11 +88,7 @@ typedef struct glconfig_s {
 	int					displayFrequency;
 
 	bool				isFullscreen;
-
-	bool				allowNV30Path;
-	bool				allowNV20Path;
-	bool				allowNV10Path;
-	bool				allowR200Path;
+	bool				allowGLSLPath;
 	bool				allowARB2Path;
 
 	bool				isInitialized;
@@ -250,12 +246,16 @@ public:
 	// to use the default tga loading code without having dimmed down areas in many places
 	virtual void			CaptureRenderToFile( const char *fileName, bool fixAlpha = false ) = 0;
 	virtual void			UnCrop() = 0;
-	virtual void			GetCardCaps( bool &oldCard, bool &nv10or20 ) = 0;
-
+	
 	// the image has to be already loaded ( most straightforward way would be through a FindMaterial )
 	// texture filter / mipmapping / repeat won't be modified by the upload
 	// returns false if the image wasn't found
 	virtual bool			UploadImage( const char *imageName, const byte *data, int width, int height ) = 0;
+
+// BEATO Begin:
+	virtual void RenderThread( void ) = 0; 
+// BEATO End
+
 };
 
 extern idRenderSystem *			renderSystem;

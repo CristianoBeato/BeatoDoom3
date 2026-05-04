@@ -32,58 +32,8 @@ If you have questions concerning this license or the applicable additional terms
 #ifndef __QGL_H__
 #define __QGL_H__
 
-#if defined( _WIN32 )
-
-#include <gl/gl.h>
-
-#elif defined( MACOS_X )
-
-// magic flag to keep tiger gl.h from loading glext.h
-#define GL_GLEXT_LEGACY
-#include <OpenGL/gl.h>
-
-#elif defined( __linux__ )
-
-// using our local glext.h
-// http://oss.sgi.com/projects/ogl-sample/ABI/
-#define GL_GLEXT_LEGACY
-#define GLX_GLXEXT_LEGACY
 #include <GL/gl.h>
-#include <GL/glx.h>
-
-#else
-
-#include <gl.h>
-
-#endif
-
-#ifndef APIENTRY
-#define APIENTRY
-#endif
-#ifndef WINAPI
-#define WINAPI
-#endif
-
-// only use local glext.h if we are not using the system one already
-// http://oss.sgi.com/projects/ogl-sample/ABI/
-#ifndef GL_GLEXT_VERSION
-
-#include "glext.h"
-
-#endif
-
-typedef void (*GLExtension_t)(void);
-
-#ifdef __cplusplus
-	extern "C" 
-	{
-#endif
-
-GLExtension_t GLimp_ExtensionPointer( const char *name );
-
-#ifdef __cplusplus
-	}
-#endif
+#include <GL/glext.h>
 
 // multitexture
 extern	void ( APIENTRY * qglMultiTexCoord2fARB )( GLenum texture, GLfloat s, GLfloat t );
@@ -122,6 +72,52 @@ extern void ( APIENTRY *qglTexImage3D)(GLenum, GLint, GLint, GLsizei, GLsizei, G
 
 // shared texture palette
 extern	void ( APIENTRY *qglColorTableEXT)( int, int, int, int, int, const void * );
+
+// vertex array 
+extern PFNGLISVERTEXARRAYPROC                           glIsVertexArray;
+extern PFNGLCREATEVERTEXARRAYSPROC                      glCreateVertexArrays;
+extern PFNGLDELETEVERTEXARRAYSPROC                      glDeleteVertexArrays;
+extern PFNGLBINDVERTEXARRAYPROC                         glBindVertexArray;             
+extern PFNGLENABLEVERTEXARRAYATTRIBPROC                 glEnableVertexArrayAttrib;
+extern PFNGLDISABLEVERTEXARRAYATTRIBPROC                glDisableVertexArrayAttrib;
+extern PFNGLVERTEXARRAYATTRIBBINDINGPROC                glVertexArrayAttribBinding;
+extern PFNGLVERTEXARRAYATTRIBFORMATPROC                 glVertexArrayAttribFormat;
+extern PFNGLVERTEXARRAYELEMENTBUFFERPROC                glVertexArrayElementBuffer;
+extern PFNGLVERTEXARRAYVERTEXBUFFERPROC                 glVertexArrayVertexBuffer; 
+
+// shader 
+extern PFNGLISSHADERPROC                                glIsShader;
+extern PFNGLCREATESHADERPROC                            glCreateShader;
+extern PFNGLDELETESHADERPROC                            glDeleteShader;
+extern PFNGLSHADERSOURCEPROC                            glShaderSource;
+extern PFNGLSHADERBINARYPROC                            glShaderBinary;
+extern PFNGLCOMPILESHADERPROC                           glCompileShader;
+extern PFNGLSPECIALIZESHADERPROC                        glSpecializeShader;
+extern PFNGLGETSHADERINFOLOGPROC                        glGetShaderInfoLog;
+extern PFNGLGETSHADERIVPROC                             glGetShaderiv;
+
+// program
+extern PFNGLCREATEPROGRAMPROC                           glCreateProgram;
+extern PFNGLDELETEPROGRAMPROC                           glDeleteProgram;
+extern PFNGLISPROGRAMPROC                               glIsProgram;
+extern PFNGLPROGRAMPARAMETERIPROC                       glProgramParameteri;
+extern PFNGLATTACHSHADERPROC                            glAttachShader;
+extern PFNGLDETACHSHADERPROC                            glDetachShader;
+extern PFNGLLINKPROGRAMPROC                             glLinkProgram;
+extern PFNGLVALIDATEPROGRAMPROC                         glValidateProgram;
+extern PFNGLGETPROGRAMIVPROC                            glGetProgramiv;
+extern PFNGLGETPROGRAMINFOLOGPROC                       glGetProgramInfoLog;
+extern PFNGLUSEPROGRAMPROC                              glUseProgram;
+
+// Uniforms
+extern PFNGLUNIFORM1FVPROC								glUniform1fv;
+extern PFNGLUNIFORM1IPROC                               glUniform1i;
+extern PFNGLUNIFORM1IVPROC                              glUniform1iv;
+extern PFNGLUNIFORM1UIVPROC                             glUniform1uiv;
+extern PFNGLUNIFORM4FPROC								glUniform4f;
+extern PFNGLUNIFORM4FVPROC								glUniform4fv;
+extern PFNGLUNIFORMMATRIX4FVPROC						glUniformMatrix4fv;
+
 
 // ATI_fragment_shader
 extern	PFNGLGENFRAGMENTSHADERSATIPROC	qglGenFragmentShadersATI;

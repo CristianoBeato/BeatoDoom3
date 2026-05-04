@@ -155,16 +155,12 @@ void			Sys_Printf( const char *msg, ... )id_attribute((format(printf,1,2)));
 void			Sys_DebugPrintf( const char *fmt, ... )id_attribute((format(printf,1,2)));
 void			Sys_DebugVPrintf( const char *fmt, va_list arg );
 
-// a decent minimum sleep time to avoid going below the process scheduler speeds
-#define			SYS_MINSLEEP	20
-
 // allow game to yield CPU time
-// NOTE: due to SYS_MINSLEEP this is very bad portability karma, and should be completely removed
-void			Sys_Sleep( int msec );
+extern void		Sys_Sleep( uint32_t msec );
 
 // Sys_Milliseconds should only be used for profiling purposes,
 // any game related timing information should come from event timestamps
-Uint32			Sys_Milliseconds( void );
+extern uint64_t	Sys_Milliseconds( void );
 
 // for accurate performance testing
 double			Sys_GetClockTicks( void );
@@ -173,18 +169,6 @@ double			Sys_ClockTicksPerSecond( void );
 // returns a selection of the CPUID_* flags
 cpuid_t			Sys_GetProcessorId( void );
 const char *	Sys_GetProcessorString( void );
-
-// returns true if the FPU stack is empty
-bool			Sys_FPU_StackIsEmpty( void );
-
-// empties the FPU stack
-void			Sys_FPU_ClearStack( void );
-
-// returns the FPU state as a string
-const char *	Sys_FPU_GetState( void );
-
-// enables the given FPU exceptions
-void			Sys_FPU_EnableExceptions( int exceptions );
 
 // sets the FPU precision
 void			Sys_FPU_SetPrecision( int precision );
@@ -199,10 +183,10 @@ void			Sys_FPU_SetFTZ( bool enable );
 void			Sys_FPU_SetDAZ( bool enable );
 
 // returns amount of system ram
-int				Sys_GetSystemRam( void );
+extern uint32_t	Sys_GetSystemRam( void );
 
 // returns amount of video ram
-int				Sys_GetVideoRam( void );
+extern uint32_t	Sys_GetVideoRam( void );
 
 // returns amount of drive space in path
 int				Sys_GetDriveFreeSpace( const char *path );
@@ -257,8 +241,10 @@ void			Sys_EndMouseInputEvents( void );
 // when in windowed mode
 void			Sys_GrabMouseCursor( bool grabIt );
 
-void			Sys_ShowWindow( bool show );
-bool			Sys_IsWindowVisible( void );
+extern bool		Sys_InitVideo( void );
+extern void		Sys_ShutdownVideo( void );
+extern void		Sys_ShowWindow( const bool show );
+extern bool		Sys_IsWindowVisible( void );
 void			Sys_ShowConsole( int visLevel, bool quitOnClose );
 
 

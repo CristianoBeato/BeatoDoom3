@@ -25,9 +25,7 @@ If you have questions concerning this license or the applicable additional terms
 
 ===========================================================================
 */
-#include "../idlib/precompiled.h"
-#pragma hdrstop
-
+#include "idlib/precompiled.h"
 #include "tr_local.h"
 
 idRenderSystemLocal	tr;
@@ -42,9 +40,10 @@ This prints both front and back end counters, so it should
 only be called when the back end thread is idle.
 =====================
 */
-static void R_PerformanceCounters( void ) {
-	if ( r_showPrimitives.GetInteger() != 0 ) {
-		
+static void R_PerformanceCounters( void ) 
+{
+	if ( r_showPrimitives.GetInteger() != 0 ) 
+	{	
 		float megaBytes = globalImages->SumOfUsedImages() / ( 1024*1024.0 );
 
 		if ( r_showPrimitives.GetInteger() > 1 ) {
@@ -106,7 +105,7 @@ static void R_PerformanceCounters( void ) {
 			tr.pc.c_lightUpdates, tr.pc.c_lightReferences );
 	}
 	if ( r_showMemory.GetBool() ) {
-		int	m1 = frameData ? frameData->memoryHighwater : 0;
+		int	m1 = frameData ? frameData[frameDataBuffer]->memoryHighwater : 0;
 		common->Printf( "frameData: %i (%i)\n", R_CountFrameData(), m1 );
 	}
 	if ( r_showLightScale.GetBool() ) {
@@ -126,12 +125,14 @@ R_IssueRenderCommands
 Called by R_EndFrame each frame
 ====================
 */
-static void R_IssueRenderCommands( void ) {
-	if ( frameData->cmdHead->commandId == RC_NOP
-		&& !frameData->cmdHead->next ) {
+static void R_IssueRenderCommands( void ) 
+{
+	if ( frameData[frameDataBuffer]->cmdHead->commandId == RC_NOP && !frameData[frameDataBuffer]->cmdHead->next ) 
 		// nothing to issue
 		return;
-	}
+	
+	/// wait for backend to be iddle 
+	GLimp_FrontEndSleep();
 
 	// r_skipBackEnd allows the entire time of the back end
 	// to be removed from performance measurements, although
@@ -141,8 +142,12 @@ static void R_IssueRenderCommands( void ) {
 
 	// r_skipRender is usually more usefull, because it will still
 	// draw 2D graphics
-	if ( !r_skipBackEnd.GetBool() ) {
-		RB_ExecuteBackEndCommands( frameData->cmdHead );
+	if ( !r_skipBackEnd.GetBool() ) 
+	{
+		if( r_enableSMPBackend.GetBool() )
+			GLimp_WakeBackEnd( frameData[frameDataBuffer]->cmdHead );
+		else
+			RB_ExecuteBackEndCommands( frameData[frameDataBuffer]->cmdHead );
 	}
 
 	R_ClearCommandChain();
@@ -157,17 +162,17 @@ drawSurfsCommand_t, etc) and links it to the end of the
 current command chain.
 ============
 */
-void *R_GetCommandBuffer( int bytes ) {
+void *R_GetCommandBuffer( int bytes ) 
+{
 	emptyCommand_t	*cmd;
 
 	cmd = (emptyCommand_t *)R_FrameAlloc( bytes );
-	cmd->next = NULL;
-	frameData->cmdTail->next = &cmd->commandId;
-	frameData->cmdTail = cmd;
+	cmd->next = nullptr;
+	frameData[frameDataBuffer]->cmdTail->next = &cmd->commandId;
+	frameData[frameDataBuffer]->cmdTail = cmd;
 
 	return (void *)cmd;
 }
-
 
 /*
 ====================
@@ -177,11 +182,12 @@ Called after every buffer submission
 and by R_ToggleSmpFrame
 ====================
 */
-void R_ClearCommandChain( void ) {
+void R_ClearCommandChain( void ) 
+{
 	// clear the command chain
-	frameData->cmdHead = frameData->cmdTail = (emptyCommand_t *)R_FrameAlloc( sizeof( *frameData->cmdHead ) );
-	frameData->cmdHead->commandId = RC_NOP;
-	frameData->cmdHead->next = NULL;
+	frameData[frameDataBuffer]->cmdHead = frameData[frameDataBuffer]->cmdTail = (emptyCommand_t *)R_FrameAlloc( sizeof( *frameData[frameDataBuffer]->cmdHead ) );
+	frameData[frameDataBuffer]->cmdHead->commandId = RC_NOP;
+	frameData[frameDataBuffer]->cmdHead->next = NULL;
 }
 
 /*
@@ -533,50 +539,39 @@ SetBackEndRenderer
 Check for changes in the back end renderSystem, possibly invalidating cached data
 ==================
 */
-void idRenderSystemLocal::SetBackEndRenderer() {
-	if ( !r_renderer.IsModified() ) {
+void idRenderSystemLocal::SetBackEndRenderer( void ) 
+{
+	if ( !r_renderer.IsModified() ) 
 		return;
-	}
 
 	bool oldVPstate = backEndRendererHasVertexPrograms;
 
 	backEndRenderer = BE_BAD;
 
-	if ( idStr::Icmp( r_renderer.GetString(), "arb" ) == 0 ) {
+	if ( idStr::Icmp( r_renderer.GetString(), "arb" ) == 0 )
 		backEndRenderer = BE_ARB;
-	} else if ( idStr::Icmp( r_renderer.GetString(), "arb2" ) == 0 ) {
-		if ( glConfig.allowARB2Path ) {
+	else if ( idStr::Icmp( r_renderer.GetString(), "arb2" ) == 0 ) 
+	{
+		if ( glConfig.allowARB2Path ) 
 			backEndRenderer = BE_ARB2;
-		}
-	} else if ( idStr::Icmp( r_renderer.GetString(), "nv10" ) == 0 ) {
-		if ( glConfig.allowNV10Path ) {
-			backEndRenderer = BE_NV10;
-		}
-	} else if ( idStr::Icmp( r_renderer.GetString(), "nv20" ) == 0 ) {
-		if ( glConfig.allowNV20Path ) {
-			backEndRenderer = BE_NV20;
-		}
-	} else if ( idStr::Icmp( r_renderer.GetString(), "r200" ) == 0 ) {
-		if ( glConfig.allowR200Path ) {
-			backEndRenderer = BE_R200;
-		}
-	}
+	} 
+	else if ( idStr::Icmp( r_renderer.GetString(), "glsl" ) == 0 ) 
+	{
+		if ( glConfig.allowGLSLPath ) 
+			backEndRenderer = BE_GLSL;
+	} 
 
 	// fallback
-	if ( backEndRenderer == BE_BAD ) {
+	if ( backEndRenderer == BE_BAD ) 
+	{
 		// choose the best
-		if ( glConfig.allowARB2Path ) {
+		if ( glConfig.allowARB2Path ) 
 			backEndRenderer = BE_ARB2;
-		} else if ( glConfig.allowR200Path ) {
-			backEndRenderer = BE_R200;
-		} else if ( glConfig.allowNV20Path ) {
-			backEndRenderer = BE_NV20;
-		} else if ( glConfig.allowNV10Path ) {
-			backEndRenderer = BE_NV10;
-		} else {
+		else if ( glConfig.allowGLSLPath )
+			backEndRenderer = BE_GLSL; 
+		else 
 			// the others are considered experimental
 			backEndRenderer = BE_ARB;
-		}
 	}
 
 	backEndRendererHasVertexPrograms = false;
@@ -586,19 +581,13 @@ void idRenderSystemLocal::SetBackEndRenderer() {
 	case BE_ARB:
 		common->Printf( "using ARB renderSystem\n" );
 		break;
-	case BE_NV10:
-		common->Printf( "using NV10 renderSystem\n" );
-		break;
-	case BE_NV20:
-		common->Printf( "using NV20 renderSystem\n" );
-		backEndRendererHasVertexPrograms = true;
-		break;
-	case BE_R200:
-		common->Printf( "using R200 renderSystem\n" );
-		backEndRendererHasVertexPrograms = true;
-		break;
 	case BE_ARB2:
 		common->Printf( "using ARB2 renderSystem\n" );
+		backEndRendererHasVertexPrograms = true;
+		backEndRendererMaxLight = 999;
+		break;
+	case BE_GLSL:
+		common->Printf( "using GLSL renderSystem\n" );
 		backEndRendererHasVertexPrograms = true;
 		backEndRendererMaxLight = 999;
 		break;
@@ -609,11 +598,11 @@ void idRenderSystemLocal::SetBackEndRenderer() {
 	// clear the vertex cache if we are changing between
 	// using vertex programs and not, because specular and
 	// shadows will be different data
-	if ( oldVPstate != backEndRendererHasVertexPrograms ) {
+	if ( oldVPstate != backEndRendererHasVertexPrograms ) 
+	{
 		vertexCache.PurgeAll();
-		if ( primaryWorld ) {
+		if ( primaryWorld )
 			primaryWorld->FreeInteractions();
-		}
 	}
 
 	r_renderer.ClearModified();
@@ -705,12 +694,12 @@ EndFrame
 Returns the number of msec spent in the back end
 =============
 */
-void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
+void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) 
+{
 	emptyCommand_t *cmd;
 
-	if ( !glConfig.isInitialized ) {
+	if ( !glConfig.isInitialized ) 
 		return;
-	}
 
 	// close any gui drawing
 	guiModel->EmitFullScreen();
@@ -747,14 +736,13 @@ void idRenderSystemLocal::EndFrame( int *frontEndMsec, int *backEndMsec ) {
 	// we can now release the vertexes used this frame
 	vertexCache.EndFrame();
 
-	if ( session->writeDemo ) {
+	if ( session->writeDemo ) 
+	{
 		session->writeDemo->WriteInt( DS_RENDER );
 		session->writeDemo->WriteInt( DC_END_FRAME );
-		if ( r_showDemo.GetBool() ) {
+		if ( r_showDemo.GetBool() ) 
 			common->Printf( "write DC_END_FRAME\n" );
-		}
 	}
-
 }
 
 /*
@@ -1038,4 +1026,21 @@ bool idRenderSystemLocal::UploadImage( const char *imageName, const byte *data, 
 	image->UploadScratch( data, width, height );
 	image->SetImageFilterAndRepeat();
 	return true;
+}
+
+void idRenderSystemLocal::RenderThread(void)
+{
+	/// 
+	GLimp_ActivateContext();
+
+	 while ( true )
+	 {
+		auto frameData = static_cast<emptyCommand_t*>( GLimp_BackEndSleep() );
+		if ( frameData )
+			RB_ExecuteBackEndCommands( frameData );
+
+		GLimp_WakeFrontEnd();
+	 }
+
+	GLimp_DeactivateContext();
 }

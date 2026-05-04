@@ -29,7 +29,7 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 //
 // Only include here, to don't leak to typeInfo executable the main entry point 
 //#define SDL_MAIN_HANDLED
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 #include "common/console.h"
 #include "common/window.h"
@@ -46,50 +46,6 @@ idSys *				sys = &sysLocal;
 							/*	FPU_EXCEPTION_NUMERIC_UNDERFLOW |		*/	\
 							/*	FPU_EXCEPTION_INEXACT_RESULT |			*/	\
 								0
-
-static void Sys_CreateWindow( void )
-{
-	SDL_Rect win = { SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480 };
-	assert( !sysVars.window );
-	sysVars.window = new btWindow();
-
-	// Create a small hiden window, and show and recise when the renderer is initialized
-	sysVars.window->Create( GAME_NAME, win, SDL_WINDOW_HIDDEN | SDL_WINDOW_OPENGL );
-}
-
-static void Sys_DestroyWindow( void )
-{
-	if (sysVars.window)
-		sysVars.window->Destroy();
-
-	SAFE_DELETE( sysVars.window );
-}
-
-/*
-==============
-Sys_ShowWindow
-==============
-*/
-void Sys_ShowWindow( bool show )
-{
-	assert( sysVars.window != nullptr );
-	if (show)
-		sysVars.window->Show();
-	else
-		sysVars.window->Hide();
-}
-
-/*
-==============
-Sys_IsWindowVisible
-==============
-*/
-bool Sys_IsWindowVisible( void )
-{
-	assert( sysVars.window != nullptr );
-	return sysVars.window->IsFlagActive( SDL_WINDOW_SHOWN );
-}
-
 /*
 ==============
 Sys_Quit
@@ -97,11 +53,11 @@ Sys_Quit
 */
 void Sys_Quit( void )
 {
-	timeEndPeriod( 1 );
 	Sys_ShutdownInput();
 	Sys_DestroyConsole();
 	Sys_ShutDownOpenGL();
 #if _WIN32 || _WIN64
+	timeEndPeriod( 1 );
 	ExitProcess( 0 );
 #endif
 }
@@ -276,3 +232,23 @@ int main( int argc, char *argv[] )
 
 	return 0;
 };
+
+void Sys_Sleep( uint32_t msec )
+{
+	SDL_Delay( msec );
+}
+
+uint64_t Sys_Milliseconds( void )
+{
+	return SDL_GetTicks();
+}
+
+uint32_t		Sys_GetSystemRam( void )
+{
+	return SDL_GetSystemRAM();
+}
+
+uint32_t	Sys_GetVideoRam( void )
+{
+	return 128;
+}

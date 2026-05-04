@@ -1485,35 +1485,30 @@ void Com_ExecMachineSpec_f( const idCmdArgs &args ) {
 		cvarSystem->SetCVarBool( "r_forceLoadImages", false, CVAR_ARCHIVE );
 	}
 
+#if 0
 	bool oldCard = false;
 	bool nv10or20 = false;
 	renderSystem->GetCardCaps( oldCard, nv10or20 );
-	if ( oldCard ) {
+	if ( oldCard ) 
+	{
 		cvarSystem->SetCVarBool( "g_decals", false, CVAR_ARCHIVE );
 		cvarSystem->SetCVarBool( "g_projectileLights", false, CVAR_ARCHIVE );
 		cvarSystem->SetCVarBool( "g_doubleVision", false, CVAR_ARCHIVE );
 		cvarSystem->SetCVarBool( "g_muzzleFlash", false, CVAR_ARCHIVE );
-	} else {
+	} 
+	else
+#endif 
+	{
 		cvarSystem->SetCVarBool( "g_decals", true, CVAR_ARCHIVE );
 		cvarSystem->SetCVarBool( "g_projectileLights", true, CVAR_ARCHIVE );
 		cvarSystem->SetCVarBool( "g_doubleVision", true, CVAR_ARCHIVE );
 		cvarSystem->SetCVarBool( "g_muzzleFlash", true, CVAR_ARCHIVE );
 	}
-	if ( nv10or20 ) {
-		cvarSystem->SetCVarInteger( "image_useNormalCompression", 1, CVAR_ARCHIVE );
-	}
 
-#if MACOS_X
-	// On low settings, G4 systems & 64MB FX5200/NV34 Systems should default shadows off
-	bool oldArch;
-	int vendorId, deviceId, cpuId;
-	OSX_GetVideoCard( vendorId, deviceId );
-	OSX_GetCPUIdentification( cpuId, oldArch );
-	bool isFX5200 = vendorId == 0x10DE && ( deviceId & 0x0FF0 ) == 0x0320;
-	if ( ( oldArch || ( isFX5200 && Sys_GetVideoRam() < 128 ) ) && com_machineSpec.GetInteger() == 0 ) {
-		cvarSystem->SetCVarBool( "r_shadows", false, CVAR_ARCHIVE );
-	} else {
-		cvarSystem->SetCVarBool( "r_shadows", true, CVAR_ARCHIVE );
+#if 0
+	if ( nv10or20 ) 
+	{
+		cvarSystem->SetCVarInteger( "image_useNormalCompression", 1, CVAR_ARCHIVE );
 	}
 #endif
 }
@@ -2454,15 +2449,9 @@ void idCommonLocal::Frame( void ) {
 
 		// set idLib frame number for frame based memory dumps
 		idLib::frameNumber = com_frameNumber;
-
-		// the FPU stack better be empty at this point or some bad code or compiler bug left values on the stack
-		if ( !Sys_FPU_StackIsEmpty() ) {
-			Printf( Sys_FPU_GetState() );
-			FatalError( "idCommon::Frame: the FPU stack is not empty at the end of the frame\n" );
-		}
 	}
-
-	catch( idException & ) {
+	catch( idException & ) 
+	{
 		return;			// an ERP_DROP was thrown
 	}
 }
@@ -2721,23 +2710,26 @@ void idCommonLocal::SetMachineSpec( void ) {
 	double ghz = Sys_ClockTicksPerSecond() * 0.000000001f;
 	int vidRam = Sys_GetVideoRam();
 	int sysRam = Sys_GetSystemRam();
-	bool oldCard = false;
-	bool nv10or20 = false;
 
-	renderSystem->GetCardCaps( oldCard, nv10or20 );
+	Printf( "Detected\n \t%.2f GHz CPU\n\t%i MB of System memory\n\t%i MB of Video memory on %s\n\n", ghz, sysRam, vidRam, "an optimal video architecture" );
 
-	Printf( "Detected\n \t%.2f GHz CPU\n\t%i MB of System memory\n\t%i MB of Video memory on %s\n\n", ghz, sysRam, vidRam, ( oldCard ) ? "a less than optimal video architecture" : "an optimal video architecture" );
-
-	if ( ghz >= 2.75f && vidRam >= 512 && sysRam >= 1024 && !oldCard ) {
+	if ( ghz >= 2.75f && vidRam >= 512 && sysRam >= 1024 ) 
+	{
 		Printf( "This system qualifies for Ultra quality!\n" );
 		com_machineSpec.SetInteger( 3 );
-	} else if ( ghz >= ( ( cpu & CPUID_AMD ) ? 1.9f : 2.19f ) && vidRam >= 256 && sysRam >= 512 && !oldCard ) {
+	} 
+	else if ( ghz >= ( ( cpu & CPUID_AMD ) ? 1.9f : 2.19f ) && vidRam >= 256 && sysRam >= 512 ) 
+	{
 		Printf( "This system qualifies for High quality!\n" );
 		com_machineSpec.SetInteger( 2 );
-	} else if ( ghz >= ( ( cpu & CPUID_AMD ) ? 1.1f : 1.25f ) && vidRam >= 128 && sysRam >= 384 ) {
+	} 
+	else if ( ghz >= ( ( cpu & CPUID_AMD ) ? 1.1f : 1.25f ) && vidRam >= 128 && sysRam >= 384 ) 
+	{
 		Printf( "This system qualifies for Medium quality.\n" );
 		com_machineSpec.SetInteger( 1 );
-	} else {
+	} 
+	else 
+	{
 		Printf( "This system qualifies for Low quality.\n" );
 		com_machineSpec.SetInteger( 0 );
 	}

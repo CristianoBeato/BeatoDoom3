@@ -277,8 +277,7 @@ void RB_RenderDrawSurfListWithFunction( drawSurf_t **drawSurfs, int numDrawSurfs
 RB_RenderDrawSurfChainWithFunction
 ======================
 */
-void RB_RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs, 
-										void (*triFunc_)( const drawSurf_t *) ) {
+void RB_RenderDrawSurfChainWithFunction( const drawSurf_t *drawSurfs, void (*triFunc_)( const drawSurf_t *) ) {
 	const drawSurf_t		*drawSurf;
 
 	backEnd.currentSpace = NULL;
@@ -631,7 +630,8 @@ void R_SetDrawInteraction( const shaderStage_t *surfaceStage, const float *surfa
 		matrix[1][3] = 0;
 	}
 
-	if ( color ) {
+	if ( color ) 
+	{
 		for ( int i = 0 ; i < 4 ; i++ ) {
 			color[i] = surfaceRegs[surfaceStage->color.registers[i]];
 			// clamp here, so card with greater range don't look different.

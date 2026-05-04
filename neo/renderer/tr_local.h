@@ -365,7 +365,8 @@ typedef struct viewEntity_s {
 const int	MAX_CLIP_PLANES	= 1;				// we may expand this to six for some subview issues
 
 // viewDefs are allocated on the frame temporary stack memory
-typedef struct viewDef_s {
+typedef struct viewDef_s 
+{
 	// specified in the call to DrawScene()
 	renderView_t		renderView;
 
@@ -542,7 +543,9 @@ typedef struct {
 	emptyCommand_t	*cmdHead, *cmdTail;		// may be of other command type based on commandId
 } frameData_t;
 
-extern	frameData_t	*frameData;
+extern 	uint32_t 		frameDataBuffer;
+extern	frameData_t*	frameData[SMP_FRAMES];
+extern	frameData_t*	frame;
 
 //=======================================================================
 
@@ -669,12 +672,11 @@ typedef struct {
 const int MAX_GUI_SURFACES	= 1024;		// default size of the drawSurfs list for guis, will
 										// be automatically expanded as needed
 
-typedef enum {
+typedef enum 
+{
 	BE_ARB,
-	BE_NV10,
-	BE_NV20,
-	BE_R200,
 	BE_ARB2,
+	BE_GLSL,
 	BE_BAD
 } backEndName_t;
 
@@ -729,9 +731,11 @@ public:
 	virtual void			CaptureRenderToImage( const char *imageName );
 	virtual void			CaptureRenderToFile( const char *fileName, bool fixAlpha );
 	virtual void			UnCrop();
-	virtual void			GetCardCaps( bool &oldCard, bool &nv10or20 );
 	virtual bool			UploadImage( const char *imageName, const byte *data, int width, int height );
-
+	/// BEATO Begin:
+	virtual void 				RenderThread( void );
+	/// BEATO End
+	
 public:
 	// internal functions
 							idRenderSystemLocal( void );
@@ -740,6 +744,7 @@ public:
 	void					Clear( void );
 	void					SetBackEndRenderer();			// sets tr.backEndRenderer based on cvars
 	void					RenderViewToViewport( const renderView_t *renderView, idScreenRect *viewport );
+
 
 public:
 	// renderer globals
@@ -841,10 +846,7 @@ extern idCVar r_flareSize;				// scale the flare deforms from the material def
 extern idCVar r_gamma;					// changes gamma tables
 extern idCVar r_brightness;				// changes gamma tables
 
-extern idCVar r_renderer;				// arb, nv10, nv20, r200, gl2, etc
-
-extern idCVar r_cgVertexProfile;		// arbvp1, vp20, vp30
-extern idCVar r_cgFragmentProfile;		// arbfp1, fp30
+extern idCVar r_renderer;				// arb, gl2, glsl etc
 
 extern idCVar r_checkBounds;			// compare all surface bounds with precalculated ones
 
@@ -987,6 +989,8 @@ extern idCVar r_materialOverride;		// override all materials
 
 extern idCVar r_debugRenderToTexture;
 
+extern idCVar r_enableSMPBackend;
+
 /*
 ====================================================================
 
@@ -1058,70 +1062,7 @@ void R_StencilShot( void );
 
 bool R_CheckExtension( char *name );
 
-
-/*
-====================================================================
-
-IMPLEMENTATION SPECIFIC FUNCTIONS
-
-====================================================================
-*/
-
-typedef struct {
-	int			width;
-	int			height;
-	bool		fullScreen;
-	bool		stereo;
-	int			displayHz;
-	int			multiSamples;
-} glimpParms_t;
-
-bool		GLimp_Init( glimpParms_t parms );
-// If the desired mode can't be set satisfactorily, false will be returned.
-// The renderer will then reset the glimpParms to "safe mode" of 640x480
-// fullscreen and try again.  If that also fails, the error will be fatal.
-
-bool		GLimp_SetScreenParms( glimpParms_t parms );
-// will set up gl up with the new parms
-
-void		GLimp_Shutdown( void );
-// Destroys the rendering context, closes the window, resets the resolution,
-// and resets the gamma ramps.
-
-void		GLimp_SwapBuffers( void );
-// Calls the system specific swapbuffers routine, and may also perform
-// other system specific cvar checks that happen every frame.
-// This will not be called if 'r_drawBuffer GL_FRONT'
-
-void		GLimp_SetGamma( unsigned short red[256], 
-						    unsigned short green[256],
-							unsigned short blue[256] );
-// Sets the hardware gamma ramps for gamma and brightness adjustment.
-// These are now taken as 16 bit values, so we can take full advantage
-// of dacs with >8 bits of precision
-
-
-bool		GLimp_SpawnRenderThread( void (*function)( void ) );
-// Returns false if the system only has a single processor
-
-void *		GLimp_BackEndSleep( void );
-void		GLimp_FrontEndSleep( void );
-void		GLimp_WakeBackEnd( void *data );
-// these functions implement the dual processor syncronization
-
-void		GLimp_ActivateContext( void );
-void		GLimp_DeactivateContext( void );
-// These are used for managing SMP handoffs of the OpenGL context
-// between threads, and as a performance tunining aid.  Setting
-// 'r_skipRenderContext 1' will call GLimp_DeactivateContext() before
-// the 3D rendering code, and GLimp_ActivateContext() afterwards.  On
-// most OpenGL implementations, this will result in all OpenGL calls
-// being immediate returns, which lets us guage how much time is
-// being spent inside OpenGL.
-
-void		GLimp_EnableLogging( bool enable );
-
-
+#include "GLimp.hpp"
 /*
 ====================================================================
 
@@ -1296,15 +1237,6 @@ DRAW_*
 */
 
 void	RB_ARB_DrawInteractions( void );
-
-void	R_R200_Init( void );
-void	RB_R200_DrawInteractions( void );
-
-void	R_NV10_Init( void );
-void	RB_NV10_DrawInteractions( void );
-
-void	R_NV20_Init( void );
-void	RB_NV20_DrawInteractions( void );
 
 void	R_ARB2_Init( void );
 void	RB_ARB2_DrawInteractions( void );
@@ -1564,12 +1496,12 @@ void R_InitFrameData( void );
 void R_ShutdownFrameData( void );
 int R_CountFrameData( void );
 void R_ToggleSmpFrame( void );
-void *R_FrameAlloc( int bytes );
-void *R_ClearedFrameAlloc( int bytes );
+void *R_FrameAlloc( size_t bytes );
+void *R_ClearedFrameAlloc( size_t bytes );
 void R_FrameFree( void *data );
 
-void *R_StaticAlloc( int bytes );		// just malloc with error checking
-void *R_ClearedStaticAlloc( int bytes );	// with memset
+void *R_StaticAlloc( size_t bytes );		// just malloc with error checking
+void *R_ClearedStaticAlloc( size_t bytes );	// with memset
 void R_StaticFree( void *data );
 
 
@@ -1683,5 +1615,6 @@ idScreenRect R_CalcIntersectionScissor( const idRenderLightLocal * lightDef,
 #include "RenderWorld_local.h"
 #include "GuiModel.h"
 #include "VertexCache.h"
+#include "draw_glsl.hpp"
 
 #endif /* !__TR_LOCAL_H__ */

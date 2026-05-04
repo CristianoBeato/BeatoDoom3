@@ -34,18 +34,12 @@ source_group("" FILES ${RENDERER_SOURCES} )
 ## Backend
 ## 
 SET( RENDERER_BAKCEND_SOURCES
-	${CMAKE_CURRENT_SOURCE_DIR}/cg_explicit.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/draw_arb.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/draw_arb2.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/draw_glsl.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/draw_glsl.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/draw_common.cpp
-#	${CMAKE_CURRENT_SOURCE_DIR}/draw_exp.cpp		#Mark as remove
-#	${CMAKE_CURRENT_SOURCE_DIR}/draw_exp_stub.cpp	#Mark as remove
-	${CMAKE_CURRENT_SOURCE_DIR}/draw_nv10.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/draw_nv20.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/draw_r200.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/tr_backend.cpp
-	
-	${CMAKE_CURRENT_SOURCE_DIR}/cg_explicit.h
+	${CMAKE_CURRENT_SOURCE_DIR}/tr_backend.cpp	
 	)
 
 source_group("Backend" FILES ${RENDERER_BAKCEND_SOURCES} )
@@ -132,8 +126,9 @@ source_group("Models" FILES ${RENDERER_MODELS_SOURCES} )
 ## OpenGL
 ## 
 SET( RENDERER_OPENGL_SOURCES
+	${CMAKE_CURRENT_SOURCE_DIR}/GLimp.cpp	
+	${CMAKE_CURRENT_SOURCE_DIR}/GLimp.hpp	
 	${CMAKE_CURRENT_SOURCE_DIR}/qgl.h
-	${CMAKE_CURRENT_SOURCE_DIR}/qgl_linked.h
 	)
 	
 source_group("OpenGL" FILES ${RENDERER_OPENGL_SOURCES} )
@@ -147,7 +142,6 @@ SET( RENDERER_RENDERWORL_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/RenderWorld_demo.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/RenderWorld_load.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/RenderWorld_portals.cpp
-
 	${CMAKE_CURRENT_SOURCE_DIR}/ModelOverlay.h
 	${CMAKE_CURRENT_SOURCE_DIR}/RenderWorld.h
 	${CMAKE_CURRENT_SOURCE_DIR}/RenderWorld_local.h

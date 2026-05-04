@@ -29,7 +29,7 @@ GNU General Public License which accompanied the Beato Tech 4 Source Code.
 #include "idlib/precompiled.h"
 #pragma hdrstop
 
-#include "idlib/toolsGui/GuiCommon.h"
+//#include "idlib/toolsGui/GuiCommon.h"
 #include "sys/sys_main.h"
 #include "window.h"
 #include "console.h"
@@ -276,12 +276,14 @@ btConsoleLog::~btConsoleLog( void )
 {
 }
 
+extern idCVar sys_viewlog;
+
 void btConsoleLog::CreateConsole( void )
 {
 	const char *DEDCLASS = WIN32_CONSOLE_CLASS;
 	SDL_Rect screen = {0 ,0, 540, 450};
 
-	int DEDSTYLE = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_POPUP_MENU;
+	int DEDSTYLE = SDL_WINDOW_OPENGL | SDL_WINDOW_POPUP_MENU;
 
 	m_consoleWindow = new btWindow();
 	if(!m_consoleWindow->Create( DEDCLASS, screen, DEDSTYLE ))
@@ -354,7 +356,7 @@ void btConsoleLog::CreateConsole( void )
 //	SendMessage( s_wcd.hwndInputLine, WM_SETFONT, (WPARAM)s_wcd.hfBufferFont, 0 );
 
 	// don't show it now that we have a splash screen up
-	if (sysVars.sys_viewlog.GetBool())
+	if ( sys_viewlog.GetBool() )
 	{
 		m_consoleWindow->Show();
 		m_consoleWindow->SetFocus();
@@ -372,7 +374,7 @@ void btConsoleLog::DestroyConsole( void )
 {
 	if (m_consoleRenderer)
 	{
-		SDL_GL_DeleteContext( m_consoleRenderer );
+		SDL_GL_DestroyContext( m_consoleRenderer );
 		m_consoleRenderer = nullptr;
 	}
 

@@ -485,13 +485,16 @@ void idRenderModelManagerLocal::FreeModelVertexCaches() {
 idRenderModelManagerLocal::BeginLevelLoad
 =================
 */
-void idRenderModelManagerLocal::BeginLevelLoad() {
+void idRenderModelManagerLocal::BeginLevelLoad( void ) 
+{
 	insideLevelLoad = true;
 
-	for ( int i = 0 ; i < models.Num() ; i++ ) {
+	for ( int i = 0 ; i < models.Num() ; i++ ) 
+	{
 		idRenderModel *model = models[i];
 
-		if ( com_purgeAll.GetBool() && model->IsReloadable() ) {
+		if ( com_purgeAll.GetBool() && model->IsReloadable() ) 
+		{
 			R_CheckForEntityDefsUsingModel( model );
 			model->PurgeModel();
 		}
@@ -500,7 +503,7 @@ void idRenderModelManagerLocal::BeginLevelLoad() {
 	}
 
 	// purge unused triangle surface memory
-	R_PurgeTriSurfData( frameData );
+	R_PurgeTriSurfData( frame );
 }
 
 /*
@@ -508,7 +511,8 @@ void idRenderModelManagerLocal::BeginLevelLoad() {
 idRenderModelManagerLocal::EndLevelLoad
 =================
 */
-void idRenderModelManagerLocal::EndLevelLoad() {
+void idRenderModelManagerLocal::EndLevelLoad( void ) 
+{
 	common->Printf( "----- idRenderModelManagerLocal::EndLevelLoad -----\n" );
 
 	int start = Sys_Milliseconds();
@@ -541,7 +545,7 @@ void idRenderModelManagerLocal::EndLevelLoad() {
 	}
 
 	// purge unused triangle surface memory
-	R_PurgeTriSurfData( frameData );
+	R_PurgeTriSurfData( frame );
 
 	// load any new ones
 	for ( int i = 0 ; i < models.Num() ; i++ ) {

@@ -486,31 +486,30 @@ R_FreeStaticTriSurf
 This will defer the free until the current frame has run through the back end.
 ==============
 */
-void R_FreeStaticTriSurf( srfTriangles_t *tri ) {
-	frameData_t		*frame;
-
-	if ( !tri ) {
+void R_FreeStaticTriSurf( srfTriangles_t *tri ) 
+{
+	if ( !tri ) 
 		return;
-	}
 
-	if ( tri->nextDeferredFree ) {
+	if ( tri->nextDeferredFree ) 
 		common->Error( "R_FreeStaticTriSurf: freed a freed triangle" );
-	}
-	frame = frameData;
-
-	if ( !frame ) {
+	
+	if ( !frame ) 
+	{
 		// command line utility, or rendering in editor preview mode ( force )
 		R_ReallyFreeStaticTriSurf( tri );
-	} else {
+	} 
+	else 
+	{
 #ifdef ID_DEBUG_MEMORY
 		R_CheckStaticTriSurfMemory( tri );
 #endif
-		tri->nextDeferredFree = NULL;
-		if ( frame->lastDeferredFreeTriSurf ) {
+		tri->nextDeferredFree = nullptr;
+		if ( frame->lastDeferredFreeTriSurf )
 			frame->lastDeferredFreeTriSurf->nextDeferredFree = tri;
-		} else {
+		else 
 			frame->firstDeferredFreeTriSurf = tri;
-		}
+		
 		frame->lastDeferredFreeTriSurf = tri;
 	}
 }
@@ -520,7 +519,8 @@ void R_FreeStaticTriSurf( srfTriangles_t *tri ) {
 R_AllocStaticTriSurf
 ==============
 */
-srfTriangles_t *R_AllocStaticTriSurf( void ) {
+srfTriangles_t *R_AllocStaticTriSurf( void ) 
+{
 	srfTriangles_t *tris = srfTrianglesAllocator.Alloc();
 	memset( tris, 0, sizeof( srfTriangles_t ) );
 	return tris;
@@ -533,7 +533,8 @@ R_CopyStaticTriSurf
 This only duplicates the indexes and verts, not any of the derived data.
 =================
 */
-srfTriangles_t *R_CopyStaticTriSurf( const srfTriangles_t *tri ) {
+srfTriangles_t *R_CopyStaticTriSurf( const srfTriangles_t *tri ) 
+{
 	srfTriangles_t	*newTri;
 
 	newTri = R_AllocStaticTriSurf();

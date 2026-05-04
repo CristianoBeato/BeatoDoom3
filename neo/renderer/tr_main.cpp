@@ -181,26 +181,29 @@ void R_ShowColoredScreenRect( const idScreenRect &rect, int colorIndex ) {
 R_ToggleSmpFrame
 ====================
 */
-void R_ToggleSmpFrame( void ) {
-	if ( r_lockSurfaces.GetBool() ) {
+void R_ToggleSmpFrame( void ) 
+{
+	if ( r_lockSurfaces.GetBool() )
 		return;
-	}
-	R_FreeDeferredTriSurfs( frameData );
+
+	R_FreeDeferredTriSurfs( frame );
 
 	// clear frame-temporary data
-	frameData_t		*frame;
+	
 	frameMemoryBlock_t	*block;
 
 	// update the highwater mark
 	R_CountFrameData();
 
-	frame = frameData;
+	frameDataBuffer = ( frameDataBuffer + 1 ) % SMP_FRAMES;
+	frame = frameData[frameDataBuffer];
 
 	// reset the memory allocation to the first block
 	frame->alloc = frame->memory;
 
 	// clear all the blocks
-	for ( block = frame->memory ; block ; block = block->next ) {
+	for ( block = frame->memory ; block ; block = block->next ) 
+	{
 		block->used = 0;
 	}
 
@@ -217,25 +220,28 @@ void R_ToggleSmpFrame( void ) {
 R_ShutdownFrameData
 =====================
 */
-void R_ShutdownFrameData( void ) {
-	frameData_t *frame;
+void R_ShutdownFrameData( void ) 
+{
 	frameMemoryBlock_t *block;
+	for ( uint32_t i = 0; i < SMP_FRAMES; i++)
+	{
+		// free any current data
+		frame = frameData[i];
+		if ( !frame ) 
+			return;
 
-	// free any current data
-	frame = frameData;
-	if ( !frame ) {
-		return;
+		R_FreeDeferredTriSurfs( frame );
+
+		frameMemoryBlock_t *nextBlock;
+		for ( block = frame->memory ; block ; block = nextBlock ) 
+		{
+			nextBlock = block->next;
+			Mem_Free( block );
+		}
+
+		Mem_Free( frame );
+		frameData[i] = nullptr;
 	}
-
-	R_FreeDeferredTriSurfs( frame );
-
-	frameMemoryBlock_t *nextBlock;
-	for ( block = frame->memory ; block ; block = nextBlock ) {
-		nextBlock = block->next;
-		Mem_Free( block );
-	}
-	Mem_Free( frame );
-	frameData = NULL;
 }
 
 /*
@@ -243,26 +249,28 @@ void R_ShutdownFrameData( void ) {
 R_InitFrameData
 =====================
 */
-void R_InitFrameData( void ) {
+void R_InitFrameData( void ) 
+{
 	int size;
-	frameData_t *frame;
 	frameMemoryBlock_t *block;
 
 	R_ShutdownFrameData();
 
-	frameData = (frameData_t *)Mem_ClearedAlloc( sizeof( *frameData ));
-	frame = frameData;
-	size = MEMORY_BLOCK_SIZE;
-	block = (frameMemoryBlock_t *)Mem_Alloc( size + sizeof( *block ) );
-	if ( !block ) {
-		common->FatalError( "R_InitFrameData: Mem_Alloc() failed" );
+	for ( uint32_t i = 0; i < SMP_FRAMES; i++)
+	{
+		frameData[i] = (frameData_t *)Mem_ClearedAlloc( sizeof( frameData_t ));
+		frame = frameData[i];
+		size = MEMORY_BLOCK_SIZE;
+		block = (frameMemoryBlock_t *)Mem_Alloc( size + sizeof( *block ) );
+		if ( !block ) 
+			common->FatalError( "R_InitFrameData: Mem_Alloc() failed" );
+		
+		block->size = size;
+		block->used = 0;
+		block->next = nullptr;
+		frame->memory = block;
+		frame->memoryHighwater = 0;
 	}
-	block->size = size;
-	block->used = 0;
-	block->next = NULL;
-	frame->memory = block;
-	frame->memoryHighwater = 0;
-
 	R_ToggleSmpFrame();
 }
 
@@ -271,24 +279,22 @@ void R_InitFrameData( void ) {
 R_CountFrameData
 ================
 */
-int R_CountFrameData( void ) {
-	frameData_t		*frame;
+int R_CountFrameData( void ) 
+{
 	frameMemoryBlock_t	*block;
-	int				count;
+	int	count;
 
 	count = 0;
-	frame = frameData;
-	for ( block = frame->memory ; block ; block=block->next ) {
+	for ( block = frame->memory ; block ; block=block->next ) 
+	{
 		count += block->used;
-		if ( block == frame->alloc ) {
+		if ( block == frame->alloc ) 
 			break;
-		}
 	}
 
 	// note if this is a new highwater mark
-	if ( count > frame->memoryHighwater ) {
+	if ( count > frame->memoryHighwater ) 
 		frame->memoryHighwater = count;
-	}
 
 	return count;
 }
@@ -362,17 +368,17 @@ The memory is NOT zero filled.
 Should part of this be inlined in a macro?
 ================
 */
-void *R_FrameAlloc( int bytes ) {
-	frameData_t		*frame;
+void *R_FrameAlloc( size_t bytes ) 
+{
 	frameMemoryBlock_t	*block;
 	void			*buf;
     
 	bytes = (bytes+16)&~15;
 	// see if it can be satisfied in the current block
-	frame = frameData;
 	block = frame->alloc;
 
-	if ( block->size - block->used >= bytes ) {
+	if ( block->size - block->used >= bytes ) 
+	{
 		buf = block->base + block->used;
 		block->used += bytes;
 		return buf;
@@ -382,17 +388,18 @@ void *R_FrameAlloc( int bytes ) {
 	block = block->next;
 	// create a new block if we are at the end of
 	// the chain
-	if ( !block ) {
+	if ( !block ) 
+	{
 		int		size;
 
 		size = MEMORY_BLOCK_SIZE;
 		block = (frameMemoryBlock_t *)Mem_Alloc( size + sizeof( *block ) );
-		if ( !block ) {
+		if ( !block ) 
 			common->FatalError( "R_FrameAlloc: Mem_Alloc() failed" );
-		}
+		
 		block->size = size;
 		block->used = 0;
-		block->next = NULL;
+		block->next = nullptr;
 		frame->alloc->next = block;
 	}
 

@@ -24,15 +24,15 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 */
 
 #include "idlib/precompiled.h"
-#pragma hdrstop
-
 #include "common/console.h"
 #include "sys_main.h"
 
+#include <SDL3/SDL_log.h>
+
 #define MAXPRINTMSG 4096
 
-idCVar sysVars_t::sys_viewlog( "sys_viewlog", "0", CVAR_SYSTEM | CVAR_INTEGER, "" );
-idCVar sysVars_t::sys_outputEditString( "sys_outputEditString", "1", CVAR_SYSTEM | CVAR_BOOL, "" );
+idCVar sys_viewlog( "sys_viewlog", "0", CVAR_SYSTEM | CVAR_INTEGER, "" );
+idCVar sys_outputEditString( "sys_outputEditString", "1", CVAR_SYSTEM | CVAR_BOOL, "" );
 
 #ifdef _WIN32
 idCVar win_outputDebugString( "win_outputDebugString", "0", CVAR_SYSTEM | CVAR_BOOL, "" );
@@ -54,7 +54,7 @@ void Sys_DestroyConsole( void )
 	SAFE_DELETE( sysVars.console );
 }
 
-static void Sys_ShowConsole( int visLevel, bool quitOnClose )
+void Sys_ShowConsole( int visLevel, bool quitOnClose )
 {
 	assert( sysVars.console );
 	sysVars.console->ShowConsole( visLevel, quitOnClose );
@@ -72,8 +72,7 @@ void Sys_Error( const char *error, ... )
 {
 	va_list		argptr;
 	char		text[4096];
-	MSG        msg;
-
+	
 	va_start( argptr, error );
 	vsprintf( text, error, argptr );
 	va_end( argptr );
@@ -84,8 +83,6 @@ void Sys_Error( const char *error, ... )
 
 	sysVars.console->SetErrorText( text );
 	sysVars.console->ShowConsole( 1, true );
-
-	timeEndPeriod( 1 );
 
 	Sys_ShutdownInput();
 
@@ -131,7 +128,7 @@ void Sys_Printf( const char *fmt, ... )
 	std::cerr << msg;
 #endif
 
-	if (sysVars.sys_outputEditString.GetBool())
+	if (sys_outputEditString.GetBool())
 		sysVars.console->AppendText( msg );
 }
 
@@ -150,7 +147,7 @@ void Sys_DebugPrintf( const char *fmt, ... )
 	msg[sizeof( msg ) - 1] = '\0';
 	va_end( argptr );
 
-	OutputDebugString( msg );
+	//OutputDebugString( msg );
 }
 
 /*

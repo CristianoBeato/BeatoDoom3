@@ -26,18 +26,14 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #include "idlib/precompiled.h"
 #pragma hdrstop
 
-#include <SDL_filesystem.h>
-
-// Requires c++ 17
-#include <filesystem>
-namespace fs = std::filesystem;
-
+#include <SDL3/SDL_filesystem.h>
 
 #include "sys_platform.h"
 #include "sys_main.h"
 
-static idStr savePath = idStr();
-static idStr basePath = idStr();
+#if SDL_PLATFORM_LINUX
+#	include <sys/stat.h>
+#endif
 
 /*
 ==============
@@ -46,15 +42,15 @@ Sys_Cwd
 */
 const char *Sys_Cwd( void )
 {
-	static char cwd[MAX_OSPATH];
-#if 1
-	fs::path cwdPath = fs::current_path();
-	strcpy( cwd, cwdPath.u8string().c_str() );
-#else
-	_getcwd( cwd, sizeof( cwd ) - 1 );
-	cwd[MAX_OSPATH - 1] = 0;
-#endif
-	return cwd;
+	static idStr k_cwdPath = idStr();
+	if( k_cwdPath.IsEmpty() )
+	{
+		auto currentWorkingDirectory = SDL_GetCurrentDirectory();
+		k_cwdPath = currentWorkingDirectory;
+		SDL_free( currentWorkingDirectory );
+	}
+	
+	return k_cwdPath.c_str();
 }
 
 /*
@@ -64,15 +60,9 @@ Sys_Mkdir
 */
 void Sys_Mkdir( const char *path )
 {
-#if 1
-	fs::path pathToCreate = path;
-	if (!fs::create_directory( pathToCreate ))
-		common->Error( " can't create dir %s\n", path );
-#else
-	_mkdir( path );
-#endif
+	if( !SDL_CreateDirectory( path ) )
+		idLib::Error( SDL_GetError() );
 }
-
 
 /*
 =================
@@ -81,13 +71,13 @@ Sys_FileTimeStamp
 */
 ID_TIME_T Sys_FileTimeStamp( FILE *fp )
 {
-#if _WIN32 || _WIN64
+#if SDL_PLATFORM_WINDOWS
 	struct _stat st;
 	_fstat( _fileno( fp ), &st );
 	return (long)st.st_mtime;
 #else
-	struct stat st;
-	fstat( fileno( fp ), &st );
+	struct stat64 st;
+	fstat64( fileno( fp ), &st );
 	return st.st_mtime;
 #endif
 }
@@ -109,21 +99,27 @@ Sys_DefaultBasePath
 */
 const char *Sys_DefaultBasePath( void )
 {
-	if (basePath.IsEmpty())
+	static idStr k_basePath = idStr();
+	if ( k_basePath.IsEmpty() )
 	{
-		char* save_path = SDL_GetBasePath();
+		auto save_path = SDL_GetBasePath();
 		if (save_path)
 		{
-			basePath = SDL_strdup( save_path );
-			SDL_free( save_path );
+			k_basePath = SDL_strdup( save_path );
+			SDL_free( const_cast<char*>( save_path ) );
 		}
 		else
-			basePath = Sys_Cwd();
+			k_basePath = Sys_Cwd();
 
-		basePath.BackSlashesToSlashes();
+		k_basePath.BackSlashesToSlashes();
+		
+		// Remove the trailing slash if present to maintain the idTech 4 standard
+		// (Ex: "C:/Doom3/" becomes "C:/Doom3")
+        if ( k_basePath.Length() > 0 && k_basePath[k_basePath.Length() - 1] == '/' )
+            k_basePath.StripTrailing( '/' );
 	}
 
-	return basePath.c_str();
+	return k_basePath.c_str();
 }
 
 /*
@@ -133,25 +129,27 @@ Sys_DefaultSavePath
 */
 const char *Sys_DefaultSavePath( void )
 {
-	//Beato: uses getenv() on linux, because sdl set in "/home/user name/.local/share/SAVE_PATH/"
-#if defined(__linux__)
-	sprintf( savePath, "%s/.%s", getenv( "HOME" ), SAVE_PATH );
-#else
-	if (savePath.IsEmpty())
+	static idStr k_savePath = idStr();
+	if ( k_savePath.IsEmpty() )
 	{
 		char* save_path = SDL_GetPrefPath( "BeatoSoftware", "BeatoD3" );
 		if (save_path)
 		{
-			savePath = SDL_strdup( save_path );
+			k_savePath = SDL_strdup( save_path );
 			SDL_free( save_path );
 		}
 		else // if can't get a valid save path, save in game folder 
-			savePath = Sys_DefaultBasePath();
+			k_savePath = Sys_DefaultBasePath();
 
-		savePath.BackSlashesToSlashes();
+		k_savePath.BackSlashesToSlashes();
+
+		// Remove the trailing slash if present to maintain the idTech 4 standard
+		// (Ex: "C:/Doom3/" becomes "C:/Doom3")
+        if ( k_savePath.Length() > 0 && k_savePath[k_savePath.Length() - 1] == '/' )
+            k_savePath.StripTrailing( '/' );
 	}
-#endif
-	return savePath.c_str();
+
+	return k_savePath.c_str();
 }
 
 /*
@@ -161,9 +159,13 @@ Sys_EXEPath
 */
 const char *Sys_EXEPath( void )
 {
+#if 0
 	static char exe[MAX_OSPATH];
 	GetModuleFileName( NULL, exe, sizeof( exe ) - 1 );
 	return exe;
+#else
+	return Sys_Cwd();
+#endif 
 }
 
 /*
@@ -173,80 +175,41 @@ Sys_ListFiles
 */
 int Sys_ListFiles( const char *directory, const char *extension, idStrList &list )
 {
-	idStr		search;
+	int count = 0;
+	char pattern[MAX_OSPATH];
 
 	if (!extension)
 		extension = "";
 
-#if 1
-	fs::path path = directory;
-	for (const fs::directory_entry & entry : fs::directory_iterator( path ))
-	{
-		// passing a slash as extension will find directories
-		if (extension[0] == '/' && extension[1] == 0)
-		{
-			if (entry.is_directory())
-			{
-				fs::path subDirPath = entry.path();
-				idStr subDir = idStr( subDirPath.string().c_str() );
-				list.Append( subDir );
-			}
-		}
-		else
-		{
-			if ( entry.is_regular_file() )
-			{
-				fs::path filePath = entry.path();
-				fs::path fileExt = filePath.extension();
-				if (!fileExt.empty() && fileExt.string().compare( extension ))
-				{
-					idStr file = idStr( filePath.string().c_str() );
-					list.Append( file );
-				}
-				
-			}
-		}
-	}
-#else
-	struct _finddata_t findinfo;
-	int			findhandle;
-	int			flag;
-
-	
-
-	// passing a slash as extension will find directories
-	if (extension[0] == '/' && extension[1] == 0)
-	{
-		extension = "";
-		flag = 0;
-	}
-	else
-	{
-		flag = _A_SUBDIR;
-	}
-
-	sprintf( search, "%s\\*%s", directory, extension );
-
-	// search
 	list.Clear();
 
-	findhandle = _findfirst( search, &findinfo );
-	if (findhandle == -1)
+	// idTech commonly uses extensions like ".txt" or "txt"
+	// SDL_GlobDirectory uses shell standards (e.g., *.txt)
+	if (extension && extension[0] != '\0') 
 	{
-		return -1;
-	}
-
-	do
+		if (extension[0] == '.') 
+			SDL_snprintf( pattern, sizeof( pattern ), "*%s", extension );
+		else 
+			SDL_snprintf( pattern, sizeof( pattern ), "*.%s", extension );
+    } 
+	else 
 	{
-		if (flag ^ (findinfo.attrib & _A_SUBDIR))
+		SDL_strlcpy( pattern, "*", sizeof( pattern ) );
+    }
+	
+	// SDL_GlobDirectory returns an array of strings (char**)
+	// The SDL_GLOB_CASEINSENSITIVE parameter is useful for Linux
+	char **files = SDL_GlobDirectory( directory, pattern, SDL_GLOB_CASEINSENSITIVE, &count );
+	if ( files )
+	{
+		for ( int i = 0; i < count; i++ )
 		{
-			list.Append( findinfo.name );
+			list.Append( files[i] );
 		}
+
+		// In SDL3, we use SDL_free to release the returned array.
+        SDL_free(files);
 	}
-	while (_findnext( findhandle, &findinfo ) != -1);
 
-	_findclose( findhandle );
-#endif
 	return list.Num();
-
 }

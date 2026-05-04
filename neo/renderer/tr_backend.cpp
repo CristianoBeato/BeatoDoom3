@@ -30,10 +30,10 @@ If you have questions concerning this license or the applicable additional terms
 
 #include "tr_local.h"
 
-
-frameData_t		*frameData;
+uint32_t		frameDataBuffer = 0;
+frameData_t		*frameData[SMP_FRAMES];
+frameData_t		*frame;
 backEndState_t	backEnd;
-
 
 /*
 ======================
@@ -112,9 +112,8 @@ RB_LogComment
 void RB_LogComment( const char *comment, ... ) {
    va_list marker;
 
-	if ( !tr.logFile ) {
+	if ( !tr.logFile ) 
 		return;
-	}
 
 	fprintf( tr.logFile, "// " );
 	va_start( marker, comment );
@@ -132,10 +131,10 @@ void RB_LogComment( const char *comment, ... ) {
 GL_SelectTexture
 ====================
 */
-void GL_SelectTexture( int unit ) {
-	if ( backEnd.glState.currenttmu == unit ) {
+void GL_SelectTexture( int unit ) 
+{
+	if ( backEnd.glState.currenttmu == unit ) 
 		return;
-	}
 
 	if ( unit < 0 || unit >= glConfig.maxTextureUnits && unit >= glConfig.maxTextureImageUnits ) {
 		common->Warning( "GL_SelectTexture: unit = %i", unit );
@@ -158,15 +157,19 @@ This handles the flipping needed when the view being
 rendered is a mirored view.
 ====================
 */
-void GL_Cull( int cullType ) {
-	if ( backEnd.glState.faceCulling == cullType ) {
+void GL_Cull( int cullType ) 
+{
+	if ( backEnd.glState.faceCulling == cullType ) 
 		return;
-	}
 
-	if ( cullType == CT_TWO_SIDED ) {
+	if ( cullType == CT_TWO_SIDED ) 
+	{
 		qglDisable( GL_CULL_FACE );
-	} else  {
-		if ( backEnd.glState.faceCulling == CT_TWO_SIDED ) {
+	} 
+	else  
+	{
+		if ( backEnd.glState.faceCulling == CT_TWO_SIDED ) 
+		{
 			qglEnable( GL_CULL_FACE );
 		}
 
@@ -225,7 +228,8 @@ Clears the state delta bits, so the next GL_State
 will set every item
 =================
 */
-void GL_ClearStateDelta( void ) {
+void GL_ClearStateDelta( void ) 
+{
 	backEnd.glState.forceGlState = true;
 }
 

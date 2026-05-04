@@ -112,14 +112,18 @@ ARB_vertex_buffer_object
 The ARB_vertex_buffer_object will be bound
 ==============
 */
-void *idVertexCache::Position( vertCache_t *buffer ) {
-	if ( !buffer || buffer->tag == TAG_FREE ) {
+void *idVertexCache::Position( vertCache_t *buffer ) 
+{
+	if ( !buffer || buffer->tag == TAG_FREE ) 
+	{
 		common->FatalError( "idVertexCache::Position: bad vertCache_t" );
 	}
 
 	// the ARB vertex object just uses an offset
-	if ( buffer->vbo ) {
-		if ( r_showVertexCache.GetInteger() == 2 ) {
+	if ( buffer->vbo ) 
+	{
+		if ( r_showVertexCache.GetInteger() == 2 ) 
+		{
 			if ( buffer->tag == TAG_TEMP ) {
 				common->Printf( "GL_ARRAY_BUFFER_ARB = %i + %i (%i bytes)\n", buffer->vbo, buffer->offset, buffer->size ); 
 			} else {

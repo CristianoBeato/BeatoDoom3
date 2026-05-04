@@ -209,9 +209,6 @@ idCVar r_showSkel( "r_showSkel", "0", CVAR_RENDERER | CVAR_INTEGER, "draw the sk
 idCVar r_jointNameScale( "r_jointNameScale", "0.02", CVAR_RENDERER | CVAR_FLOAT, "size of joint names when r_showskel is set to 1" );
 idCVar r_jointNameOffset( "r_jointNameOffset", "0.5", CVAR_RENDERER | CVAR_FLOAT, "offset of joint names when r_showskel is set to 1" );
 
-idCVar r_cgVertexProfile( "r_cgVertexProfile", "best", CVAR_RENDERER | CVAR_ARCHIVE, "arbvp1, vp20, vp30" );     
-idCVar r_cgFragmentProfile( "r_cgFragmentProfile", "best", CVAR_RENDERER | CVAR_ARCHIVE, "arbfp1, fp30" );
-
 idCVar r_debugLineDepthTest( "r_debugLineDepthTest", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "perform depth test on debug lines" );
 idCVar r_debugLineWidth( "r_debugLineWidth", "1", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "width of debug lines" );
 idCVar r_debugArrowStep( "r_debugArrowStep", "120", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_INTEGER, "step size of arrow cone line rotation in degrees", 0, 120 );
@@ -220,6 +217,10 @@ idCVar r_debugPolygonFilled( "r_debugPolygonFilled", "1", CVAR_RENDERER | CVAR_B
 idCVar r_materialOverride( "r_materialOverride", "", CVAR_RENDERER, "overrides all materials", idCmdSystem::ArgCompletion_Decl<DECL_MATERIAL> );
 
 idCVar r_debugRenderToTexture( "r_debugRenderToTexture", "0", CVAR_RENDERER | CVAR_INTEGER, "" );
+
+/// BEATO Begin:
+idCVar r_enableSMPBackend( "r_enableSMPBackend", "0", CVAR_RENDERER | CVAR_ARCHIVE | CVAR_BOOL, "SMP Rendering" );
+/// BEATO End
 
 void ( APIENTRY * qglMultiTexCoord2fARB )( GLenum texture, GLfloat s, GLfloat t );
 void ( APIENTRY * qglMultiTexCoord2fvARB )( GLenum texture, GLfloat *st );
@@ -687,10 +688,8 @@ void R_InitOpenGL( void ) {
 
 	// parse our vertex and fragment programs, possibly disably support for
 	// one of the paths if there was an error
-	R_NV10_Init();
-	R_NV20_Init();
-	R_R200_Init();
 	R_ARB2_Init();
+	R_GLSL_Init();
 
 	cmdSystem->AddCommand( "reloadARBprograms", R_ReloadARBPrograms_f, CMD_FL_RENDERER, "reloads ARB programs" );
 	R_ReloadARBPrograms_f( idCmdArgs() );
@@ -1804,29 +1803,15 @@ void GfxInfo_f( const idCmdArgs &args ) {
 	const char *active[2] = { "", " (ACTIVE)" };
 	common->Printf( "ARB path ENABLED%s\n", active[tr.backEndRenderer == BE_ARB] );
 
-	if ( glConfig.allowNV10Path ) {
-		common->Printf( "NV10 path ENABLED%s\n", active[tr.backEndRenderer == BE_NV10] );
-	} else {
-		common->Printf( "NV10 path disabled\n" );
-	}
-
-	if ( glConfig.allowNV20Path ) {
-		common->Printf( "NV20 path ENABLED%s\n", active[tr.backEndRenderer == BE_NV20] );
-	} else {
-		common->Printf( "NV20 path disabled\n" );
-	}
-
-	if ( glConfig.allowR200Path ) {
-		common->Printf( "R200 path ENABLED%s\n", active[tr.backEndRenderer == BE_R200] );
-	} else {
-		common->Printf( "R200 path disabled\n" );
-	}
-
-	if ( glConfig.allowARB2Path ) {
+	if ( glConfig.allowARB2Path ) 
 		common->Printf( "ARB2 path ENABLED%s\n", active[tr.backEndRenderer == BE_ARB2] );
-	} else {
+	else 
 		common->Printf( "ARB2 path disabled\n" );
-	}
+
+	if ( glConfig.allowGLSLPath ) 
+		common->Printf( "GLSL path ENABLED%s\n", active[tr.backEndRenderer == BE_GLSL] );
+	else 
+		common->Printf( "GLSL path disabled\n" );
 
 	//=============================
 
@@ -1852,19 +1837,17 @@ extern	PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT;
 	
 	bool tss = glConfig.twoSidedStencilAvailable || glConfig.atiTwoSidedStencilAvailable;
 
-	if ( !r_useTwoSidedStencil.GetBool() && tss ) {
+	if ( !r_useTwoSidedStencil.GetBool() && tss ) 
 		common->Printf( "Two sided stencil available but disabled\n" );
-	} else if ( !tss ) {
+	else if ( !tss )
 		common->Printf( "Two sided stencil not available\n" );
-	} else if ( tss ) {
+	else if ( tss )
 		common->Printf( "Using two sided stencil\n" );
-	}
 
-	if ( vertexCache.IsFast() ) {
+	if ( vertexCache.IsFast() ) 
 		common->Printf( "Vertex cache is fast\n" );
-	} else {
+	else 
 		common->Printf( "Vertex cache is SLOW\n" );
-	}
 }
 
 /*
@@ -1876,9 +1859,8 @@ void R_VidRestart_f( const idCmdArgs &args ) {
 	int	err;
 
 	// if OpenGL isn't started, do nothing
-	if ( !glConfig.isInitialized ) {
+	if ( !glConfig.isInitialized )
 		return;
-	}
 
 	bool full = true;
 	bool forceWindow = false;
@@ -2311,14 +2293,3 @@ idRenderSystemLocal::GetScreenHeight
 int idRenderSystemLocal::GetScreenHeight( void ) const {
 	return glConfig.vidHeight;
 }
-
-/*
-========================
-idRenderSystemLocal::GetCardCaps
-========================
-*/
-void idRenderSystemLocal::GetCardCaps( bool &oldCard, bool &nv10or20 ) {
-	nv10or20 = ( tr.backEndRenderer == BE_NV10 || tr.backEndRenderer == BE_NV20 );
-	oldCard = ( tr.backEndRenderer == BE_ARB || tr.backEndRenderer == BE_R200 || tr.backEndRenderer == BE_NV10 || tr.backEndRenderer == BE_NV20 );
-}
-

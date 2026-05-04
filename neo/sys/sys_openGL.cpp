@@ -27,8 +27,8 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #include "idlib/precompiled.h"
 #pragma hdrstop
 
-#include <SDL_mouse.h>
-#include <SDL_video.h>
+#include <SDL3/SDL_mouse.h>
+#include <SDL3/SDL_video.h>
 
 #include "common/window.h"
 #include "renderer/tr_local.h"
@@ -893,7 +893,7 @@ void InitDebugOutput( int inflags )
 	GLint flags = glGetInteger( GL_CONTEXT_FLAGS );
 	if (flags & GL_CONTEXT_FLAG_DEBUG_BIT)
 	{
-		// Habilita a saida de depuração do contexto 
+		// Habilita a saida de depuraï¿½ï¿½o do contexto 
 		// Enable context debug output 
 		glSetState( GL_DEBUG_OUTPUT, GL_TRUE );
 

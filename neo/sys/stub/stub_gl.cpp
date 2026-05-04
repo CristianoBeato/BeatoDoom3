@@ -385,9 +385,6 @@ void GLimp_ActivateContext() {};
 void GLimp_DeactivateContext() {};
 bool GLimp_SpawnRenderThread(void (*a)()) {return false;};
 
-static void StubFunction( void ) {};
-GLExtension_t GLimp_ExtensionPointer( const char *a) { return StubFunction; };
-
 bool GLimp_Init(glimpParms_t a) {return true;};
 void GLimp_SetGamma(unsigned short*a, unsigned short*b, unsigned short*c) {};
 void GLimp_Shutdown() {};

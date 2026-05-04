@@ -29,7 +29,7 @@ GNU General Public License which accompanied the Beato Tech 4 Source Code.
 #ifndef __WINDOW_H__
 #define __WINDOW_H__
 
-#include <SDL_video.h>
+#include <SDL3/SDL_video.h>
 
 class btWindow
 {

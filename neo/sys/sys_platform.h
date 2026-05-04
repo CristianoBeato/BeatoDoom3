@@ -34,8 +34,11 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 #include <SDL3/SDL_endian.h>
 
 #include <cstdint>
+#include <cstdio>
+#include <cstddef>
 #include <cstdarg>
 #include <algorithm>
+#include <cstring>
 
 /*
 #define _ARCH_x86_32_
@@ -157,8 +160,8 @@ along with Beato idTech 4  Source Code.  If not, see <http://www.gnu.org/license
 
 #elif  defined(  __linux__ ) // Linux distro build
 #define	BUILD_STRING				"linux"
-#define _alloca							alloca
-
+#define BUILD_OS_ID					1
+#define _alloca						alloca
 
 #define PATHSEPERATOR_STR				"/"
 #define PATHSEPERATOR_CHAR				'/'
