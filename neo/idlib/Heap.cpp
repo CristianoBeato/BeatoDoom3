@@ -142,8 +142,9 @@ Mem_CopyString
 */
 char *Mem_CopyString( const char *in ) 
 {
-	char* out = static_cast<char*>( SDL_malloc( std::strlen( in ) + 1 ) );
-	std::strcpy( out, in );
+	auto len = std::strlen( in );
+	char* out = static_cast<char*>( SDL_malloc( len + 1 ) );
+	std::strncpy( out, in, len );
 	return out;
 }
 
