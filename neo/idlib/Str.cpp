@@ -997,18 +997,21 @@ idStr::IsNumeric
 Checks a string to see if it contains only numerical values.
 ============
 */
-bool idStr::IsNumeric( const char *s ) {
+bool idStr::IsNumeric( const char *s ) 
+{
 	int		i;
 	bool	dot;
 
-	if ( *s == '-' ) {
+	if ( *s == '-' ) 
 		s++;
-	}
 
 	dot = false;
-	for ( i = 0; s[i]; i++ ) {
-		if ( !isdigit( s[i] ) ) {
-			if ( ( s[ i ] == '.' ) && !dot ) {
+	for ( i = 0; s[i]; i++ ) 
+	{
+		if ( !isdigit( s[i] ) ) 
+		{
+			if ( ( s[ i ] == '.' ) && !dot ) 
+			{
 				dot = true;
 				continue;
 			}
@@ -1026,17 +1029,27 @@ idStr::HasLower
 Checks if a string has any lowercase chars
 ============
 */
-bool idStr::HasLower( const char *s ) {
-	if ( !s ) {
+bool idStr::HasLower( const char *s ) 
+{
+	if ( !s ) 
 		return false;
-	}
 	
-	while ( *s ) {
+#if 0
+	while ( *s ) 
+	{
 		if ( CharIsLower( *s ) ) {
 			return true;
 		}
 		s++;
 	}
+#else
+	auto len = SDL_strlen( s );
+	for ( size_t i = 0; i < len; i++)
+	{
+		if( SDL_islower( s[i] ) )
+			return true;
+	}
+#endif
 	
 	return false;
 }
@@ -1048,18 +1061,30 @@ idStr::HasUpper
 Checks if a string has any uppercase chars
 ============
 */
-bool idStr::HasUpper( const char *s ) {
-	if ( !s ) {
+bool idStr::HasUpper( const char *s ) 
+{
+	if ( !s )
 		return false;
-	}
 	
-	while ( *s ) {
-		if ( CharIsUpper( *s ) ) {
+#if 0
+	while ( *s ) 
+	{
+		if ( CharIsUpper( *s ) ) 
+		{
 			return true;
 		}
 		s++;
 	}
+#else
+	auto len = SDL_strlen( s );
+	for ( size_t i = 0; i < len; i++)
+	{
+		if( SDL_isupper( s[i]) )
+			return true;
+	}
 	
+#endif
+
 	return false;
 }
 
@@ -1068,7 +1093,9 @@ bool idStr::HasUpper( const char *s ) {
 idStr::Cmp
 ================
 */
-int idStr::Cmp( const char *s1, const char *s2 ) {
+int idStr::Cmp( const char *s1, const char *s2 ) 
+{
+#if 0
 	int c1, c2, d;
 
 	do {
@@ -1082,6 +1109,9 @@ int idStr::Cmp( const char *s1, const char *s2 ) {
 	} while( c1 );
 
 	return 0;		// strings are equal
+#else
+	return SDL_strcmp( s1, s2 );
+#endif
 }
 
 /*
@@ -1413,9 +1443,8 @@ int idStr::LengthWithoutColors( const char *s ) {
 	int len;
 	const char *p;
 
-	if ( !s ) {
+	if ( !s ) 
 		return 0;
-	}
 
 	len = 0;
 	p = s;
@@ -1499,22 +1528,13 @@ idStr::vsnPrintf: always appends a trailing '\0', returns number of characters w
 or returns -1 on failure or if the buffer would be overflowed.
 ============
 */
-int idStr::vsnPrintf( char *dest, int size, const char *fmt, va_list argptr ) {
-	int ret;
-
-#ifdef _WIN32
-#undef _vsnprintf
-	ret = _vsnprintf( dest, size-1, fmt, argptr );
-#define _vsnprintf	use_idStr_vsnPrintf
-#else
-#undef vsnprintf
-	ret = vsnprintf( dest, size, fmt, argptr );
-#define vsnprintf	use_idStr_vsnPrintf
-#endif
+int idStr::vsnPrintf( char *dest, int size, const char *fmt, va_list argptr ) 
+{
+	int ret = SDL_vsnprintf( dest, size-1, fmt, argptr );
 	dest[size-1] = '\0';
-	if ( ret < 0 || ret >= size ) {
+	if ( ret < 0 || ret >= size ) 
 		return -1;
-	}
+	
 	return ret;
 }
 
@@ -1525,7 +1545,8 @@ sprintf
 Sets the value of the string using a printf interface.
 ============
 */
-int sprintf( idStr &string, const char *fmt, ... ) {
+int sprintf( idStr &string, const char *fmt, ... ) 
+{
 	int l;
 	va_list argptr;
 	char buffer[32000];
@@ -1546,7 +1567,8 @@ vsprintf
 Sets the value of the string using a vprintf interface.
 ============
 */
-int vsprintf( idStr &string, const char *fmt, va_list argptr ) {
+int vsprintf( idStr &string, const char *fmt, va_list argptr ) 
+{
 	int l;
 	char buffer[32000];
 	

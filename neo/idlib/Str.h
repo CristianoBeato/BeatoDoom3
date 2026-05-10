@@ -59,18 +59,48 @@ If you have questions concerning this license or the applicable additional terms
 #if defined( StrCmpNI )
 #undef StrCmpNI
 #endif
+
 #define StrCmpNI		use_idStr_Icmpn
 
-#define stricmp			idStr::Icmp		// use_idStr_Icmp
-#define _stricmp		use_idStr_Icmp
-#define strcasecmp		use_idStr_Icmp
-#define strnicmp		use_idStr_Icmpn
-#define _strnicmp		use_idStr_Icmpn
-#define _memicmp		use_idStr_Icmpn
-#define snprintf		use_idStr_snPrintf
-#define _snprintf		use_idStr_snPrintf
-#define vsnprintf		use_idStr_vsnPrintf
-#define _vsnprintf		use_idStr_vsnPrintf
+#ifndef stricmp
+#	define stricmp			idStr::Icmp		// use_idStr_Icmp
+#endif // stricmp
+
+#ifndef _stricmp
+#	define _stricmp			use_idStr_Icmp
+#endif // _stricmp
+
+#ifndef strcasecmp
+#	define strcasecmp		use_idStr_Icmp
+#endif // strcasecmp
+
+#ifndef strnicmp
+#	define strnicmp			use_idStr_Icmpn
+#endif
+
+#ifndef _strnicmp
+#	define _strnicmp		use_idStr_Icmpn
+#endif // _strnicmp
+
+#ifndef _memicmp
+#	define _memicmp			use_idStr_Icmpn
+#endif // _memicmp
+
+#ifndef snprintf
+#	define snprintf			use_idStr_snPrintf
+#endif // snprintf
+
+#ifndef _snprintf
+#	define _snprintf		use_idStr_snPrintf
+#endif //_snprintf
+
+#ifndef vsnprintf
+#	define vsnprintf		use_idStr_vsnPrintf
+#endif //vsnprintf
+
+#ifndef _vsnprintf
+#	define _vsnprintf		use_idStr_vsnPrintf
+#endif //_vsnprintf
 
 class idVec4;
 
@@ -649,7 +679,8 @@ ID_INLINE bool operator!=( const char *a, const idStr &b ) {
 	return !( a == b );
 }
 
-ID_INLINE int idStr::Cmp( const char *text ) const {
+ID_INLINE int idStr::Cmp( const char *text ) const 
+{
 	assert( text );
 	return idStr::Cmp( data, text );
 }
