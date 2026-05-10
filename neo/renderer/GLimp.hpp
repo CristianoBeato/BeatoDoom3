@@ -65,6 +65,114 @@ extern void		GLimp_DeactivateContext( void );
 void		GLimp_EnableLogging( bool enable );
 
 typedef void (*GLExtension_t)(void);
-extern GLExtension_t GLimp_ExtensionPointer( const char *name );
+extern GLExtension_t	GLimp_ExtensionPointer( const char *name );
+extern bool 			GLimp_CheckExtension( const char *name );
+extern void				GLimp_LoadExtension( void );
+
+extern void R_CheckPortableExtensions( void );
+
+ID_INLINE GLint glGetInteger( const GLenum pname )
+{
+	GLint params = 0;
+	glGetIntegerv( pname, &params );
+	return params;
+}
+
+ID_INLINE GLboolean glGetState( const GLenum flag )
+{
+	return glIsEnabled( flag ) ? GL_TRUE : GL_FALSE;
+}
+
+ID_INLINE GLboolean glSetState( const GLenum flag, const GLboolean enable )
+{
+	GLboolean former = glGetState( flag );
+	if (former != enable)
+	{
+		if (enable)
+			glEnable( flag );
+		else
+			glDisable( flag );
+	}
+	return former;
+}
+
+ID_INLINE GLenum glGetActiveTexture( void )
+{
+	GLint unit = 0;
+	glGetIntegerv( GL_ACTIVE_TEXTURE, &unit );
+	return unit;
+}
+
+ID_INLINE const GLuint glGetBuferBinding( const GLenum target )
+{
+	GLenum binding = GL_INVALID_ENUM;
+	switch (target)
+	{
+	case GL_ARRAY_BUFFER:
+		binding = GL_ARRAY_BUFFER_BINDING; break;
+	case GL_ATOMIC_COUNTER_BUFFER:
+		binding = GL_ATOMIC_COUNTER_BUFFER_BINDING; break;
+	case GL_COPY_READ_BUFFER:
+		binding = GL_COPY_READ_BUFFER_BINDING; break;
+	case GL_COPY_WRITE_BUFFER:
+		binding = GL_COPY_WRITE_BUFFER_BINDING; break;
+	case GL_DISPATCH_INDIRECT_BUFFER:
+		binding = GL_DISPATCH_INDIRECT_BUFFER_BINDING; break;
+	case GL_DRAW_INDIRECT_BUFFER:
+		binding = GL_DRAW_INDIRECT_BUFFER_BINDING; break;
+	case GL_ELEMENT_ARRAY_BUFFER:
+		binding = GL_ELEMENT_ARRAY_BUFFER_BINDING; break;
+	case GL_PIXEL_PACK_BUFFER:
+		binding = GL_PIXEL_PACK_BUFFER_BINDING; break;
+	case GL_PIXEL_UNPACK_BUFFER:
+		binding = GL_PIXEL_UNPACK_BUFFER_BINDING; break;
+	case GL_QUERY_BUFFER:
+		binding = GL_QUERY_BUFFER_BINDING; break;
+	case GL_SHADER_STORAGE_BUFFER:
+		binding = GL_SHADER_STORAGE_BUFFER_BINDING; break;
+	case GL_TEXTURE_BUFFER:
+		binding = GL_TEXTURE_BUFFER_BINDING; break;
+	case GL_TRANSFORM_FEEDBACK_BUFFER:
+		binding = GL_TRANSFORM_FEEDBACK_BUFFER_BINDING; break;
+	case GL_UNIFORM_BUFFER:
+		binding = GL_UNIFORM_BUFFER_BINDING; break;
+	default:
+		assert( false );
+	}
+
+	return glGetInteger( binding );
+}
+
+ID_INLINE const GLuint glGetTextureBinding( const GLenum target )
+{
+	GLenum binding = GL_INVALID_ENUM;
+	switch (target)
+	{
+	case GL_TEXTURE_1D:
+		binding = GL_TEXTURE_BINDING_1D; break;
+	case GL_TEXTURE_1D_ARRAY:
+		binding = GL_TEXTURE_BINDING_1D_ARRAY; break;
+	case GL_TEXTURE_2D:
+		binding = GL_TEXTURE_BINDING_2D; break;
+	case GL_TEXTURE_2D_ARRAY:
+		binding = GL_TEXTURE_BINDING_2D_ARRAY; break;
+	case GL_TEXTURE_2D_MULTISAMPLE:
+		binding = GL_TEXTURE_BINDING_2D_MULTISAMPLE; break;
+	case GL_TEXTURE_2D_MULTISAMPLE_ARRAY:
+		binding = GL_TEXTURE_BINDING_2D_MULTISAMPLE_ARRAY; break;
+	case GL_TEXTURE_3D:
+		binding = GL_TEXTURE_BINDING_3D; break;
+	case GL_TEXTURE_RECTANGLE:
+		binding = GL_TEXTURE_BINDING_RECTANGLE; break;
+	case GL_TEXTURE_CUBE_MAP:
+		binding = GL_TEXTURE_BINDING_CUBE_MAP; break;
+	case GL_TEXTURE_CUBE_MAP_ARRAY:
+		binding = GL_TEXTURE_BINDING_CUBE_MAP_ARRAY; break;
+	default:
+		assert( false );
+	}
+
+	return glGetInteger( binding );
+}
 
 #endif ///!__GL_IMP_HPP__
